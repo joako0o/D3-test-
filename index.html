@@ -19,13 +19,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" as="font" href="https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQZNLo_U2r.woff2" type="font/woff2" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&display=swap" rel="stylesheet" />
-    
+
     <!-- NUEVO: Pre-carga de librerías críticas para dispositivos móviles -->
     <link rel="preload" href="js/vendor/lenis.min.js" as="script" />
     <link rel="preload" href="js/vendor/gsap.min.js" as="script" />
     <link rel="preload" href="js/vendor/ScrollTrigger.min.js" as="script" />
     <link rel="preload" href="js/vendor/d3.min.js" as="script" />
-  
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { background: #0a0e1a; }
@@ -283,156 +283,49 @@
       opacity: 0;
     }
 
-    /* ──────────────────────────────── Stage 5 — Timeline (D3, lazy & responsive) ──────────────────────────────── */
-const timelineTitle = document.querySelector('[data-timeline-title]');
-gsap.fromTo(timelineTitle,
-    { opacity: 0, y: 20 },
-    { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out', scrollTrigger: { trigger: timelineTitle, start: 'top 80%', toggleActions: 'play none none reverse' } }
-);
-
-let timelineBuilt = false;
-let timelinePath, timelineTotalLen;
-
-function buildTimeline() {
-    if (timelineBuilt) return;
-    timelineBuilt = true;
-
-    const container = document.getElementById('timelineContainer');
-    container.innerHTML = ''; // Limpiar el contenedor antes de redibujar
-
-    const margin = { top: 40, right: 30, bottom: 60, left: 50 };
-    
-    // NUEVO: Calculamos el ancho basado en el contenedor real, no en la ventana global
-    const containerWidth = container.clientWidth || Math.min(1060, window.innerWidth - 40);
-    const width = containerWidth;
-    const height = 320;
-    const innerW = width - margin.left - margin.right;
-    const innerH = height - margin.top - margin.bottom;
-
-    const svg = d3.select(container)
-        .append('svg')
-        .attr('width', '100%') // Permite escalar
-        .attr('height', 'auto')
-        .attr('viewBox', `0 0 ${width} ${height}`)
-        .style('max-width', '100%');
-
-    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
-
-    /* [TODO: datos reales del dataset — reemplazar sampleData */
-    const sampleData = [
-        { date: new Date(2000, 0), value: 0.2 }, { date: new Date(2001, 0), value: -0.1 },
-        { date: new Date(2002, 0), value: 0.05 }, { date: new Date(2003, 0), value: 0.3 },
-        { date: new Date(2004, 0), value: 0.15 }, { date: new Date(2005, 0), value: -0.05 },
-        { date: new Date(2006, 0), value: 0.25 }, { date: new Date(2007, 0), value: 0.4 },
-        { date: new Date(2008, 0), value: -0.3 }, { date: new Date(2009, 0), value: -0.15 },
-        { date: new Date(2010, 0), value: 0.1 }, { date: new Date(2011, 0), value: 0.35 },
-        { date: new Date(2012, 0), value: 0.05 }, { date: new Date(2013, 0), value: -0.1 },
-        { date: new Date(2014, 0), value: 0.2 }, { date: new Date(2015, 0), value: -0.05 },
-    ];
-
-    const x = d3.scaleTime().domain(d3.extent(sampleData, d => d.date)).range([0, innerW]);
-    const y = d3.scaleLinear().domain([-0.5, 0.5]).range([innerH, 0]);
-
-    g.append('g')
-        .attr('transform', `translate(0,${innerH})`)
-        .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat('%Y')))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
-
-    g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');
-
-    g.append('g')
-        .call(d3.axisLeft(y).ticks(5).tickFormat(d => d > 0 ? `+${d}` : d))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
-
-    g.selectAll('.domain').style('stroke', 'none');
-    g.selectAll('.tick line').style('stroke', 'rgba(255,255,255,0.06)');
-
-    g.append('line')
-        .attr('x1', 0).attr('x2', innerW)
-        .attr('y1', y(0)).attr('y2', y(0))
-        .style('stroke', 'rgba(255,255,255,0.15)')
-        .style('stroke-dasharray', '4,4');
-
-    const gradient = svg.append('defs').append('linearGradient')
-        .attr('id', 'lineGrad').attr('x1', '0%').attr('x2', '100%');
-    gradient.append('stop').attr('offset', '0%').attr('stop-color', '#8ab4f8');
-    gradient.append('stop').attr('offset', '50%').attr('stop-color', '#ffd76a');
-    gradient.append('stop').attr('offset', '100%').attr('stop-color', '#8ab4f8');
-
-    const line = d3.line()
-        .x(d => x(d.date))
-        .y(d => y(d.value))
-        .curve(d3.curveMonotoneX);
-
-    timelinePath = g.append('path')
-        .datum(sampleData)
-        .attr('fill', 'none')
-        .attr('stroke', 'url(#lineGrad)')
-        .attr('stroke-width', 2.5)
-        .attr('d', line);
-
-    timelineTotalLen = timelinePath.node().getTotalLength();
-    timelinePath
-        .attr('stroke-dasharray', timelineTotalLen)
-        .attr('stroke-dashoffset', timelineTotalLen);
-
-    /* [TODO: fechas y datos reales del dataset — anotaciones de eventos macro */
-    const events = [
-        { date: new Date(2008, 8), label: '[TODO: Crisis financiera externa]' },
-    ];
-
-    const evG = g.selectAll('.ev').data(events).enter().append('g').attr('class', 'ev');
-    evG.append('line')
-        .attr('x1', d => x(d.date)).attr('x2', d => x(d.date))
-        .attr('y1', 0).attr('y2', innerH)
-        .style('stroke', 'rgba(255,215,106,0.25)')
-        .style('stroke-dasharray', '3,3');
-
-    evG.append('text')
-        .attr('x', d => x(d.date))
-        .attr('y', -8)
-        .attr('text-anchor', 'middle')
-        .style('font-size', '11px')
-        .style('fill', '#ffd76a')
-        .style('opacity', 0.7)
-        .text(d => d.label);
-
-    gsap.to(container, { opacity: 1, duration: 0.3 });
-}
-
-// NUEVO: Escuchador que redibuja el gráfico si el usuario gira la pantalla o cambia el tamaño
-let resizeTimer;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-        // Solo redibujar si ya se había construido una vez
-        if (document.getElementById('timelineContainer').innerHTML !== '') {
-            timelineBuilt = false;
-            buildTimeline();
-            ScrollTrigger.refresh(); // Asegura que la animación siga funcionando
-        }
-    }, 250);
-});
-
-ScrollTrigger.create({
-    trigger: '#stageTimeline',
-    start: 'top 80%',
-    onEnter: buildTimeline,
-    onEnterBack: buildTimeline,
-});
-
-ScrollTrigger.create({
-    trigger: '#stageTimeline',
-    start: 'top top',
-    end: '+=150%',
-    pin: '.timeline-pin-wrapper',
-    scrub: 1,
-    onUpdate: (self) => {
-        if (timelinePath) {
-            timelinePath.attr('stroke-dashoffset', timelineTotalLen * (1 - self.progress));
-        }
-    },
-});
+    /* ─── STAGE 5 — Timeline ───
+       (Antes había un bloque de JavaScript pegado por error aquí dentro de
+       <style>. Eso rompía el parseo de CSS: el navegador descarta cualquier
+       "regla" con un selector inválido, así que estas clases nunca existían
+       y además la siguiente regla real (.stage-quotes) quedaba arrastrada y
+       también se perdía. Por eso todo se veía "corrido a la izquierda": le
+       faltaba el centrado/flex a estas secciones. Aquí está el CSS correcto. */
+    .stage-timeline {
+      position: relative; z-index: 4;
+      padding: 0;
+    }
+    .timeline-pin-wrapper {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: clamp(40px, 8vw, 80px) clamp(20px, 5vw, 50px);
+      width: 100%;
+    }
+    .timeline-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(22px, 3.5vw, 40px);
+      font-weight: 700;
+      text-align: center;
+      background: linear-gradient(120deg, #ffd76a, #f5f0e6);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: clamp(24px, 5vw, 48px);
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .timeline-container {
+      width: 100%;
+      max-width: 1060px;
+      margin: 0 auto;
+      opacity: 0;
+    }
+    .timeline-container svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
 
     /* ─── STAGE 6 — Quotes ─── */
     .stage-quotes {
@@ -552,7 +445,7 @@ ScrollTrigger.create({
     @media (max-width: 1024px) {
       .hero-title h1 { font-size: clamp(24px, 4vw, 42px); }
     }
-    
+
     @media (max-width: 768px) {
       .quotes-grid { grid-template-columns: 1fr; }
       .counters-grid { grid-template-columns: repeat(2, 1fr); gap: clamp(20px, 4vw, 32px); }
@@ -561,7 +454,7 @@ ScrollTrigger.create({
       .step-connector { margin-left: 14px; height: 10px; }
       .scroll-hint span { font-size: clamp(9px, 1vw, 11px); }
     }
-    
+
     @media (max-width: 480px) {
       .quotes-grid { grid-template-columns: 1fr; }
       .counters-grid { grid-template-columns: 1fr; gap: clamp(20px, 4vw, 32px); }
@@ -754,6 +647,22 @@ ScrollTrigger.create({
       },
     };
 
+    /* NUEVO: escala responsiva de la moneda.
+       Con un FOV vertical fijo, la altura en píxeles de la moneda se mantiene
+       casi igual en cualquier dispositivo (el alto de la ventana de un celular
+       en vertical es parecido al de una laptop). El problema es el ANCHO: un
+       celular tiene mucho menos ancho, así que la misma moneda "grande" ocupa
+       casi toda la pantalla. Por eso se ve gigante en el cel. Acá la achicamos
+       según el ancho real de la ventana. */
+    function getResponsiveCoinScale() {
+      const w = window.innerWidth;
+      if (w <= 380) return 0.5;
+      if (w <= 480) return 0.6;
+      if (w <= 768) return 0.75;
+      if (w <= 1024) return 0.9;
+      return 1;
+    }
+
     const canvas = document.getElementById('canvas');
     const loadEl = document.getElementById('load');
     const haloWrap = document.getElementById('haloWrap');
@@ -841,6 +750,7 @@ ScrollTrigger.create({
         });
       });
       coin.add(model);
+      coin.scale.setScalar(getResponsiveCoinScale());
 
       // Diagnostic: measure actual coin screen bounds
       const coinBox = new THREE.Box3().setFromObject(coin);
@@ -908,6 +818,7 @@ ScrollTrigger.create({
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      coin.scale.setScalar(getResponsiveCoinScale());
     });
 
     /* ────────────────────────────────
@@ -1032,7 +943,7 @@ ScrollTrigger.create({
     });
 
     /* ────────────────────────────────
-       Stage 5 — Timeline (D3, lazy)
+       Stage 5 — Timeline (D3, lazy & responsive)
     ──────────────────────────────── */
     const timelineTitle = document.querySelector('[data-timeline-title]');
     gsap.fromTo(timelineTitle,
@@ -1049,12 +960,15 @@ ScrollTrigger.create({
     let timelinePath, timelineTotalLen;
 
     function buildTimeline() {
-      if (timelineBuilt) return;
       timelineBuilt = true;
 
       const container = document.getElementById('timelineContainer');
+      container.innerHTML = ''; // limpiar antes de redibujar (por resize/rotación)
+
       const margin = { top: 40, right: 30, bottom: 60, left: 50 };
-      const width = Math.min(1060, window.innerWidth - 40);
+      // NUEVO: ancho basado en el contenedor real (respeta el padding del wrapper
+      // en mobile), en vez de asumir siempre el ancho de escritorio.
+      const width = container.clientWidth || Math.min(1060, window.innerWidth - 40);
       const height = 320;
       const innerW = width - margin.left - margin.right;
       const innerH = height - margin.top - margin.bottom;
@@ -1175,6 +1089,20 @@ ScrollTrigger.create({
       },
     });
 
+    // NUEVO: si el usuario rota el celular o cambia el tamaño de ventana,
+    // volvemos a dibujar el gráfico con el ancho correcto (evita texto
+    // ilegible al haber sido comprimido vía CSS desde un ancho de escritorio).
+    let timelineResizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(timelineResizeTimer);
+      timelineResizeTimer = setTimeout(() => {
+        if (timelineBuilt) {
+          buildTimeline();
+          ScrollTrigger.refresh();
+        }
+      }, 250);
+    });
+
     /* ────────────────────────────────
        Stage 6 — Quotes
     ──────────────────────────────── */
@@ -1208,3 +1136,4 @@ ScrollTrigger.create({
   </script>
 </body>
 </html>
+
