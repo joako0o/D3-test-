@@ -456,10 +456,24 @@
     }
 
     @media (max-width: 480px) {
-      .quotes-grid { grid-template-columns: 1fr; }
-      .counters-grid { grid-template-columns: 1fr; gap: clamp(20px, 4vw, 32px); }
-      .hero-title h1 { font-size: clamp(20px, 3.5vw, 28px); line-height: 1.3; }
-      .quote-text { font-size: clamp(13px, 1.8vw, 16px); }
+    /* Forzamos un margen seguro a los lados en todas las secciones */
+    .stage-hook, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing {
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+    .pipeline-pin-wrapper, .timeline-pin-wrapper {
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+    /* Hacemos que los textos no choquen con el borde */
+    .stage-hook .line, .stage-hook .paragraph, .closing-text {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .quotes-grid { grid-template-columns: 1fr; }
+    .counters-grid { grid-template-columns: 1fr; gap: clamp(20px, 4vw, 32px); }
+    .hero-title h1 { font-size: clamp(20px, 3.5vw, 28px); line-height: 1.3; }
+    .quote-text { font-size: clamp(13px, 1.8vw, 16px); }
     }
   </style>
 </head>
