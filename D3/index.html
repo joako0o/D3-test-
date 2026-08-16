@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>In the room where monetary policy happens: Learning from two decades of Central Bank deliberations in Chile</title>
+
+  <meta property="og:title" content="In the room where monetary policy happens: Learning from two decades of Central Bank deliberations in Chile" />
+  <meta property="og:description" content="Exploración interactiva de 15 años de reuniones de política monetaria en Chile." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="font" href="https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQZNLo_U2r.woff2" type="font/woff2" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23dfab42'/><text x='50' y='65' text-anchor='middle' font-size='36' font-weight='bold' fill='%230a0e1a'>RPM</text></svg>" />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { background: #0a0e1a; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #e8ecf5; overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(255,215,106,0.03), transparent 35%),
+        radial-gradient(circle at 50% 50%, transparent 52%, rgba(0,0,0,0.4) 100%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 200px 200px;
+    }
+
+    #canvas {
+      display: block; position: fixed; inset: 0;
+      z-index: 2; cursor: grab;
+      pointer-events: auto;
+      transition: opacity 0.35s ease;
+    }
+    #canvas:active { cursor: grabbing; }
+    #canvas.hidden-stage { opacity: 0; pointer-events: none; }
+
+    .hero {
+      position: relative; width: 100%; min-height: 100vh;
+      z-index: 3; pointer-events: none;
+      display: flex; flex-direction: column;
+    }
+    .top {
+      padding: clamp(16px, 2vw, 40px) clamp(20px, 5vw, 50px);
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .brand { font-size: clamp(11px, 1.2vw, 14px); letter-spacing: 4px; text-transform: uppercase; opacity: 0.7; }
+    .brand strong { color: #ffd76a; font-weight: 600; }
+    .hero-title {
+      margin-top: auto; padding-bottom: clamp(10vh, 15vw, 18vh); text-align: center;
+      position: relative;
+    }
+    .hero-title::before {
+      content: "";
+      position: absolute;
+      inset: -40px -60px;
+      background: radial-gradient(ellipse at center, rgba(10,14,26,0.7) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .hero-title h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 5vw, 56px);
+      font-weight: 700; letter-spacing: 0.5px;
+      background: linear-gradient(120deg, #ffd76a, #f5f0e6);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow:
+        0 0 12px rgba(255, 215, 106, 0.08),
+        0 0 28px rgba(255, 215, 106, 0.04);
+    }
+    .hero-title p { margin-top: clamp(8px, 1.5vw, 16px); font-size: clamp(12px, 1.8vw, 18px); opacity: 0.75; }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      opacity: 0.45;
+      transition: opacity 0.4s;
+    }
+    .scroll-hint.hidden { opacity: 0; pointer-events: none; }
+    .scroll-hint span {
+      font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    }
+    .scroll-hint svg {
+      width: 20px; height: 20px;
+      animation: scrollBounce 2s ease-in-out infinite;
+    }
+    @keyframes scrollBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    .coin-halo-wrap {
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 1;
+      pointer-events: none;
+      will-change: transform, opacity;
+      transition: opacity 0.35s ease;
+    }
+    .coin-halo-wrap.hidden-stage { opacity: 0 !important; }
+
+    .coin-halo {
+      width: min(580px, 90vmin);
+      height: min(580px, 90vmin);
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(circle,
+          rgba(212,168,75,0.18) 0%,
+          rgba(212,168,75,0.06) 35%,
+          rgba(85,110,180,0.03) 60%,
+          transparent 72%);
+      filter: blur(8px);
+      animation: haloPulse 8s ease-in-out infinite;
+    }
+
+    @keyframes haloPulse {
+      0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.94); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+    }
+
+    /* ─── STAGE 2 — Hook ─── */
+    .stage-hook {
+      position: relative; z-index: 4;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 50px);
+      text-align: center;
+    }
+    .stage-hook .line {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(26px, 4vw, 48px);
+      font-weight: 500;
+      line-height: 1.6;
+      max-width: 90vw;
+      padding: 0 clamp(10px, 3vw, 30px);
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    .stage-hook .paragraph {
+      margin-top: clamp(24px, 4vw, 40px);
+      max-width: 90vw;
+      max-width: 700px;
+      font-size: clamp(14px, 1.8vw, 18px);
+      line-height: 1.8;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    /* ─── STAGE 3 — Counters ─── */
+    .stage-counters {
+      position: relative; z-index: 4;
+      min-height: 80vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 50px);
+    }
+    .counters-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(32px, 5vw, 60px);
+      max-width: 100%;
+      width: 100%;
+    }
+    .counter-item {
+      text-align: center;
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    .counter-number {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(40px, 6vw, 72px);
+      font-weight: 700;
+      color: #ffd76a;
+      line-height: 1;
+    }
+    .counter-label {
+      margin-top: clamp(8px, 1.5vw, 14px);
+      font-size: clamp(11px, 1.2vw, 14px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.65;
+    }
+
+    /* ─── STAGE 4 — Pipeline ─── */
+    .stage-pipeline {
+      position: relative; z-index: 4;
+      padding: 0;
+    }
+    .pipeline-pin-wrapper {
+      min-height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: clamp(40px, 8vw, 80px) clamp(40px, 8vw, 100px);
+    }
+    .pipeline-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(28px, 3.5vw, 40px);
+      font-weight: 700;
+      background: linear-gradient(120deg, #ffd76a, #f5f0e6);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: clamp(40px, 6vw, 60px);
+      align-self: flex-start;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .pipeline-steps {
+      display: flex; flex-direction: column;
+      gap: clamp(32px, 4vw, 48px);
+      max-width: 90vw;
+      max-width: 800px;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .pipeline-step {
+      display: flex; align-items: flex-start; gap: clamp(20px, 3vw, 32px);
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    .step-number {
+      flex-shrink: 0;
+      width: clamp(32px, 4vw, 40px); height: clamp(32px, 4vw, 40px);
+      border-radius: 50%;
+      border: 2px solid rgba(255,215,106,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(13px, 1.5vw, 15px); font-weight: 700;
+      color: #ffd76a;
+    }
+    .step-content h3 {
+      font-size: clamp(14px, 1.6vw, 17px); font-weight: 600;
+      margin-bottom: 4px; color: #f5f0e6;
+    }
+    .step-content p {
+      font-size: clamp(12px, 1.4vw, 15px); line-height: 1.6; opacity: 0.7;
+      max-width: 90vw;
+      max-width: 480px;
+    }
+    .step-connector {
+      width: 2px;
+      height: 16px;
+      margin-left: 17px;
+      background: linear-gradient(to bottom, rgba(255,215,106,0.3), rgba(255,215,106,0.08));
+      opacity: 0;
+    }
+
+    /* ─── STAGE 5 — Timeline ─── */
+    .stage-timeline {
+      position: relative; z-index: 4;
+      padding: 0;
+    }
+    .timeline-pin-wrapper {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      justify-content: center;
+      padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 50px);
+    }
+    .timeline-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(24px, 3.5vw, 40px);
+      font-weight: 700;
+      background: linear-gradient(120deg, #ffd76a, #f5f0e6);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: clamp(32px, 6vw, 60px);
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .timeline-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      opacity: 0;
+    }
+    .timeline-container svg {
+      overflow: visible;
+    }
+    .timeline-event {
+      font-size: 12px;
+      fill: #ffd76a;
+      opacity: 0;
+    }
+
+    /* ─── STAGE 6 — Quotes ─── */
+    .stage-quotes {
+      position: relative; z-index: 4;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 50px);
+    }
+    .quotes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(clamp(280px, 40vw, 400px), 1fr));
+      gap: clamp(24px, 4vw, 48px);
+      max-width: 90vw;
+      max-width: 950px;
+      width: 100%;
+    }
+    .quote-card {
+      padding: clamp(20px, 4vw, 36px);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      opacity: 0;
+      transform: translateY(24px);
+      transition: border-color 0.3s;
+    }
+    .quote-card.hawkish {
+      border-color: rgba(212,168,75,0.2);
+      box-shadow: 0 0 40px rgba(212,168,75,0.05);
+    }
+    .quote-card.dovish {
+      border-color: rgba(100,140,220,0.2);
+      box-shadow: 0 0 40px rgba(100,140,220,0.05);
+    }
+    .quote-tag {
+      font-size: 11px; letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .quote-card.hawkish .quote-tag { color: #ffd76a; }
+    .quote-card.dovish .quote-tag { color: #8ab4f8; }
+    .quote-text {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(14px, 2vw, 20px);
+      font-weight: 400;
+      font-style: italic;
+      line-height: 1.8;
+      margin-bottom: clamp(14px, 2vw, 24px);
+      color: #f5f0e6;
+    }
+    .quote-author {
+      font-size: clamp(11px, 1.2vw, 14px);
+      opacity: 0.55;
+    }
+
+    /* ─── STAGE 7 — Closing ─── */
+    .stage-closing {
+      position: relative; z-index: 4;
+      min-height: 80vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: clamp(60px, 10vw, 100px) clamp(20px, 5vw, 50px);
+      text-align: center;
+    }
+    .closing-text {
+      max-width: 90vw;
+      max-width: 680px;
+      font-size: clamp(15px, 1.9vw, 20px);
+      line-height: 1.8;
+      opacity: 0;
+      transform: translateY(20px);
+      margin-bottom: clamp(28px, 5vw, 48px);
+    }
+    .closing-cta {
+      display: inline-block;
+      padding: clamp(12px, 2vw, 16px) clamp(28px, 4vw, 40px);
+      border: 1px solid rgba(255,215,106,0.4);
+      border-radius: 8px;
+      color: #ffd76a;
+      font-size: clamp(12px, 1.3vw, 15px);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 0.3s, border-color 0.3s;
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    .closing-cta:hover {
+      background: rgba(255,215,106,0.08);
+      border-color: #ffd76a;
+    }
+
+    .footer {
+      padding: clamp(24px, 5vw, 48px) clamp(20px, 5vw, 50px);
+      text-align: center;
+      font-size: clamp(10px, 1.1vw, 13px);
+      opacity: 0.3;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    #load {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 18px; background: #0a0e1a;
+      transition: opacity 0.6s ease;
+    }
+    #load.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(255,215,106,0.15);
+      border-top-color: #ffd76a;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #load span { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.8; }
+
+    @media (max-width: 1024px) {
+      .hero-title h1 { font-size: clamp(24px, 4vw, 42px); }
+    }
+    
+    @media (max-width: 768px) {
+      .quotes-grid { grid-template-columns: 1fr; }
+      .counters-grid { grid-template-columns: repeat(2, 1fr); gap: clamp(20px, 4vw, 32px); }
+      .pipeline-step { gap: 12px; }
+      .step-number { width: 30px; height: 30px; font-size: clamp(11px, 1vw, 12px); }
+      .step-connector { margin-left: 14px; height: 10px; }
+      .scroll-hint span { font-size: clamp(9px, 1vw, 11px); }
+    }
+    
+    @media (max-width: 480px) {
+      .quotes-grid { grid-template-columns: 1fr; }
+      .counters-grid { grid-template-columns: 1fr; gap: clamp(20px, 4vw, 32px); }
+      .hero-title h1 { font-size: clamp(20px, 3.5vw, 28px); line-height: 1.3; }
+      .quote-text { font-size: clamp(13px, 1.8vw, 16px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="load">
+    <div class="spinner"></div>
+    <span>Cargando moneda&hellip;</span>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="coin-halo-wrap" id="haloWrap">
+    <div class="coin-halo"></div>
+  </div>
+
+  <!-- ═══════ STAGE 1 — Hero ═══════ -->
+  <div class="hero" id="hero">
+    <div class="top">
+      <div class="brand"><strong>2000&#8211;2015</strong></div>
+      <div class="brand" style="opacity:0.55">Política Monetaria</div>
+    </div>
+    <div class="hero-title">
+      <h1>In the room where monetary policy happens: Learning from two<br>decades of Central Bank deliberations in Chile</h1>
+      <p>Reuniones de política monetaria en Chile &middot; 2000&ndash;2015</p>
+    </div>
+    <div class="scroll-hint" id="scrollHint">
+      <span>Scroll</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M19 12l-7 7-7-7"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ═══════ STAGE 2 — Hook ═══════ -->
+  <section class="stage-hook" id="stageHook">
+    <div class="line" data-hook>
+      &ldquo;Vemos las decisiones de política monetaria.<br/>
+      Rara vez vemos c&oacute;mo se llega a ellas.&rdquo;
+    </div>
+    <p class="paragraph" data-hook>
+      Los an&aacute;lisis tradicionales se basan en resultados observables: tasas, votos, previsiones.
+      Las deliberaciones mismas &mdash;el razonamiento, el debate entre riesgos&mdash;
+      han recibido mucho menos atenci&oacute;n.
+    </p>
+  </section>
+
+  <!-- ═══════ STAGE 3 — Counters ═══════ -->
+  <section class="stage-counters" id="stageCounters">
+    <div class="counters-grid">
+      <div class="counter-item" data-counter>
+        <div class="counter-number" data-target="16" data-suffix="">0</div>
+        <div class="counter-label">A&ntilde;os cubiertos</div>
+      </div>
+      <div class="counter-item" data-counter>
+        <div class="counter-number" data-target="[TODO: dato real]" data-suffix="">0</div>
+        <div class="counter-label">Reuniones analizadas</div>
+      </div>
+      <div class="counter-item" data-counter>
+        <div class="counter-number" data-target="[TODO: dato real]" data-suffix="">0</div>
+        <div class="counter-label">Intervenciones clasificadas</div>
+      </div>
+      <div class="counter-item" data-counter>
+        <div class="counter-number" data-target="[TODO: dato real]" data-suffix="">0</div>
+        <div class="counter-label">Responsables identificados</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 4 — Pipeline ═══════ -->
+  <section class="stage-pipeline" id="stagePipeline">
+    <div class="pipeline-pin-wrapper">
+      <h2 class="pipeline-title" data-pipeline>Metodolog&iacute;a</h2>
+      <div class="pipeline-steps">
+        <div class="pipeline-step" data-step>
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Actas de reuniones</h3>
+            <p>Texto crudo de las transcripciones de las reuniones de pol&iacute;tica monetaria.</p>
+          </div>
+        </div>
+        <div class="step-connector" data-step></div>
+        <div class="pipeline-step" data-step>
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Etiquetado few-shot con LLM</h3>
+            <p>Un subconjunto de intervenciones es etiquetado como hawkish o dovish mediante prompting con ejemplos.</p>
+          </div>
+        </div>
+        <div class="step-connector" data-step></div>
+        <div class="pipeline-step" data-step>
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Conjunto de entrenamiento</h3>
+            <p>Las etiquetas del LLM construyen un dataset supervisado, validado por expertos en pol&iacute;tica monetaria.</p>
+          </div>
+        </div>
+        <div class="step-connector" data-step></div>
+        <div class="pipeline-step" data-step>
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3>Clasificaci&oacute;n supervisada</h3>
+            <p>Un clasificador entrena sobre el conjunto etiquetado y clasifica todo el corpus de 2000&ndash;2015.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 5 — Timeline ═══════ -->
+  <section class="stage-timeline" id="stageTimeline">
+    <div class="timeline-pin-wrapper">
+      <h2 class="timeline-title" data-timeline-title>Orientaci&oacute;n de pol&iacute;tica monetaria en el tiempo</h2>
+      <div class="timeline-container" id="timelineContainer"></div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 6 — Quotes ═══════ -->
+  <section class="stage-quotes" id="stageQuotes">
+    <div class="quotes-grid">
+      <div class="quote-card hawkish" data-quote>
+        <div class="quote-tag">Hawkish</div>
+        <div class="quote-text">&ldquo;[TODO: cita real del corpus &mdash; responsables con postura hawkish]&rdquo;</div>
+        <div class="quote-author">&mdash; [TODO: nombre, responsable de pol&iacute;tica]</div>
+      </div>
+      <div class="quote-card dovish" data-quote>
+        <div class="quote-tag">Dovish</div>
+        <div class="quote-text">&ldquo;[TODO: cita real del corpus &mdash; responsables con postura dovish]&rdquo;</div>
+        <div class="quote-author">&mdash; [TODO: nombre, responsable de pol&iacute;tica]</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 7 — Closing ═══════ -->
+  <section class="stage-closing" id="stageClosing">
+    <p class="closing-text" data-closing>
+      Este proyecto aporta una fuente nueva de informaci&oacute;n estructurada sobre la
+      formulaci&oacute;n de pol&iacute;tica monetaria en una econom&iacute;a emergente,
+      combinando datos textuales con indicadores macroecon&oacute;micos tradicionales.
+    </p>
+    <a href="#" class="closing-cta" data-closing>Explorar el dataset completo &rarr;</a>
+  </section>
+
+  <footer class="footer">
+    &copy; 2026 &middot; In the room where monetary policy happens: Learning from two decades of Central Bank deliberations in Chile
+  </footer>
+
+  <script src="js/vendor/lenis.min.js"></script>
+  <script src="js/vendor/gsap.min.js"></script>
+  <script src="js/vendor/ScrollTrigger.min.js"></script>
+  <script src="js/vendor/d3.min.js"></script>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./js/three.module.js",
+      "three/addons/": "./js/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    /* ────────────────────────────────
+       Three.js — Coin
+    ──────────────────────────────── */
+    const CONFIG = {
+      camera: { fov: 38, x: 0, y: 0.6, z: 5.8 },
+      lights: {
+        ambient: { color: 0xfff4df, intensity: 0.25 },
+        key:     { color: 0xffe8b0, intensity: 2.2,  x: 3.5, y: 4.5, z: 4.5 },
+        fill:    { color: 0xa8c0e8, intensity: 0.5,  x: -4,  y: 1.5, z: 3 },
+        rim:     { color: 0xffd76a, intensity: 1.5,  x: -2.5, y: 3.5, z: -4 },
+        front:   { color: 0xfff1c8, intensity: 1.0,  x: 0,   y: 0.8, z: 5.5 },
+      },
+      exposure: 1.08,
+      coin: {
+        scale: 2.15, swaySpeedY: 0.45, tiltBase: -0.05,
+        tiltOscillation: 0.025, tiltSpeed: 0.5,
+        floatAmount: 0.04, floatSpeed: 0.7, baseY: 1.4,
+        color: '#dfab42', metalness: 1.0, roughness: 0.22,
+        envMapIntensity: 1.05, emissive: '#3d2508', emissiveIntensity: 0.05,
+      },
+    };
+
+    const canvas = document.getElementById('canvas');
+    const loadEl = document.getElementById('load');
+    const haloWrap = document.getElementById('haloWrap');
+    const scrollHint = document.getElementById('scrollHint');
+    const heroEl = document.getElementById('hero');
+
+    let currentStage = 1;
+    function setStage(stage) {
+      if (stage === currentStage) return;
+      currentStage = stage;
+      if (stage === 1) {
+        canvas.classList.remove('hidden-stage');
+        haloWrap.classList.remove('hidden-stage');
+        scrollHint.classList.remove('hidden');
+        canvas.style.pointerEvents = 'auto';
+      } else {
+        canvas.classList.add('hidden-stage');
+        haloWrap.classList.add('hidden-stage');
+        scrollHint.classList.add('hidden');
+        canvas.style.pointerEvents = 'none';
+      }
+    }
+
+    const stageObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.target === heroEl && entry.isIntersecting) setStage(1);
+        if (entry.target !== heroEl && entry.isIntersecting) setStage(2);
+      });
+    }, { threshold: 0.45 });
+    stageObserver.observe(heroEl);
+    document.querySelectorAll('.stage-hook, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing')
+      .forEach(el => stageObserver.observe(el));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
+    camera.lookAt(0, 0.7, 0);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = CONFIG.exposure;
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
+
+    const L = CONFIG.lights;
+    scene.add(new THREE.AmbientLight(L.ambient.color, L.ambient.intensity));
+    const key = new THREE.DirectionalLight(L.key.color, L.key.intensity); key.position.set(L.key.x, L.key.y, L.key.z);
+    const fill = new THREE.DirectionalLight(L.fill.color, L.fill.intensity); fill.position.set(L.fill.x, L.fill.y, L.fill.z);
+    const rim = new THREE.DirectionalLight(L.rim.color, L.rim.intensity); rim.position.set(L.rim.x, L.rim.y, L.rim.z);
+    const front = new THREE.DirectionalLight(L.front.color, L.front.intensity); front.position.set(L.front.x, L.front.y, L.front.z);
+    scene.add(key, fill, rim, front);
+    const mouseLight = new THREE.PointLight(0xfff1c8, 0.4, 8);
+    scene.add(mouseLight);
+
+    const coin = new THREE.Group();
+    scene.add(coin);
+
+    const manager = new THREE.LoadingManager();
+    manager.onLoad = () => setTimeout(() => loadEl.classList.add('hidden'), 300);
+
+    const loader = new GLTFLoader(manager);
+    loader.load('monedav5.glb', (gltf) => {
+      const model = gltf.scene;
+      const box = new THREE.Box3().setFromObject(model);
+      if (!box.isEmpty()) {
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        const size = box.getSize(new THREE.Vector3());
+        model.scale.setScalar(CONFIG.coin.scale / Math.max(size.x, size.y, size.z));
+      }
+      model.traverse((object) => {
+        if (!object.isMesh || !object.material) return;
+        [object.material].flat().forEach((m) => {
+          if (!m || !('metalness' in m)) return;
+          m.side = THREE.FrontSide;
+          m.metalness = CONFIG.coin.metalness;
+          m.roughness = CONFIG.coin.roughness;
+          m.envMapIntensity = CONFIG.coin.envMapIntensity;
+          m.needsUpdate = true;
+        });
+      });
+      coin.add(model);
+
+      // Diagnostic: measure actual coin screen bounds
+      const coinBox = new THREE.Box3().setFromObject(coin);
+      const coinSize = coinBox.getSize(new THREE.Vector3());
+      const coinCenter = coinBox.getCenter(new THREE.Vector3());
+      const projectedCenter = coinCenter.clone().project(camera);
+      const projectedTop = new THREE.Vector3(coinCenter.x, coinCenter.y + coinSize.y / 2, coinCenter.z).project(camera);
+      const projectedBottom = new THREE.Vector3(coinCenter.x, coinCenter.y - coinSize.y / 2, coinCenter.z).project(camera);
+      const screenCenterY = (-projectedCenter.y * 0.5 + 0.5) * window.innerHeight;
+      const screenTopY = (-projectedTop.y * 0.5 + 0.5) * window.innerHeight;
+      const screenBottomY = (-projectedBottom.y * 0.5 + 0.5) * window.innerHeight;
+      const screen_height_px = Math.abs(screenBottomY - screenTopY);
+      console.log(`[DIAG] Coin world size: ${coinSize.y.toFixed(3)} units`);
+      console.log(`[DIAG] Coin screen: top=${screenTopY.toFixed(0)}px center=${screenCenterY.toFixed(0)}px bottom=${screenBottomY.toFixed(0)}px height=${screen_height_px.toFixed(0)}px (${(screen_height_px/window.innerHeight*100).toFixed(1)}vh)`);
+      console.log(`[DIAG] Viewport: ${window.innerWidth}x${window.innerHeight}`);
+    }, undefined, (err) => {
+      console.error('Error cargando GLB:', err);
+      loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la moneda</span>';
+    });
+
+    const clock = new THREE.Clock();
+    const C = CONFIG.coin;
+    let mouseX = 0, mouseY = 0, smoothMouseX = 0, smoothMouseY = 0;
+    let isDragging = false, dragStartX = 0, dragStartY = 0, dragRotY = 0, dragRotX = 0;
+
+    function onPointerMove(cx, cy) {
+      mouseX = (cx / window.innerWidth) * 2 - 1;
+      mouseY = (cy / window.innerHeight) * 2 - 1;
+      if (isDragging) { dragRotY += (cx - dragStartX) * 0.005; dragRotX += (cy - dragStartY) * 0.005; dragStartX = cx; dragStartY = cy; }
+    }
+    function onPointerDown(cx, cy) { isDragging = true; dragStartX = cx; dragStartY = cy; }
+    function onPointerUp() { isDragging = false; }
+
+    window.addEventListener('mousemove', (e) => onPointerMove(e.clientX, e.clientY));
+    canvas.addEventListener('mousedown', (e) => onPointerDown(e.clientX, e.clientY));
+    window.addEventListener('mouseup', onPointerUp);
+    canvas.addEventListener('touchstart', (e) => { const t = e.touches[0]; onPointerDown(t.clientX, t.clientY); }, { passive: true });
+    canvas.addEventListener('touchmove', (e) => { const t = e.touches[0]; onPointerMove(t.clientX, t.clientY); }, { passive: true });
+    canvas.addEventListener('touchend', onPointerUp, { passive: true });
+
+    const projectedPos = new THREE.Vector3();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const time = clock.getElapsedTime();
+      smoothMouseX = THREE.MathUtils.lerp(smoothMouseX, mouseX, 0.06);
+      smoothMouseY = THREE.MathUtils.lerp(smoothMouseY, mouseY, 0.06);
+      if (!isDragging) { dragRotY = THREE.MathUtils.lerp(dragRotY, 0, 0.05); dragRotX = THREE.MathUtils.lerp(dragRotX, 0, 0.05); }
+      if (coin.children.length > 0) {
+        const introT = Math.min(time / 1.8, 1);
+        const introEase = 1 - Math.pow(1 - introT, 3);
+        coin.rotation.y = (1 - introEase) * 0.6 + time * C.swaySpeedY + smoothMouseX * 0.22 + dragRotY;
+        coin.rotation.x = C.tiltBase + C.tiltOscillation * Math.sin(time * C.tiltSpeed) + smoothMouseY * -0.12 + dragRotX;
+        coin.position.y = C.baseY + C.floatAmount * Math.sin(time * C.floatSpeed);
+        mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
+        coin.getWorldPosition(projectedPos);
+        projectedPos.project(camera);
+        haloWrap.style.transform = `translate3d(${(projectedPos.x * 0.5 + 0.5) * window.innerWidth}px, ${(-projectedPos.y * 0.5 + 0.5) * window.innerHeight}px, 0)`;
+      }
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* ────────────────────────────────
+       Lenis + GSAP ScrollTrigger
+    ──────────────────────────────── */
+    gsap.registerPlugin(ScrollTrigger);
+
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+    gsap.ticker.lagSmoothing(0);
+
+    /* ────────────────────────────────
+       Hero — coin + title move together on scroll
+    ──────────────────────────────── */
+    const heroGroup = gsap.timeline({
+      scrollTrigger: {
+        trigger: '.hero',
+        start: 'top top',
+        end: '40% top',
+        scrub: true,
+      },
+    });
+    heroGroup.to('.hero-title', { opacity: 0, y: -60, ease: 'none' }, 0);
+    heroGroup.to('.scroll-hint', { opacity: 0, ease: 'none' }, 0);
+    heroGroup.to('#canvas', { opacity: 0, y: -60, ease: 'none' }, 0);
+    heroGroup.to('#haloWrap', { opacity: 0, y: -60, ease: 'none' }, 0);
+
+    /* ────────────────────────────────
+       Stage 2 — Hook
+    ──────────────────────────────── */
+    const hookLines = document.querySelectorAll('[data-hook]');
+    hookLines.forEach((el, i) => {
+      gsap.fromTo(el,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1, y: 0,
+          duration: 1,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 80%',
+            end: 'top 50%',
+            toggleActions: 'play none none reverse',
+          }
+        }
+      );
+    });
+
+    /* ────────────────────────────────
+       Stage 3 — Counters
+    ──────────────────────────────── */
+    const counterEls = document.querySelectorAll('[data-counter]');
+    counterEls.forEach((el) => {
+      const numEl = el.querySelector('.counter-number');
+      const rawTarget = numEl.dataset.target;
+      const isTodo = rawTarget.startsWith('[TODO');
+
+      gsap.fromTo(el,
+        { opacity: 0, y: 24 },
+        {
+          opacity: 1, y: 0,
+          duration: 0.6,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+            onEnter: () => {
+              if (isTodo) return;
+              const target = parseInt(rawTarget, 10);
+              const obj = { val: 0 };
+              gsap.to(obj, {
+                val: target,
+                duration: 1.5,
+                ease: 'power2.out',
+                onUpdate: () => { numEl.textContent = Math.round(obj.val); },
+              });
+            },
+          }
+        }
+      );
+    });
+
+    /* ────────────────────────────────
+       Stage 4 — Pipeline
+    ──────────────────────────────── */
+    const pipelineTitle = document.querySelector('[data-pipeline]');
+    gsap.fromTo(pipelineTitle,
+      { opacity: 0, y: 20 },
+      {
+        opacity: 1, y: 0,
+        duration: 0.8,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: pipelineTitle, start: 'top 80%', toggleActions: 'play none none reverse' }
+      }
+    );
+
+    const stepEls = document.querySelectorAll('[data-step]');
+    ScrollTrigger.create({
+      trigger: '#stagePipeline',
+      start: 'top top',
+      end: '+=180%',
+      pin: '.pipeline-pin-wrapper',
+      scrub: 1,
+      onUpdate: (self) => {
+        const p = self.progress;
+        const n = stepEls.length;
+        stepEls.forEach((el, i) => {
+          const localProgress = gsap.utils.clamp(0, 1, (p * n) - i);
+          const ease = 1 - Math.pow(1 - localProgress, 2);
+          gsap.set(el, {
+            opacity: ease,
+            y: 30 * (1 - ease),
+          });
+        });
+      },
+    });
+
+    /* ────────────────────────────────
+       Stage 5 — Timeline (D3, lazy)
+    ──────────────────────────────── */
+    const timelineTitle = document.querySelector('[data-timeline-title]');
+    gsap.fromTo(timelineTitle,
+      { opacity: 0, y: 20 },
+      {
+        opacity: 1, y: 0,
+        duration: 0.8,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: timelineTitle, start: 'top 80%', toggleActions: 'play none none reverse' }
+      }
+    );
+
+    let timelineBuilt = false;
+    let timelinePath, timelineTotalLen;
+
+    function buildTimeline() {
+      if (timelineBuilt) return;
+      timelineBuilt = true;
+
+      const container = document.getElementById('timelineContainer');
+      const margin = { top: 40, right: 30, bottom: 60, left: 50 };
+      const width = Math.min(1060, window.innerWidth - 40);
+      const height = 320;
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      const svg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .style('max-width', '100%')
+        .style('height', 'auto');
+
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      /* [TODO: datos reales del dataset — reemplazar sampleData */
+      const sampleData = [
+        { date: new Date(2000, 0), value: 0.2 },
+        { date: new Date(2001, 0), value: -0.1 },
+        { date: new Date(2002, 0), value: 0.05 },
+        { date: new Date(2003, 0), value: 0.3 },
+        { date: new Date(2004, 0), value: 0.15 },
+        { date: new Date(2005, 0), value: -0.05 },
+        { date: new Date(2006, 0), value: 0.25 },
+        { date: new Date(2007, 0), value: 0.4 },
+        { date: new Date(2008, 0), value: -0.3 },
+        { date: new Date(2009, 0), value: -0.15 },
+        { date: new Date(2010, 0), value: 0.1 },
+        { date: new Date(2011, 0), value: 0.35 },
+        { date: new Date(2012, 0), value: 0.05 },
+        { date: new Date(2013, 0), value: -0.1 },
+        { date: new Date(2014, 0), value: 0.2 },
+        { date: new Date(2015, 0), value: -0.05 },
+      ];
+
+      const x = d3.scaleTime().domain(d3.extent(sampleData, d => d.date)).range([0, innerW]);
+      const y = d3.scaleLinear().domain([-0.5, 0.5]).range([innerH, 0]);
+
+      g.append('g')
+        .attr('transform', `translate(0,${innerH})`)
+        .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat('%Y')))
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
+      g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');
+
+      g.append('g')
+        .call(d3.axisLeft(y).ticks(5).tickFormat(d => d > 0 ? `+${d}` : d))
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
+      g.selectAll('.domain').style('stroke', 'none');
+      g.selectAll('.tick line').style('stroke', 'rgba(255,255,255,0.06)');
+
+      g.append('line')
+        .attr('x1', 0).attr('x2', innerW)
+        .attr('y1', y(0)).attr('y2', y(0))
+        .style('stroke', 'rgba(255,255,255,0.15)')
+        .style('stroke-dasharray', '4,4');
+
+      const gradient = svg.append('defs').append('linearGradient')
+        .attr('id', 'lineGrad').attr('x1', '0%').attr('x2', '100%');
+      gradient.append('stop').attr('offset', '0%').attr('stop-color', '#8ab4f8');
+      gradient.append('stop').attr('offset', '50%').attr('stop-color', '#ffd76a');
+      gradient.append('stop').attr('offset', '100%').attr('stop-color', '#8ab4f8');
+
+      const line = d3.line()
+        .x(d => x(d.date))
+        .y(d => y(d.value))
+        .curve(d3.curveMonotoneX);
+
+      timelinePath = g.append('path')
+        .datum(sampleData)
+        .attr('fill', 'none')
+        .attr('stroke', 'url(#lineGrad)')
+        .attr('stroke-width', 2.5)
+        .attr('d', line);
+
+      timelineTotalLen = timelinePath.node().getTotalLength();
+      timelinePath
+        .attr('stroke-dasharray', timelineTotalLen)
+        .attr('stroke-dashoffset', timelineTotalLen);
+
+      /* [TODO: fechas y datos reales del dataset — anotaciones de eventos macro */
+      const events = [
+        { date: new Date(2008, 8), label: '[TODO: Crisis financiera externa]' },
+      ];
+      const evG = g.selectAll('.ev').data(events).enter().append('g').attr('class', 'ev');
+      evG.append('line')
+        .attr('x1', d => x(d.date)).attr('x2', d => x(d.date))
+        .attr('y1', 0).attr('y2', innerH)
+        .style('stroke', 'rgba(255,215,106,0.25)')
+        .style('stroke-dasharray', '3,3');
+      evG.append('text')
+        .attr('x', d => x(d.date))
+        .attr('y', -8)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '11px')
+        .style('fill', '#ffd76a')
+        .style('opacity', 0.7)
+        .text(d => d.label);
+
+      gsap.to(container, { opacity: 1, duration: 0.3 });
+    }
+
+    ScrollTrigger.create({
+      trigger: '#stageTimeline',
+      start: 'top 80%',
+      onEnter: buildTimeline,
+      onEnterBack: buildTimeline,
+    });
+
+    ScrollTrigger.create({
+      trigger: '#stageTimeline',
+      start: 'top top',
+      end: '+=150%',
+      pin: '.timeline-pin-wrapper',
+      scrub: 1,
+      onUpdate: (self) => {
+        if (timelinePath) {
+          timelinePath.attr('stroke-dashoffset', timelineTotalLen * (1 - self.progress));
+        }
+      },
+    });
+
+    /* ────────────────────────────────
+       Stage 6 — Quotes
+    ──────────────────────────────── */
+    const quoteEls = document.querySelectorAll('[data-quote]');
+    quoteEls.forEach((el) => {
+      gsap.fromTo(el,
+        { opacity: 0, y: 24 },
+        {
+          opacity: 1, y: 0,
+          duration: 0.8,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: el, start: 'top 80%', toggleActions: 'play none none reverse' }
+        }
+      );
+    });
+
+    /* ────────────────────────────────
+       Stage 7 — Closing
+    ──────────────────────────────── */
+    document.querySelectorAll('[data-closing]').forEach((el) => {
+      gsap.fromTo(el,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1, y: 0,
+          duration: 0.8,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none reverse' }
+        }
+      );
+    });
+  </script>
+</body>
+</html>
