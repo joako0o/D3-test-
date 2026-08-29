@@ -1,0 +1,2969 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>In the room where monetary policy happens: Learning from two decades of Central Bank deliberations in Chile</title>
+
+  <meta name="description" content="Exploración interactiva de 15 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
+  <meta name="theme-color" content="#0a0e1a" />
+  <meta property="og:title" content="In the room where monetary policy happens — Two decades of Central Bank deliberations in Chile" />
+  <meta property="og:description" content="Exploración interactiva de 15 años de reuniones de política monetaria en Chile." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="font" href="https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQZNLo_U2r.woff2" type="font/woff2" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23dfab42'/><text x='50' y='65' text-anchor='middle' font-size='36' font-weight='bold' fill='%230a0e1a'>RPM</text></svg>" />
+
+  <style>
+    :root {
+      /* ── Color Tokens ── */
+      --color-gold: #ffd76a;
+      --color-gold-dim: rgba(255, 215, 106, 0.3);
+      --color-gold-glow: rgba(255, 215, 106, 0.6);
+      --color-dovish: #8ab4f8;
+      --color-dovish-dim: rgba(138, 180, 248, 0.16);
+      --color-text-primary: #f1f5f9;
+      --color-text-secondary: #cbd5e1;
+      --color-text-muted: rgba(255, 255, 255, 0.55);
+      --color-text-faint: rgba(255, 255, 255, 0.45);
+      --color-surface: rgba(255, 255, 255, 0.03);
+      --color-surface-border: rgba(255, 255, 255, 0.06);
+      --color-bg: #0a0e1a;
+
+      /* ── Typography Tokens ── */
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --fs-hero: clamp(22px, 3.2vw, 38px);
+      --fs-h2: clamp(20px, 2.8vw, 32px);
+      --fs-h3: clamp(14px, 1.4vw, 18px);
+      --fs-body: clamp(14px, 1.6vw, 17px);
+      --fs-small: clamp(11px, 1vw, 13px);
+      --fs-micro: clamp(10px, 0.8vw, 11px);
+      --lh-tight: 1.25;
+      --lh-normal: 1.6;
+      --lh-relaxed: 1.8;
+
+      /* ── Spacing Tokens ── */
+      --space-xs: 8px;
+      --space-sm: 16px;
+      --space-md: 24px;
+      --space-lg: 48px;
+      --space-xl: 80px;
+      --space-section: clamp(80px, 12vh, 120px);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { background: var(--color-bg); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text-primary); overflow-x: hidden;
+      font-weight: 400; letter-spacing: 0.01em;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .scroll-hint { display: none; }
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 50% 42%, var(--color-gold-dim), transparent 35%),
+        radial-gradient(circle at 50% 50%, transparent 52%, rgba(0,0,0,0.4) 100%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 200px 200px;
+    }
+
+    #canvas {
+      display: block; position: fixed; inset: 0;
+      z-index: 25; cursor: grab;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    #canvas:active { cursor: grabbing; }
+    #canvas.hidden-stage { opacity: 0; pointer-events: none; }
+
+    .stage-hook, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing {
+      pointer-events: none;
+    }
+    .closing-cta, .quote-card, #timelineContainer {
+      pointer-events: auto;
+    }
+
+    .hero {
+      position: relative; width: 100%; min-height: 100vh;
+      z-index: 3; pointer-events: none;
+      display: flex; flex-direction: column;
+    }
+    .top {
+      padding: clamp(16px, 3vw, 28px) clamp(16px, 5vw, 40px);
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .brand { font-size: var(--fs-small); letter-spacing: 4px; text-transform: uppercase; opacity: 0.7; }
+    .brand strong { color: var(--color-gold); font-weight: 600; }
+    .hero-title {
+      margin-top: auto; padding-bottom: 14vh; text-align: center;
+      position: relative;
+    }
+    .hero-title::before {
+      content: "";
+      position: absolute;
+      inset: -40px -60px;
+      background: radial-gradient(ellipse at center, rgba(10,14,26,0.7) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .hero-title h1 {
+      font-family: var(--font-display);
+      font-size: var(--fs-hero);
+      font-weight: 700; letter-spacing: 0.5px;
+      line-height: var(--lh-tight);
+      background: linear-gradient(120deg, var(--color-gold), var(--color-text-primary));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow:
+        0 0 12px rgba(255, 215, 106, 0.08),
+        0 0 28px rgba(255, 215, 106, 0.04);
+    }
+    .hero-title p { 
+      margin-top: 12px; font-size: var(--fs-body); opacity: 0.65; 
+      font-weight: 300; letter-spacing: 0.02em;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      opacity: 0.45;
+      transition: opacity 0.4s;
+    }
+    .scroll-hint.hidden { opacity: 0; pointer-events: none; }
+    .scroll-hint span {
+      font-size: var(--fs-micro); letter-spacing: 3px; text-transform: uppercase;
+    }
+    .scroll-hint svg {
+      width: 20px; height: 20px;
+      animation: scrollBounce 2s ease-in-out infinite;
+    }
+    @keyframes scrollBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    .coin-halo-wrap {
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 1;
+      pointer-events: none;
+      will-change: transform, opacity;
+      transition: opacity 0.35s ease;
+    }
+    .coin-halo-wrap.hidden-stage { opacity: 0 !important; }
+
+    .coin-halo {
+      width: min(580px, 90vmin);
+      height: min(580px, 90vmin);
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(circle,
+          rgba(255,215,106,0.18) 0%,
+          rgba(255,215,106,0.06) 35%,
+          rgba(85,110,180,0.03) 60%,
+          transparent 72%);
+      filter: blur(8px);
+      animation: haloPulse 8s ease-in-out infinite;
+    }
+
+    @keyframes haloPulse {
+      0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.94); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+    }
+
+    /* ─── STAGE 2 — Hook ─── */
+    .stage-hook {
+      position: relative; z-index: 4;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: var(--space-section) 10%;
+      text-align: center;
+    }
+    .stage-hook .line {
+      font-family: var(--font-display);
+      font-size: var(--fs-hero);
+      font-weight: 500;
+      line-height: 1.5;
+      max-width: 800px;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    .stage-hook .paragraph {
+      margin-top: 32px;
+      max-width: 600px;
+      font-size: var(--fs-body);
+      line-height: var(--lh-relaxed);
+      opacity: 0;
+      transform: translateY(20px);
+      font-weight: 300;
+    }
+
+    /* ─── STAGE 3 — Counters ─── */
+    .stage-counters {
+      position: relative; z-index: 4;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      padding: var(--space-section) 10%;
+    }
+    .counters-wrap {
+      width: 100%;
+      max-width: 900px;
+      display: flex; flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .chart-container {
+      width: 100%;
+      max-width: 800px;
+      margin-top: 20px;
+      display: flex; flex-direction: column; align-items: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .stage-counters.active .chart-container {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .chart-axis-label {
+      font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; opacity: 0.45;
+      text-align: center;
+    }
+    .chart-axes-svg {
+      overflow: visible;
+      margin-top: 8px;
+    }
+    .counters-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 48px;
+      max-width: 900px;
+      width: 100%;
+      justify-items: center;
+    }
+    .counter-item {
+      text-align: center;
+      opacity: 0;
+      transform: translateY(24px);
+      width: 100%;
+    }
+    .counter-number {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 700;
+      color: var(--color-gold);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .counter-label {
+      margin-top: 10px;
+      font-size: var(--fs-small);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.55;
+      font-weight: 500;
+    }
+
+    /* ─── STAGE 4 — Pipeline (horizontal scroll) ─── */
+    .stage-pipeline { position: relative; z-index: 4; padding: 0; }
+    .pipeline-pin-wrapper {
+      height: 100vh; overflow: hidden; position: relative;
+    }
+    .pipe-header {
+      position: absolute; top: clamp(28px, 7vh, 72px); left: 0; right: 0;
+      text-align: center; pointer-events: none; z-index: 2;
+    }
+    .pipe-kicker {
+      font-size: var(--fs-micro); letter-spacing: 4px; text-transform: uppercase;
+      color: var(--color-text-muted); margin-bottom: 8px;
+    }
+    .pipe-header h2 {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: clamp(24px, 3vw, 34px); line-height: 1.1; color: var(--color-text-primary);
+    }
+    .pipe-header h2 em { font-style: normal; color: var(--color-gold); }
+
+    .pipe-viewport { position: absolute; inset: 0; display: flex; align-items: center; overflow: hidden; }
+    .pipe-track {
+      display: flex; align-items: center; gap: clamp(56px, 9vw, 140px);
+      width: max-content;
+      padding-inline: max(6vw, calc(50vw - min(300px, 41vw)));
+      will-change: transform;
+    }
+
+    .pipe-panel { width: min(600px, 82vw); flex-shrink: 0; position: relative; }
+    .pipe-panel--wide { width: min(760px, 92vw); }
+
+    .pipe-index {
+      position: absolute; top: -0.62em; left: -0.14em; z-index: 0;
+      font-family: var(--font-display); font-weight: 700; line-height: 1;
+      font-size: clamp(88px, 11vw, 150px);
+      color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.08);
+      pointer-events: none; user-select: none;
+    }
+    .pipe-body { position: relative; z-index: 1; }
+    .pipe-label {
+      font-size: var(--fs-micro); letter-spacing: 3px; text-transform: uppercase;
+      color: var(--color-gold); margin-bottom: 12px; font-weight: 600;
+    }
+    .pipe-panel h3 {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: clamp(20px, 2.4vw, 28px); line-height: 1.2;
+      margin-bottom: 12px; color: var(--color-text-primary);
+    }
+    .pipe-panel .pipe-p {
+      font-size: var(--fs-small); line-height: 1.75; opacity: 0.65; max-width: 460px; margin-bottom: 20px;
+    }
+    .pipe-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+
+    /* Panel 01 — acta */
+    .doc-card {
+      border: 1px solid var(--color-surface-border); background: var(--color-surface);
+      border-radius: 10px; padding: 22px 26px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: var(--fs-small); line-height: 1.9; color: var(--color-text-secondary);
+    }
+    .doc-head {
+      display: flex; justify-content: space-between; gap: 12px;
+      font-family: var(--font-body); font-size: var(--fs-micro);
+      letter-spacing: 2px; text-transform: uppercase; opacity: 0.45; margin-bottom: 14px;
+    }
+    .doc-line { display: block; overflow: hidden; }
+    .doc-line > span { display: inline-block; transform: translateY(110%); }
+    .word-meter { display: flex; align-items: baseline; gap: 10px; margin-top: 18px; }
+    .word-meter strong {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: clamp(26px, 3vw, 38px); color: var(--color-gold); font-variant-numeric: tabular-nums;
+    }
+    .word-meter span { font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; opacity: 0.5; }
+
+    /* Panel 02 — etiquetado */
+    .frag {
+      font-family: Georgia, serif; font-style: italic;
+      font-size: clamp(16px, 1.9vw, 20px); line-height: 1.7; color: var(--color-text-primary);
+      border-left: 2px solid rgba(255,255,255,0.12); padding-left: 18px; margin-bottom: 22px;
+    }
+    .verdict-row { display: flex; align-items: center; gap: 20px; min-height: 54px; flex-wrap: wrap; }
+    .verdict {
+      display: inline-flex; padding: 9px 18px; border-radius: 6px;
+      border: 1.5px solid var(--color-gold); color: var(--color-gold);
+      font-weight: 700; font-size: var(--fs-small); letter-spacing: 3px; text-transform: uppercase;
+      opacity: 0; will-change: transform, opacity;
+    }
+    .confidence { flex: 1; min-width: 140px; max-width: 220px; }
+    .confidence .bar { height: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
+    .confidence .bar i { display: block; height: 100%; width: 0; background: var(--color-gold); }
+    .confidence .cap { font-size: var(--fs-micro); opacity: 0.5; margin-top: 6px; letter-spacing: 1px; }
+
+    /* Panel 03 — semilla */
+    .seed-grid {
+      display: grid; grid-template-columns: repeat(26, 1fr); gap: 4px;
+      border: 1px solid var(--color-surface-border); border-radius: 10px;
+      background: var(--color-surface); padding: 18px;
+    }
+    .seed-dot { aspect-ratio: 1; border-radius: 2px; background: rgba(255,255,255,0.07); }
+    .seed-dot.h.lit { background: var(--color-gold); }
+    .seed-dot.d.lit { background: var(--color-dovish); }
+
+    /* Panel 04 — corpus */
+    .corpus-wrap {
+      border: 1px solid var(--color-surface-border); border-radius: 10px;
+      background: var(--color-surface); padding: 22px;
+    }
+    .corpus-field { position: relative; }
+    .corpus-grid { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 3px; }
+    .corpus-col { display: contents; }
+    .corpus-dot {
+      aspect-ratio: 1; border-radius: 50%;
+      background: rgba(255,255,255,0.09); transition: background 0.3s ease;
+    }
+    .corpus-col.lit > .h { background: var(--color-gold); }
+    .corpus-col.lit > .d { background: var(--color-dovish); }
+    .corpus-head {
+      position: absolute; top: -4px; bottom: -4px; width: 1px;
+      background: rgba(255,255,255,0.55); pointer-events: none; opacity: 0;
+    }
+    .corpus-year {
+      position: absolute; top: -22px; left: 0; transform: translateX(-50%);
+      font-size: var(--fs-micro); letter-spacing: 2px; white-space: nowrap;
+      color: var(--color-text-primary); font-variant-numeric: tabular-nums;
+    }
+    .corpus-axis {
+      display: flex; justify-content: space-between; margin-top: 12px;
+      font-size: var(--fs-micro); letter-spacing: 2px; opacity: 0.4; font-variant-numeric: tabular-nums;
+    }
+    .corpus-status { margin-top: 14px; font-size: var(--fs-small); color: var(--color-text-secondary); }
+    .corpus-status strong { color: var(--color-gold); font-variant-numeric: tabular-nums; }
+
+    /* Rail de progreso */
+    .pipe-rail {
+      position: absolute; bottom: clamp(20px, 5vh, 44px); left: 0; right: 0;
+      display: flex; align-items: center; justify-content: center; gap: 12px; z-index: 2;
+    }
+    .rail-node {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.16);
+      display: grid; place-items: center;
+      font-size: 10px; letter-spacing: 1px; color: var(--color-text-muted);
+      transition: border-color 0.4s ease, color 0.4s ease;
+    }
+    .rail-node.active { border-color: var(--color-gold); color: var(--color-gold); }
+    .rail-seg { width: clamp(20px, 6vw, 72px); height: 1px; background: rgba(255,255,255,0.12); position: relative; }
+    .rail-seg i { position: absolute; inset: 0; background: var(--color-gold); transform: scaleX(0); transform-origin: left center; }
+
+    /* Data tags (shared) */
+    .data-tag {
+      font-size: var(--fs-micro); padding: 3px 10px; border-radius: 999px;
+      letter-spacing: 1px; font-weight: 500;
+    }
+    .data-tag.neutral { background: rgba(255,255,255,0.06); color: var(--color-text-secondary); border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s ease; }
+    .data-tag.hawkish { background: rgba(255,215,106,0.12); color: var(--color-gold); border: 1px solid rgba(255,215,106,0.2); transition: all 0.2s ease; }
+    .data-tag.dovish { background: rgba(138,180,248,0.12); color: var(--color-dovish); border: 1px solid rgba(138,180,248,0.2); transition: all 0.2s ease; }
+    .data-tag:hover { transform: translateY(-1px); }
+    .data-tag.neutral:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
+    .data-tag.hawkish:hover { background: rgba(255,215,106,0.18); border-color: rgba(255,215,106,0.35); }
+    .data-tag.dovish:hover { background: rgba(138,180,248,0.18); border-color: rgba(138,180,248,0.35); }
+
+    /* ─── STAGE 5 — Timeline ─── */
+    .stage-timeline {
+      position: relative; z-index: 4;
+      padding: 0;
+    }
+    .timeline-pin-wrapper {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      justify-content: center;
+      padding: var(--space-section) 5%;
+    }
+    .timeline-title {
+      font-family: var(--font-display);
+      font-size: var(--fs-h2);
+      font-weight: 700;
+      background: linear-gradient(120deg, var(--color-gold), var(--color-text-primary));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 48px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .timeline-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      opacity: 0;
+    }
+    .timeline-container svg {
+      overflow: visible;
+    }
+    .timeline-event {
+      font-size: var(--fs-small);
+      fill: var(--color-gold);
+      opacity: 0;
+    }
+
+    /* ─── STAGE 6 — Quotes ─── */
+    .stage-quotes {
+      position: relative; z-index: 4;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--space-section) 10%;
+    }
+    .quotes-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      max-width: 900px;
+      width: 100%;
+    }
+    .quote-card {
+      padding: 32px;
+      border-radius: 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-surface-border);
+      opacity: 0;
+      transform: translateY(24px);
+      transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .quote-card.hawkish {
+      border-color: rgba(255,215,106,0.15);
+      box-shadow: 0 0 40px rgba(255,215,106,0.03);
+    }
+    .quote-card.hawkish:hover {
+      border-color: rgba(255,215,106,0.35);
+      box-shadow: 0 4px 60px rgba(255,215,106,0.08);
+      transform: translateY(-2px);
+    }
+    .quote-card.dovish {
+      border-color: rgba(138,180,248,0.15);
+      box-shadow: 0 0 40px rgba(138,180,248,0.03);
+    }
+    .quote-card.dovish:hover {
+      border-color: rgba(138,180,248,0.35);
+      box-shadow: 0 4px 60px rgba(138,180,248,0.08);
+      transform: translateY(-2px);
+    }
+    .quote-tag {
+      font-size: var(--fs-micro); letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+    .quote-card.hawkish .quote-tag { color: var(--color-gold); }
+    .quote-card.dovish .quote-tag { color: var(--color-dovish); }
+    .quote-text {
+      font-family: var(--font-display);
+      font-size: clamp(15px, 1.8vw, 19px);
+      font-weight: 400;
+      font-style: italic;
+      line-height: 1.85;
+      margin-bottom: 20px;
+      color: var(--color-text-primary);
+      letter-spacing: 0.01em;
+    }
+    .quote-author {
+      font-size: var(--fs-small);
+      opacity: 0.55;
+      margin-top: 12px;
+      font-weight: 500;
+    }
+
+    /* ─── STAGE 7 — Closing ─── */
+    .stage-closing {
+      position: relative; z-index: 4;
+      min-height: 80vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: var(--space-section) 10%;
+      text-align: center;
+    }
+    .closing-text {
+      max-width: 640px;
+      font-size: var(--fs-body);
+      line-height: var(--lh-relaxed);
+      opacity: 0;
+      transform: translateY(20px);
+      margin-bottom: 40px;
+      font-weight: 300;
+      letter-spacing: 0.01em;
+    }
+    .closing-cta {
+      display: inline-block;
+      padding: 14px 36px;
+      border: 1px solid var(--color-gold-dim);
+      border-radius: 8px;
+      color: var(--color-gold);
+      font-size: var(--fs-small);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.3s, border-color 0.3s, transform 0.2s;
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    .closing-cta:hover {
+      background: rgba(255,215,106,0.08);
+      border-color: var(--color-gold);
+      transform: translateY(-1px);
+    }
+    .closing-cta:active {
+      transform: translateY(0);
+    }
+
+    .footer {
+      padding: 40px 10%;
+      text-align: center;
+      font-size: var(--fs-small);
+      opacity: 0.3;
+      border-top: 1px solid var(--color-surface-border);
+      letter-spacing: 0.02em;
+    }
+
+    /* Debug panel for scroll debugging */
+    #debugPanel {
+      position: fixed; bottom: 12px; left: 12px; z-index: 200;
+      background: rgba(0,0,0,0.85); border: 1px solid rgba(255,215,106,0.3);
+      border-radius: 8px; padding: 10px 14px; font-family: monospace;
+      font-size: 11px; color: #ffd76a; line-height: 1.6;
+      pointer-events: none; min-width: 200px;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    #debugPanel.visible { opacity: 1; }
+    #debugPanel .debug-label { color: rgba(255,255,255,0.5); }
+    #debugPanel .debug-value { color: #ffd76a; font-weight: bold; }
+    #debugPanel .debug-bar {
+      height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px;
+      margin-top: 6px; overflow: hidden;
+    }
+    #debugPanel .debug-bar-fill {
+      height: 100%; background: linear-gradient(90deg, #ffd76a, #8ab4f8);
+      transition: width 0.1s ease;
+    }
+
+    #load {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 18px; background: var(--color-bg);
+      transition: opacity 0.6s ease;
+    }
+    #load.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid var(--color-gold-dim);
+      border-top-color: var(--color-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #load span { font-size: var(--fs-small); letter-spacing: 3px; text-transform: uppercase; opacity: 0.8; }
+
+    /* ─── Tablet: 768px-1024px ─── */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .quotes-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+      .quote-card { padding: 24px; }
+      .counters-grid { grid-template-columns: repeat(2, 1fr); gap: 40px; }
+      .stage-hook { padding: 80px 8%; }
+      .stage-counters { padding: 80px 8%; }
+      .stage-closing { padding: 80px 8%; }
+      .timeline-pin-wrapper { padding: 80px 3%; }
+      .pipeline-pin-wrapper { padding: 32px 8%; }
+    }
+
+    /* ─── Mobile: 768px ─── */
+    @media (max-width: 768px) {
+      .quotes-grid { grid-template-columns: 1fr; }
+      .counters-grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+      .pipe-track { gap: 48px; }
+      .pipe-index { font-size: 88px; top: -0.55em; }
+      .pipe-header { top: 18px; }
+      .pipe-rail { bottom: 14px; }
+      .stage-timeline .timeline-pin-wrapper { padding: 60px 2%; }
+      .stage-hook .line { padding: 0 20px; }
+      .top { flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+      /* Quote panel: full width en móvil */
+      #quotePanel {
+        right: 12px;
+        left: 12px;
+        width: auto;
+        top: auto;
+        bottom: 20px;
+        transform: translateY(0);
+        max-height: 50vh;
+        overflow-y: auto;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      #quotePanel.visible { transform: translateY(0); }
+      #quotePanel .txt { font-size: var(--fs-small); line-height: 1.6; }
+      #quotePanel .close { 
+        position: absolute; 
+        top: 8px; 
+        right: 8px; 
+        width: 32px; 
+        height: 32px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        font-size: 18px;
+      }
+      /* Timeline: stack labels vertically */
+      .timeline-event { font-size: var(--fs-micro); }
+    }
+
+    /* ─── Small mobile: 430px ─── */
+    @media (max-width: 430px) {
+      .top { padding: 12px 12px 8px; }
+      .brand { font-size: var(--fs-micro); letter-spacing: 3px; }
+      .hero-title h1 { font-size: clamp(18px, 5vw, 28px); }
+      .quote-card { padding: 20px; }
+      .counter-number { font-size: clamp(28px, 8vw, 48px); }
+    }
+
+    /* ─── Reduced Motion ─── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .coin-halo { animation: none; opacity: 0.7; }
+      .scroll-hint svg { animation: none; }
+      .spinner { animation: none; }
+    }
+
+    /* ─── Focus States (Accessibility) ─── */
+    :focus-visible {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 4px;
+    }
+    .closing-cta:focus-visible {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 4px;
+      background: rgba(255,215,106,0.08);
+    }
+    #quotePanel .close:focus-visible {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 2px;
+    }
+    .skip-link {
+      position: absolute;
+      left: -10000px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      display: block;
+      padding: 12px 24px;
+      background: var(--color-gold);
+      color: var(--color-bg);
+      text-align: center;
+      z-index: 9999;
+    }
+
+    .char-reveal {
+      display: inline-block;
+      perspective: 400px;
+    }
+
+    .word-reveal {
+      display: inline-block;
+      margin-right: 0.25em;
+    }
+
+    /* ─── ENJAMBRE DE PARTÍCULAS · panel de cita ─── */
+    #quotePanel {
+      position: fixed;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 30;
+      width: min(360px, 86vw);
+      background: rgba(10,14,26,0.96);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 12px;
+      padding: 18px 20px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(calc(-50% + 8px));
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      box-shadow: 0 10px 60px rgba(0,0,0,0.65);
+      box-sizing: border-box;
+    }
+    #quotePanel.visible { opacity: 1; pointer-events: auto; transform: translateY(-50%); }
+    #quotePanel .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    #quotePanel .who { font-weight: 600; font-size: var(--fs-body); color: var(--color-text-primary); }
+    #quotePanel .when { font-size: var(--fs-small); opacity: 0.6; }
+    #quotePanel .tag { font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; padding: 2px 9px; border-radius: 999px; }
+    #quotePanel .tag.hawkish { background: rgba(255,215,106,0.16); color: var(--color-gold); }
+    #quotePanel .tag.dovish  { background: rgba(138,180,248,0.16); color: var(--color-dovish); }
+    #quotePanel .tag.neutral { background: rgba(255,255,255,0.1);  color: #cfd6e4; }
+    #quotePanel .txt { font-size: var(--fs-small); line-height: 1.75; color: var(--color-text-primary); }
+    #quotePanel .year { margin-top: 10px; font-size: var(--fs-micro); letter-spacing: 1px; text-transform: uppercase; opacity: 0.45; }
+    #quotePanel .close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--color-text-primary); font-size: var(--fs-body); cursor: pointer; opacity: 0.55; transition: opacity 0.2s, transform 0.2s; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+    #quotePanel .close:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+    #quotePanel .close:active { transform: scale(0.95); }
+    #canvas { cursor: grab; }
+    #canvas.particle-hover { cursor: pointer; }
+
+
+  @supports (height: 100dvh) {
+      .hero, .stage-hook, .stage-counters, .stage-quotes,
+      .pipeline-pin-wrapper, .timeline-pin-wrapper {
+        min-height: 100dvh;
+      }
+      .pipeline-pin-wrapper, .timeline-pin-wrapper { max-height: 100dvh; }
+      .sticky-container { height: 100dvh !important; }
+    }
+
+    /* ─── Accessibility: Reduced Motion ─── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .coin-halo { animation: none !important; }
+      .spinner { animation: none !important; }
+      .scroll-hint svg { animation: none !important; }
+    }
+
+    /* ─── Jargon tooltips ─── */
+    .jargon-term {
+      position: relative;
+      cursor: help;
+    }
+    .jargon-term::after {
+      content: attr(title);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 14, 26, 0.95);
+      border: 1px solid var(--color-surface-border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-family: var(--font-body);
+      font-weight: 400;
+      font-style: normal;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+      max-width: 280px;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.4;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .jargon-term:hover::after {
+      opacity: 1;
+    }
+
+    /* ─── Focus styles for keyboard navigation ─── */
+    :focus-visible {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 2px;
+    }
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 2px;
+    }
+
+  </style>
+</head>
+<body>
+  <a href="#mainContent" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- Progress bar -->
+  <div id="progressBar" style="position: fixed; top: 0; left: 0; width: 0%; height: 2px; background: linear-gradient(90deg, var(--color-gold), var(--color-dovish)); z-index: 9999; transition: width 0.1s ease-out;"></div>
+
+  <!-- Section indicator -->
+  <div id="sectionIndicator" style="position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; font-family: var(--font-body); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--color-text-muted); opacity: 0; transition: opacity 0.3s; pointer-events: none;">hero</div>
+
+  <!-- Global timeline scrubber (debug tool) -->
+  <div id="timelineScrubber" style="position: fixed; right: 20px; top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 0; pointer-events: auto;">
+    <div id="tsProgress" style="font-family: monospace; font-size: 11px; color: var(--color-gold); margin-bottom: 8px; min-width: 45px; text-align: center;">0%</div>
+    <div style="position: relative; width: 3px; height: 300px; background: rgba(255,255,255,0.1); border-radius: 2px;">
+      <div id="tsBar" style="position: absolute; top: 0; left: 0; width: 100%; height: 0%; background: var(--color-gold); border-radius: 2px; transition: height 0.05s;"></div>
+      <div id="tsMarker" style="position: absolute; left: -4px; width: 11px; height: 3px; background: var(--color-gold); border-radius: 1px; top: 0%; transition: top 0.05s;"></div>
+    </div>
+    <div id="tsSection" style="font-family: monospace; font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 8px; text-align: center; max-width: 80px; line-height: 1.3; min-height: 20px;">hero</div>
+  </div>
+
+  <div id="load">
+    <div class="spinner"></div>
+    <span>Cargando moneda&hellip;</span>
+  </div>
+
+  <div id="quotePanel" role="dialog" aria-label="Panel de cita del Banco Central" aria-live="polite">
+    <button class="close" id="quotePanelClose" aria-label="Cerrar panel de cita">&#10005;</button>
+    <div class="head">
+      <span class="who" id="qpWho"></span>
+      <span class="tag" id="qpTag"></span>
+    </div>
+    <div class="when" id="qpWhen"></div>
+    <div class="txt" id="qpText"></div>
+    <div class="year" id="qpYear"></div>
+  </div>
+
+  <canvas id="canvas" role="img" aria-label="Moneda animada de 3D que representa la política monetaria del Banco Central de Chile"></canvas>
+
+  <div class="coin-halo-wrap" id="haloWrap">
+    <div class="coin-halo"></div>
+  </div>
+
+  <!-- ═══════ STAGE 1 — Hero ═══════ -->
+  <main id="mainContent">
+  <div class="hero" id="hero">
+    <div class="top">
+      <div class="brand"><strong>2000&#8211;2015</strong></div>
+      <div class="brand" style="opacity:0.55">Política Monetaria</div>
+    </div>
+    <div class="hero-title">
+      <h1>In the room where monetary policy happens: Learning from sixteen<br>years of Central Bank deliberations in Chile</h1>
+      <p>Reuniones de política monetaria en Chile &middot; 2000&ndash;2015</p>
+    </div>
+    <div class="scroll-hint" id="scrollHint">
+      <span>Scroll</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M19 12l-7 7-7-7"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ═══════ STAGE 2 — El Objetivo (ACTO 2) ═══════ -->
+  <section id="stageObjective" style="position: relative; width: 100%; height: 200vh; pointer-events: none;">
+    <div id="stageObjectiveContainer" class="sticky-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 6vh; z-index: 30; pointer-events: none;">
+      <h2 id="stageObjectiveTitle" data-objective style="font-family: var(--font-body); font-size: var(--fs-h3); font-weight: 600; text-transform: uppercase; letter-spacing: 4px; color: var(--color-text-secondary); margin-bottom: 1rem; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">
+        La Reuni&oacute;n
+      </h2>
+      <p id="stageObjectiveParagraph" data-objective style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 660px; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin: 0 20px;">
+        El Banco Central se re&uacute;ne una vez al mes <span>a puerta cerrada</span> <br>
+        para discutir y tomar decisiones de <span>pol&iacute;tica monetaria</span> <br>
+        que impactan a toda la econom&iacute;a.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 3 — Hook (ACTO 3: EL MÉTODO) ═══════ -->
+  <section id="stageHook" style="position: relative; width: 100%; height: 300vh; pointer-events: none;">
+    <div class="sticky-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;" id="textParticleSection">
+      
+      <!-- TÍTULO -->
+      <h2 data-hook style="font-family: var(--font-body); font-size: var(--fs-h3); font-weight: 600; text-transform: uppercase; letter-spacing: 4px; color: var(--color-text-secondary); margin-bottom: 1.5rem;">
+        El M&eacute;todo
+      </h2>
+      
+      <!-- PÁRRAFO PRINCIPAL -->
+      <p data-hook id="hookParagraph" style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 650px; position: relative;">
+        El modelo busca se&ntilde;ales de <span class="jargon-term" style="color: var(--color-gold); font-weight: 600; cursor: help; border-bottom: 1px dotted var(--color-gold-dim);" title="Tono restrictivo: se&ntilde;ales de preocupaci&oacute;n por inflaci&oacute;n o exceso de actividad">hawkish</span> y <span class="jargon-term" style="color: var(--color-dovish); font-weight: 600; cursor: help; border-bottom: 1px dotted var(--color-dovish-dim);" title="Tono expansivo: se&ntilde;ales de debilidad econ&oacute;mica o necesidad de est&iacute;mulo">dovish</span>. <br><br>
+        Una menci&oacute;n a un <span style="display: inline-block; text-align: center;"><span class="word-hawkish" data-sentiment="hawkish" style="color: var(--color-gold); display: inline-block;">riesgo de inflaci&oacute;n</span><span class="keyword-underline" style="display: block; width: 100%; height: 2px; background-color: var(--color-gold); transform: scaleX(0); transform-origin: center center; margin-top: 2px;"></span></span> genera una alerta restrictiva, <br>
+        mientras que la preocupaci&oacute;n por la <span style="display: inline-block; text-align: center;"><span class="word-dovish" data-sentiment="dovish" style="color: var(--color-dovish); display: inline-block;">holgura econ&oacute;mica</span><span class="keyword-underline" style="display: block; width: 100%; height: 2px; background-color: var(--color-dovish); transform: scaleX(0); transform-origin: center center; margin-top: 2px;"></span></span> sugiere expansi&oacute;n.
+      </p>
+
+      <!-- Scanning light bar -->
+      <div id="scanLight" style="position: absolute; top: 0; left: 0; width: 100px; height: 100%; pointer-events: none; opacity: 0; z-index: 20; background: linear-gradient(90deg, transparent 0%, rgba(255,215,106,0.15) 30%, rgba(255,215,106,0.25) 50%, rgba(255,215,106,0.15) 70%, transparent 100%); filter: blur(8px); mix-blend-mode: screen;"></div>
+      
+      <!-- Micro-label -->
+      <div id="microLabel" style="position: absolute; pointer-events: none; opacity: 0; z-index: 25; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 4px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); white-space: nowrap; transform: translate(-50%, -120%);"></div>
+      
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 4 — Alfabetización Visual (#stageAxes) ═══════ -->
+  <section id="stageAxes" style="position: relative; width: 100%; height: 200vh; pointer-events: none;">
+    <div class="sticky-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 15vh; z-index: 10;">
+      <p style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); text-align: center; max-width: 600px;">
+        Cada punto es una intervenci&oacute;n. Arriba, tono restrictivo. Abajo, tono expansivo.
+      </p>
+    </div>
+    <div id="d3-canvas" style="position: fixed; inset: 0; pointer-events: none; z-index: 5;"></div>
+  </section>
+
+  <!-- ═══════ STAGE 3 — Counters ═══════ -->
+  <section class="stage-counters" id="stageCounters">
+    <div class="counters-grid">
+      <div class="counter-item" data-counter>
+        <div class="counter-number" data-target="16" data-suffix="">0</div>
+        <div class="counter-label">A&ntilde;os cubiertos</div>
+      </div>
+      <div class="counter-item" data-counter>
+        <div class="counter-number" data-target="182" data-suffix="">0</div>
+        <div class="counter-label">Reuniones analizadas</div>
+      </div>
+      <div class="counter-item" data-counter>
+        <div class="counter-number" data-target="100" data-suffix="">0</div>
+        <div class="counter-label">Intervenciones clasificadas</div>
+      </div>
+      <div class="counter-item" data-counter>
+        <div class="counter-number" data-target="18" data-suffix="">0</div>
+        <div class="counter-label">Responsables identificados</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 4 — Pipeline ═══════ -->
+  <section class="stage-pipeline" id="stagePipeline">
+    <div class="pipeline-pin-wrapper">
+      <header class="pipe-header">
+        <div class="pipe-kicker">Metodolog&iacute;a</div>
+        <h2>Del texto crudo <em>al dato</em></h2>
+      </header>
+
+      <div class="pipe-viewport">
+        <div class="pipe-track" id="pipeTrack">
+
+          <!-- 01 · Fuente -->
+          <article class="pipe-panel">
+            <span class="pipe-index">01</span>
+            <div class="pipe-body">
+              <div class="pipe-label">Input</div>
+              <h3>Las actas, tal como fueron habladas</h3>
+              <div class="doc-card">
+                <div class="doc-head"><span>Acta &middot; Sesi&oacute;n de Pol&iacute;tica Monetaria</span><span>2007</span></div>
+                <span class="doc-line"><span>&hellip;el alza del IPC sorprendi&oacute; al alza y la lectura de</span></span>
+                <span class="doc-line"><span>inflaci&oacute;n subyacente se mantiene elevada. El riesgo de</span></span>
+                <span class="doc-line"><span>inflaci&oacute;n domina el panorama&hellip;</span></span>
+              </div>
+              <div class="word-meter">
+                <strong id="wordCount">0</strong>
+                <span>palabras en 182 actas &middot; 2000&ndash;2015</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- 02 · Etiquetado -->
+          <article class="pipe-panel">
+            <span class="pipe-index">02</span>
+            <div class="pipe-body">
+              <div class="pipe-label">Proceso</div>
+              <h3>Un LLM aprende de ejemplos y etiqueta</h3>
+              <p class="pipe-p">Etiquetado few-shot: el modelo recibe fragmentos de ejemplo y asigna a cada fragmento nuevo una orientaci&oacute;n y un nivel de confianza.</p>
+              <div class="frag">&laquo;el riesgo de inflaci&oacute;n domina el panorama&raquo;</div>
+              <div class="verdict-row">
+                <span class="verdict" id="verdictStamp">Hawkish</span>
+                <div class="confidence">
+                  <div class="bar"><i id="confBar"></i></div>
+                  <div class="cap">confianza <span id="confVal">0.00</span></div>
+                </div>
+              </div>
+              <div class="pipe-meta">
+                <span class="data-tag hawkish">Hawkish</span>
+                <span class="data-tag dovish">Dovish</span>
+                <span class="data-tag neutral">Validaci&oacute;n experta</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- 03 · Semilla -->
+          <article class="pipe-panel">
+            <span class="pipe-index">03</span>
+            <div class="pipe-body">
+              <div class="pipe-label">Entrenamiento</div>
+              <h3>La semilla etiquetada a mano</h3>
+              <div class="seed-grid" id="seedGrid" aria-hidden="true"></div>
+              <div class="word-meter" style="margin-top:14px">
+                <strong id="seedCount">0</strong>
+                <span>fragmentos etiquetados</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- 04 · Corpus -->
+          <article class="pipe-panel pipe-panel--wide">
+            <span class="pipe-index">04</span>
+            <div class="pipe-body">
+              <div class="pipe-label">Resultado</div>
+              <h3>El clasificador barre todo el corpus</h3>
+              <div class="corpus-wrap">
+                <div class="corpus-field">
+                  <div class="corpus-grid" id="corpusGrid" aria-hidden="true"></div>
+                  <div class="corpus-head" id="corpusHead"><span class="corpus-year" id="corpusYear">2000</span></div>
+                </div>
+                <div class="corpus-axis"><span>2000</span><span>2015</span></div>
+                <div class="corpus-status"><strong id="corpusPct">0%</strong> del corpus clasificado</div>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+
+      <div class="pipe-rail" id="pipeRail">
+        <span class="rail-node active">01</span><span class="rail-seg"><i></i></span><span class="rail-node">02</span><span class="rail-seg"><i></i></span><span class="rail-node">03</span><span class="rail-seg"><i></i></span><span class="rail-node">04</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 5 — Timeline ═══════ -->
+  <section class="stage-timeline" id="stageTimeline">
+    <div class="timeline-pin-wrapper">
+      <h2 class="timeline-title" data-timeline-title>Orientaci&oacute;n de pol&iacute;tica monetaria en el tiempo</h2>
+      <div class="timeline-container" id="timelineContainer"></div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 6 — Quotes ═══════ -->
+  <section class="stage-quotes" id="stageQuotes">
+    <div class="quotes-grid">
+      <div class="quote-card hawkish" data-quote tabindex="0" role="button" aria-label="Cita hawkish de Vittorio Corbo, 2007. Click para ver m&aacute;s detalles.">
+        <div class="quote-tag">Hawkish</div>
+        <div class="quote-text">&ldquo;Mayor incertidumbre ciertamente no alcanza a dominar el efecto de primer orden que representa el aumento de la inflaci&oacute;n. Efectivamente, el aumento de la inflaci&oacute;n se ha dado en energ&iacute;a y alimentos, y una vez que descontamos estos componentes del IPC, el registro de inflaci&oacute;n subyacente se mantiene elevado.&rdquo;</div>
+        <div class="quote-author">&mdash; Vittorio Corbo, 2007</div>
+      </div>
+      <div class="quote-card dovish" data-quote tabindex="0" role="button" aria-label="Cita dovish de Jos&eacute; De Gregorio, 2009. Click para ver m&aacute;s detalles.">
+        <div class="quote-tag">Dovish</div>
+        <div class="quote-text">&ldquo;En el frente externo, los mercados financieros denotan una mayor inclinaci&oacute;n al riesgo, en tanto que los precios de las materias primas han vuelto a subir. Por su parte, las proyecciones de crecimiento han dejado de observar correcciones a la baja de la magnitud registrada en meses anteriores.&rdquo;</div>
+        <div class="quote-author">&mdash; Jos&eacute; De Gregorio, 2009</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 7 — Closing ═══════ -->
+  <section class="stage-closing" id="stageClosing">
+    <p class="closing-text" data-closing>
+      Este proyecto aporta una fuente nueva de informaci&oacute;n estructurada sobre la
+      formulaci&oacute;n de pol&iacute;tica monetaria en una econom&iacute;a emergente,
+      combinando datos textuales con indicadores macroecon&oacute;micos tradicionales.
+    </p>
+    <a href="#" class="closing-cta" data-closing>Explorar el dataset completo &rarr;</a>
+  </section>
+  </main>
+
+  <footer class="footer">
+    &copy; 2026 &middot; Central Bank deliberations in Chile
+  </footer>
+
+  <div id="debugPanel">
+    <div><span class="debug-label">Section:</span> <span class="debug-value" id="debugSection">—</span></div>
+    <div><span class="debug-label">Progress:</span> <span class="debug-value" id="debugProgress">0%</span></div>
+    <div><span class="debug-label">Active Panel:</span> <span class="debug-value" id="debugPanelInfo">—</span></div>
+    <div class="debug-bar"><div class="debug-bar-fill" id="debugBar"></div></div>
+  </div>
+
+  <script src="js/vendor/lenis.min.js"></script>
+  <script src="js/vendor/gsap.min.js"></script>
+  <script src="js/vendor/ScrollTrigger.min.js"></script>
+  <script src="js/vendor/CustomEase.min.js"></script>
+  <script src="js/vendor/SplitText.min.js"></script>
+  <script src="js/vendor/d3.min.js"></script>
+  <script src="js/quotes.js"></script>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./js/three.module.js",
+      "three/addons/": "./js/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    /* ────────────────────────────────
+       Detección de capacidades del dispositivo
+    ──────────────────────────────── */
+    const supportsWebGL = (() => {
+      try {
+        const c = document.createElement('canvas');
+        return !!(c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'));
+      } catch (e) {
+        return false;
+      }
+    })();
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.matchMedia && (window.matchMedia('(max-width: 767px)').matches || window.matchMedia('(pointer: coarse)').matches);
+    const animMul = reduceMotion ? 0 : 1;
+
+    /* ────────────────────────────────
+       Three.js — Coin & Setup
+    ──────────────────────────────── */
+    const CONFIG = {
+      camera: { fov: 38, x: 0, y: 0.6, z: 5.8 },
+      lights: {
+        ambient: { color: 0xfff4df, intensity: 0.25 },
+        key:     { color: 0xffe8b0, intensity: 2.2,  x: 3.5, y: 4.5, z: 4.5 },
+        fill:    { color: 0xa8c0e8, intensity: 0.5,  x: -4,  y: 1.5, z: 3 },
+        rim:     { color: 0xffd76a, intensity: 1.5,  x: -2.5, y: 3.5, z: -4 },
+        front:   { color: 0xfff1c8, intensity: 1.0,  x: 0,   y: 0.8, z: 5.5 },
+      },
+      exposure: 1.08,
+      coin: {
+        scale: 2.15, swaySpeedY: 0.45, tiltBase: -0.05,
+        tiltOscillation: 0.025, tiltSpeed: 0.5,
+        floatAmount: 0.04, floatSpeed: 0.7, baseY: 1.4,
+        color: '#ffd76a', metalness: 1.0, roughness: 0.22,
+        envMapIntensity: 1.05, emissive: '#3d2508', emissiveIntensity: 0.05,
+      },
+      door: {
+        /* ══════════════════════════════════════════════════════════════════════
+           AJUSTES FÁCILES DE LA PUERTA 3D (ACTO 2):
+           Cambia estos valores para mover o escalar la puerta:
+        ══════════════════════════════════════════════════════════════════════ */
+        baseY: 1.2,             // Altura en pantalla: SUBIR (1.8, 2.2) | BAJAR (1.0, 0.5)
+        baseX: 0.0,             // Horizontal: DERECHA (> 0) | IZQUIERDA (< 0)
+        baseZ: 0.0,             // Profundidad: MÁS CERCA (> 0) | MÁS LEJOS (< 0)
+        scaleMultiplier: 12.0,   // Tamaño en pantalla: MÁS GRANDE (9.5, 11) | MÁS CHICO (7.0, 6.0)
+        centerOffsetX: -0.78,   // Offset manual para centrar visualmente (ajustar si la puerta se ve descentrada)
+
+        /* ── Materiales e Iluminación ── */
+        scale: 2.5,
+        color: '#ffd76a', metalness: 1.0, roughness: 0.22,
+        envMapIntensity: 1.3,
+        emissive: '#3d2508', emissiveIntensity: 0.05,
+        spots: {
+          key:  { color: 0xffe3b5, intensity: 120, angle: 0.45, penumbra: 0.5, decay: 1.2, distance: 0, x: 1.2, y: 5.5, z: 2.5, tx: 0, ty: 0.2, tz: 0 },
+          rim:  { color: 0x90b9ff, intensity: 45, angle: 0.6, penumbra: 0.7, decay: 1.2, distance: 0, x: -4.5, y: 4.0, z: -4.5, tx: 0, ty: -0.2, tz: 0 },
+          under: { color: 0xffba80, intensity: 12, angle: 0.9, penumbra: 0.8, decay: 1.6, distance: 0, x: 0, y: -2.0, z: 2.2, tx: 0, ty: -0.3, tz: 0 },
+        },
+        fog: 0x0b101d,
+        fogDensity: 0.08,
+      },
+      doorText: {
+        /* ══════════════════════════════════════════════════════════════════════
+           AJUSTES FÁCILES DEL TEXTO (ACTO 2 - "LA REUNIÓN"):
+           Cambia estos valores para mover y personalizar el texto:
+        ══════════════════════════════════════════════════════════════════════ */
+        bottomOffset: '12vh',       // Distancia desde abajo (SUBIR: '10vh', '14vh' | BAJAR: '4vh', '2vh')
+        horizontalOffset: '0px',   // Horizontal (DERECHA: '30px' | IZQUIERDA: '-30px' | '0px' = centrado)
+        maxWidth: '650px',         // Ancho del párrafo (Más ancho: '750px' | Más angosto: '550px')
+        titleSize: '0.90rem',      // Tamaño de "LA REUNIÓN"
+        textSize: '1.2rem',        // Tamaño del párrafo
+        gap: '0.8rem',             // Espacio entre título y párrafo
+      },
+    };
+
+    const canvas = document.getElementById('canvas');
+    const loadEl = document.getElementById('load');
+    const haloWrap = document.getElementById('haloWrap');
+    const scrollHint = document.getElementById('scrollHint');
+    const heroEl = document.getElementById('hero');
+
+    let currentStage = 1;
+    function setStage(stage) {
+      if (stage === currentStage) return;
+      currentStage = stage;
+      if (stage === 1) {
+        haloWrap.classList.remove('hidden-stage');
+        scrollHint.classList.remove('hidden');
+      } else {
+        haloWrap.classList.add('hidden-stage');
+        scrollHint.classList.add('hidden');
+      }
+      if (coin.children.length > 0) coin.visible = (stage === 1) && coinFade > 0.01;
+    }
+
+    const stageObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        if (entry.target === heroEl) {
+          setStage(1);
+          canvas.style.pointerEvents = 'auto';
+        } else {
+          setStage(2);
+          canvas.style.pointerEvents = entry.target.id === 'stageQuotes' ? 'auto' : 'none';
+        }
+      });
+    }, { threshold: 0.45 });
+    stageObserver.observe(heroEl);
+    document.querySelectorAll('.stage-hook, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing, #stageObjective, #stageHook, #stageAxes')
+      .forEach(el => stageObserver.observe(el));
+
+    const scene = new THREE.Scene();
+    const camBaseY = 0.7;
+    scene.fog = new THREE.FogExp2(CONFIG.door?.fog ?? 0x0a0e1a, 0);
+    const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
+    camera.lookAt(0, 0.7, 0);
+
+    let renderer = null;
+    if (supportsWebGL) {
+      try {
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = CONFIG.exposure;
+        renderer.shadowMap.enabled = false;
+      } catch (e) {
+        renderer = null;
+      }
+    }
+
+    if (!renderer) {
+      loadEl.innerHTML = '<span style="opacity:.9">Tu dispositivo no soporta WebGL. Se muestra una versi&oacute;n simplificada.</span>';
+    }
+
+    // WebGL context loss handler
+    if (renderer) {
+      canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        loadEl.innerHTML = '<span style="opacity:.9">Conexi&oacute;n WebGL perdida. Recargue la p&aacute;gina.</span>';
+        loadEl.style.display = 'flex';
+      }, false);
+
+      canvas.addEventListener('webglcontextrestored', () => {
+        window.location.reload();
+      }, false);
+    }
+
+    if (renderer) {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      pmrem.dispose();
+    }
+
+    const L = CONFIG.lights;
+    const ambient = new THREE.AmbientLight(L.ambient.color, L.ambient.intensity);
+    scene.add(ambient);
+    const key = new THREE.DirectionalLight(L.key.color, L.key.intensity); key.position.set(L.key.x, L.key.y, L.key.z);
+    const fill = new THREE.DirectionalLight(L.fill.color, L.fill.intensity); fill.position.set(L.fill.x, L.fill.y, L.fill.z);
+    const rim = new THREE.DirectionalLight(L.rim.color, L.rim.intensity); rim.position.set(L.rim.x, L.rim.y, L.rim.z);
+    const front = new THREE.DirectionalLight(L.front.color, L.front.intensity); front.position.set(L.front.x, L.front.y, L.front.z);
+    scene.add(key, fill, rim, front);
+    const mouseLight = new THREE.PointLight(0xfff1c8, 0.4, 8);
+    scene.add(mouseLight);
+
+    /* ────────────────────────────────
+       Door light rig — spotlights dedicados (no reutiliza los de la moneda)
+    ──────────────────────────────── */
+    const doorSpots = [];
+    function buildDoorSpots() {
+      const S = CONFIG.door.spots;
+      const doorLights = new THREE.Group();
+      doorLights.name = 'doorLights';
+      const make = (cfg) => {
+        const sp = new THREE.SpotLight(cfg.color, cfg.intensity, cfg.distance, cfg.angle, cfg.penumbra, cfg.decay);
+        sp.position.set(cfg.x, cfg.y, cfg.z);
+        const t = new THREE.Object3D();
+        t.position.set(cfg.tx, cfg.ty, cfg.tz);
+        sp.target = t;
+        doorLights.add(sp);
+        doorLights.add(t);
+        doorSpots.push(sp);
+        return sp;
+      };
+      make(S.key);
+      make(S.rim);
+      make(S.under);
+      scene.add(doorLights);
+      doorLights.visible = false;
+      return doorLights;
+    }
+    let doorLightGroup = buildDoorSpots();
+
+    /* Sombra de contacto suave (radial gradient) para la base de la puerta */
+    const shadowCanvas = document.createElement('canvas');
+    shadowCanvas.width = 256;
+    shadowCanvas.height = 256;
+    const sCtx = shadowCanvas.getContext('2d');
+    const grad = sCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    grad.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
+    grad.addColorStop(0.4, 'rgba(0, 0, 0, 0.5)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    sCtx.fillStyle = grad;
+    sCtx.fillRect(0, 0, 256, 256);
+    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+
+    const doorFloor = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.8, 2.8),
+      new THREE.MeshBasicMaterial({
+        map: shadowTex,
+        transparent: true,
+        opacity: 0.8,
+        depthWrite: false,
+        blending: THREE.MultiplyBlending
+      })
+    );
+    doorFloor.rotation.x = -Math.PI / 2;
+    doorFloor.position.set(0, 0, 0);
+    scene.add(doorFloor);
+
+    const coin = new THREE.Group();
+    scene.add(coin);
+
+    let coinModel = null;
+    let coinScaleBase = 0;
+    function getResponsiveCoinScale() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 32);
+      const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
+      const dist = CONFIG.camera.z;
+      const worldPxPerUnit = h / (2 * tanHalf * dist);
+      const targetPx = fontPx * 9;
+      return THREE.MathUtils.clamp(targetPx / (CONFIG.coin.scale * worldPxPerUnit), 0.25, 1.6);
+    }
+    function applyCoinScale() {
+      if (coinModel && coinScaleBase) coinModel.scale.setScalar(coinScaleBase * getResponsiveCoinScale());
+    }
+
+    const manager = new THREE.LoadingManager();
+    manager.onLoad = () => setTimeout(() => { if (renderer) loadEl.classList.add('hidden'); }, 300);
+
+    // Loading timeout - show helpful message if loading takes too long
+    setTimeout(() => {
+      if (loadEl && !loadEl.classList.contains('hidden')) {
+        loadEl.innerHTML = '<span style="opacity:.9">La carga est&aacute; tomando m&aacute;s tiempo del esperado. Verifique su conexi&oacute;n a internet.</span>';
+      }
+    }, 15000);
+
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+
+    const loader = new GLTFLoader(manager);
+    loader.setDRACOLoader(dracoLoader);
+    loader.load('monedav5-draco.glb', (gltf) => {
+      const model = gltf.scene;
+      const box = new THREE.Box3().setFromObject(model);
+      if (!box.isEmpty()) {
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        const size = box.getSize(new THREE.Vector3());
+        coinScaleBase = CONFIG.coin.scale / Math.max(size.x, size.y, size.z);
+        coinModel = model;
+        applyCoinScale();
+      }
+      model.traverse((object) => {
+        if (!object.isMesh || !object.material) return;
+        [object.material].flat().forEach((m) => {
+          if (!m || !('metalness' in m)) return;
+          m.side = THREE.FrontSide;
+          m.metalness = CONFIG.coin.metalness;
+          m.roughness = CONFIG.coin.roughness;
+          m.envMapIntensity = CONFIG.coin.envMapIntensity;
+          m.needsUpdate = true;
+        });
+      });
+      coin.add(model);
+    }, undefined, (err) => {
+      console.error('Error cargando GLB:', err);
+      loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la moneda</span>';
+    });
+
+    /* ────────────────────────────────
+       Door — Acto 2 (#stageObjective)
+    ──────────────────────────────── */
+    const doorGroup = new THREE.Group();
+    scene.add(doorGroup);
+    doorGroup.visible = false;
+
+    let doorModel = null;
+    let doorScaleBase = 0;
+    let doorResizeTimer = null;
+    function getResponsiveDoorScale() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 32);
+      const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
+      const dist = CONFIG.camera.z;
+      const worldPxPerUnit = h / (2 * tanHalf * dist);
+      const targetPx = fontPx * (CONFIG.door.scaleMultiplier ?? 8.2);
+      return THREE.MathUtils.clamp(targetPx / (CONFIG.door.scale * worldPxPerUnit), 0.25, 2.5);
+    }
+    function applyDoorScale() {
+      if (doorModel && doorScaleBase) doorModel.scale.setScalar(doorScaleBase * getResponsiveDoorScale());
+    }
+
+    function applyDoorTextStyle() {
+      const cfg = CONFIG.doorText;
+      if (!cfg) return;
+      const container = document.getElementById('stageObjectiveContainer');
+      const title = document.getElementById('stageObjectiveTitle');
+      const p = document.getElementById('stageObjectiveParagraph');
+      if (container) {
+        if (cfg.bottomOffset) container.style.paddingBottom = cfg.bottomOffset;
+        if (cfg.horizontalOffset) container.style.transform = `translateX(${cfg.horizontalOffset})`;
+      }
+      if (title) {
+        if (cfg.titleSize) title.style.fontSize = cfg.titleSize;
+        if (cfg.gap) title.style.marginBottom = cfg.gap;
+      }
+      if (p) {
+        if (cfg.textSize) p.style.fontSize = cfg.textSize;
+        if (cfg.maxWidth) p.style.maxWidth = cfg.maxWidth;
+      }
+    }
+    applyDoorTextStyle();
+
+    const doorLoader = new GLTFLoader(manager);
+    doorLoader.setDRACOLoader(dracoLoader);
+    doorLoader.load('puerta-draco.glb', (gltf) => {
+      const model = gltf.scene;
+      const box = new THREE.Box3().setFromObject(model);
+      if (!box.isEmpty()) {
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        // Aplicar offset manual para centrado visual
+        if (CONFIG.door.centerOffsetX) {
+          model.position.x += CONFIG.door.centerOffsetX;
+        }
+        const size = box.getSize(new THREE.Vector3());
+        doorScaleBase = CONFIG.door.scale / Math.max(size.x, size.y, size.z);
+        doorModel = model;
+        applyDoorScale();
+      }
+      model.traverse((object) => {
+        if (!object.isMesh || !object.material) return;
+        const name = (object.name || '').toLowerCase();
+        // Toroide.001 son las hojas de la puerta; Cubo es el marco/pórtico exterior
+        const isDoorLeaf = name.includes('toroide');
+        [object.material].flat().forEach((m) => {
+          if (!m || !('metalness' in m)) return;
+          m.side = THREE.FrontSide;
+          if (isDoorLeaf) {
+            // Hoja de la puerta interior — Dorado metálico brillante
+            m.color.set('#ffd76a');
+            m.metalness = 1.0;
+            m.roughness = 0.22;
+            m.envMapIntensity = 1.3;
+            if (!m.emissive) m.emissive = new THREE.Color();
+            m.emissive.set('#3d2508');
+            m.emissiveIntensity = 0.05;
+          } else {
+            // Pórtico exterior, dintel y escalones — Obsidiana / Negro azulado profundo mate
+            m.color.set('#0d0f16');
+            m.metalness = 0.15;
+            m.roughness = 0.75;
+            m.envMapIntensity = 0.3;
+            if (!m.emissive) m.emissive = new THREE.Color();
+            m.emissive.set('#000000');
+            m.emissiveIntensity = 0;
+          }
+          m.needsUpdate = true;
+        });
+      });
+      doorGroup.add(model);
+    }, undefined, (err) => {
+      console.error('Error cargando GLB:', err);
+    });
+
+    const clock = new THREE.Clock();
+    const C = CONFIG.coin;
+    let coinBirth = -1;
+    let mouseX = 0, mouseY = 0, smoothMouseX = 0, smoothMouseY = 0;
+    let isDragging = false, dragStartX = 0, dragStartY = 0, dragRotY = 0, dragRotX = 0;
+
+    function onPointerMove(cx, cy) {
+      mouseX = (cx / window.innerWidth) * 2 - 1;
+      mouseY = (cy / window.innerHeight) * 2 - 1;
+      if (isDragging) { dragRotY += (cx - dragStartX) * 0.005; dragRotX += (cy - dragStartY) * 0.005; dragStartX = cx; dragStartY = cy; }
+    }
+    function onPointerDown(cx, cy) { isDragging = true; dragStartX = cx; dragStartY = cy; }
+    function onPointerUp() { isDragging = false; }
+
+    window.addEventListener('mousemove', (e) => onPointerMove(e.clientX, e.clientY));
+    canvas.addEventListener('mousedown', (e) => onPointerDown(e.clientX, e.clientY));
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+    window.addEventListener('blur', onPointerUp);
+    document.addEventListener('visibilitychange', onPointerUp);
+    canvas.addEventListener('touchstart', (e) => { const t = e.touches[0]; onPointerDown(t.clientX, t.clientY); }, { passive: true });
+    canvas.addEventListener('touchmove', (e) => { const t = e.touches[0]; onPointerMove(t.clientX, t.clientY); }, { passive: true });
+    canvas.addEventListener('touchend', onPointerUp, { passive: true });
+
+    const projectedPos = new THREE.Vector3();
+
+    /* ────────────────────────────────
+       Enjambre de partículas — Premium (Textura suave + Color por sentimiento + Additive Blending)
+    ──────────────────────────────── */
+    const quotes = (window.QUOTES || []).slice();
+    const swarm = new THREE.Group();
+    scene.add(swarm);
+    const QUOTES_N = Math.max(quotes.length, 0);
+
+    const PCOUNT = QUOTES_N || 1;
+    const pPos = new Float32Array(PCOUNT * 3);
+    const pOriginalPos = new Float32Array(PCOUNT * 3);
+    const pScatterPos = new Float32Array(PCOUNT * 3);
+    const pColors = new Float32Array(PCOUNT * 3);
+
+    const colorHawkish = new THREE.Color(0xffd76a); // Oro / Hawkish
+    const colorDovish  = new THREE.Color(0x8ab4f8); // Azul suave / Dovish
+    const colorNeutral = new THREE.Color(0xcfd6e4); // Plata / Neutral
+
+    for (let i = 0; i < PCOUNT; i++) {
+      const q = quotes[i];
+      const label = q ? q.label : 'neutral';
+      let c = colorNeutral;
+      if (label === 'hawkish') c = colorHawkish;
+      else if (label === 'dovish') c = colorDovish;
+
+      pColors[i * 3 + 0] = c.r;
+      pColors[i * 3 + 1] = c.g;
+      pColors[i * 3 + 2] = c.b;
+
+      const ang = (i / PCOUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      const radius = 2.1 + Math.random() * 1.5;
+      const yOff = (Math.random() - 0.5) * 1.6;
+      
+      const ox = Math.cos(ang) * radius;
+      const oy = yOff;
+      const oz = Math.sin(ang) * radius;
+
+      pOriginalPos[i * 3 + 0] = ox;
+      pOriginalPos[i * 3 + 1] = oy;
+      pOriginalPos[i * 3 + 2] = oz;
+
+      pPos[i * 3 + 0] = ox;
+      pPos[i * 3 + 1] = oy;
+      pPos[i * 3 + 2] = oz;
+
+      const scatterAng = Math.random() * Math.PI * 2;
+      const scatterRad = 3.8 + Math.random() * 5.5;
+      pScatterPos[i * 3 + 0] = Math.cos(scatterAng) * scatterRad;
+      pScatterPos[i * 3 + 1] = (Math.random() - 0.5) * 6.5;
+      pScatterPos[i * 3 + 2] = (Math.random() - 0.5) * 4.5 - 1.0;
+    }
+
+
+
+    const totalQuotes = quotes.length;
+    const uniqueParticipants = new Set(quotes.map(q => q.participant)).size;
+    const counterItems = document.querySelectorAll('[data-counter]');
+    if (counterItems.length >= 4) {
+      counterItems[2].querySelector('.counter-number').dataset.target = totalQuotes.toString();
+      counterItems[3].querySelector('.counter-number').dataset.target = uniqueParticipants.toString();
+    }
+
+    function createParticleTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.25, 'rgba(255,255,255,0.85)');
+      grad.addColorStop(0.7, 'rgba(255,255,255,0.2)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 64);
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    let sharedTexture = null;
+    function getParticleTexture() {
+      if (!sharedTexture) sharedTexture = createParticleTexture();
+      return sharedTexture;
+    }
+
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+    pGeo.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
+
+    const pMat = new THREE.PointsMaterial({
+      size: 0.14,
+      sizeAttenuation: true,
+      vertexColors: true,
+      map: getParticleTexture(),
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const points = new THREE.Points(pGeo, pMat);
+    swarm.add(points);
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.params.Points.threshold = 0.16;
+    const ndc = new THREE.Vector2();
+
+    function pickPoint(cx, cy) {
+      if (!QUOTES_N) return -1;
+      ndc.x = (cx / window.innerWidth) * 2 - 1;
+      ndc.y = -(cy / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObject(points, false);
+      if (hits.length > 0) {
+        return hits[0].index;
+      }
+      return -1;
+    }
+
+    function openQuote(i) {
+      const q = quotes[i];
+      if (!q) return;
+      document.getElementById('qpWho').textContent = q.participant || 'Participante anónimo';
+      const tag = document.getElementById('qpTag');
+      tag.textContent = (q.label || 'neutral').charAt(0).toUpperCase() + (q.label || 'neutral').slice(1);
+      tag.className = 'tag ' + (q.label || 'neutral');
+      document.getElementById('qpWhen').textContent = q.formatted_date || q.date || 'Fecha no especificada';
+      document.getElementById('qpText').textContent = '\u201C' + (q.text || 'Sin texto disponible') + '\u201D';
+      document.getElementById('qpYear').textContent = q.year ? 'Año ' + q.year : 'Año no especificado';
+      document.getElementById('quotePanel').classList.add('visible');
+    }
+
+    let hoveredPoint = false;
+    let lastHoverAt = 0;
+    function updateHover(cx, cy) {
+      const now = performance.now();
+      if (now - lastHoverAt < 32) return;
+      lastHoverAt = now;
+      const hit = pickPoint(cx, cy) >= 0;
+      if (hit !== hoveredPoint) {
+        hoveredPoint = hit;
+        canvas.classList.toggle('particle-hover', hit);
+      }
+    }
+
+    const origOnPointerMove = onPointerMove;
+    onPointerMove = function(cx, cy) {
+      origOnPointerMove(cx, cy);
+      updateHover(cx, cy);
+    };
+
+    const origOnPointerDown = onPointerDown;
+    onPointerDown = function(cx, cy) {
+      const hit = pickPoint(cx, cy);
+      if (hit >= 0) { openQuote(hit); return; }
+      origOnPointerDown(cx, cy);
+    };
+
+    let scatterProgress = 0;
+    let coinFade = 1;
+    let doorFade = 0;
+    let doorTarget = 0;
+
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const time = clock.getElapsedTime();
+      smoothMouseX = THREE.MathUtils.lerp(smoothMouseX, mouseX, 0.06);
+      smoothMouseY = THREE.MathUtils.lerp(smoothMouseY, mouseY, 0.06);
+      if (!isDragging) { dragRotY = THREE.MathUtils.lerp(dragRotY, 0, 0.05); dragRotX = THREE.MathUtils.lerp(dragRotX, 0, 0.05); }
+      if (coin.children.length > 0) {
+        if (coinBirth < 0) coinBirth = time;
+        const tElapsed = time - coinBirth;
+        const introT = Math.min(tElapsed / (reduceMotion ? 1.2 : 1.8), 1);
+        const introEase = 1 - Math.pow(1 - introT, 3);
+        coin.rotation.y = tElapsed * C.swaySpeedY * introEase + smoothMouseX * 0.22 * (reduceMotion ? 0.2 : 1) + dragRotY;
+        coin.rotation.x = C.tiltBase + C.tiltOscillation * Math.sin(tElapsed * C.tiltSpeed) + smoothMouseY * -0.12 * (reduceMotion ? 0.2 : 1) + dragRotX;
+        coin.position.y = C.baseY + C.floatAmount * Math.sin(tElapsed * C.floatSpeed);
+        mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
+        coin.getWorldPosition(projectedPos);
+        projectedPos.project(camera);
+        haloWrap.style.transform = `translate3d(${(projectedPos.x * 0.5 + 0.5) * window.innerWidth}px, ${(-projectedPos.y * 0.5 + 0.5) * window.innerHeight}px, 0)`;
+
+        coinFade = THREE.MathUtils.clamp(1 - (scatterProgress / 0.45), 0, 1);
+        coin.visible = (currentStage === 1) && (coinFade > 0.01);
+        coin.traverse((child) => {
+          if (child.isMesh && child.material) {
+            [child.material].flat().forEach(m => {
+              m.transparent = true;
+              m.opacity = coinFade;
+            });
+          }
+        });
+      }
+
+      /* puerta: acto 2 — fade sutil + parallax de frente (sin giro 360°) */
+      if (doorGroup.children.length > 0) {
+        doorFade = THREE.MathUtils.lerp(doorFade, doorTarget, 0.12);
+        if (doorTarget === 0 && doorFade < 0.03) doorFade = 0;
+        doorGroup.visible = doorFade > 0.001;
+        const doorEase = doorFade * doorFade * (3 - 2 * doorFade);
+        doorGroup.rotation.y = smoothMouseX * 0.05 * doorEase;
+        doorGroup.rotation.x = smoothMouseY * -0.03 * doorEase;
+        doorGroup.position.x = CONFIG.door.baseX;
+        doorGroup.position.y = CONFIG.door.baseY + smoothMouseY * -0.06 * doorEase;
+        doorGroup.position.z = CONFIG.door.baseZ ?? 0;
+        doorGroup.scale.setScalar(0.94 + 0.06 * doorEase);
+        doorGroup.traverse((child) => {
+          if (child.isMesh && child.material) {
+            [child.material].flat().forEach(m => {
+              m.transparent = true;
+              m.opacity = doorFade;
+            });
+          }
+        });
+
+        /* rig de luces + fog solo mientras la puerta está presente */
+        const doorActive = doorFade > 0.01;
+        if (doorLightGroup) doorLightGroup.visible = doorActive;
+        doorFloor.visible = doorActive;
+        doorFloor.material.opacity = 0.8 * doorEase;
+        if (scene.fog) scene.fog.density = doorActive ? CONFIG.door.fogDensity * doorEase : 0;
+        doorFloor.position.set(doorGroup.position.x, doorGroup.position.y - 1.15, doorGroup.position.z);
+        if (doorActive) {
+          const target = new THREE.Vector3(doorGroup.position.x, doorGroup.position.y, doorGroup.position.z);
+          doorSpots.forEach((sp) => {
+            sp.target.position.copy(target);
+            sp.target.updateMatrixWorld();
+          });
+        }
+      }
+
+      /* enjambre: orbita y se dispersa por la pantalla al hacer scroll */
+      swarm.rotation.y = time * 0.12 + scatterProgress * 0.8;
+
+      const positions = pGeo.attributes.position.array;
+      for (let i = 0; i < PCOUNT; i++) {
+        const idx = i * 3;
+        const ox = pOriginalPos[idx], oy = pOriginalPos[idx+1], oz = pOriginalPos[idx+2];
+        const sx = pScatterPos[idx], sy = pScatterPos[idx+1], sz = pScatterPos[idx+2];
+        const wave = Math.sin(time * 0.9 + i * 0.5) * 0.08 * animMul;
+
+        positions[idx]   = THREE.MathUtils.lerp(ox, sx, scatterProgress) + wave;
+        positions[idx+1] = THREE.MathUtils.lerp(oy, sy, scatterProgress) + wave;
+        positions[idx+2] = THREE.MathUtils.lerp(oz, sz, scatterProgress);
+      }
+      pGeo.attributes.position.needsUpdate = true;
+
+      /* atenuar las luces genéricas de la moneda cuando la puerta domina */
+      const camBlend = doorGroup.children.length > 0 ? doorFade : 0;
+      const dim = 1 - camBlend * 0.85;
+      key.intensity = L.key.intensity * dim;
+      fill.intensity = L.fill.intensity * dim;
+      rim.intensity = L.rim.intensity * dim;
+      front.intensity = L.front.intensity * dim;
+      ambient.intensity = L.ambient.intensity * dim;
+      const baseCamY = CONFIG.camera.y;
+      const lowCamY = baseCamY - 0.15;
+      const currentCamY = THREE.MathUtils.lerp(baseCamY, lowCamY, camBlend);
+      camera.position.set(CONFIG.camera.x, currentCamY, CONFIG.camera.z + camBlend * 0.3);
+      camera.lookAt(0, camBaseY, 0);
+
+      if (renderer) renderer.render(scene, camera);
+    }
+    animate();
+
+    document.getElementById('quotePanelClose').addEventListener('click', () => {
+      document.getElementById('quotePanel').classList.remove('visible');
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      if (renderer) renderer.setSize(window.innerWidth, window.innerHeight);
+      applyCoinScale();
+      applyDoorScale();
+      applyDoorTextStyle();
+    });
+
+    /* ────────────────────────────────
+       Acto 4: D3.js + WebGL Bridge
+    ──────────────────────────────── */
+    let d3Scales = {};
+    function initD3Axes() {
+      const container = document.getElementById('d3-canvas');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      const svg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .style('position', 'absolute')
+        .style('inset', '0');
+
+      const margin = { top: height * 0.35, right: width * 0.15, bottom: height * 0.25, left: width * 0.15 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      const xScale = d3.scaleTime()
+        .domain([new Date(2000, 0, 1), new Date(2015, 11, 31)])
+        .range([margin.left, width - margin.right]);
+
+      const yScale = d3.scaleLinear()
+        .domain([-1, 1])
+        .range([margin.top + innerH, margin.top]);
+
+      d3Scales = { xScale, yScale };
+
+      const g = svg.append('g');
+      const xAxis = d3.axisBottom(xScale).ticks(8).tickFormat(d3.timeFormat('%Y'));
+      g.append('g')
+        .attr('transform', `translate(0, ${margin.top + innerH / 2})`)
+        .call(xAxis)
+        .selectAll('text')
+        .style('fill', 'rgba(255,255,255,0.4)')
+        .style('font-family', 'sans-serif')
+        .style('font-size', '11px');
+
+      g.selectAll('.domain, .tick line')
+        .style('stroke', 'rgba(255,255,255,0.1)');
+
+      return d3Scales;
+    }
+
+    function get3DPosFromData(date, sentiment, camera) {
+      const { xScale, yScale } = d3Scales;
+      if (!xScale || !yScale) return new THREE.Vector3(0, 0, 0);
+
+      const px = xScale(date);
+      const py = yScale(sentiment);
+
+      const xNDC = (px / window.innerWidth) * 2 - 1;
+      const pyNDC = -(py / window.innerHeight) * 2 + 1;
+
+      const vector = new THREE.Vector3(xNDC, pyNDC, 0.5).unproject(camera);
+      const dir = vector.sub(camera.position).normalize();
+      const distance = -camera.position.z / dir.z;
+      return camera.position.clone().add(dir.multiplyScalar(distance));
+    }
+
+    initD3Axes();
+    window.addEventListener('resize', initD3Axes);
+
+    /* ────────────────────────────────
+       Text-to-Particle v2 — Scanning Light + Burst + Micro-label
+    ──────────────────────────────── */
+    function initTextToParticlePOC(scene, camera) {
+      const hookParagraph = document.querySelector('#hookParagraph');
+      if (!hookParagraph) return;
+
+      const hawkishSpan = hookParagraph.querySelector('.word-hawkish');
+      const dovishSpan  = hookParagraph.querySelector('.word-dovish');
+      if (!hawkishSpan || !dovishSpan) return;
+
+      const hawkContainer = hawkishSpan.parentElement;
+      const dovishContainer = dovishSpan.parentElement;
+
+      const scanLight = document.getElementById('scanLight');
+      const microLabel = document.getElementById('microLabel');
+
+      const KEYWORDS = [
+        { span: hawkishSpan, container: hawkContainer, sentiment: 0.8,  color: 0xffd76a, label: 'hawkish', cssColor: '#ffd76a' },
+        { span: dovishSpan,  container: dovishContainer, sentiment: -0.6, color: 0x8ab4f8, label: 'dovish',  cssColor: '#8ab4f8' }
+      ];
+
+      const BURST_COUNT = 12;
+      const allBursts = [];
+      const keywordTriggers = KEYWORDS.map(() => false);
+
+      function getElementWorldCenter(el) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return null;
+        const xNDC = ((rect.left + rect.width / 2) / window.innerWidth) * 2 - 1;
+        const yNDC = -(((rect.top + rect.height / 2) / window.innerHeight) * 2 - 1);
+        const v = new THREE.Vector3(xNDC, yNDC, 0.5).unproject(camera);
+        const d = v.sub(camera.position).normalize();
+        const dist = -camera.position.z / d.z;
+        return camera.position.clone().add(d.multiplyScalar(dist));
+      }
+
+      function createBurstParticles(kw, origin) {
+        const positions = new Float32Array(BURST_COUNT * 3);
+        const restPositions = new Float32Array(BURST_COUNT * 3);
+        const drift = [];
+        const dateMap = {
+          hawkish: new Date(2003, 0, 1),
+          dovish:  new Date(2012, 0, 1)
+        };
+        const targetDate = dateMap[kw.label] || new Date(2008, 0, 1);
+        const targetPos = get3DPosFromData(targetDate, kw.sentiment, camera);
+
+        for (let i = 0; i < BURST_COUNT; i++) {
+          positions[i * 3]     = origin.x;
+          positions[i * 3 + 1] = origin.y;
+          positions[i * 3 + 2] = origin.z;
+          restPositions[i * 3]     = origin.x;
+          restPositions[i * 3 + 1] = origin.y;
+          restPositions[i * 3 + 2] = origin.z;
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 0.12 + Math.random() * 0.25;
+          drift.push({
+            x: Math.cos(angle) * dist,
+            y: Math.sin(angle) * dist,
+            z: (Math.random() - 0.5) * 0.08
+          });
+        }
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const mat = new THREE.PointsMaterial({
+          size: 0.1,
+          color: kw.color,
+          map: getParticleTexture(),
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+
+        const points = new THREE.Points(geo, mat);
+        scene.add(points);
+
+        return { positions, restPositions, drift, targetPos, geo, mat, points, origin, triggerP: 0, active: true };
+      }
+
+      function populateScatterBackground() {
+        const quotes = window.QUOTES || [];
+        if (quotes.length === 0) return;
+
+        const bgPositions = new Float32Array(quotes.length * 3);
+        const bgColors = new Float32Array(quotes.length * 3);
+        const cH = new THREE.Color(0xffd76a);
+        const cD = new THREE.Color(0x8ab4f8);
+        const cN = new THREE.Color(0xcfd6e4);
+
+        function seededRandom(seed) {
+          let x = Math.sin(seed * 9301 + 49297) * 233280;
+          return x - Math.floor(x);
+        }
+
+        quotes.forEach((q, i) => {
+          const date = new Date(q.date);
+          const seed = q.date.length + q.text.length;
+          const sentiment = q.label === 'hawkish' ? 0.3 + seededRandom(seed) * 0.4
+                          : q.label === 'dovish' ? -0.3 - seededRandom(seed + 1) * 0.4
+                          : (seededRandom(seed + 2) - 0.5) * 0.3;
+          const pos = get3DPosFromData(date, sentiment, camera);
+          bgPositions[i * 3]     = pos.x;
+          bgPositions[i * 3 + 1] = pos.y;
+          bgPositions[i * 3 + 2] = pos.z;
+
+          const c = q.label === 'hawkish' ? cH : q.label === 'dovish' ? cD : cN;
+          bgColors[i * 3]     = c.r;
+          bgColors[i * 3 + 1] = c.g;
+          bgColors[i * 3 + 2] = c.b;
+        });
+
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(bgPositions, 3));
+        geo.setAttribute('color', new THREE.BufferAttribute(bgColors, 3));
+
+        const mat = new THREE.PointsMaterial({
+          size: 0.04,
+          vertexColors: true,
+          map: getParticleTexture(),
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+
+        const pts = new THREE.Points(geo, mat);
+        scene.add(pts);
+        return { mat, pts };
+      }
+
+      const bgScatter = populateScatterBackground();
+
+      const clamp01 = (v) => Math.max(0, Math.min(1, v));
+      let lastProgress = 0;
+
+      ScrollTrigger.create({
+        trigger: '#stageHook',
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 1,
+        onUpdate: (self) => {
+          const p = self.progress;
+          const scrollingDown = p >= lastProgress;
+
+          // Reset everything when scrolling back up past start
+          if (!scrollingDown && p < 0.02) {
+            // Remove all particles
+            allBursts.forEach(burst => {
+              if (burst.active) {
+                scene.remove(burst.points);
+                burst.geo.dispose();
+                burst.mat.dispose();
+                burst.active = false;
+              }
+            });
+            allBursts.length = 0;
+
+            // Reset keyword triggers
+            keywordTriggers.forEach((_, i) => keywordTriggers[i] = false);
+
+            // Reset text visibility
+            hookParagraph.style.opacity = 1;
+
+            // Reset keywords
+            KEYWORDS.forEach(kw => {
+              kw.span.style.textShadow = '';
+            });
+            hookParagraph.querySelectorAll('.keyword-underline').forEach(ul => {
+              ul.style.transform = 'scaleX(0)';
+            });
+
+            // Reset scan light
+            scanLight.style.opacity = 0;
+
+            // Reset micro label
+            microLabel.style.opacity = 0;
+
+            // Reset background scatter
+            if (bgScatter) bgScatter.mat.opacity = 0;
+          }
+
+          lastProgress = p;
+
+          /* ═══════════════════════════════════════════
+             PHASE 1: HIGHLIGHT KEYWORDS (0% – 8%)
+             Keywords glow + underlines appear
+             ═══════════════════════════════════════════ */
+          const hl = clamp01(p / 0.08);
+          KEYWORDS.forEach(kw => {
+            kw.span.style.textShadow = `0 0 ${hl * 25}px currentColor`;
+          });
+          hookParagraph.querySelectorAll('.keyword-underline').forEach(ul => {
+            ul.style.transform = `scaleX(${hl})`;
+          });
+
+          /* ═══════════════════════════════════════════
+             PHASE 2: SCANNING LIGHT (10% – 45%)
+             Light moves across the paragraph
+             ═══════════════════════════════════════════ */
+          const scanProgress = clamp01((p - 0.10) / 0.35);
+          const paraRect = hookParagraph.getBoundingClientRect();
+          const lightX = paraRect.left + scanProgress * paraRect.width - 50;
+
+          if (p > 0.10 && p < 0.50) {
+            // Fade in during first 10% of scan, fade out during last 5%
+            const scanFadeIn = clamp01((p - 0.10) / 0.03);
+            const scanFadeOut = p < 0.45 ? 1 : 1 - (p - 0.45) / 0.05;
+            scanLight.style.opacity = scanFadeIn * scanFadeOut;
+            scanLight.style.transform = `translateX(${lightX}px)`;
+          } else {
+            scanLight.style.opacity = 0;
+          }
+
+          /* ═══════════════════════════════════════════
+             PHASE 3: PARTICLES EMERGE (25% – 50%)
+             When light passes keyword, particles appear
+             ═══════════════════════════════════════════ */
+          KEYWORDS.forEach((kw, idx) => {
+            if (keywordTriggers[idx]) return;
+            if (p < 0.25 || p > 0.50) return; // Only check during this phase
+            const kwRect = kw.span.getBoundingClientRect();
+            const kwCenter = kwRect.left + kwRect.width / 2;
+            const lightCenter = lightX + 50;
+            const distance = Math.abs(kwCenter - lightCenter);
+
+            if (distance < 60 && scanProgress > 0.10) {
+              keywordTriggers[idx] = true;
+              const origin = getElementWorldCenter(kw.span);
+              if (!origin) return;
+
+              const burst = createBurstParticles(kw, origin);
+              burst.triggerP = p;
+              allBursts.push(burst);
+
+              microLabel.innerHTML = `<span style="color: ${kw.cssColor}">"${kw.span.textContent}"</span> → ${kw.label}`;
+              microLabel.style.opacity = 1;
+              microLabel.style.left = `${kwRect.left + kwRect.width / 2}px`;
+              microLabel.style.top = `${kwRect.top - 30}px`;
+              microLabel.style.color = kw.cssColor;
+
+              setTimeout(() => { microLabel.style.opacity = 0; }, 1200);
+            }
+          });
+
+          /* ═══════════════════════════════════════════
+             PHASE 4: PARTICLE DRIFT (45% – 75%)
+             Particles drift outward after scan ends
+             ═══════════════════════════════════════════ */
+          allBursts.forEach(burst => {
+            if (!burst.active) return;
+            const age = clamp01((p - burst.triggerP) / 0.30);
+
+            // Fade in gently (first 20% of life)
+            const fadeIn = clamp01(age / 0.20);
+            burst.mat.opacity = fadeIn * 0.7;
+
+            // Drift outward with deceleration
+            const drift = 1 - Math.pow(1 - age, 2);
+            for (let i = 0; i < BURST_COUNT; i++) {
+              const idx = i * 3;
+              burst.positions[idx]     = burst.restPositions[idx]     + burst.drift[i].x * drift * 40;
+              burst.positions[idx + 1] = burst.restPositions[idx + 1] + burst.drift[i].y * drift * 40;
+              burst.positions[idx + 2] = burst.restPositions[idx + 2] + burst.drift[i].z * drift * 15;
+            }
+            burst.geo.attributes.position.needsUpdate = true;
+          });
+
+          /* ═══════════════════════════════════════════
+             PHASE 5: BACKGROUND SCATTER (50% – 70%)
+             Scatter plot fades in subtly
+             ═══════════════════════════════════════════ */
+          if (bgScatter) {
+            bgScatter.mat.opacity = clamp01((p - 0.50) / 0.20) * 0.15;
+          }
+
+          /* ═══════════════════════════════════════════
+             PHASE 6: GLOBAL FADE (80% – 100%)
+             Everything fades together when leaving
+             ═══════════════════════════════════════════ */
+          const globalFade = p > 0.80 ? 1 - (p - 0.80) / 0.20 : 1;
+          hookParagraph.style.opacity = globalFade;
+          if (bgScatter) bgScatter.mat.opacity *= globalFade;
+          allBursts.forEach(burst => {
+            if (burst.active) burst.mat.opacity *= globalFade;
+          });
+        }
+      });
+    }
+
+    initTextToParticlePOC(scene, camera);
+
+    // Global scroll scrubber
+    const tsProgress = document.getElementById('tsProgress');
+    const tsBar = document.getElementById('tsBar');
+    const tsMarker = document.getElementById('tsMarker');
+    const tsSection = document.getElementById('tsSection');
+
+    const sections = [
+      { label: 'hero', start: 0 },
+      { label: 'door', start: 0.08 },
+      { label: 'hook', start: 0.18 },
+      { label: 'axes', start: 0.38 },
+      { label: 'counters', start: 0.52 },
+      { label: 'pipeline', start: 0.60 },
+      { label: 'timeline', start: 0.70 },
+      { label: 'quotes', start: 0.80 },
+      { label: 'closing', start: 0.92 }
+    ];
+
+    const progressBar = document.getElementById('progressBar');
+    const sectionIndicator = document.getElementById('sectionIndicator');
+    let indicatorTimeout;
+
+    function updateScrubber() {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const p = docHeight > 0 ? scrollTop / docHeight : 0;
+
+      // Debug scrubber
+      tsProgress.textContent = Math.round(p * 100) + '%';
+      tsBar.style.height = (p * 100) + '%';
+      tsMarker.style.top = (p * 100) + '%';
+
+      // Progress bar
+      progressBar.style.width = (p * 100) + '%';
+
+      // Section indicator
+      let sec = 'hero';
+      for (let i = sections.length - 1; i >= 0; i--) {
+        if (p >= sections[i].start) { sec = sections[i].label; break; }
+      }
+      tsSection.textContent = sec;
+      sectionIndicator.textContent = sec;
+      sectionIndicator.style.opacity = '0.6';
+      clearTimeout(indicatorTimeout);
+      indicatorTimeout = setTimeout(() => { sectionIndicator.style.opacity = '0'; }, 1500);
+    }
+    window.addEventListener('scroll', updateScrubber, { passive: true });
+    updateScrubber();
+
+
+    /* ────────────────────────────────
+       Lenis + GSAP ScrollTrigger
+    ──────────────────────────────── */
+    gsap.registerPlugin(ScrollTrigger, CustomEase, SplitText);
+
+    CustomEase.create("cinematicIn", "0.22,1,0.36,1");
+    CustomEase.create("cinematicOut", "0.61,1,0.88,1");
+    CustomEase.create("cinematicInOut", "0.65,0,0.35,1");
+    CustomEase.create("cinematicSilk", "0.45,0.05,0.55,0.95");
+    CustomEase.create("cinematicSnap", "0.16,1,0.3,1");
+
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+    gsap.ticker.lagSmoothing(0);
+
+    /* ────────────────────────────────
+       Hero — coin + title move together on scroll
+    ──────────────────────────────── */
+    const heroGroup = gsap.timeline({
+      scrollTrigger: {
+        trigger: '.hero',
+        start: 'top top',
+        end: '40% top',
+        scrub: true,
+      },
+    });
+    heroGroup.to('.hero-title', { opacity: 0, y: -60, ease: 'cinematicSilk' }, 0);
+    heroGroup.to('.scroll-hint', { opacity: 0, ease: 'cinematicSilk' }, 0);
+    heroGroup.to('#haloWrap', { opacity: 0, y: -60, ease: 'cinematicSilk' }, 0);
+
+    ScrollTrigger.create({
+      trigger: '.hero',
+      start: 'top top',
+      end: 'bottom top',
+      scrub: true,
+      onUpdate: (self) => {
+        scatterProgress = self.progress;
+        if (self.progress < 0.98) {
+          doorTarget = 0;
+          doorFade = 0;
+          if (doorGroup) doorGroup.visible = false;
+        }
+      },
+      onLeaveBack: () => {
+        doorTarget = 0;
+        doorFade = 0;
+        if (doorGroup) doorGroup.visible = false;
+      }
+    });
+
+    /* ────────────────────────────────
+       Stage 2 (Door) ScrollTrigger — control continuo, suave y sin parpadeos
+    ──────────────────────────────── */
+    ScrollTrigger.create({
+      trigger: '#stageObjective',
+      start: 'top top',
+      end: 'bottom top',
+      scrub: true,
+      onUpdate: (self) => {
+        const p = self.progress;
+        if (p <= 0) {
+          doorTarget = 0;
+        } else if (p < 0.20) {
+          // Fade in over 20% (smooth entrance)
+          doorTarget = p / 0.20;
+        } else if (p <= 0.50) {
+          // Fully visible
+          doorTarget = 1;
+        } else if (p < 0.80) {
+          // Fade out over 30% (smooth exit)
+          doorTarget = Math.max(0, 1 - (p - 0.50) / 0.30);
+        } else {
+          doorTarget = 0;
+        }
+      },
+      onLeave: () => { doorTarget = 0; },
+      onLeaveBack: () => { doorTarget = 0; }
+    });
+
+    /* Animación del texto de Stage 2 (La Reunión) */
+    const objTimeline = gsap.timeline({
+      scrollTrigger: {
+        trigger: '#stageObjective',
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: true,
+      }
+    });
+    objTimeline
+      .fromTo('[data-objective]', 
+        { opacity: 0, y: 30 }, 
+        { opacity: 1, y: 0, duration: 0.20, ease: 'cinematicOut', stagger: 0.04 }, 
+        0.05
+      )
+      .to('[data-objective]', 
+        { opacity: 0, y: -25, duration: 0.25, ease: 'cinematicIn' }, 
+        0.60
+      );
+
+    /* ────────────────────────────────
+       Stage 3 — Hook
+    ──────────────────────────────── */
+    const hookLines = document.querySelectorAll('#stageHook h2[data-hook]');
+    hookLines.forEach((el, i) => {
+      const split = new SplitText(el, { type: 'chars,words', charsClass: 'char-reveal', wordsClass: 'word-reveal' });
+      gsap.fromTo(split.chars,
+        { opacity: 0, y: 20, rotationX: -40 },
+        {
+          opacity: 1, y: 0, rotationX: 0,
+          duration: 0.6,
+          stagger: 0.02,
+          ease: 'cinematicOut',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 70%',
+            end: 'top 40%',
+            toggleActions: 'play none none reverse',
+          }
+        }
+      );
+    });
+
+    /* ────────────────────────────────
+       Stage 3 — Counters
+    ──────────────────────────────── */
+    const counterEls = document.querySelectorAll('[data-counter]');
+    counterEls.forEach((el) => {
+      const numEl = el.querySelector('.counter-number');
+      const rawTarget = numEl.dataset.target;
+      const isTodo = rawTarget.startsWith('[TODO');
+
+      gsap.fromTo(el,
+        { opacity: 0, y: 24 },
+        {
+          opacity: 1, y: 0,
+          duration: 0.6,
+          ease: 'cinematicOut',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+            onEnter: () => {
+              if (isTodo) return;
+              const target = parseInt(rawTarget, 10);
+              const obj = { val: 0 };
+              gsap.to(obj, {
+                val: target,
+                duration: 1.5,
+                ease: 'cinematicSilk',
+                onUpdate: () => { numEl.textContent = Math.round(obj.val); },
+              });
+            },
+          }
+        }
+      );
+    });
+
+    /* ────────────────────────────────
+       Stage 4 — Pipeline: línea de transformación horizontal
+    ─────────────────────────────── */
+    (function initPipeline() {
+      const track = document.getElementById('pipeTrack');
+      const viewport = track?.closest('.pipe-viewport');
+      if (!track || !viewport) return;
+
+      /* — Semilla (panel 03) — */
+      const seedGrid = document.getElementById('seedGrid');
+      const seedDots = [];
+      for (let i = 0; i < 26 * 6; i++) {
+        const d = document.createElement('i');
+        d.className = 'seed-dot ' + (Math.random() < 0.46 ? 'h' : 'd');
+        d.dataset.th = (0.05 + Math.random() * 0.8).toFixed(3);
+        seedGrid.appendChild(d);
+        seedDots.push(d);
+      }
+
+      /* — Corpus (panel 04) — */
+      const corpusGrid = document.getElementById('corpusGrid');
+      const corpusHead = document.getElementById('corpusHead');
+      const corpusYear = document.getElementById('corpusYear');
+      const corpusPct  = document.getElementById('corpusPct');
+      const isNarrow = () => window.matchMedia('(max-width: 640px)').matches;
+      const ROWS = 12;
+      let COLS = 0, corpusCols = [], litCols = -1;
+
+      function buildCorpus() {
+        COLS = isNarrow() ? 26 : 40;
+        corpusGrid.innerHTML = '';
+        corpusGrid.style.setProperty('--cols', COLS);
+        corpusCols = [];
+        for (let c = 0; c < COLS; c++) {
+          const col = document.createElement('span');
+          col.className = 'corpus-col';
+          const bias = Math.sin((c / COLS) * Math.PI * 1.7 - 1.1);
+          const hawks = Math.round((0.5 + 0.42 * bias) * ROWS);
+          for (let r = 0; r < ROWS; r++) {
+            const dot = document.createElement('i');
+            dot.className = 'corpus-dot ' + (r < hawks ? 'h' : 'd');
+            col.appendChild(dot);
+          }
+          corpusGrid.appendChild(col);
+          corpusCols.push(col);
+        }
+        litCols = -1;
+      }
+      buildCorpus();
+
+      /* — Referencias — */
+      const wordCount = document.getElementById('wordCount');
+      const docLines  = document.querySelectorAll('#stagePipeline .doc-line > span');
+      const fragEl    = document.querySelector('#stagePipeline .frag');
+      const verdict   = document.getElementById('verdictStamp');
+      const confBar   = document.getElementById('confBar');
+      const confVal   = document.getElementById('confVal');
+      const seedCount = document.getElementById('seedCount');
+      const railNodes = document.querySelectorAll('#pipeRail .rail-node');
+      const railSegs  = document.querySelectorAll('#pipeRail .rail-seg i');
+
+      const clamp01  = gsap.utils.clamp(0, 1);
+      const seg      = (p, a, b) => clamp01((p - a) / (b - a));
+      const easeOut3 = (t) => 1 - Math.pow(1 - t, 3);
+      const fmt      = (n) => Math.round(n).toLocaleString('es-CL');
+
+      const panels = track.querySelectorAll('.pipe-panel');
+      const getPanelBounds = () => {
+        const totalW = track.scrollWidth - viewport.clientWidth;
+        return Array.from(panels).map(panel => {
+          const left = panel.offsetLeft - viewport.clientWidth * 0.35;
+          const right = left + panel.offsetWidth;
+          return { start: clamp01(left / totalW), end: clamp01(right / totalW) };
+        });
+      };
+
+      function updatePipe(p) {
+        const bounds = getPanelBounds();
+
+        /* Panel 01 — acta revelada línea a línea + contador de palabras */
+        const l1 = seg(p, bounds[0].start, bounds[0].end);
+        docLines.forEach((line, i) => {
+          const t = easeOut3(seg(l1, 0.02 + i * 0.06, 0.22 + i * 0.06));
+          line.style.transform = `translateY(${(1 - t) * 110}%)`;
+        });
+        wordCount.textContent = fmt(150000 * easeOut3(seg(l1, 0.15, 0.85)));
+
+        /* Panel 02 — fragmento + sello del veredicto + confianza */
+        const l2 = seg(p, bounds[1].start, bounds[1].end);
+        fragEl.style.opacity = easeOut3(seg(l2, 0.05, 0.3));
+        const stamp = easeOut3(seg(l2, 0.42, 0.6));
+        verdict.style.opacity = stamp;
+        verdict.style.transform = `scale(${1.9 - 0.9 * stamp}) rotate(${-9 + 6 * stamp}deg)`;
+        const conf = seg(l2, 0.5, 0.9);
+        confBar.style.width = (conf * 94) + '%';
+        confVal.textContent = (conf * 0.94).toFixed(2);
+
+        /* Panel 03 — semilla encendida + contador */
+        const l3 = seg(p, bounds[2].start, bounds[2].end);
+        seedDots.forEach((d) => d.classList.toggle('lit', l3 > +d.dataset.th));
+        seedCount.textContent = fmt(872 * easeOut3(seg(l3, 0.05, 0.9)));
+
+        /* Panel 04 — barrido del corpus, año por año */
+        const l4 = seg(p, bounds[3].start, bounds[3].end);
+        const sweep = seg(l4, 0.05, 0.92);
+        const front = Math.floor(sweep * (COLS + 1));
+        if (front !== litCols) {
+          corpusCols.forEach((col, c) => col.classList.toggle('lit', c < front));
+          litCols = front;
+        }
+        corpusHead.style.left = (sweep * 100) + '%';
+        corpusHead.style.opacity = (l4 > 0.02 && sweep < 0.999) ? 1 : 0;
+        corpusYear.textContent = 2000 + Math.round(sweep * 15);
+        corpusPct.textContent = Math.round(sweep * 100) + '%';
+
+        /* Rail de progreso */
+        let activeIdx = 0;
+        for (let i = bounds.length - 1; i >= 0; i--) {
+          if (p >= bounds[i].start) { activeIdx = i; break; }
+        }
+        railNodes.forEach((n, i) => n.classList.toggle('active', i <= activeIdx));
+        railSegs.forEach((s, i) => {
+          if (i < activeIdx) s.style.transform = 'scaleX(1)';
+          else if (i === activeIdx) s.style.transform = `scaleX(${seg(p, bounds[i].start, bounds[i].end)})`;
+          else s.style.transform = 'scaleX(0)';
+        });
+
+        /* Debug panel */
+        const debugEl = document.getElementById('debugPanel');
+        const debugSection = document.getElementById('debugSection');
+        const debugProgress = document.getElementById('debugProgress');
+        const debugPanelInfo = document.getElementById('debugPanelInfo');
+        const debugBar = document.getElementById('debugBar');
+        if (debugEl) {
+          debugEl.classList.add('visible');
+          debugSection.textContent = 'Pipeline';
+          debugProgress.textContent = Math.round(p * 100) + '%';
+          const panelNames = ['01 · Fuente', '02 · Etiquetado', '03 · Semilla', '04 · Corpus'];
+          debugPanelInfo.textContent = panelNames[activeIdx] || '—';
+          debugBar.style.width = (p * 100) + '%';
+        }
+      }
+
+      /* GSAP Official Pattern: Pin parent, animate child */
+      const scrollTween = gsap.to(track, {
+        x: () => -(track.scrollWidth - viewport.clientWidth),
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '.pipeline-pin-wrapper',
+          start: 'top top',
+          end: () => '+=' + (track.scrollWidth - viewport.clientWidth),
+          pin: true,
+          scrub: 1,
+          invalidateOnRefresh: true,
+          anticipatePin: 1,
+          onUpdate: (self) => updatePipe(self.progress),
+        },
+      });
+
+      updatePipe(0);
+
+      window.addEventListener('resize', () => {
+        if (isNarrow() !== wasNarrow) { wasNarrow = isNarrow(); buildCorpus(); }
+        ScrollTrigger.refresh();
+      });
+    })();
+
+    /* ────────────────────────────────
+       Stage 5 — Timeline (D3, lazy)
+    ──────────────────────────────── */
+    const timelineTitle = document.querySelector('[data-timeline-title]');
+    gsap.fromTo(timelineTitle,
+      { opacity: 0, y: 20 },
+      {
+        opacity: 1, y: 0,
+        duration: 0.8,
+        ease: 'cinematicOut',
+        scrollTrigger: { trigger: timelineTitle, start: 'top 80%', toggleActions: 'play none none reverse' }
+      }
+    );
+
+    let timelineBuilt = false;
+    let timelinePath, timelineTotalLen;
+
+    function buildTimeline() {
+      const container = document.getElementById('timelineContainer');
+      if (!container) return;
+
+      if (timelineBuilt) {
+        d3.select(container).selectAll('*').remove();
+      }
+      timelineBuilt = true;
+      const margin = { top: 40, right: 30, bottom: 60, left: 50 };
+      const width = Math.min(1060, window.innerWidth - 40);
+      const height = 320;
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      const svg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .style('max-width', '100%')
+        .style('height', 'auto');
+
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      /* Datos de orientación de política monetaria */
+      const sampleData = [
+        { date: new Date(2000, 0), value: 0.2 },
+        { date: new Date(2001, 0), value: -0.1 },
+        { date: new Date(2002, 0), value: 0.05 },
+        { date: new Date(2003, 0), value: 0.3 },
+        { date: new Date(2004, 0), value: 0.15 },
+        { date: new Date(2005, 0), value: -0.05 },
+        { date: new Date(2006, 0), value: 0.25 },
+        { date: new Date(2007, 0), value: 0.4 },
+        { date: new Date(2008, 0), value: -0.3 },
+        { date: new Date(2009, 0), value: -0.15 },
+        { date: new Date(2010, 0), value: 0.1 },
+        { date: new Date(2011, 0), value: 0.35 },
+        { date: new Date(2012, 0), value: 0.05 },
+        { date: new Date(2013, 0), value: -0.1 },
+        { date: new Date(2014, 0), value: 0.2 },
+        { date: new Date(2015, 0), value: -0.05 },
+      ];
+
+      const x = d3.scaleTime().domain(d3.extent(sampleData, d => d.date)).range([0, innerW]);
+      const y = d3.scaleLinear().domain([-0.5, 0.5]).range([innerH, 0]);
+
+      g.append('g')
+        .attr('transform', `translate(0,${innerH})`)
+        .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat('%Y')))
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
+      g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');
+
+      g.append('g')
+        .call(d3.axisLeft(y).ticks(5).tickFormat(d => d > 0 ? `+${d}` : d))
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
+      g.selectAll('.domain').style('stroke', 'none');
+      g.selectAll('.tick line').style('stroke', 'rgba(255,255,255,0.06)');
+
+      g.append('line')
+        .attr('x1', 0).attr('x2', innerW)
+        .attr('y1', y(0)).attr('y2', y(0))
+        .style('stroke', 'rgba(255,255,255,0.15)')
+        .style('stroke-dasharray', '4,4');
+
+      const gradient = svg.append('defs').append('linearGradient')
+        .attr('id', 'lineGrad').attr('x1', '0%').attr('x2', '100%');
+      gradient.append('stop').attr('offset', '0%').attr('stop-color', '#8ab4f8');
+      gradient.append('stop').attr('offset', '50%').attr('stop-color', '#ffd76a');
+      gradient.append('stop').attr('offset', '100%').attr('stop-color', '#8ab4f8');
+
+      const line = d3.line()
+        .x(d => x(d.date))
+        .y(d => y(d.value))
+        .curve(d3.curveMonotoneX);
+
+      timelinePath = g.append('path')
+        .datum(sampleData)
+        .attr('fill', 'none')
+        .attr('stroke', 'url(#lineGrad)')
+        .attr('stroke-width', 2.5)
+        .attr('d', line);
+
+      timelineTotalLen = timelinePath.node().getTotalLength();
+      timelinePath
+        .attr('stroke-dasharray', timelineTotalLen)
+        .attr('stroke-dashoffset', timelineTotalLen);
+
+      /* Eventos macro importantes */
+      const events = [
+        { date: new Date(2008, 8), label: 'Crisis financiera externa' },
+      ];
+      const evG = g.selectAll('.ev').data(events).enter().append('g').attr('class', 'ev');
+      evG.append('line')
+        .attr('x1', d => x(d.date)).attr('x2', d => x(d.date))
+        .attr('y1', 0).attr('y2', innerH)
+        .style('stroke', 'rgba(255,215,106,0.25)')
+        .style('stroke-dasharray', '3,3');
+      evG.append('text')
+        .attr('x', d => x(d.date))
+        .attr('y', -8)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '11px')
+        .style('fill', '#ffd76a')
+        .style('opacity', 0.7)
+        .text(d => d.label);
+
+      gsap.to(container, { opacity: 1, duration: 0.3 });
+    }
+
+    ScrollTrigger.create({
+      trigger: '#stageTimeline',
+      start: 'top 80%',
+      onEnter: buildTimeline,
+      onEnterBack: buildTimeline,
+    });
+
+    let timelineResizeT;
+    window.addEventListener('resize', () => {
+      clearTimeout(timelineResizeT);
+      timelineResizeT = setTimeout(() => {
+        if (timelineBuilt) buildTimeline();
+      }, 200);
+    });
+
+    ScrollTrigger.create({
+      trigger: '#stageTimeline',
+      start: 'top top',
+      end: '+=150%',
+      pin: '.timeline-pin-wrapper',
+      scrub: 1,
+      onUpdate: (self) => {
+        if (timelinePath) {
+          timelinePath.attr('stroke-dashoffset', timelineTotalLen * (1 - self.progress));
+        }
+      },
+    });
+
+    /* ────────────────────────────────
+       Acto 4: Sincronización de visibilidad para #d3-canvas
+    ──────────────────────────────── */
+    gsap.fromTo('#d3-canvas', 
+      { opacity: 0 },
+      {
+        opacity: 1,
+        scrollTrigger: {
+          trigger: '#stageAxes',
+          start: 'top 35%',
+          end: 'top 10%',
+          scrub: true,
+        }
+      }
+    );
+
+    gsap.to('#d3-canvas', {
+      opacity: 0,
+      scrollTrigger: {
+        trigger: '#stageAxes',
+        start: 'bottom center',
+        end: 'bottom top',
+        scrub: true,
+      }
+    });
+
+    /* ────────────────────────────────
+       Stage 6 — Quotes
+    ──────────────────────────────── */
+    const quoteEls = document.querySelectorAll('[data-quote]');
+    quoteEls.forEach((el) => {
+      gsap.fromTo(el,
+        { opacity: 0, y: 24 },
+        {
+          opacity: 1, y: 0,
+          duration: 0.8,
+          ease: 'cinematicOut',
+          scrollTrigger: { trigger: el, start: 'top 80%', toggleActions: 'play none none reverse' }
+        }
+      );
+
+      // Keyboard accessibility
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          el.click();
+        }
+      });
+    });
+
+    /* ────────────────────────────────
+       Stage 7 — Closing
+    ──────────────────────────────── */
+    document.querySelectorAll('[data-closing]').forEach((el) => {
+      const split = new SplitText(el, { type: 'chars,words', charsClass: 'char-reveal', wordsClass: 'word-reveal' });
+      gsap.fromTo(split.chars,
+        { opacity: 0, y: 15, rotationX: -30 },
+        {
+          opacity: 1, y: 0, rotationX: 0,
+          duration: 0.5,
+          stagger: 0.015,
+          ease: 'cinematicOut',
+          scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none reverse' }
+        }
+      );
+    });
+
+    /* ══════════════════════════════════════════════════════════════════════════
+       TÉCNICAS PREMIUM — Background Color Transitions + Parallax + Velocity
+    ══════════════════════════════════════════════════════════════════════════ */
+
+    /* 1. BACKGROUND COLOR TRANSITIONS — El fondo cambia suavemente entre secciones */
+    const bgSections = [
+      { trigger: '#stageObjective', color: '#0c1020' },
+      { trigger: '#stageHook', color: '#0a0e1a' },
+      { trigger: '#stageAxes', color: '#0d1225' },
+      { trigger: '#stageCounters', color: '#0a0e1a' },
+      { trigger: '#stagePipeline', color: '#0c1020' },
+      { trigger: '#stageTimeline', color: '#0a0e1a' },
+      { trigger: '#stageQuotes', color: '#0d1225' },
+      { trigger: '#stageClosing', color: '#0a0e1a' },
+    ];
+
+    bgSections.forEach(({ trigger, color }) => {
+      ScrollTrigger.create({
+        trigger,
+        start: 'top center',
+        end: 'bottom center',
+        onToggle: (self) => {
+          if (self.isActive) {
+            gsap.to('html', { backgroundColor: color, duration: 1.2, ease: 'power2.inOut' });
+            gsap.to('body', { backgroundColor: color, duration: 1.2, ease: 'power2.inOut' });
+          }
+        }
+      });
+    });
+
+    /* 2. PARALLAX DEPTH — Elementos decorativos se mueven a diferentes velocidades */
+    gsap.to('#haloWrap', {
+      y: -80,
+      opacity: 0,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.hero',
+        start: 'top top',
+        end: '60% top',
+        scrub: 1,
+      }
+    });
+
+    gsap.to('.hero-title', {
+      yPercent: -8,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.hero',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 1,
+      }
+    });
+
+    /* 3. STAGGERED SECTION REVEAL — Cada sección aparece con timing escalonado */
+    const premiumSections = document.querySelectorAll('.stage-counters, .stage-pipeline, .stage-quotes, .stage-closing');
+    premiumSections.forEach((section) => {
+      gsap.fromTo(section,
+        { opacity: 0.3, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 85%',
+            end: 'top 50%',
+            scrub: 1,
+          }
+        }
+      );
+    });
+
+    /* 5. SMOOTH COUNTER SCALE — Los counters pulsan suavemente al entrar */
+    document.querySelectorAll('.counter-item').forEach((item) => {
+      gsap.fromTo(item,
+        { scale: 0.9, opacity: 0 },
+        {
+          scale: 1,
+          opacity: 1,
+          duration: 0.8,
+          ease: 'back.out(1.7)',
+          scrollTrigger: {
+            trigger: item,
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+          }
+        }
+      );
+    });
+
+    /* 6. QUOTE CARD HOVER GLOW — Efecto de brillo al hover */
+    document.querySelectorAll('.quote-card').forEach((card) => {
+      card.addEventListener('mouseenter', () => {
+        gsap.to(card, { 
+          scale: 1.02, 
+          duration: 0.3, 
+          ease: 'power2.out',
+          boxShadow: card.classList.contains('hawkish') 
+            ? '0 0 60px rgba(255,215,106,0.15)' 
+            : '0 0 60px rgba(138,180,248,0.15)'
+        });
+      });
+      card.addEventListener('mouseleave', () => {
+        gsap.to(card, { 
+          scale: 1, 
+          duration: 0.3, 
+          ease: 'power2.out',
+          boxShadow: card.classList.contains('hawkish')
+            ? '0 0 40px rgba(255,215,106,0.05)'
+            : '0 0 40px rgba(138,180,248,0.05)'
+        });
+      });
+    });
+
+    /* 7. TIMELINE PATH DRAWING — La línea se dibuja progresivamente */
+    if (timelinePath) {
+      gsap.fromTo(timelinePath.node(),
+        { strokeDashoffset: timelineTotalLen },
+        {
+          strokeDashoffset: 0,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '#stageTimeline',
+            start: 'top top',
+            end: '+=150%',
+            scrub: 1,
+          }
+        }
+      );
+    }
+
+    /* ────────────────────────────────
+       Refresh de ScrollTrigger tras carga completa
+       (fuentes web + GLBs + pin-spacers pueden cambiar la altura
+       real del documento después de que los triggers ya se
+       calcularon en píxeles — sin este refresh, start/end quedan
+       desincronizados del layout final, causando activaciones
+       prematuras o tardías como la superposición en el hero).
+    ──────────────────────────────── */
+    const refreshST = () => ScrollTrigger.refresh();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(refreshST);
+    }
+    window.addEventListener('load', refreshST);
+    manager.onLoad = (() => {
+      const original = manager.onLoad;
+      return () => { original(); refreshST(); };
+    })();
+  </script>
+
+
+</body>
+</html>
