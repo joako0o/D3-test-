@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>In the room where monetary policy happens: Learning from two decades of Central Bank deliberations in Chile</title>
 
-  <meta name="description" content="Exploración interactiva de 15 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
+  <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
   <meta name="theme-color" content="#0a0e1a" />
   <meta property="og:title" content="In the room where monetary policy happens — Two decades of Central Bank deliberations in Chile" />
   <meta property="og:description" content="Exploración interactiva de 15 años de reuniones de política monetaria en Chile." />
@@ -496,8 +496,10 @@
     }
 
     /* ─── STAGE 6 — Quotes ─── */
+    /* z-index sobre el canvas fijo (z:25): sin esto el canvas interceptaba
+       hover/click de las tarjetas y ninguna interacción de esta sección funcionaba */
     .stage-quotes {
-      position: relative; z-index: 4;
+      position: relative; z-index: 30;
       min-height: 100vh;
       display: flex; align-items: center; justify-content: center;
       padding: var(--space-section) 10%;
@@ -776,7 +778,7 @@
       right: 18px;
       top: 50%;
       transform: translateY(-50%);
-      z-index: 30;
+      z-index: 60; /* sobre .stage-quotes (z:30) para que las tarjetas no lo tapen */
       width: min(360px, 86vw);
       background: rgba(10,14,26,0.96);
       border: 1px solid rgba(255,255,255,0.14);
@@ -968,7 +970,7 @@
       <div id="scanLight" style="position: absolute; top: 0; left: 0; width: 100px; height: 100%; pointer-events: none; opacity: 0; z-index: 20; background: linear-gradient(90deg, transparent 0%, rgba(255,215,106,0.15) 30%, rgba(255,215,106,0.25) 50%, rgba(255,215,106,0.15) 70%, transparent 100%); filter: blur(8px); mix-blend-mode: screen;"></div>
       
       <!-- Micro-label -->
-      <div id="microLabel" style="position: absolute; pointer-events: none; opacity: 0; z-index: 25; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 4px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); white-space: nowrap; transform: translate(-50%, -120%);"></div>
+      <div id="microLabel" style="position: absolute; pointer-events: none; opacity: 0; z-index: 25; transition: opacity 0.25s ease; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 4px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); white-space: nowrap; transform: translate(-50%, -120%);"></div>
       
     </div>
   </section>
@@ -1109,12 +1111,12 @@
   <!-- ═══════ STAGE 6 — Quotes ═══════ -->
   <section class="stage-quotes" id="stageQuotes">
     <div class="quotes-grid">
-      <div class="quote-card hawkish" data-quote tabindex="0" role="button" aria-label="Cita hawkish de Vittorio Corbo, 2007. Click para ver m&aacute;s detalles.">
+      <div class="quote-card hawkish" data-quote data-quote-participant="Vittorio Corbo" data-quote-year="2007" tabindex="0" role="button" aria-label="Cita hawkish de Vittorio Corbo, 2007. Click para ver m&aacute;s detalles.">
         <div class="quote-tag">Hawkish</div>
         <div class="quote-text">&ldquo;Mayor incertidumbre ciertamente no alcanza a dominar el efecto de primer orden que representa el aumento de la inflaci&oacute;n. Efectivamente, el aumento de la inflaci&oacute;n se ha dado en energ&iacute;a y alimentos, y una vez que descontamos estos componentes del IPC, el registro de inflaci&oacute;n subyacente se mantiene elevado.&rdquo;</div>
         <div class="quote-author">&mdash; Vittorio Corbo, 2007</div>
       </div>
-      <div class="quote-card dovish" data-quote tabindex="0" role="button" aria-label="Cita dovish de Jos&eacute; De Gregorio, 2009. Click para ver m&aacute;s detalles.">
+      <div class="quote-card dovish" data-quote data-quote-participant="Jos&eacute; De Gregorio" data-quote-year="2009" tabindex="0" role="button" aria-label="Cita dovish de Jos&eacute; De Gregorio, 2009. Click para ver m&aacute;s detalles.">
         <div class="quote-tag">Dovish</div>
         <div class="quote-text">&ldquo;En el frente externo, los mercados financieros denotan una mayor inclinaci&oacute;n al riesgo, en tanto que los precios de las materias primas han vuelto a subir. Por su parte, las proyecciones de crecimiento han dejado de observar correcciones a la baja de la magnitud registrada en meses anteriores.&rdquo;</div>
         <div class="quote-author">&mdash; Jos&eacute; De Gregorio, 2009</div>
@@ -1168,6 +1170,18 @@
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
     /* ────────────────────────────────
+       Modo debug: solo con ?debug en la URL se muestran los HUDs
+       (panel de debug, scrubber lateral, indicador de sección).
+    ──────────────────────────────── */
+    const DEBUG_MODE = /[?&]debug\b/.test(location.search);
+    if (!DEBUG_MODE) {
+      ['debugPanel', 'timelineScrubber'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
+
+    /* ────────────────────────────────
        Detección de capacidades del dispositivo
     ──────────────────────────────── */
     const supportsWebGL = (() => {
@@ -1211,7 +1225,7 @@
         baseX: 0.0,             // Horizontal: DERECHA (> 0) | IZQUIERDA (< 0)
         baseZ: 0.0,             // Profundidad: MÁS CERCA (> 0) | MÁS LEJOS (< 0)
         scaleMultiplier: 12.0,   // Tamaño en pantalla: MÁS GRANDE (9.5, 11) | MÁS CHICO (7.0, 6.0)
-        centerOffsetX: -0.78,   // Offset manual para centrar visualmente (ajustar si la puerta se ve descentrada)
+        centerOffsetX: -0.78,   // SOLO fallback (si no se hallan las hojas 'toroide'). El pivote normal es el centro de las hojas
 
         /* ── Materiales e Iluminación ── */
         scale: 2.5,
@@ -1390,6 +1404,9 @@
     const coin = new THREE.Group();
     scene.add(coin);
 
+    /* Cache de materiales: recorrer el grafo con traverse() y aplanar arrays en
+       cada frame generaba ~120 arrays/seg para el GC. Se resuelve una sola vez. */
+    const coinMats = [];
     let coinModel = null;
     let coinScaleBase = 0;
     function getResponsiveCoinScale() {
@@ -1408,6 +1425,7 @@
 
     const manager = new THREE.LoadingManager();
     manager.onLoad = () => setTimeout(() => { if (renderer) loadEl.classList.add('hidden'); }, 300);
+    manager.onError = (url) => console.warn('Error cargando recurso:', url);
 
     // Loading timeout - show helpful message if loading takes too long
     setTimeout(() => {
@@ -1415,9 +1433,24 @@
         loadEl.innerHTML = '<span style="opacity:.9">La carga est&aacute; tomando m&aacute;s tiempo del esperado. Verifique su conexi&oacute;n a internet.</span>';
       }
     }, 15000);
+    /* Red de seguridad: si a los 30s nada terminó de cargar, liberar la página igual.
+       (Antes el overlay bloqueaba la página para siempre si un GLB fallaba.) */
+    setTimeout(() => {
+      if (loadEl && !loadEl.classList.contains('hidden')) loadEl.classList.add('hidden');
+    }, 30000);
 
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    /* Respaldo: si el CDN primario no responde, usar el mirror de jsDelivr
+       (mismos decodificadores, versión three r160). Se decide antes del primer GLB. */
+    try {
+      fetch('https://www.gstatic.com/draco/versioned/decoders/1.5.6/draco_wasm_wrapper.js', {
+        method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout ? AbortSignal.timeout(3500) : undefined,
+      }).catch(() => {
+        console.warn('Draco CDN primario no disponible — usando mirror jsDelivr');
+        dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
+      });
+    } catch (e) { /* navegador sin fetch/AbortSignal moderno: se queda con el CDN primario */ }
 
     const loader = new GLTFLoader(manager);
     loader.setDRACOLoader(dracoLoader);
@@ -1441,12 +1474,14 @@
           m.roughness = CONFIG.coin.roughness;
           m.envMapIntensity = CONFIG.coin.envMapIntensity;
           m.needsUpdate = true;
+          coinMats.push(m);
         });
       });
       coin.add(model);
     }, undefined, (err) => {
       console.error('Error cargando GLB:', err);
       loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la moneda</span>';
+      setTimeout(() => loadEl.classList.add('hidden'), 1200);
     });
 
     /* ────────────────────────────────
@@ -1457,6 +1492,7 @@
     doorGroup.visible = false;
 
     let doorModel = null;
+    const doorMats = [];
     let doorScaleBase = 0;
     let doorResizeTimer = null;
     function getResponsiveDoorScale() {
@@ -1496,18 +1532,33 @@
 
     const doorLoader = new GLTFLoader(manager);
     doorLoader.setDRACOLoader(dracoLoader);
+    /* Base real de la puerta relativa al pivote (para la sombra de contacto).
+       Se recalcula al cargar el modelo; -1.15 es solo el valor de reserva. */
+    let doorBottomOffset = -1.15;
     doorLoader.load('puerta-draco.glb', (gltf) => {
       const model = gltf.scene;
       const box = new THREE.Box3().setFromObject(model);
       if (!box.isEmpty()) {
-        const center = box.getCenter(new THREE.Vector3());
+        /* Pivote = centro de las HOJAS de la puerta (mallas 'toroide'), no el
+           centro del bounding box completo: el pórtico es asimétrico y corrida
+           el centro geométrico, así que la puerta giraba/escalaba alrededor de
+           un punto que no era su centro visual (y obligaba al parche manual
+           centerOffsetX, que a su vez descentraba el pivote). */
+        const leafBox = new THREE.Box3();
+        model.traverse((o) => {
+          if (o.isMesh && (o.name || '').toLowerCase().includes('toroide')) leafBox.expandByObject(o);
+        });
+        const pivotBox = leafBox.isEmpty() ? box : leafBox;
+        const center = pivotBox.getCenter(new THREE.Vector3());
         model.position.sub(center);
-        // Aplicar offset manual para centrado visual
-        if (CONFIG.door.centerOffsetX) {
+        /* El offset manual aplica solo en fallback (sin hojas identificables) */
+        if (leafBox.isEmpty() && CONFIG.door.centerOffsetX) {
           model.position.x += CONFIG.door.centerOffsetX;
         }
         const size = box.getSize(new THREE.Vector3());
         doorScaleBase = CONFIG.door.scale / Math.max(size.x, size.y, size.z);
+        /* Base del modelo (escalones) relativa al pivote, para la sombra */
+        doorBottomOffset = box.min.y - center.y;
         doorModel = model;
         applyDoorScale();
       }
@@ -1539,11 +1590,14 @@
             m.emissiveIntensity = 0;
           }
           m.needsUpdate = true;
+          doorMats.push(m);
         });
       });
       doorGroup.add(model);
     }, undefined, (err) => {
       console.error('Error cargando GLB:', err);
+      loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la puerta</span>';
+      setTimeout(() => loadEl.classList.add('hidden'), 1200);
     });
 
     const clock = new THREE.Clock();
@@ -1734,7 +1788,6 @@
 
 
     function animate() {
-      requestAnimationFrame(animate);
       const time = clock.getElapsedTime();
       smoothMouseX = THREE.MathUtils.lerp(smoothMouseX, mouseX, 0.06);
       smoothMouseY = THREE.MathUtils.lerp(smoothMouseY, mouseY, 0.06);
@@ -1754,14 +1807,10 @@
 
         coinFade = THREE.MathUtils.clamp(1 - (scatterProgress / 0.45), 0, 1);
         coin.visible = (currentStage === 1) && (coinFade > 0.01);
-        coin.traverse((child) => {
-          if (child.isMesh && child.material) {
-            [child.material].flat().forEach(m => {
-              m.transparent = true;
-              m.opacity = coinFade;
-            });
-          }
-        });
+        for (let i = 0; i < coinMats.length; i++) {
+          coinMats[i].transparent = true;
+          coinMats[i].opacity = coinFade;
+        }
       }
 
       /* puerta: acto 2 — fade sutil + parallax de frente (sin giro 360°) */
@@ -1776,14 +1825,10 @@
         doorGroup.position.y = CONFIG.door.baseY + smoothMouseY * -0.06 * doorEase;
         doorGroup.position.z = CONFIG.door.baseZ ?? 0;
         doorGroup.scale.setScalar(0.94 + 0.06 * doorEase);
-        doorGroup.traverse((child) => {
-          if (child.isMesh && child.material) {
-            [child.material].flat().forEach(m => {
-              m.transparent = true;
-              m.opacity = doorFade;
-            });
-          }
-        });
+        for (let i = 0; i < doorMats.length; i++) {
+          doorMats[i].transparent = true;
+          doorMats[i].opacity = doorFade;
+        }
 
         /* rig de luces + fog solo mientras la puerta está presente */
         const doorActive = doorFade > 0.01;
@@ -1791,7 +1836,7 @@
         doorFloor.visible = doorActive;
         doorFloor.material.opacity = 0.8 * doorEase;
         if (scene.fog) scene.fog.density = doorActive ? CONFIG.door.fogDensity * doorEase : 0;
-        doorFloor.position.set(doorGroup.position.x, doorGroup.position.y - 1.15, doorGroup.position.z);
+        doorFloor.position.set(doorGroup.position.x, doorGroup.position.y + doorBottomOffset * doorGroup.scale.x, doorGroup.position.z);
         if (doorActive) {
           const target = new THREE.Vector3(doorGroup.position.x, doorGroup.position.y, doorGroup.position.z);
           doorSpots.forEach((sp) => {
@@ -1833,10 +1878,19 @@
 
       if (renderer) renderer.render(scene, camera);
     }
-    animate();
+    /* Un solo loop rAF: el ticker de GSAP (que ya maneja Lenis) maneja la escena.
+       Antes había dos loops rAF independientes desincronizados. */
+    gsap.ticker.add(animate);
 
-    document.getElementById('quotePanelClose').addEventListener('click', () => {
-      document.getElementById('quotePanel').classList.remove('visible');
+    const quotePanelEl = document.getElementById('quotePanel');
+    let lastFocusedCard = null;
+    const closeQuotePanel = () => {
+      quotePanelEl.classList.remove('visible');
+      if (lastFocusedCard) { lastFocusedCard.focus({ preventScroll: true }); lastFocusedCard = null; }
+    };
+    document.getElementById('quotePanelClose').addEventListener('click', closeQuotePanel);
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && quotePanelEl.classList.contains('visible')) closeQuotePanel();
     });
 
     window.addEventListener('resize', () => {
@@ -1852,6 +1906,10 @@
        Acto 4: D3.js + WebGL Bridge
     ──────────────────────────────── */
     let d3Scales = {};
+    /* Scatter de intervenciones (puntos por cita) — vive desde el Hook
+       pero su visibilidad principal es #stageAxes. Hoisted para que el
+       ScrollTrigger de los ejes pueda controlarlo. */
+    let bgScatter = null;
     function initD3Axes() {
       const container = document.getElementById('d3-canvas');
       if (!container) return;
@@ -1894,6 +1952,21 @@
       g.selectAll('.domain, .tick line')
         .style('stroke', 'rgba(255,255,255,0.1)');
 
+      /* Etiquetas de tono en el eje Y — el copy de la sección lo promete
+         ("arriba restrictivo, abajo expansivo") pero el eje no se dibujaba */
+      svg.append('text')
+        .attr('x', margin.left - 16).attr('y', margin.top - 4)
+        .attr('text-anchor', 'end')
+        .style('fill', 'rgba(255,215,106,0.75)').style('font-size', '11px')
+        .style('letter-spacing', '2px').style('text-transform', 'uppercase')
+        .text('Hawkish ↑');
+      svg.append('text')
+        .attr('x', margin.left - 16).attr('y', margin.top + innerH + 2)
+        .attr('text-anchor', 'end')
+        .style('fill', 'rgba(138,180,248,0.75)').style('font-size', '11px')
+        .style('letter-spacing', '2px').style('text-transform', 'uppercase')
+        .text('Dovish ↓');
+
       return d3Scales;
     }
 
@@ -1914,7 +1987,16 @@
     }
 
     initD3Axes();
-    window.addEventListener('resize', initD3Axes);
+    /* Debounce: en mobile el resize dispara varias veces (barra de URL) y
+       reconstruir el SVG entero en cada evento era innecesario */
+    let d3ResizeT;
+    window.addEventListener('resize', () => {
+      clearTimeout(d3ResizeT);
+      d3ResizeT = setTimeout(() => {
+        initD3Axes();
+        if (bgScatter) bgScatter.rebuild();
+      }, 150);
+    });
 
     /* ────────────────────────────────
        Text-to-Particle v2 — Scanning Light + Burst + Micro-label
@@ -2047,13 +2129,31 @@
 
         const pts = new THREE.Points(geo, mat);
         scene.add(pts);
-        return { mat, pts };
+        return {
+          mat, pts,
+          /* Recalcular posiciones proyectadas (la proyección depende del viewport) */
+          rebuild() {
+            const arr = geo.attributes.position.array;
+            quotes.forEach((q, i) => {
+              const d = new Date(q.date);
+              const sd = q.date.length + q.text.length;
+              const s = q.label === 'hawkish' ? 0.3 + seededRandom(sd) * 0.4
+                      : q.label === 'dovish' ? -0.3 - seededRandom(sd + 1) * 0.4
+                      : (seededRandom(sd + 2) - 0.5) * 0.3;
+              const p3 = get3DPosFromData(d, s, camera);
+              arr[i * 3] = p3.x; arr[i * 3 + 1] = p3.y; arr[i * 3 + 2] = p3.z;
+            });
+            geo.attributes.position.needsUpdate = true;
+          }
+        };
       }
 
-      const bgScatter = populateScatterBackground();
+      const bgScatterLocal = populateScatterBackground();
+      bgScatter = bgScatterLocal;
 
       const clamp01 = (v) => Math.max(0, Math.min(1, v));
       let lastProgress = 0;
+      let microLabelUntil = 0; // progreso de scroll hasta el que el micro-label queda visible
 
       ScrollTrigger.create({
         trigger: '#stageHook',
@@ -2096,12 +2196,20 @@
 
             // Reset micro label
             microLabel.style.opacity = 0;
+            microLabelUntil = 0;
 
             // Reset background scatter
             if (bgScatter) bgScatter.mat.opacity = 0;
           }
 
           lastProgress = p;
+
+          /* Micro-label controlado por scroll (no por reloj: el setTimeout
+             se apagaba a mitad de camino si las dos keywords disparaban juntas) */
+          if (microLabelUntil && p > microLabelUntil) {
+            microLabel.style.opacity = 0;
+            microLabelUntil = 0;
+          }
 
           /* ═══════════════════════════════════════════
              PHASE 1: HIGHLIGHT KEYWORDS (0% – 8%)
@@ -2159,8 +2267,7 @@
               microLabel.style.left = `${kwRect.left + kwRect.width / 2}px`;
               microLabel.style.top = `${kwRect.top - 30}px`;
               microLabel.style.color = kw.cssColor;
-
-              setTimeout(() => { microLabel.style.opacity = 0; }, 1200);
+              microLabelUntil = p + 0.14;
             }
           });
 
@@ -2170,30 +2277,34 @@
              ═══════════════════════════════════════════ */
           allBursts.forEach(burst => {
             if (!burst.active) return;
-            const age = clamp01((p - burst.triggerP) / 0.30);
+            const age = clamp01((p - burst.triggerP) / 0.45);
 
-            // Fade in gently (first 20% of life)
-            const fadeIn = clamp01(age / 0.20);
-            burst.mat.opacity = fadeIn * 0.7;
+            /* Fade-in rápido (10% de la vida): antes tardaba el 20% de un ciclo
+               más corto y las partículas alcanzaban opacidad plena recién a
+               mitad de su vida, justo antes de que el fade global las matara */
+            const fadeIn = clamp01(age / 0.10);
+            burst.mat.opacity = fadeIn * 0.85;
 
-            // Drift outward with deceleration
+            /* Drift moderado (×40 → ×8: antes volaban 5–10 unidades y salían de
+               pantalla) + migración hacia el punto de datos del scatter —
+               targetPos existía pero nunca se usaba */
             const drift = 1 - Math.pow(1 - age, 2);
+            const mig = drift * 0.55;
             for (let i = 0; i < BURST_COUNT; i++) {
               const idx = i * 3;
-              burst.positions[idx]     = burst.restPositions[idx]     + burst.drift[i].x * drift * 40;
-              burst.positions[idx + 1] = burst.restPositions[idx + 1] + burst.drift[i].y * drift * 40;
-              burst.positions[idx + 2] = burst.restPositions[idx + 2] + burst.drift[i].z * drift * 15;
+              burst.positions[idx]     = burst.restPositions[idx]     + burst.drift[i].x * drift * 8 + (burst.targetPos.x - burst.origin.x) * mig;
+              burst.positions[idx + 1] = burst.restPositions[idx + 1] + burst.drift[i].y * drift * 8 + (burst.targetPos.y - burst.origin.y) * mig;
+              burst.positions[idx + 2] = burst.restPositions[idx + 2] + burst.drift[i].z * drift * 4 + (burst.targetPos.z - burst.origin.z) * mig;
             }
             burst.geo.attributes.position.needsUpdate = true;
           });
 
           /* ═══════════════════════════════════════════
-             PHASE 5: BACKGROUND SCATTER (50% – 70%)
-             Scatter plot fades in subtly
+             PHASE 5: BACKGROUND SCATTER → movido a #stageAxes
+             (el scatter vive ahora durante la sección de ejes; ver
+             ScrollTrigger más abajo. Antes nacía y moría dentro del Hook
+             con opacidad 0.15 y la sección Axes quedaba sin datos.)
              ═══════════════════════════════════════════ */
-          if (bgScatter) {
-            bgScatter.mat.opacity = clamp01((p - 0.50) / 0.20) * 0.15;
-          }
 
           /* ═══════════════════════════════════════════
              PHASE 6: GLOBAL FADE (80% – 100%)
@@ -2201,7 +2312,6 @@
              ═══════════════════════════════════════════ */
           const globalFade = p > 0.80 ? 1 - (p - 0.80) / 0.20 : 1;
           hookParagraph.style.opacity = globalFade;
-          if (bgScatter) bgScatter.mat.opacity *= globalFade;
           allBursts.forEach(burst => {
             if (burst.active) burst.mat.opacity *= globalFade;
           });
@@ -2251,11 +2361,13 @@
       for (let i = sections.length - 1; i >= 0; i--) {
         if (p >= sections[i].start) { sec = sections[i].label; break; }
       }
-      tsSection.textContent = sec;
-      sectionIndicator.textContent = sec;
-      sectionIndicator.style.opacity = '0.6';
-      clearTimeout(indicatorTimeout);
-      indicatorTimeout = setTimeout(() => { sectionIndicator.style.opacity = '0'; }, 1500);
+      if (DEBUG_MODE) {
+        tsSection.textContent = sec;
+        sectionIndicator.textContent = sec;
+        sectionIndicator.style.opacity = '0.6';
+        clearTimeout(indicatorTimeout);
+        indicatorTimeout = setTimeout(() => { sectionIndicator.style.opacity = '0'; }, 1500);
+      }
     }
     window.addEventListener('scroll', updateScrubber, { passive: true });
     updateScrubber();
@@ -2280,6 +2392,13 @@
     lenis.on('scroll', ScrollTrigger.update);
     gsap.ticker.add((time) => { lenis.raf(time * 1000); });
     gsap.ticker.lagSmoothing(0);
+
+    /* CTA de cierre: volver al hero con scroll suave de Lenis
+       (el href="#" nativo daba un salto brusco y sin animación) */
+    document.querySelector('.closing-cta')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      lenis.scrollTo(0, { duration: 1.8, easing: (t) => 1 - Math.pow(1 - t, 3) });
+    });
 
     /* ────────────────────────────────
        Hero — coin + title move together on scroll
@@ -2448,6 +2567,9 @@
       const corpusYear = document.getElementById('corpusYear');
       const corpusPct  = document.getElementById('corpusPct');
       const isNarrow = () => window.matchMedia('(max-width: 640px)').matches;
+      /* wasNarrow no estaba declarado → ReferenceError en strict mode al
+         hacer resize cruzando el breakpoint; mataba el refresh completo */
+      let wasNarrow = isNarrow();
       const ROWS = 12;
       let COLS = 0, corpusCols = [], litCols = -1;
 
@@ -2499,8 +2621,16 @@
         });
       };
 
+      /* Bounds cacheados: getPanelBounds() lee offsetLeft/scrollWidth (forced
+         reflow). Se recalcula solo en refresh del ScrollTrigger, no por tick. */
+      let bounds = getPanelBounds();
+      const debugEl = document.getElementById('debugPanel');
+      const debugSection = document.getElementById('debugSection');
+      const debugProgress = document.getElementById('debugProgress');
+      const debugPanelInfo = document.getElementById('debugPanelInfo');
+      const debugBar = document.getElementById('debugBar');
+
       function updatePipe(p) {
-        const bounds = getPanelBounds();
 
         /* Panel 01 — acta revelada línea a línea + contador de palabras */
         const l1 = seg(p, bounds[0].start, bounds[0].end);
@@ -2550,13 +2680,8 @@
           else s.style.transform = 'scaleX(0)';
         });
 
-        /* Debug panel */
-        const debugEl = document.getElementById('debugPanel');
-        const debugSection = document.getElementById('debugSection');
-        const debugProgress = document.getElementById('debugProgress');
-        const debugPanelInfo = document.getElementById('debugPanelInfo');
-        const debugBar = document.getElementById('debugBar');
-        if (debugEl) {
+        /* Debug panel — solo con ?debug (antes aparecía aquí y jamás se ocultaba) */
+        if (DEBUG_MODE && debugEl) {
           debugEl.classList.add('visible');
           debugSection.textContent = 'Pipeline';
           debugProgress.textContent = Math.round(p * 100) + '%';
@@ -2578,6 +2703,7 @@
           scrub: 1,
           invalidateOnRefresh: true,
           anticipatePin: 1,
+          onRefresh: () => { bounds = getPanelBounds(); },
           onUpdate: (self) => updatePipe(self.progress),
         },
       });
@@ -2747,27 +2873,29 @@
 
     /* ────────────────────────────────
        Acto 4: Sincronización de visibilidad para #d3-canvas
+       (un solo timeline: fade-in → hold → fade-out. Antes eran dos tweens
+       scrubbed en serie y el segundo partía desde opacity 0 → animaba 0→0,
+       así que los ejes desaparecían de golpe sin fade.)
     ──────────────────────────────── */
-    gsap.fromTo('#d3-canvas', 
-      { opacity: 0 },
-      {
-        opacity: 1,
-        scrollTrigger: {
-          trigger: '#stageAxes',
-          start: 'top 35%',
-          end: 'top 10%',
-          scrub: true,
-        }
-      }
-    );
+    gsap.timeline({
+      scrollTrigger: { trigger: '#stageAxes', start: 'top 60%', end: 'bottom top', scrub: true }
+    })
+      .fromTo('#d3-canvas', { opacity: 0 }, { opacity: 1, duration: 0.15, ease: 'none' }, 0)
+      .to('#d3-canvas', { opacity: 0, duration: 0.15, ease: 'none', immediateRender: false }, 0.85);
 
-    gsap.to('#d3-canvas', {
-      opacity: 0,
-      scrollTrigger: {
-        trigger: '#stageAxes',
-        start: 'bottom center',
-        end: 'bottom top',
-        scrub: true,
+    /* El scatter de intervenciones vive durante #stageAxes: es el pago visual
+       de la promesa "cada punto es una intervención". Antes moría dentro del Hook. */
+    ScrollTrigger.create({
+      trigger: '#stageAxes',
+      start: 'top 60%',
+      end: 'bottom top',
+      scrub: true,
+      onUpdate: (self) => {
+        if (!bgScatter) return;
+        const p = self.progress;
+        const fadeIn = gsap.utils.clamp(0, 1, p / 0.15);
+        const fadeOut = gsap.utils.clamp(0, 1, (1 - p) / 0.15);
+        bgScatter.mat.opacity = Math.min(fadeIn, fadeOut) * 0.9;
       }
     });
 
@@ -2785,6 +2913,20 @@
           scrollTrigger: { trigger: el, start: 'top 80%', toggleActions: 'play none none reverse' }
         }
       );
+
+      /* Click/teclado → abre el panel con la cita correspondiente del dataset.
+         Antes los handlers de click no existían: el panel solo era alcanzable
+         clickeando partículas del canvas (que además tapaba las tarjetas). */
+      el.addEventListener('click', () => {
+        const name = el.dataset.quoteParticipant;
+        const year = parseInt(el.dataset.quoteYear, 10);
+        let idx = quotes.findIndex(q => q.participant === name && q.year === year);
+        if (idx < 0) idx = quotes.findIndex(q => q.participant === name);
+        if (idx >= 0) {
+          lastFocusedCard = el;
+          openQuote(idx);
+        }
+      });
 
       // Keyboard accessibility
       el.addEventListener('keydown', (e) => {
@@ -2842,67 +2984,20 @@
       });
     });
 
-    /* 2. PARALLAX DEPTH — Elementos decorativos se mueven a diferentes velocidades */
-    gsap.to('#haloWrap', {
-      y: -80,
-      opacity: 0,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: '.hero',
-        start: 'top top',
-        end: '60% top',
-        scrub: 1,
-      }
-    });
+    /* 2. PARALLAX DEPTH — ELIMINADO: duplicaba las propiedades y/opacity que
+       heroGroup ya anima sobre #haloWrap (dos tweens scrubbed peleándose por
+       los mismos valores = doble entrada visible). El heroGroup original es
+       el único driver ahora. */
 
-    gsap.to('.hero-title', {
-      yPercent: -8,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: '.hero',
-        start: 'top top',
-        end: 'bottom top',
-        scrub: 1,
-      }
-    });
+    /* 3. STAGGERED SECTION REVEAL — ELIMINADO: montaba un segundo fade sobre
+       secciones cuyos hijos ya tienen reveals propios (doble entrada = "los
+       elementos tardan en aparecer"). Peor aún: el y:40 en .stage-pipeline
+       ponía un transform en el ancestro del elemento pineado, lo que rompe
+       position:fixed del pin (pin inestable). Cada elemento ya revela solo. */
 
-    /* 3. STAGGERED SECTION REVEAL — Cada sección aparece con timing escalonado */
-    const premiumSections = document.querySelectorAll('.stage-counters, .stage-pipeline, .stage-quotes, .stage-closing');
-    premiumSections.forEach((section) => {
-      gsap.fromTo(section,
-        { opacity: 0.3, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 1,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 85%',
-            end: 'top 50%',
-            scrub: 1,
-          }
-        }
-      );
-    });
-
-    /* 5. SMOOTH COUNTER SCALE — Los counters pulsan suavemente al entrar */
-    document.querySelectorAll('.counter-item').forEach((item) => {
-      gsap.fromTo(item,
-        { scale: 0.9, opacity: 0 },
-        {
-          scale: 1,
-          opacity: 1,
-          duration: 0.8,
-          ease: 'back.out(1.7)',
-          scrollTrigger: {
-            trigger: item,
-            start: 'top 85%',
-            toggleActions: 'play none none reverse',
-          }
-        }
-      );
-    });
+    /* 5. SMOOTH COUNTER SCALE — ELIMINADO: era un segundo fromTo sobre los
+       mismos [data-counter] que ya tienen fade+rise + contador numérico.
+       Dos entradas sobre un mismo elemento = parpadeo/tiempo doble. */
 
     /* 6. QUOTE CARD HOVER GLOW — Efecto de brillo al hover */
     document.querySelectorAll('.quote-card').forEach((card) => {
@@ -2928,22 +3023,9 @@
       });
     });
 
-    /* 7. TIMELINE PATH DRAWING — La línea se dibuja progresivamente */
-    if (timelinePath) {
-      gsap.fromTo(timelinePath.node(),
-        { strokeDashoffset: timelineTotalLen },
-        {
-          strokeDashoffset: 0,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '#stageTimeline',
-            start: 'top top',
-            end: '+=150%',
-            scrub: 1,
-          }
-        }
-      );
-    }
+    /* 7. TIMELINE PATH DRAWING — ELIMINADO: código muerto. timelinePath es
+       undefined al evaluarse (el timeline se construye lazy) y el dibujo real
+       ya lo hace el onUpdate del pin de #stageTimeline. */
 
     /* ────────────────────────────────
        Refresh de ScrollTrigger tras carga completa

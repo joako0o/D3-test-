@@ -1,6 +1,6 @@
 # In the Room Where Monetary Policy Happens
 
-Exploración interactiva de 15 años de reuniones de política monetaria en Chile (2000-2015). Un scrollytelling que combina datos textuales con indicadores macroeconómicos tradicionales.
+Exploración interactiva de 16 años de reuniones de política monetaria en Chile (2000-2015). Un scrollytelling que combina datos textuales con indicadores macroeconómicos tradicionales.
 
 ## Stack
 
