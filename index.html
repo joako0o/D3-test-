@@ -1225,7 +1225,7 @@
         baseX: 0.0,             // Horizontal: DERECHA (> 0) | IZQUIERDA (< 0)
         baseZ: 0.0,             // Profundidad: MÁS CERCA (> 0) | MÁS LEJOS (< 0)
         scaleMultiplier: 12.0,   // Tamaño en pantalla: MÁS GRANDE (9.5, 11) | MÁS CHICO (7.0, 6.0)
-        centerOffsetX: -0.78,   // Offset manual para centrar visualmente (ajustar si la puerta se ve descentrada)
+        centerOffsetX: -0.78,   // SOLO fallback (si no se hallan las hojas 'toroide'). El pivote normal es el centro de las hojas
 
         /* ── Materiales e Iluminación ── */
         scale: 2.5,
@@ -1532,18 +1532,33 @@
 
     const doorLoader = new GLTFLoader(manager);
     doorLoader.setDRACOLoader(dracoLoader);
+    /* Base real de la puerta relativa al pivote (para la sombra de contacto).
+       Se recalcula al cargar el modelo; -1.15 es solo el valor de reserva. */
+    let doorBottomOffset = -1.15;
     doorLoader.load('puerta-draco.glb', (gltf) => {
       const model = gltf.scene;
       const box = new THREE.Box3().setFromObject(model);
       if (!box.isEmpty()) {
-        const center = box.getCenter(new THREE.Vector3());
+        /* Pivote = centro de las HOJAS de la puerta (mallas 'toroide'), no el
+           centro del bounding box completo: el pórtico es asimétrico y corrida
+           el centro geométrico, así que la puerta giraba/escalaba alrededor de
+           un punto que no era su centro visual (y obligaba al parche manual
+           centerOffsetX, que a su vez descentraba el pivote). */
+        const leafBox = new THREE.Box3();
+        model.traverse((o) => {
+          if (o.isMesh && (o.name || '').toLowerCase().includes('toroide')) leafBox.expandByObject(o);
+        });
+        const pivotBox = leafBox.isEmpty() ? box : leafBox;
+        const center = pivotBox.getCenter(new THREE.Vector3());
         model.position.sub(center);
-        // Aplicar offset manual para centrado visual
-        if (CONFIG.door.centerOffsetX) {
+        /* El offset manual aplica solo en fallback (sin hojas identificables) */
+        if (leafBox.isEmpty() && CONFIG.door.centerOffsetX) {
           model.position.x += CONFIG.door.centerOffsetX;
         }
         const size = box.getSize(new THREE.Vector3());
         doorScaleBase = CONFIG.door.scale / Math.max(size.x, size.y, size.z);
+        /* Base del modelo (escalones) relativa al pivote, para la sombra */
+        doorBottomOffset = box.min.y - center.y;
         doorModel = model;
         applyDoorScale();
       }
@@ -1821,7 +1836,7 @@
         doorFloor.visible = doorActive;
         doorFloor.material.opacity = 0.8 * doorEase;
         if (scene.fog) scene.fog.density = doorActive ? CONFIG.door.fogDensity * doorEase : 0;
-        doorFloor.position.set(doorGroup.position.x, doorGroup.position.y - 1.15, doorGroup.position.z);
+        doorFloor.position.set(doorGroup.position.x, doorGroup.position.y + doorBottomOffset * doorGroup.scale.x, doorGroup.position.z);
         if (doorActive) {
           const target = new THREE.Vector3(doorGroup.position.x, doorGroup.position.y, doorGroup.position.z);
           doorSpots.forEach((sp) => {
