@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>In the room where monetary policy happens: Learning from two decades of Central Bank deliberations in Chile</title>
+  <title>In the room where monetary policy happens: Learning from Two Decades of Central Bank Deliberation in Chile</title>
 
   <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
   <meta name="theme-color" content="#0a0e1a" />
-  <meta property="og:title" content="In the room where monetary policy happens — Two decades of Central Bank deliberations in Chile" />
+  <meta property="og:title" content="In the room where monetary policy happens: Learning from Two Decades of Central Bank Deliberation in Chile" />
   <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
   <meta property="og:type" content="website" />
 
@@ -37,12 +37,18 @@
       /* ── Typography Tokens ── */
       --font-display: 'Playfair Display', Georgia, serif;
       --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --fs-hero: clamp(18px, 2.4vw, 30px);
-      --fs-h2: clamp(20px, 2.8vw, 32px);
-      --fs-h3: clamp(14px, 1.4vw, 18px);
-      --fs-body: clamp(14px, 1.6vw, 17px);
-      --fs-small: clamp(11px, 1vw, 13px);
-      --fs-micro: clamp(10px, 0.8vw, 11px);
+      /* Escala tipográfica compartida. Los máximos estaban capados demasiado
+         bajo para monitores grandes (17px de cuerpo, 13px de texto auxiliar),
+         por eso los stages posteriores se veían pequeños. Se suben los topes y
+         los coeficientes vw; los mínimos (móvil) respetan legibilidad:
+         cuerpo ≥16px y micro ≥12px (recomendación WCAG / clamp()).
+         Ver best practices: min 16px cuerpo, máximo ≤2.5× mínimo. */
+      --fs-hero: clamp(18px, 2.6vw, 34px);
+      --fs-h2: clamp(22px, 3.2vw, 40px);
+      --fs-h3: clamp(16px, 1.8vw, 22px);
+      --fs-body: clamp(16px, 1.9vw, 19px);
+      --fs-small: clamp(13px, 1.3vw, 16px);
+      --fs-micro: clamp(12px, 0.95vw, 13px);
       --lh-tight: 1.25;
       --lh-normal: 1.6;
       --lh-relaxed: 1.8;
@@ -151,7 +157,7 @@
       margin: 0 auto;
     }
     .hero-title p { 
-      margin-top: 16px; font-size: clamp(12px, 1.2vw, 15px); opacity: 0.5; 
+      margin-top: 16px; font-size: clamp(13px, 1.3vw, 17px); opacity: 0.5; 
       font-weight: 300; letter-spacing: 0.04em;
     }
 
@@ -244,7 +250,7 @@
       max-width: 740px;
       text-align: center;
       font-family: var(--font-display);
-      font-size: clamp(24px, 3vw, 44px);
+      font-size: clamp(26px, 3.4vw, 52px);
       font-weight: 500;
       line-height: 1.28;
       letter-spacing: -0.015em;
@@ -321,7 +327,7 @@
     }
     .signal-phrase {
       font-family: var(--font-display);
-      font-size: clamp(16px, 1.8vw, 22px);
+      font-size: clamp(17px, 2vw, 26px);
       font-weight: 500;
       line-height: 1.35;
       color: #ffffff;
@@ -374,7 +380,7 @@
       #stageHook h2[data-hook] { margin-bottom: 0.85rem !important; }
       .hook-inner { width: min(720px, 90vw); }
       .hook-lead {
-        font-size: clamp(22px, 2.7vw, 34px);
+        font-size: clamp(24px, 3vw, 38px);
         line-height: 1.22;
       }
       .hook-caption { margin-top: 18px; }
@@ -392,7 +398,7 @@
     }
 
     @media (max-width: 600px) {
-      .hook-lead { font-size: clamp(22px, 2.7vw, 32px); }
+      .hook-lead { font-size: clamp(24px, 3vw, 36px); }
       .hook-divider { margin-top: 32px; }
       .signal-card { grid-template-columns: 32px 1fr; }
       .signal-result {
@@ -459,7 +465,7 @@
     }
     .counter-number {
       font-family: var(--font-display);
-      font-size: clamp(36px, 5vw, 64px);
+      font-size: clamp(40px, 5.5vw, 76px);
       font-weight: 700;
       color: var(--color-gold);
       line-height: 1;
@@ -489,7 +495,7 @@
     }
     .pipe-header h2 {
       font-family: var(--font-display); font-weight: 700;
-      font-size: clamp(24px, 3vw, 34px); line-height: 1.1; color: var(--color-text-primary);
+      font-size: clamp(26px, 3.3vw, 42px); line-height: 1.1; color: var(--color-text-primary);
     }
     .pipe-header h2 em { font-style: normal; color: var(--color-gold); }
 
@@ -518,7 +524,7 @@
     }
     .pipe-panel h3 {
       font-family: var(--font-display); font-weight: 700;
-      font-size: clamp(20px, 2.4vw, 28px); line-height: 1.2;
+      font-size: clamp(22px, 2.7vw, 34px); line-height: 1.2;
       margin-bottom: 12px; color: var(--color-text-primary);
     }
     .pipe-panel .pipe-p {
@@ -543,14 +549,14 @@
     .word-meter { display: flex; align-items: baseline; gap: 10px; margin-top: 18px; }
     .word-meter strong {
       font-family: var(--font-display); font-weight: 700;
-      font-size: clamp(26px, 3vw, 38px); color: var(--color-gold); font-variant-numeric: tabular-nums;
+      font-size: clamp(28px, 3.4vw, 46px); color: var(--color-gold); font-variant-numeric: tabular-nums;
     }
     .word-meter span { font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; opacity: 0.5; }
 
     /* Panel 02 — etiquetado */
     .frag {
       font-family: Georgia, serif; font-style: italic;
-      font-size: clamp(16px, 1.9vw, 20px); line-height: 1.7; color: var(--color-text-primary);
+      font-size: clamp(17px, 2.1vw, 24px); line-height: 1.7; color: var(--color-text-primary);
       border-left: 2px solid rgba(255,255,255,0.12); padding-left: 18px; margin-bottom: 22px;
     }
     .verdict-row { display: flex; align-items: center; gap: 20px; min-height: 54px; flex-wrap: wrap; }
@@ -726,7 +732,7 @@
     .quote-card.dovish .quote-tag { color: var(--color-dovish); }
     .quote-text {
       font-family: var(--font-display);
-      font-size: clamp(15px, 1.8vw, 19px);
+      font-size: clamp(16px, 2vw, 23px);
       font-weight: 400;
       font-style: italic;
       line-height: 1.85;
@@ -899,7 +905,7 @@
       .brand { font-size: var(--fs-micro); letter-spacing: 3px; }
       .hero-title h1 { font-size: clamp(18px, 5vw, 28px); }
       .quote-card { padding: 20px; }
-      .counter-number { font-size: clamp(28px, 8vw, 48px); }
+      .counter-number { font-size: clamp(32px, 8vw, 56px); }
     }
 
     /* ─── Reduced Motion ─── */
@@ -1017,6 +1023,11 @@
       }
       .pipeline-pin-wrapper, .timeline-pin-wrapper { max-height: 100dvh; }
       .sticky-container, .room-container { height: 100dvh !important; }
+      /* 100vh en móvil usa el viewport GRANDE (barra de URL plegada), así que
+         el pin se alarga por debajo de lo visible. 100dvh lo ajusta en tiempo
+         real a la barra de URL sin dejar un salto ni recortar el pin. */
+      .pipeline-pin-wrapper { height: 100dvh; }
+      .timeline-pin-wrapper { min-height: 100dvh; }
     }
 
     /* ─── Accessibility: Reduced Motion ─── */
@@ -1132,7 +1143,7 @@
       <div class="brand" style="opacity:0.55">Política Monetaria</div>
     </div>
     <div class="hero-title">
-      <h1>In the room where monetary policy happens: Learning from sixteen<br>years of Central Bank deliberations in Chile</h1>
+      <h1>In the room where monetary policy happens:<br>Learning from Two Decades of Central Bank Deliberation in Chile</h1>
       <p>Reuniones de política monetaria en Chile &middot; 2000&ndash;2015</p>
     </div>
     <div class="scroll-hint" id="scrollHint">
@@ -1171,7 +1182,7 @@
         Cada part&iacute;cula de luz que ves es un fragmento de lo que se dijo en una de estas reuniones.
       </p>
       <p id="roomHint" data-room-hint style="font-size: var(--fs-small); color: var(--color-text-muted); font-family: var(--font-body); text-align: center; margin-top: 1.6rem; letter-spacing: 0.3px; opacity: 0;">
-        Una peque&ntilde;a muestra de dos d&eacute;cadas en deliberaciones
+        Pasa el cursor sobre una voz para leer lo que dijo &middot; haz click para fijarla
       </p>
     </div>
   </section>
@@ -1466,7 +1477,11 @@
       coin: {
         scale: 2.15, swaySpeedY: 0.45, tiltBase: -0.05,
         tiltOscillation: 0.025, tiltSpeed: 0.5,
-        floatAmount: 0.04, floatSpeed: 0.7, baseY: 1.4,
+        floatAmount: 0.04, floatSpeed: 0.7, baseY: 1.05,
+        /* baseY 1.05 proyecta la moneda a ~39% del alto del viewport (un poco
+           por arriba del centro de la aureola, que está en 42%). baseY 0.9 la
+           dejaba exactamente en el centro de la aureola; el usuario pidió
+           subirla un poco. */
         color: '#ffd76a', metalness: 1.0, roughness: 0.22,
         envMapIntensity: 1.05, emissive: '#3d2508', emissiveIntensity: 0.05,
       },
@@ -1482,8 +1497,9 @@
         ══════════════════════════════════════════════════════════════════════ */
         /* Ancho TOTAL de la puerta (pórtico + escalones) como múltiplo del
            diámetro de la moneda. MÁS GRANDE: 1.6, 1.8 | MÁS CHICA: 1.1, 1.25.
-           Con 1.25 la puerta mide ~36% del alto del viewport en 16:9. */
-        widthVsCoin: 1.1,
+           Con 1.25 la puerta mide ~36% del alto del viewport en 16:9.
+           1.1 dejaba las dos figuras más chicas que el tamaño de referencia. */
+        widthVsCoin: 1.25,
         /* Línea de suelo: el pie de los escalones se apoya acá (unidades de mundo).
            En 0.15 queda por encima del bloque de texto de La Reunión, incluso
            en ventanas bajas y anchas. SUBIR: valores mayores | BAJAR: menores. */
@@ -1529,6 +1545,11 @@
         roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
         veilFog: 0.06,     // pico del velo de niebla durante el cruce
         fovKick: 4,        // grados extra de FOV durante el dolly (0 → 1 → 0)
+        /* Nube de voces dentro de la sala: centro y escala con los que se
+           recoloca el enjambre al cruzar el umbral. La nube queda DELANTE de
+           la cámara (z < roomCamZ) y se comprime, así el giro alrededor del
+           eje Y nunca la barre hacia atrás y la sala no queda sin partículas. */
+        roomSwarm: { x: 0, y: 0.55, z: -2.5, scale: 0.35 },
         /* Encuadre del acercamiento (ventanas de crossT en las que la mira viaja):
            aimDoorT: mira neutra de "La Reunión" → centro VISUAL de la puerta.
                      Que termine a ~0.45 hace que "un instante antes de entrar" la
@@ -1548,6 +1569,22 @@
         titleSize: '0.90rem',      // Tamaño de "LA REUNIÓN"
         textSize: '1.2rem',        // Tamaño del párrafo
         gap: '0.8rem',             // Espacio entre título y párrafo
+      },
+      interaction: {
+        /* ── Hover sobre partículas ──────────────────────────────────────────
+           hoverRadius: radio de detección en unidades de mundo para el
+                    raycaster de THREE.Points. Tres.js usa un "threshold" en
+                    unidades de mundo (por defecto 1), así que un valor grande
+                    hace que se dispare cerca del puntero aunque no esté sobre
+                    la partícula. 0.075 ≈ un área de ~15px por partícula; bajarlo
+                    a 0.04-0.05 lo hace más quirúrgico.
+           El radio se escala con el tamaño del enjambre (swarm.scale), igual
+           que el aspecto visual de la partícula, así en La Sala (escala 0.35)
+           el área también se achica.
+           hoverDelayMs: espera antes de abrir el panel para no disparar al
+                    cruzar la nube con el mouse. */
+        hoverRadius: 0.075,
+        hoverDelayMs: 90,
       },
     };
 
@@ -1569,6 +1606,7 @@
         scrollHint.classList.add('hidden');
       }
       if (coin.children.length > 0) coin.visible = (stage === 1) && coinFade > 0.01;
+      document.body.style.cursor = stage === 1 ? 'grab' : '';
     }
 
     const stageObserver = new IntersectionObserver((entries) => {
@@ -1576,14 +1614,11 @@
         if (!entry.isIntersecting) return;
         if (entry.target === heroEl) {
           setStage(1);
-          canvas.style.pointerEvents = 'auto';
         } else {
           setStage(2);
-          /* El canvas es interactivo en el hero (moneda), en Citas y — en modo
-             doorway — en La Sala (hover/click sobre las voces). */
-          const interactive = entry.target.id === 'stageQuotes'
-            || (DOOR_MODE === 'doorway' && entry.target.id === 'stageRoomContainer');
-          canvas.style.pointerEvents = interactive ? 'auto' : 'none';
+          /* Las partículas se interactúan desde listeners globales (window),
+             no desde el canvas fijo: así se pueden presionar aunque un marco o
+             una sección esté visualmente por encima, sin bloquear el scroll. */
         }
       });
     }, { threshold: 0.45 });
@@ -1594,7 +1629,8 @@
     const scene = new THREE.Scene();
     const camBaseY = 0.7;
     scene.fog = new THREE.FogExp2(CONFIG.door?.fog ?? 0x0a0e1a, 0);
-    const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth / window.innerHeight, 0.1, 100);
+    const initialVp = getViewportSize();
+    const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, initialVp.width / initialVp.height, 0.1, 100);
     camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
     camera.lookAt(0, 0.7, 0);
 
@@ -1603,7 +1639,7 @@
       try {
         renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(initialVp.width, initialVp.height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = CONFIG.exposure;
@@ -1713,15 +1749,31 @@
     const coinMats = [];
     let coinModel = null;
     let coinScaleBase = 0;
+
+    /* Basis de tamaño del layout: window.innerWidth/Height, como antes de la
+       corrección de resize. visualViewport se usa SOLO como disparador de
+       resize (barra URL/orientación), no como base de dimensiones: si se usara
+       como base, la moneda y la puerta pasaban a renderizarse contra un
+       viewport potencialmente más chico y quedaban mucho más pequeñas. */
+    function getViewportSize() {
+      return { width: Math.max(window.innerWidth, 1), height: Math.max(window.innerHeight, 1) };
+    }
+
     function getResponsiveCoinScale() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 32);
+      const { width: w, height: h } = getViewportSize();
+      const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 34);
       const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
       const dist = CONFIG.camera.z;
       const worldPxPerUnit = h / (2 * tanHalf * dist);
-      const targetPx = fontPx * 9;
-      return THREE.MathUtils.clamp(targetPx / (CONFIG.coin.scale * worldPxPerUnit), 0.25, 1.6);
+      /* Objetivo en píxeles CSS: el mayor entre el tamaño tipográfico previo
+         (fontPx * 9) y ~40% del lado menor del viewport (46% en móvil, donde
+         la moneda queda más presente sin tapar el título). En pantallas grandes
+         se acababa achatando a 288px fijos y las dos figuras se veían muy
+         chicas; ahora crecen con el viewport sin pasarse (≤50% del ancho o
+         680px). En móvil/computadoras chicas el resultado es casi el mismo. */
+      const minTargetPx = Math.min(w, h) * (isMobile ? 0.46 : 0.40);
+      const targetPx = Math.min(Math.max(fontPx * 9, minTargetPx), Math.min(w * 0.5, 680));
+      return THREE.MathUtils.clamp(targetPx / (CONFIG.coin.scale * worldPxPerUnit), 0.25, 1.8);
     }
     function applyCoinScale() {
       if (coinModel && coinScaleBase) coinModel.scale.setScalar(coinScaleBase * getResponsiveCoinScale());
@@ -1851,7 +1903,8 @@
       /* En ventanas muy anchas y bajas la moneda de referencia conserva un
          tamaño tipográfico que haría crecer demasiado la puerta en vertical.
          El límite solo actúa por encima de ~19:10; 16:9 y móvil no cambian. */
-      const aspect = window.innerWidth / Math.max(window.innerHeight, 1);
+      const vp = getViewportSize();
+      const aspect = vp.width / Math.max(vp.height, 1);
       const aspectFit = THREE.MathUtils.clamp(1.9 / aspect, 0.78, 1);
       const widthWorld = getCoinWorldSize() * (cfg.widthVsCoin ?? 1.4) * aspectFit;
       const s = widthWorld / Math.max(doorFootprint.width, 1e-3);
@@ -1978,25 +2031,39 @@
     const C = CONFIG.coin;
     let coinBirth = -1;
     let mouseX = 0, mouseY = 0, smoothMouseX = 0, smoothMouseY = 0;
+    let lastPointerX = 0, lastPointerY = 0;
     let isDragging = false, dragStartX = 0, dragStartY = 0, dragRotY = 0, dragRotX = 0;
 
     function onPointerMove(cx, cy) {
-      mouseX = (cx / window.innerWidth) * 2 - 1;
-      mouseY = (cy / window.innerHeight) * 2 - 1;
+      const vp = getViewportSize();
+      mouseX = (cx / vp.width) * 2 - 1;
+      mouseY = (cy / vp.height) * 2 - 1;
       if (isDragging) { dragRotY += (cx - dragStartX) * 0.005; dragRotX += (cy - dragStartY) * 0.005; dragStartX = cx; dragStartY = cy; }
     }
     function onPointerDown(cx, cy) { isDragging = true; dragStartX = cx; dragStartY = cy; }
     function onPointerUp() { isDragging = false; }
 
-    window.addEventListener('mousemove', (e) => onPointerMove(e.clientX, e.clientY));
-    canvas.addEventListener('mousedown', (e) => onPointerDown(e.clientX, e.clientY));
-    window.addEventListener('mouseup', onPointerUp);
+    /* Interacción global (no sobre el canvas, que está con pointer-events:none):
+       así las partículas de fondo se pueden presionar en cualquier sección sin
+       bloquear el contenido ni el scroll. En touch sólo se usa pointerdown para
+       fijar el panel; el hover queda reservado al mouse. */
+    const isInteractiveTarget = (e) => !!(e.target && e.target.closest &&
+      e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term'));
+    window.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch' || isInteractiveTarget(e)) return;
+      lastPointerX = e.clientX;
+      lastPointerY = e.clientY;
+      onPointerMove(e.clientX, e.clientY);
+    });
+    window.addEventListener('pointerdown', (e) => {
+      /* No robar el click de tarjetas, botones, links ni del panel abierto. */
+      if (isInteractiveTarget(e)) return;
+      onPointerDown(e.clientX, e.clientY, e);
+    });
+    window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
     window.addEventListener('blur', onPointerUp);
     document.addEventListener('visibilitychange', onPointerUp);
-    canvas.addEventListener('touchstart', (e) => { const t = e.touches[0]; onPointerDown(t.clientX, t.clientY); }, { passive: true });
-    canvas.addEventListener('touchmove', (e) => { const t = e.touches[0]; onPointerMove(t.clientX, t.clientY); }, { passive: true });
-    canvas.addEventListener('touchend', onPointerUp, { passive: true });
 
     const projectedPos = new THREE.Vector3();
 
@@ -2101,22 +2168,74 @@
     swarm.add(points);
 
     const raycaster = new THREE.Raycaster();
-    raycaster.params.Points.threshold = 0.16;
     const ndc = new THREE.Vector2();
+    const _pickProjected = new THREE.Vector3();
+
+    /* El threshold de THREE.Points se interpreta en unidades de mundo y no se
+       ajusta solo al tamaño de la partícula. Se fija aquí en cada consulta,
+       escalado con swarm.scale (igual que el tamaño visual del enjambre).
+       Ver https://github.com/mrdoob/three.js/issues/26235 y
+       https://discourse.threejs.org/t/hover-functionality-with-three-points-and-raycaster/53978 */
+    function setPickThreshold() {
+      const base = CONFIG.interaction?.hoverRadius ?? 0.075;
+      const s = swarm.scale?.x || 1;
+      raycaster.params.Points.threshold = base * s;
+    }
 
     function pickPoint(cx, cy) {
       if (!QUOTES_N) return -1;
-      ndc.x = (cx / window.innerWidth) * 2 - 1;
-      ndc.y = -(cy / window.innerHeight) * 2 + 1;
+      const vp = getViewportSize();
+      setPickThreshold();
+      ndc.x = (cx / vp.width) * 2 - 1;
+      ndc.y = -(cy / vp.height) * 2 + 1;
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObject(points, false);
-      if (hits.length > 0) {
-        return hits[0].index;
+      if (hits.length === 0) return -1;
+      /* Entre varios aciertos, elegir el más cercano al puntero en pantalla:
+         si el threshold es amplio, el primer hit suele ser el más cercano a la
+         cámara, no necesariamente el que está bajo el cursor. */
+      let best = hits[0].index, bestDist = Infinity;
+      for (let h = 0; h < hits.length; h++) {
+        _pickProjected.copy(hits[h].point).project(camera);
+        const sx = (_pickProjected.x * 0.5 + 0.5) * vp.width;
+        const sy = (-_pickProjected.y * 0.5 + 0.5) * vp.height;
+        const dx = sx - cx, dy = sy - cy;
+        const d = dx * dx + dy * dy;
+        if (d < bestDist) { bestDist = d; best = hits[h].index; }
       }
-      return -1;
+      return best;
     }
 
-    function openQuote(i) {
+    /* Posicionamiento del panel: en desktop sigue al punto donde se abrió
+       (cursor o tarjeta) en lugar de quedar siempre pegado a la derecha, y se
+       corrige para no salirse del viewport. En móvil se usa el layout inferior
+       de la media query. */
+    function positionQuotePanel(anchor) {
+      const panelEl = document.getElementById('quotePanel');
+      if (!panelEl) return;
+      if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+        panelEl.style.left = '';
+        panelEl.style.top = '';
+        panelEl.style.right = '';
+        return;
+      }
+      const vp = getViewportSize();
+      const w = panelEl.offsetWidth || 380;
+      const h = panelEl.offsetHeight || 220;
+      const margin = 16;
+      const ax = anchor && typeof anchor.x === 'number' ? anchor.x : lastPointerX;
+      const ay = anchor && typeof anchor.y === 'number' ? anchor.y : lastPointerY;
+      let left = ax + 22;
+      let top = ay - h / 2;
+      if (left + w > vp.width - margin) left = ax - w - 22;
+      if (left < margin) left = margin;
+      top = THREE.MathUtils.clamp(top, margin, Math.max(margin, vp.height - h - margin));
+      panelEl.style.left = left + 'px';
+      panelEl.style.top = top + 'px';
+      panelEl.style.right = 'auto';
+    }
+
+    function openQuote(i, anchor) {
       const q = quotes[i];
       if (!q) return;
       document.getElementById('qpWho').textContent = q.participant || 'Participante anónimo';
@@ -2140,13 +2259,13 @@
         }
       }
       document.getElementById('quotePanel').classList.add('visible');
+      positionQuotePanel(anchor);
     }
 
     let hoveredPoint = false;
     let lastHoverAt = 0;
-    /* La Sala (b1): HOVER → panel "peek" (se cierra al salir); CLICK → panel
-       fijado (pin, se cierra con ✕/Escape). En modo 'classic' no hay hover→panel:
-       solo el cambio de cursor (comportamiento previo). */
+    /* Partículas: HOVER → panel "peek" (se cierra al salir); CLICK → panel
+       fijado (pin, se cierra con ✕/Escape). */
     let hoverIndex = -1;
     let pinnedIndex = -1;
     let hoverTimer = null;
@@ -2171,23 +2290,23 @@
       const hasHit = hitIdx >= 0;
       if (hasHit !== hoveredPoint) {
         hoveredPoint = hasHit;
-        canvas.classList.toggle('particle-hover', hasHit);
+        document.body.style.cursor = hasHit ? 'pointer' : (currentStage === 1 ? 'grab' : '');
       }
-      /* Solo dentro de la sala (y con el cruce casi completo) el hover abre el
-         panel; en el resto del recorrido se mantiene el comportamiento clásico. */
-      if (!(DOOR_MODE === 'doorway' && inRoom && crossT > 0.6)) return;
-      if (pointerOverPanel(cx, cy)) return;  // leyendo el panel: no lo hagamos saltar
       if (pinnedIndex >= 0) return;          // panel fijado: el hover no lo toca
       if (hasHit) {
+        if (pointerOverPanel(cx, cy)) return; // leyendo el panel: no lo cerremos
         if (hitIdx === hoverIndex && hoverIndex >= 0) return;
         if (hoverTimer) clearTimeout(hoverTimer);
         hoverTimer = setTimeout(() => {
           hoverIndex = hitIdx;
           syncQuotePanel();
-        }, 140);
+        }, CONFIG.interaction?.hoverDelayMs ?? 90);
       } else if (hoverIndex >= 0) {
         hoverIndex = -1;
         syncQuotePanel();
+      } else if (quotePanelEl.classList.contains('visible')) {
+        /* Al alejar el cursor sin que haya click fijado, el panel se cierra. */
+        closeQuotePanel();
       }
     }
 
@@ -2201,10 +2320,13 @@
     onPointerDown = function(cx, cy) {
       const hit = pickPoint(cx, cy);
       if (hit >= 0) {
-        pinnedIndex = hit;   // La Sala (b1): click fija el panel (✕/Escape lo cierra)
+        pinnedIndex = hit;   // click sobre una partícula fija el panel (✕/Escape lo cierra)
+        hoverIndex = -1;
         openQuote(hit);
         return;
       }
+      /* click en el fondo cierra el panel fijado (mismo gesto que en tarjetas) */
+      if (pinnedIndex >= 0) closeQuotePanel();
       origOnPointerDown(cx, cy);
     };
 
@@ -2271,7 +2393,8 @@
         mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
         coin.getWorldPosition(projectedPos);
         projectedPos.project(camera);
-        haloWrap.style.transform = `translate3d(${(projectedPos.x * 0.5 + 0.5) * window.innerWidth}px, ${(-projectedPos.y * 0.5 + 0.5) * window.innerHeight}px, 0)`;
+        const vp = getViewportSize();
+        haloWrap.style.transform = `translate3d(${(projectedPos.x * 0.5 + 0.5) * vp.width}px, ${(-projectedPos.y * 0.5 + 0.5) * vp.height}px, 0)`;
 
         coinFade = THREE.MathUtils.clamp(1 - (scatterProgress / 0.45), 0, 1);
         coin.visible = (currentStage === 1) && (coinFade > 0.01);
@@ -2331,8 +2454,26 @@
         }
       }
 
-      /* enjambre: orbita y se dispersa por la pantalla al hacer scroll */
-      swarm.rotation.y = time * 0.12 + scatterProgress * 0.8;
+      /* enjambre: orbita y se dispersa por la pantalla al hacer scroll.
+         En La Sala la nube se recoloca delante de la cámara y se comprime;
+         de lo contrario el giro continuo la pasa detrás de la cámara en
+         ciertos ángulos y la sección queda sin partículas. */
+      const roomSwarmCfg = CONFIG.door?.roomSwarm ?? { x: 0, y: 0.55, z: -2.5, scale: 0.35 };
+      const roomSwarmT = (DOOR_MODE === 'doorway' && crossEff > 0)
+        ? THREE.MathUtils.smoothstep((crossEff - 0.25) / 0.5, 0, 1)
+        : 0;
+      const roomSwarmScale = THREE.MathUtils.lerp(1, roomSwarmCfg.scale ?? 0.35, roomSwarmT);
+      swarm.position.set(
+        THREE.MathUtils.lerp(0, roomSwarmCfg.x ?? 0, roomSwarmT),
+        THREE.MathUtils.lerp(0, roomSwarmCfg.y ?? 0.55, roomSwarmT),
+        THREE.MathUtils.lerp(0, roomSwarmCfg.z ?? -2.5, roomSwarmT)
+      );
+      swarm.scale.setScalar(roomSwarmScale);
+      /* Dentro de la sala se frena el giro completo y queda una oscilación
+         suave: movimiento sin barrer la nube fuera del encuadre. */
+      const baseSwirl = time * 0.12 + scatterProgress * 0.8;
+      const roomSway = roomSwarmT * Math.sin(time * 0.35) * 0.06;
+      swarm.rotation.y = baseSwirl * (1 - roomSwarmT) + roomSway;
 
       /* La Sala (b1): dentro de la sala la nube se tiñe de cálido (la "luz del
          interior"). Las partículas son unlit (PointsMaterial), así que la luz
@@ -2473,14 +2614,26 @@
       if (e.key === 'Escape' && quotePanelEl.classList.contains('visible')) closeQuotePanel();
     });
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+    /* Un único handler de tamaño para la cámara, el renderer y los objetos 3D.
+       Incluye visualViewport (móvil/orientación) y repite setPixelRatio porque
+       al cambiar de display/DPR ese valor puede variar aunque el viewport CSS
+       no cambie. */
+    function syncViewportAndObjects() {
+      const { width, height } = getViewportSize();
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      if (renderer) renderer.setSize(window.innerWidth, window.innerHeight);
+      if (renderer) {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        renderer.setSize(width, height);
+      }
       applyCoinScale();
       applyDoorScale();
       applyDoorTextStyle();
-    });
+    }
+    window.addEventListener('resize', syncViewportAndObjects);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', syncViewportAndObjects);
+    }
 
     /* ────────────────────────────────
        Acto 4: D3.js + WebGL Bridge
@@ -2498,8 +2651,9 @@
       if (!container) return;
       container.innerHTML = '';
 
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+      const vp = getViewportSize();
+      const width = vp.width;
+      const height = vp.height;
 
       const svg = d3.select(container)
         .append('svg')
@@ -2530,7 +2684,7 @@
         .selectAll('text')
         .style('fill', 'rgba(255,255,255,0.4)')
         .style('font-family', 'sans-serif')
-        .style('font-size', '11px');
+        .style('font-size', 'clamp(12px, 1.05vw, 13px)');
 
       g.selectAll('.domain, .tick line')
         .style('stroke', 'rgba(255,255,255,0.1)');
@@ -2545,46 +2699,70 @@
       svg.append('text')
         .attr('x', toneX).attr('y', margin.top - 4)
         .attr('text-anchor', toneAnchor)
-        .style('fill', 'rgba(255,215,106,0.75)').style('font-size', '11px')
+        .style('fill', 'rgba(255,215,106,0.75)').style('font-size', 'clamp(12px, 1.05vw, 13px)')
         .style('letter-spacing', '2px').style('text-transform', 'uppercase')
         .text('Hawkish ↑');
       svg.append('text')
         .attr('x', toneX).attr('y', margin.top + innerH + 2)
         .attr('text-anchor', toneAnchor)
-        .style('fill', 'rgba(138,180,248,0.75)').style('font-size', '11px')
+        .style('fill', 'rgba(138,180,248,0.75)').style('font-size', 'clamp(12px, 1.05vw, 13px)')
         .style('letter-spacing', '2px').style('text-transform', 'uppercase')
         .text('Dovish ↓');
 
       return d3Scales;
     }
 
-    function get3DPosFromData(date, sentiment, camera) {
+    /* Cámara de "layout" para proyectar el scatter de intervenciones SIEMPRE
+       con el encuadre base (hero), no con la cámara animada del momento. Si se
+       redimensiona durante La Sala, el dolly deja la cámara en otro lugar y el
+       scatter quedaría proyectado con coordenadas incorrectas para los ejes. */
+    const _layoutCamera = new THREE.PerspectiveCamera();
+    function getLayoutCamera() {
+      const { width, height } = getViewportSize();
+      _layoutCamera.aspect = width / height;
+      _layoutCamera.fov = CONFIG.camera.fov;
+      _layoutCamera.near = camera.near;
+      _layoutCamera.far = camera.far;
+      _layoutCamera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
+      _layoutCamera.up.set(0, 1, 0);
+      _layoutCamera.lookAt(0, camBaseY, 0);
+      _layoutCamera.updateProjectionMatrix();
+      _layoutCamera.updateMatrixWorld(true);
+      return _layoutCamera;
+    }
+
+    function get3DPosFromData(date, sentiment) {
       const { xScale, yScale } = d3Scales;
       if (!xScale || !yScale) return new THREE.Vector3(0, 0, 0);
 
       const px = xScale(date);
       const py = yScale(sentiment);
+      const vp = getViewportSize();
+      const xNDC = (px / vp.width) * 2 - 1;
+      const pyNDC = -(py / vp.height) * 2 + 1;
 
-      const xNDC = (px / window.innerWidth) * 2 - 1;
-      const pyNDC = -(py / window.innerHeight) * 2 + 1;
-
-      const vector = new THREE.Vector3(xNDC, pyNDC, 0.5).unproject(camera);
-      const dir = vector.sub(camera.position).normalize();
-      const distance = -camera.position.z / dir.z;
-      return camera.position.clone().add(dir.multiplyScalar(distance));
+      const layoutCam = getLayoutCamera();
+      const vector = new THREE.Vector3(xNDC, pyNDC, 0.5).unproject(layoutCam);
+      const dir = vector.sub(layoutCam.position).normalize();
+      const distance = -layoutCam.position.z / dir.z;
+      return layoutCam.position.clone().add(dir.multiplyScalar(distance));
     }
 
     initD3Axes();
     /* Debounce: en mobile el resize dispara varias veces (barra de URL) y
        reconstruir el SVG entero en cada evento era innecesario */
     let d3ResizeT;
-    window.addEventListener('resize', () => {
+    function onViewportResizeDebounced() {
       clearTimeout(d3ResizeT);
       d3ResizeT = setTimeout(() => {
         initD3Axes();
         if (bgScatter) bgScatter.rebuild();
       }, 150);
-    });
+    }
+    window.addEventListener('resize', onViewportResizeDebounced);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onViewportResizeDebounced);
+    }
 
     /* ────────────────────────────────
        Hook — señales hawkish/dovish
@@ -2616,7 +2794,7 @@
           const sentiment = q.label === 'hawkish' ? 0.3 + seededRandom(seed) * 0.4
                           : q.label === 'dovish' ? -0.3 - seededRandom(seed + 1) * 0.4
                           : (seededRandom(seed + 2) - 0.5) * 0.3;
-          const pos = get3DPosFromData(date, sentiment, camera);
+          const pos = get3DPosFromData(date, sentiment);
           bgPositions[i * 3]     = pos.x;
           bgPositions[i * 3 + 1] = pos.y;
           bgPositions[i * 3 + 2] = pos.z;
@@ -2657,7 +2835,7 @@
               const s = q.label === 'hawkish' ? 0.3 + seededRandom(sd) * 0.4
                       : q.label === 'dovish' ? -0.3 - seededRandom(sd + 1) * 0.4
                       : (seededRandom(sd + 2) - 0.5) * 0.3;
-              const p3 = get3DPosFromData(d, s, camera);
+              const p3 = get3DPosFromData(d, s);
               arr[i * 3] = p3.x; arr[i * 3 + 1] = p3.y; arr[i * 3 + 2] = p3.z;
             });
             geo.attributes.position.needsUpdate = true;
@@ -2729,7 +2907,8 @@
 
     function updateScrubber() {
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const vp = getViewportSize();
+      const docHeight = document.documentElement.scrollHeight - vp.height;
       const p = docHeight > 0 ? scrollTop / docHeight : 0;
 
       // Debug scrubber
@@ -2797,7 +2976,10 @@
     });
     heroGroup.to('.hero-title', { opacity: 0, y: -60, ease: 'cinematicSilk' }, 0);
     heroGroup.to('.scroll-hint', { opacity: 0, ease: 'cinematicSilk' }, 0);
-    heroGroup.to('#haloWrap', { opacity: 0, y: -60, ease: 'cinematicSilk' }, 0);
+    /* #haloWrap no se anima con y aquí: su tranform se fija cada frame desde
+       animate() para seguir la proyección de la moneda. Un y de GSAP además
+       competía con ese transform y podía descuadrar el halo respecto a la moneda. */
+    heroGroup.to('#haloWrap', { opacity: 0, ease: 'cinematicSilk' }, 0);
 
     ScrollTrigger.create({
       trigger: '.hero',
@@ -3101,7 +3283,11 @@
       const clamp01  = gsap.utils.clamp(0, 1);
       // Segmentos de transición más suaves y con más holgura para apreciar cada panel
       // Cada panel tiene su propia "ventana de animación" más amplia
-      const seg = (p, a, b) => clamp01((p - a) / (b - a));
+      const seg = (p, a, b) => {
+        const span = b - a;
+        if (span <= 1e-6) return p >= b ? 1 : 0;
+        return clamp01((p - a) / span);
+      };
       const easeOut3 = (t) => 1 - Math.pow(1 - t, 3);
       const easeInOut = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
       const fmt      = (n) => Math.round(n).toLocaleString('es-CL');
@@ -3109,13 +3295,20 @@
       const panels = track.querySelectorAll('.pipe-panel');
       const getPanelBounds = () => {
         const totalW = track.scrollWidth - viewport.clientWidth;
-        // Ajuste: empezar más centrado y terminar más centrado
-        // Antes: viewport.clientWidth * 0.35 (empujaba muy a la izquierda)
-        // Ahora: viewport.clientWidth * 0.28 (más centrado, más tiempo para ver)
+        const cw = viewport.clientWidth;
+        /* La animación de cada panel se ancla a su CENTRO, no a sus bordes.
+           Empieza cuando el centro entra por la derecha (línea al 78% del
+           ancho) y TERMINA cuando el centro llega al centro real del viewport
+           (50%). Antes el final se calculaba con el borde derecho cruzando una
+           línea al 28%, así que cada panel seguía animándose después de haber
+           pasado el centro y terminaba desplazado a la izquierda. */
+        const focusStart = cw * 0.78;
+        const focusEnd = cw * 0.5;
         return Array.from(panels).map(panel => {
-          const left = panel.offsetLeft - viewport.clientWidth * 0.28;
-          const right = left + panel.offsetWidth;
-          return { start: clamp01(left / totalW), end: clamp01(right / totalW) };
+          const panelCenter = panel.offsetLeft + panel.offsetWidth / 2;
+          const start = (panelCenter - focusStart) / totalW;
+          const end = (panelCenter - focusEnd) / totalW;
+          return { start: clamp01(start), end: clamp01(end) };
         });
       };
 
@@ -3248,7 +3441,8 @@
       }
       timelineBuilt = true;
       const margin = { top: 40, right: 30, bottom: 60, left: 50 };
-      const width = Math.min(1060, window.innerWidth - 40);
+      const vp = getViewportSize();
+      const width = Math.min(1060, vp.width - 40);
       const height = 320;
       const innerW = width - margin.left - margin.right;
       const innerH = height - margin.top - margin.bottom;
@@ -3289,12 +3483,12 @@
       g.append('g')
         .attr('transform', `translate(0,${innerH})`)
         .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat('%Y')))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(12px, 1.05vw, 13px)');
       g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');
 
       g.append('g')
         .call(d3.axisLeft(y).ticks(5).tickFormat(d => d > 0 ? `+${d}` : d))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(12px, 1.05vw, 13px)');
       g.selectAll('.domain').style('stroke', 'none');
       g.selectAll('.tick line').style('stroke', 'rgba(255,255,255,0.06)');
 
@@ -3341,7 +3535,7 @@
         .attr('x', d => x(d.date))
         .attr('y', -8)
         .attr('text-anchor', 'middle')
-        .style('font-size', '11px')
+        .style('font-size', 'clamp(12px, 1.05vw, 13px)')
         .style('fill', '#ffd76a')
         .style('opacity', 0.7)
         .text(d => d.label);
@@ -3431,7 +3625,10 @@
         if (idx < 0) idx = quotes.findIndex(q => q.participant === name);
         if (idx >= 0) {
           lastFocusedCard = el;
-          openQuote(idx);
+          pinnedIndex = idx;
+          hoverIndex = -1;
+          const r = el.getBoundingClientRect();
+          openQuote(idx, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
         }
       });
 
