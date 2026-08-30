@@ -933,11 +933,338 @@
     .voice-tone--hawkish { color: var(--color-gold); }
     .voice-tone--dovish { color: var(--color-dovish); }
     .voice-tone--neutral { color: var(--color-text-secondary); }
+    .voice-detail-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      min-width: 138px;
+    }
+    .voice-detail-actions button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 138px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font: 600 var(--fs-micro) var(--font-body);
+      letter-spacing: 0.3px;
+      line-height: 1.25;
+      cursor: pointer;
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .voice-detail-actions button span { font-size: 15px; line-height: 1; }
+    .voice-profile-open {
+      border: 1px solid rgba(255,215,106,0.25);
+      color: var(--color-text-secondary);
+      background: rgba(255,255,255,0.035);
+    }
+    .voice-profile-open:hover {
+      border-color: rgba(255,215,106,0.65);
+      color: var(--color-gold);
+      background: rgba(255,215,106,0.08);
+      transform: translateY(-2px);
+    }
+    .voice-detail-actions .voice-detail-open {
+      min-width: 138px;
+    }
+
+    /* ─── Ficha radial de perfil discursivo ─── */
+    body.voice-profile-modal-open { overflow-y: hidden; }
+    .voice-profile-panel[hidden] { display: none; }
+    .voice-profile-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    .voice-profile-panel.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .voice-profile-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(4,7,15,0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .voice-profile-dialog {
+      position: relative;
+      width: min(900px, 94vw);
+      max-height: min(860px, 94vh);
+      overflow: auto;
+      padding: clamp(22px, 4vw, 42px);
+      border: 1px solid rgba(255,215,106,0.28);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(20,27,47,0.98), rgba(8,12,23,0.98));
+      box-shadow: 0 30px 120px rgba(0,0,0,0.68), 0 0 80px rgba(255,215,106,0.08), inset 0 1px 0 rgba(255,255,255,0.06);
+      transform: translateY(18px) scale(0.97);
+      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,215,106,0.45) transparent;
+    }
+    .voice-profile-panel.is-open .voice-profile-dialog {
+      transform: translateY(0) scale(1);
+    }
+    .voice-profile-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 2;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 50%;
+      color: var(--color-text-secondary);
+      background: rgba(255,255,255,0.045);
+      font-size: 15px;
+      cursor: pointer;
+      transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .voice-profile-close:hover {
+      color: var(--color-gold);
+      border-color: rgba(255,215,106,0.6);
+      background: rgba(255,215,106,0.09);
+    }
+    .voice-profile-eyebrow {
+      color: var(--color-gold);
+      font-size: var(--fs-micro);
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .voice-profile-title {
+      max-width: 720px;
+      margin-top: 9px;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: clamp(30px, 4.8vw, 58px);
+      font-weight: 500;
+      line-height: 1.05;
+    }
+    .voice-profile-subtitle {
+      max-width: 660px;
+      margin-top: 11px;
+      color: var(--color-text-secondary);
+      font-size: var(--fs-small);
+      line-height: 1.5;
+    }
+    .voice-profile-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.85fr) minmax(260px, 1fr);
+      align-items: center;
+      gap: clamp(22px, 5vw, 58px);
+      margin-top: 22px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+    }
+    .voice-radar-wrap {
+      min-width: 0;
+      display: grid;
+      place-items: center;
+    }
+    #voiceRadar {
+      display: block;
+      width: min(100%, 360px);
+      height: auto;
+      overflow: visible;
+    }
+    #voiceRadar .radar-ring {
+      fill: none;
+      stroke: rgba(255,255,255,0.12);
+      stroke-width: 1;
+    }
+    #voiceRadar .radar-axis {
+      stroke: rgba(255,255,255,0.15);
+      stroke-width: 1;
+    }
+    #voiceRadar .radar-shape {
+      fill: rgba(255,215,106,0.16);
+      stroke: var(--color-gold);
+      stroke-width: 2;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 8px rgba(255,215,106,0.25));
+    }
+    #voiceRadar .radar-point {
+      fill: var(--color-gold);
+      stroke: #11182b;
+      stroke-width: 2;
+    }
+    #voiceRadar .radar-label {
+      fill: var(--color-text-secondary);
+      font: 10px var(--font-body);
+      letter-spacing: 0.4px;
+    }
+    #voiceRadar .radar-value {
+      fill: var(--color-gold);
+      font: 600 9px var(--font-body);
+    }
+    .voice-topic-list {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px 20px;
+      min-width: 0;
+    }
+    .voice-topic-list::before {
+      grid-column: 1 / -1;
+      content: "Presencia temática en la muestra";
+      margin-bottom: 1px;
+      color: var(--color-text-primary);
+      font-size: var(--fs-small);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .voice-topic-row {
+      display: block;
+      width: 100%;
+      padding: 7px 0 6px;
+      border: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.09);
+      color: var(--color-text-primary);
+      background: none;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .voice-topic-row:hover,
+    .voice-topic-row:focus-visible,
+    .voice-topic-row.is-active {
+      color: var(--color-gold);
+      border-bottom-color: rgba(255,215,106,0.48);
+    }
+    .voice-topic-row-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: var(--fs-small);
+    }
+    .voice-topic-row-top strong {
+      color: var(--color-gold);
+      font-size: var(--fs-micro);
+      font-variant-numeric: tabular-nums;
+    }
+    .voice-topic-meter {
+      display: block;
+      height: 3px;
+      margin-top: 6px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.09);
+    }
+    .voice-topic-meter i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(255,215,106,0.46), var(--color-gold));
+    }
+    .voice-topic-terms {
+      display: block;
+      overflow: hidden;
+      margin-top: 4px;
+      color: var(--color-text-faint);
+      font-size: 10px;
+      line-height: 1.35;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .voice-profile-evidence {
+      margin-top: 22px;
+      padding: 17px 20px;
+      border-left: 2px solid rgba(255,215,106,0.60);
+      background: rgba(255,255,255,0.035);
+    }
+    .voice-profile-evidence-label {
+      color: var(--color-gold);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    #voiceProfileEvidenceQuote {
+      margin-top: 8px;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: clamp(17px, 2vw, 23px);
+      font-style: italic;
+      line-height: 1.45;
+    }
+    #voiceProfileEvidenceCitation {
+      display: block;
+      margin-top: 7px;
+      color: var(--color-text-faint);
+      font-size: var(--fs-micro);
+      line-height: 1.4;
+    }
+    .voice-profile-note {
+      max-width: 760px;
+      margin-top: 15px;
+      color: var(--color-text-faint);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
     .voice-detail-content[hidden],
     .voice-detail-empty[hidden] { display: none; }
 
     @media (max-width: 768px) {
       .stage-voices { height: 280vh; }
+      .voice-detail-actions {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        min-width: 0;
+        gap: 8px;
+      }
+      .voice-detail-actions button {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 9px 8px;
+        font-size: 11px;
+      }
+      .voice-detail-actions .voice-detail-open {
+        min-width: 0;
+      }
+      .voice-profile-dialog {
+        width: min(100%, 560px);
+        max-height: calc(100svh - 16px);
+        padding: 22px 16px 18px;
+        border-radius: 15px;
+      }
+      .voice-profile-close { top: 10px; right: 10px; }
+      .voice-profile-title { padding-right: 35px; font-size: clamp(28px, 8vw, 42px); }
+      .voice-profile-subtitle { margin-top: 9px; font-size: 12px; line-height: 1.4; }
+      .voice-profile-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 14px;
+        padding-top: 14px;
+      }
+      .voice-radar-wrap { max-height: 220px; }
+      #voiceRadar { width: min(100%, 300px); }
+      .voice-topic-list { gap: 5px 12px; }
+      .voice-topic-list::before { font-size: 11px; }
+      .voice-topic-row { padding: 5px 0 4px; }
+      .voice-topic-terms { font-size: 9px; }
+      .voice-profile-evidence { margin-top: 14px; padding: 12px 14px; }
+      #voiceProfileEvidenceQuote {
+        display: -webkit-box;
+        overflow: hidden;
+        font-size: 16px;
+        line-height: 1.35;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+      }
+      .voice-profile-note { margin-top: 10px; font-size: 10px; line-height: 1.3; }
       .voices-pin-wrapper {
         height: 100svh;
         padding: max(22px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
@@ -972,8 +1299,39 @@
       .voice-detail-note { grid-column: 1 / -1; margin-top: 8px; font-size: 10px; }
     }
 
+    @media (max-width: 430px) and (max-height: 620px) {
+      .voice-profile-dialog {
+        max-height: calc(100svh - 12px);
+        padding: 16px 12px 12px;
+      }
+      .voice-profile-close { top: 8px; right: 8px; width: 30px; height: 30px; }
+      .voice-profile-eyebrow { font-size: 10px; letter-spacing: 2px; }
+      .voice-profile-title { padding-right: 32px; margin-top: 6px; font-size: clamp(25px, 8vw, 30px); }
+      .voice-profile-subtitle { margin-top: 7px; font-size: 10px; line-height: 1.3; }
+      .voice-profile-grid { gap: 5px; margin-top: 8px; padding-top: 8px; }
+      #voiceRadar { width: min(100%, 205px); }
+      .voice-topic-list { gap: 3px 10px; }
+      .voice-topic-list::before { margin-bottom: 0; font-size: 10px; }
+      .voice-topic-row { padding: 3px 0; }
+      .voice-topic-row-top { font-size: 11px; }
+      .voice-topic-row-top strong { font-size: 10px; }
+      .voice-topic-meter { height: 2px; margin-top: 3px; }
+      .voice-topic-terms { display: none; }
+      .voice-profile-evidence { margin-top: 9px; padding: 9px 10px; }
+      .voice-profile-evidence-label { font-size: 9px; letter-spacing: 1.5px; }
+      #voiceProfileEvidenceQuote { margin-top: 5px; font-size: 14px; line-height: 1.25; -webkit-line-clamp: 1; }
+      #voiceProfileEvidenceCitation { margin-top: 4px; font-size: 10px; }
+      .voice-profile-note { display: none; }
+    }
+
     @media (min-width: 600px) and (max-width: 900px) and (max-height: 620px) {
       .stage-voices { height: 300vh; }
+      .voice-profile-dialog { max-height: calc(100svh - 24px); padding: 18px 22px; }
+      .voice-profile-grid { grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr); gap: 20px; margin-top: 12px; padding-top: 12px; }
+      .voice-radar-wrap { max-height: none; }
+      .voice-profile-evidence { margin-top: 12px; padding: 10px 14px; }
+      #voiceProfileEvidenceQuote { font-size: 15px; -webkit-line-clamp: 2; }
+      .voice-profile-note { display: none; }
       .voices-pin-wrapper { padding: 22px 18px 18px; }
       .voices-shell { gap: 10px; }
       .voices-intro { max-width: 650px; }
@@ -1816,6 +2174,30 @@
     <div class="year" id="qpYear"></div>
   </div>
 
+  <!-- Perfil temático de una voz: se abre como ficha de exploración, sin
+       convertir el stage principal en un dashboard denso. -->
+  <div id="voiceProfilePanel" class="voice-profile-panel" role="dialog" aria-modal="true" aria-labelledby="voiceProfileTitle" hidden>
+    <div class="voice-profile-backdrop" data-voice-profile-close></div>
+    <section class="voice-profile-dialog" role="document">
+      <button class="voice-profile-close" id="voiceProfileClose" type="button" aria-label="Cerrar perfil de voz">&#10005;</button>
+      <div class="voice-profile-eyebrow">Ficha de perfil · énfasis discursivo</div>
+      <h2 class="voice-profile-title" id="voiceProfileTitle"></h2>
+      <p class="voice-profile-subtitle" id="voiceProfileSubtitle"></p>
+      <div class="voice-profile-grid">
+        <div class="voice-radar-wrap">
+          <svg id="voiceRadar" viewBox="0 0 320 270" role="img" aria-label="Gráfico radial del perfil temático"></svg>
+        </div>
+        <div class="voice-topic-list" id="voiceTopicList"></div>
+      </div>
+      <div class="voice-profile-evidence">
+        <div class="voice-profile-evidence-label">Una intervención que lo muestra</div>
+        <blockquote id="voiceProfileEvidenceQuote"></blockquote>
+        <cite id="voiceProfileEvidenceCitation"></cite>
+      </div>
+      <p class="voice-profile-note">Las dimensiones indican presencia temática en los fragmentos disponibles; no miden experiencia, autoridad ni una postura política permanente.</p>
+    </section>
+  </div>
+
   <canvas id="canvas" role="img" aria-label="Moneda animada de 3D que representa la política monetaria del Banco Central de Chile"></canvas>
 
   <div class="coin-halo-wrap" id="haloWrap">
@@ -1970,7 +2352,10 @@
                 <blockquote class="voice-detail-quote" id="voiceDetailQuote"></blockquote>
                 <cite class="voice-detail-citation" id="voiceDetailCitation"></cite>
               </div>
-              <button class="voice-detail-open" id="voiceDetailOpen" type="button">Leer intervenci&oacute;n <span aria-hidden="true">↗</span></button>
+              <div class="voice-detail-actions">
+                <button class="voice-profile-open" id="voiceProfileOpen" type="button">Ver perfil tem&aacute;tico <span aria-hidden="true">↗</span></button>
+                <button class="voice-detail-open" id="voiceDetailOpen" type="button">Leer intervenci&oacute;n <span aria-hidden="true">↗</span></button>
+              </div>
               <p class="voice-detail-note">La clasificaci&oacute;n describe la orientaci&oacute;n detectada en el fragmento, no una identidad pol&iacute;tica permanente.</p>
             </div>
           </div>
@@ -2863,7 +3248,7 @@
        bloquear el contenido ni el scroll. En touch sólo se usa pointerdown para
        fijar el panel; el hover queda reservado al mouse. */
     const isInteractiveTarget = (e) => !!(e.target && e.target.closest &&
-      e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term, .voice-explorer, .voice-card, .voice-detail'));
+      e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term, .voice-explorer, .voice-card, .voice-detail, .voice-profile-panel'));
     window.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'touch' || isInteractiveTarget(e)) return;
       lastPointerX = e.clientX;
@@ -3199,6 +3584,22 @@
        años y con qué frecuencia, y ofrece una muestra atribuida antes de abrir
        el panel documental completo.
     ──────────────────────────────── */
+    /* Taxonomía transparente del prototipo: estas dimensiones son temas
+       observables en el lenguaje económico. Con el corpus completo se valida
+       y ajusta junto al equipo; no representan habilidades profesionales. */
+    const TOPIC_DEFINITIONS = [
+      { id: 'inflation', short: 'Inflación', label: 'Inflación y precios', terms: ['inflación', 'inflacionario', 'ipc', 'precios', 'subyacente', 'expectativas', 'meta'] },
+      { id: 'activity', short: 'Actividad', label: 'Actividad y crecimiento', terms: ['crecimiento', 'pib', 'actividad', 'demanda', 'consumo', 'inversión', 'producto', 'brecha'] },
+      { id: 'monetary', short: 'Tasas', label: 'Política monetaria', terms: ['tasa', 'tpm', 'política monetaria', 'estímulo', 'neutralidad', 'liquidez', 'mantener', 'subir', 'bajar'] },
+      { id: 'external', short: 'Externo', label: 'Escenario internacional', terms: ['externo', 'internacional', 'estados unidos', 'ee.uu', 'global', 'mundial', 'china', 'europa', 'mercados externos'] },
+      { id: 'financial', short: 'Mercados', label: 'Mercados y tipo de cambio', terms: ['mercados financieros', 'tipo de cambio', 'tasas forward', 'forward', 'activos', 'bonos', 'financiero', 'dólar', 'peso'] },
+      { id: 'commodities', short: 'Commodities', label: 'Commodities y energía', terms: ['materias primas', 'petróleo', 'cobre', 'energía', 'alimentos', 'commodities'] },
+      { id: 'labor', short: 'Laboral', label: 'Empleo y holguras', terms: ['empleo', 'desempleo', 'salarios', 'salario', 'holgura', 'trabajadores'] },
+      { id: 'fiscal', short: 'Fiscal', label: 'Política fiscal', terms: ['fiscal', 'gasto', 'presupuesto', 'presupuestos', 'gobierno', 'impuesto', 'déficit'] },
+    ];
+    const normalizeTopicText = (value) => String(value || '').toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const topicHasTerm = (normalizedText, term) => normalizedText.includes(normalizeTopicText(term));
+
     function initVoiceExplorer() {
       const rail = document.getElementById('voiceRail');
       const meta = document.getElementById('voiceDirectoryMeta');
@@ -3210,7 +3611,16 @@
       const detailQuote = document.getElementById('voiceDetailQuote');
       const detailCitation = document.getElementById('voiceDetailCitation');
       const detailOpen = document.getElementById('voiceDetailOpen');
-      if (!rail || !meta || !empty || !content || !detailOpen || !quotes.length) return;
+      const profileOpen = document.getElementById('voiceProfileOpen');
+      const profilePanel = document.getElementById('voiceProfilePanel');
+      const profileClose = document.getElementById('voiceProfileClose');
+      const profileTitle = document.getElementById('voiceProfileTitle');
+      const profileSubtitle = document.getElementById('voiceProfileSubtitle');
+      const radar = document.getElementById('voiceRadar');
+      const topicList = document.getElementById('voiceTopicList');
+      const evidenceQuote = document.getElementById('voiceProfileEvidenceQuote');
+      const evidenceCitation = document.getElementById('voiceProfileEvidenceCitation');
+      if (!rail || !meta || !empty || !content || !detailOpen || !profileOpen || !profilePanel || !profileClose || !radar || !topicList || !evidenceQuote || !evidenceCitation || !quotes.length) return;
 
       const getSourceYear = (q) => {
         const dateYear = String(q.date || '').match(/^(\d{4})/);
@@ -3220,7 +3630,7 @@
       quotes.forEach((q, index) => {
         const name = q.participant || 'Participante anónimo';
         if (!grouped.has(name)) grouped.set(name, []);
-        grouped.get(name).push({ q, index });
+        grouped.get(name).push({ q, index, normalizedText: normalizeTopicText(q.text) });
       });
 
       const voices = Array.from(grouped, ([name, rows]) => {
@@ -3252,6 +3662,152 @@
         dovish: 'dovish (expansiva)',
         neutral: 'neutral',
       };
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const createSvgElement = (tag, attrs = {}) => {
+        const node = document.createElementNS(svgNS, tag);
+        Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, String(value)));
+        return node;
+      };
+      const getVoiceSample = (rows) => {
+        if (!rows || !rows.length) return null;
+        const chronological = rows.slice().sort((a, b) => {
+          const da = String(a.q.date || a.q.year || '');
+          const db = String(b.q.date || b.q.year || '');
+          return da.localeCompare(db) || a.index - b.index;
+        });
+        return chronological[Math.floor((chronological.length - 1) / 2)];
+      };
+      const getTopicProfile = (voice) => TOPIC_DEFINITIONS.map((definition) => {
+        const matchedRows = voice.rows.filter((row) => definition.terms.some((term) => topicHasTerm(row.normalizedText, term)));
+        const termCounts = definition.terms.map((term) => ({
+          term,
+          count: voice.rows.filter((row) => topicHasTerm(row.normalizedText, term)).length,
+        })).filter((item) => item.count > 0).sort((a, b) => b.count - a.count || a.term.localeCompare(b.term, 'es'));
+        return {
+          definition,
+          rows: matchedRows,
+          value: voice.count ? (matchedRows.length / voice.count) * 100 : 0,
+          termCounts,
+        };
+      });
+
+      function drawVoiceRadar(profiles, voiceName) {
+        radar.innerHTML = '';
+        const cx = 150;
+        const cy = 128;
+        const radius = 82;
+        const count = profiles.length;
+        const angleFor = (index) => (-Math.PI / 2) + (index / count) * Math.PI * 2;
+        const pointFor = (index, value, distance = radius * (value / 100)) => {
+          const angle = angleFor(index);
+          return [cx + Math.cos(angle) * distance, cy + Math.sin(angle) * distance];
+        };
+        const polygonPoints = (distance) => profiles.map((_, index) => pointFor(index, 100, distance).join(',')).join(' ');
+
+        [0.25, 0.5, 0.75, 1].forEach((level) => {
+          radar.appendChild(createSvgElement('polygon', { class: 'radar-ring', points: polygonPoints(radius * level) }));
+        });
+        profiles.forEach((profile, index) => {
+          const [x, y] = pointFor(index, 100);
+          radar.appendChild(createSvgElement('line', { class: 'radar-axis', x1: cx, y1: cy, x2: x, y2: y }));
+        });
+        const shape = createSvgElement('polygon', {
+          class: 'radar-shape',
+          points: profiles.map((profile, index) => pointFor(index, profile.value).join(',')).join(' '),
+        });
+        radar.appendChild(shape);
+        profiles.forEach((profile, index) => {
+          const [x, y] = pointFor(index, profile.value);
+          radar.appendChild(createSvgElement('circle', { class: 'radar-point', cx: x, cy: y, r: 3.5 }));
+          const [lx, ly] = pointFor(index, 100, radius + 23);
+          const label = createSvgElement('text', {
+            class: 'radar-label',
+            x: lx,
+            y: ly + (ly < cy ? -2 : 4),
+            'text-anchor': lx < cx - 8 ? 'end' : lx > cx + 8 ? 'start' : 'middle',
+          });
+          label.textContent = profile.definition.short;
+          radar.appendChild(label);
+        });
+        radar.appendChild(createSvgElement('circle', { cx, cy, r: 2, fill: 'rgba(255,255,255,0.65)' }));
+        radar.setAttribute('aria-label', `Perfil temático de ${voiceName}. Cada eje muestra el porcentaje de sus fragmentos con una mención directa.`);
+        gsap.fromTo(shape, { opacity: 0, scale: 0.92, transformOrigin: `${cx}px ${cy}px` }, { opacity: 1, scale: 1, duration: 0.55, ease: 'cinematicOut' });
+      }
+
+      let profileVoice = null;
+      let profileCloseTimer = null;
+      let profileReturnFocus = null;
+      function setProfileEvidence(voice, rows) {
+        const sample = getVoiceSample(rows) || getVoiceSample(voice.rows);
+        if (!sample) return;
+        evidenceQuote.textContent = `“${sample.q.text || 'Sin texto disponible'}”`;
+        evidenceCitation.textContent = `— ${sample.q.participant || voice.name}, ${sample.q.formatted_date || sample.q.date || sample.q.year || 'fecha no especificada'}`;
+      }
+
+      function renderVoiceProfile(voice, activeTopicId = null) {
+        if (!voice) return;
+        profileVoice = voice;
+        const profiles = getTopicProfile(voice);
+        profileTitle.textContent = voice.name;
+        profileSubtitle.textContent = `${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'} · ${voice.minYear}–${voice.maxYear} · cada eje = proporción de fragmentos con mención directa`;
+        drawVoiceRadar(profiles, voice.name);
+        topicList.innerHTML = '';
+        profiles.forEach((profile) => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'voice-topic-row' + (profile.definition.id === activeTopicId ? ' is-active' : '');
+          row.setAttribute('aria-pressed', String(profile.definition.id === activeTopicId));
+          row.setAttribute('aria-label', `${profile.definition.label}: ${Math.round(profile.value)} por ciento de los fragmentos`);
+          row.innerHTML = `
+            <span class="voice-topic-row-top"><span></span><strong></strong></span>
+            <span class="voice-topic-meter"><i></i></span>
+            <span class="voice-topic-terms"></span>`;
+          row.querySelector('.voice-topic-row-top span').textContent = profile.definition.label;
+          row.querySelector('.voice-topic-row-top strong').textContent = `${Math.round(profile.value)}%`;
+          row.querySelector('.voice-topic-meter i').style.width = `${profile.value}%`;
+          row.querySelector('.voice-topic-terms').textContent = profile.termCounts.length
+            ? profile.termCounts.slice(0, 3).map((item) => item.term).join(' · ')
+            : 'sin coincidencia directa en la muestra';
+          row.addEventListener('click', () => renderVoiceProfile(voice, profile.definition.id));
+          topicList.appendChild(row);
+        });
+        const activeProfile = profiles.find((profile) => profile.definition.id === activeTopicId);
+        setProfileEvidence(voice, activeProfile?.rows || voice.rows);
+      }
+
+      function openVoiceProfile(voice) {
+        if (!voice) return;
+        renderVoiceProfile(voice);
+        profileReturnFocus = document.activeElement;
+        profilePanel.hidden = false;
+        profilePanel.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('voice-profile-modal-open');
+        requestAnimationFrame(() => profilePanel.classList.add('is-open'));
+        profileClose.focus({ preventScroll: true });
+      }
+
+      function closeVoiceProfile() {
+        if (profilePanel.hidden) return;
+        profilePanel.classList.remove('is-open');
+        profilePanel.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('voice-profile-modal-open');
+        clearTimeout(profileCloseTimer);
+        profileCloseTimer = setTimeout(() => {
+          profilePanel.hidden = true;
+          if (profileReturnFocus && typeof profileReturnFocus.focus === 'function') {
+            profileReturnFocus.focus({ preventScroll: true });
+          }
+          profileReturnFocus = null;
+        }, 340);
+      }
+      profileClose.addEventListener('click', closeVoiceProfile);
+      profilePanel.querySelectorAll('[data-voice-profile-close]').forEach((element) => element.addEventListener('click', closeVoiceProfile));
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !profilePanel.hidden) {
+          event.preventDefault();
+          closeVoiceProfile();
+        }
+      });
 
       function updateDetail(voice) {
         if (!voice) {
@@ -3261,14 +3817,9 @@
           return;
         }
 
-        const chronological = voice.rows.slice().sort((a, b) => {
-          const da = String(a.q.date || a.q.year || '');
-          const db = String(b.q.date || b.q.year || '');
-          return da.localeCompare(db) || a.index - b.index;
-        });
         /* La muestra se toma del centro cronológico para no convertir la tarjeta
            en un ranking ni privilegiar automáticamente la primera/última cita. */
-        const sample = chronological[Math.floor((chronological.length - 1) / 2)];
+        const sample = getVoiceSample(voice.rows);
         const toneSummary = [
           `${voice.toneCounts.hawkish} ${toneLabels.hawkish}`,
           `${voice.toneCounts.dovish} ${toneLabels.dovish}`,
@@ -3298,6 +3849,11 @@
            no debe dejar un panel perteneciente a otra voz flotando sobre el rail. */
         if (typeof closeQuotePanel === 'function') closeQuotePanel();
       }
+
+      profileOpen.addEventListener('click', () => {
+        const voice = activeName ? voices.find((item) => item.name === activeName) : null;
+        openVoiceProfile(voice);
+      });
 
       voices.forEach((voice, index) => {
         const card = document.createElement('button');
