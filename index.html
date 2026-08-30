@@ -1479,8 +1479,9 @@
            Con 1.25 la puerta mide ~36% del alto del viewport en 16:9. */
         widthVsCoin: 1.1,
         /* Línea de suelo: el pie de los escalones se apoya acá (unidades de mundo).
-           SUBIR (0.2, 0.4) | BAJAR (-0.2, -0.5). */
-        groundY: -0.6,
+           En 0.15 queda por encima del bloque de texto de La Reunión, incluso
+           en ventanas bajas y anchas. SUBIR: valores mayores | BAJAR: menores. */
+        groundY: 0.15,
         baseX: 0.0,             // Horizontal: DERECHA (> 0) | IZQUIERDA (< 0)
         baseZ: 0.0,             // Profundidad: MÁS CERCA (> 0) | MÁS LEJOS (< 0)
         /* Aplastamiento de profundidad (1 = sin aplastar): la escultura es muy
@@ -1822,7 +1823,12 @@
     function applyDoorScale() {
       if (!doorModel || !doorFootprint) return;
       const cfg = CONFIG.door;
-      const widthWorld = getCoinWorldSize() * (cfg.widthVsCoin ?? 1.4);
+      /* En ventanas muy anchas y bajas la moneda de referencia conserva un
+         tamaño tipográfico que haría crecer demasiado la puerta en vertical.
+         El límite solo actúa por encima de ~19:10; 16:9 y móvil no cambian. */
+      const aspect = window.innerWidth / Math.max(window.innerHeight, 1);
+      const aspectFit = THREE.MathUtils.clamp(1.9 / aspect, 0.78, 1);
+      const widthWorld = getCoinWorldSize() * (cfg.widthVsCoin ?? 1.4) * aspectFit;
       const s = widthWorld / Math.max(doorFootprint.width, 1e-3);
       /* Squash de profundidad calculado sobre la escala FINAL. Antes se medía con
          una escala intermedia que nunca se llegaba a usar, así que el valor de Z
