@@ -1158,15 +1158,19 @@
 
   <!-- ═══════ STAGE 3 — LA SALA (La Sala b1: cruce + voces) ═══════ -->
   <section id="stageRoom" class="stage-room" style="position: relative; width: 100%; height: 260vh; pointer-events: none;">
-    <div id="stageRoomContainer" class="room-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 12vh; z-index: 30; pointer-events: none;">
+    <div id="stageRoomContainer" class="room-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(-7vh); z-index: 30; pointer-events: none;">
       <h2 id="roomTitle" data-room style="font-family: var(--font-body); font-size: var(--fs-h3); font-weight: 600; text-transform: uppercase; letter-spacing: 4px; color: var(--color-text-secondary); margin-bottom: 1rem; text-shadow: 0 2px 8px rgba(0,0,0,0.8); opacity: 0;">
         La Sala
       </h2>
       <p id="roomLead" data-room style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 640px; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin: 0 20px; opacity: 0;">
-        Detr&aacute;s de esa puerta se dijo todo esto. <span>182 reuniones.</span>
+        Detr&aacute;s de esa puerta se dijo todo esto:<br>
+        <span style="color: var(--color-gold);">182 reuniones,</span> 16 a&ntilde;os de deliberaci&oacute;n a puerta cerrada.
+      </p>
+      <p id="roomSub" data-room style="font-size: var(--fs-small); color: var(--color-text-secondary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 560px; text-shadow: 0 2px 10px rgba(0,0,0,0.9); margin: 0.9rem 20px 0; opacity: 0;">
+        Cada punto que flota en esta sala es una voz real de esas actas.
       </p>
       <p id="roomHint" data-room-hint style="font-size: var(--fs-small); color: var(--color-text-muted); font-family: var(--font-body); text-align: center; margin-top: 1.6rem; letter-spacing: 0.3px; opacity: 0;">
-        Cada punto, una voz &middot; pasa el cursor por una de ellas
+        Pasa el cursor sobre una voz para leer lo que dijo &middot; haz clic para fijarla
       </p>
     </div>
   </section>
@@ -1523,6 +1527,13 @@
         roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
         veilFog: 0.06,     // pico del velo de niebla durante el cruce
         fovKick: 4,        // grados extra de FOV durante el dolly (0 → 1 → 0)
+        /* Encuadre del acercamiento (ventanas de crossT en las que la mira viaja):
+           aimDoorT: mira neutra de "La Reunión" → centro VISUAL de la puerta.
+                     Que termine a ~0.45 hace que "un instante antes de entrar" la
+                     puerta ya vaya perfectamente centrada (antes iba cortada arriba).
+           aimRoomT: puerta (ya disuelta) → interior de la sala (roomLook). */
+        aimDoorT: [0.0, 0.45],
+        aimRoomT: [0.55, 0.95],
       },
       doorText: {
         /* ══════════════════════════════════════════════════════════════════════
@@ -1738,17 +1749,28 @@
     }, 30000);
 
     const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-    /* Respaldo: si el CDN primario no responde, usar el mirror de jsDelivr
-       (mismos decodificadores, versión three r160). Se decide antes del primer GLB. */
+    /* Decodificador Draco LOCAL primero (js/vendor/draco/): el proyecto ya era
+       offline-first (three.js, GSAP y D3 se sirven de js/), pero el decoder seguía
+       saliendo al CDN de Google — si ese CDN era inalcanzable (red filtrada, sin
+       conexión, preview aislada) los GLB no decodificaban y el sitio se quedaba
+       sin moneda ni puerta. Cadena: local → gstatic → jsDelivr. */
+    dracoLoader.setDecoderPath('js/vendor/draco/');
     try {
-      fetch('https://www.gstatic.com/draco/versioned/decoders/1.5.6/draco_wasm_wrapper.js', {
-        method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout ? AbortSignal.timeout(3500) : undefined,
+      fetch('js/vendor/draco/draco_wasm_wrapper.js', { method: 'HEAD' }).then((r) => {
+        if (!r.ok) throw new Error('decoder local ausente');
       }).catch(() => {
-        console.warn('Draco CDN primario no disponible — usando mirror jsDelivr');
-        dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
+        console.warn('Draco local no disponible — usando CDN gstatic');
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+        /* Segundo respaldo: si el CDN primario no responde, mirror de jsDelivr
+           (mismos decodificadores, versión three r160). */
+        fetch('https://www.gstatic.com/draco/versioned/decoders/1.5.6/draco_wasm_wrapper.js', {
+          method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout ? AbortSignal.timeout(3500) : undefined,
+        }).catch(() => {
+          console.warn('Draco CDN primario no disponible — usando mirror jsDelivr');
+          dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
+        });
       });
-    } catch (e) { /* navegador sin fetch/AbortSignal moderno: se queda con el CDN primario */ }
+    } catch (e) { /* navegador sin fetch moderno: intenta con el decoder local igualmente */ }
 
     const loader = new GLTFLoader(manager);
     loader.setDRACOLoader(dracoLoader);
@@ -1873,6 +1895,10 @@
        para apoyar la puerta en CONFIG.door.groundY y para la sombra de contacto.
        Se recalcula al cargar el modelo; -1.15 es solo el valor de reserva. */
     let doorBottomOffset = -1.15;
+    /* Techo (pórtico) relativo al pivote, mismas unidades. Junto con
+       doorBottomOffset da el centro VISUAL de la figura completa, que es el punto
+       de mira durante el dolly de cruce (ver animate — rama 'doorway'). */
+    let doorTopOffset = 1.15;
     doorLoader.load('puerta-draco.glb', (gltf) => {
       const model = gltf.scene;
       /* Asegura que las transformaciones del GLB ya estén aplicadas al medirlo;
@@ -1904,6 +1930,7 @@
         /* Base del modelo (escalones) relativa al pivote: sirve para apoyar la
            puerta en CONFIG.door.groundY y para pegar ahí la sombra de contacto. */
         doorBottomOffset = box.min.y - center.y;
+        doorTopOffset = box.max.y - center.y;
         doorModel = model;
         applyDoorScale();
       }
@@ -2198,6 +2225,17 @@
       CONFIG.door?.roomLook?.y ?? 0.45,
       CONFIG.door?.roomLook?.z ?? -2.0
     );
+    /* Mira durante el cruce del umbral:
+       _lookBase  = mira neutra de "La Reunión" (idéntica a la rama sin cruce,
+                    así el primer frame del cruce es continuo con el último sin él).
+       _doorLook  = centro VISUAL de la figura completa (pórtico + hojas + escalones);
+                    el dolly mira AHÍ para que la puerta crezca hacia el centro del
+                    frame en vez de escaparse hacia el borde superior (bug reportado:
+                    "un segundo antes de entrar", la puerta ya iba cortada arriba
+                    porque la mira interpolaba directo al interior de la sala — un
+                    punto bajo y detrás de la puerta). */
+    const _lookBase = new THREE.Vector3(0, camBaseY, 0);
+    const _doorLook = new THREE.Vector3();
 
 
     function animate() {
@@ -2334,7 +2372,23 @@
           THREE.MathUtils.lerp(currentCamY, CONFIG.door.roomCamY ?? 0.62, crossEase),
           THREE.MathUtils.lerp(baseCamZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
         );
-        _roomLook.set(0, camBaseY, 0).lerp(_roomLookTarget, crossEase);
+        /* Encuadre del acercamiento (tres fases encadenadas por crossT):
+             1) mira neutra → centro de la puerta  [aimDoor: crossT 0 → 0.45]
+             2) mira bloqueada en la puerta mientras ésta se disuelve
+             3) puerta ya disuelta → mira al interior de la sala  [aimRoom: 0.55 → 0.95]
+           La fase 1 usa el centro de la FIGURA COMPLETA (pivot ± offsets reales
+           medidos al cargar el GLB), no el pivote de las hojas. Como la mira y el
+           dolly comparten easings suaves, la transición no tiene saltos. */
+        const [ad0, ad1] = CONFIG.door.aimDoorT ?? [0, 0.45];
+        const [ar0, ar1] = CONFIG.door.aimRoomT ?? [0.55, 0.95];
+        const aimDoor = THREE.MathUtils.smoothstep((crossT - ad0) / Math.max(ad1 - ad0, 1e-3), 0, 1);
+        const aimRoom = THREE.MathUtils.smoothstep((crossT - ar0) / Math.max(ar1 - ar0, 1e-3), 0, 1);
+        _doorLook.set(
+          doorGroup.position.x,
+          doorGroup.position.y + (doorBottomOffset + doorTopOffset) * 0.5 * doorModelGroup.scale.y * doorGroup.scale.x,
+          doorGroup.position.z
+        );
+        _roomLook.copy(_lookBase).lerp(_doorLook, aimDoor).lerp(_roomLookTarget, aimRoom);
         camera.lookAt(_roomLook);
       } else {
         camera.position.set(CONFIG.camera.x, currentCamY, baseCamZ);
@@ -2800,11 +2854,19 @@
         },
       });
 
-      /* Beats de texto: entran al revelarse la sala, se van antes del dwell final */
+      /* Beats de texto: entran al revelarse la sala; título, titular y bajada se
+         van antes del dwell final, pero el HINT persiste todo el dwell (es la
+         única señal de que los puntos son explorables) y sale justo al final
+         para no colisionar con la entrada de "El Método". */
       const roomTitle = document.getElementById('roomTitle');
       const roomLead = document.getElementById('roomLead');
+      const roomSub = document.getElementById('roomSub');
       const roomHint = document.getElementById('roomHint');
-      if (roomTitle && roomLead && roomHint) {
+      /* En pantallas táctiles no hay "cursor": el hint explica el tap directo. */
+      if (roomHint && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        roomHint.textContent = 'Toca una voz para leer lo que dijo · tócala de nuevo para fijarla';
+      }
+      if (roomTitle && roomLead && roomSub && roomHint) {
         gsap.timeline({
           scrollTrigger: {
             trigger: '#stageRoom',
@@ -2815,10 +2877,12 @@
         })
           .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.22)
           .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.30)
-          .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.42)
+          .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.38)
+          .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.46)
           .to(roomTitle, { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.68)
           .to(roomLead,  { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.74)
-          .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.88);
+          .to(roomSub,   { opacity: 0, y: -12, duration: 0.05, ease: 'none' }, 0.80)
+          .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.94);
       }
     }
 
