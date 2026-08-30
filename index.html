@@ -1466,11 +1466,11 @@
       coin: {
         scale: 2.15, swaySpeedY: 0.45, tiltBase: -0.05,
         tiltOscillation: 0.025, tiltSpeed: 0.5,
-        floatAmount: 0.04, floatSpeed: 0.7, baseY: 0.9,
-        /* baseY 0.9 proyecta la moneda a ~42% del alto del viewport, que es la
-           altura a la que la aureola dorada de fondo centra su círculo
-           (body::before: circle at 50% 42%). Con baseY 1.4 caía a ~30% y la
-           moneda quedaba por encima del círculo. */
+        floatAmount: 0.04, floatSpeed: 0.7, baseY: 1.05,
+        /* baseY 1.05 proyecta la moneda a ~39% del alto del viewport (un poco
+           por arriba del centro de la aureola, que está en 42%). baseY 0.9 la
+           dejaba exactamente en el centro de la aureola; el usuario pidió
+           subirla un poco. */
         color: '#ffd76a', metalness: 1.0, roughness: 0.22,
         envMapIntensity: 1.05, emissive: '#3d2508', emissiveIntensity: 0.05,
       },
