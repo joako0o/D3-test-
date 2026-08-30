@@ -120,10 +120,10 @@
     #canvas:active { cursor: grabbing; }
     #canvas.hidden-stage { opacity: 0; pointer-events: none; }
 
-    .stage-hook, .stage-voices, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing {
+    .stage-hook, .stage-voices, .stage-acts, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing {
       pointer-events: none;
     }
-    .closing-cta, .quote-card, #timelineContainer, .voice-explorer, .voice-card, .voice-detail button {
+    .closing-cta, .quote-card, #timelineContainer, .voice-explorer, .voice-card, .voice-detail button, .acts-browser, .act-list-item, .act-term-chip, .act-evidence-row, .act-open-evidence {
       pointer-events: auto;
     }
 
@@ -648,6 +648,855 @@
     .data-tag.neutral:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
     .data-tag.hawkish:hover { background: rgba(255,215,106,0.18); border-color: rgba(255,215,106,0.35); }
     .data-tag.dovish:hover { background: rgba(138,180,248,0.18); border-color: rgba(138,180,248,0.35); }
+
+    /* ─── STAGE 5 — Evolución del lenguaje ─── */
+    .stage-word-evolution {
+      position: relative;
+      z-index: 30;
+      height: 230vh;
+    }
+    .word-evolution-pin-wrapper {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(34px, 7vh, 76px) 5%;
+      overflow: hidden;
+    }
+    .word-evolution-shell {
+      width: min(1180px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: clamp(16px, 2.5vh, 26px);
+    }
+    .word-evolution-intro {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    .word-evolution-kicker {
+      color: var(--color-gold);
+      font-size: var(--fs-micro);
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .word-evolution-title {
+      margin-top: 9px;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: clamp(28px, 4vw, 52px);
+      font-weight: 500;
+      line-height: 1.1;
+      background: linear-gradient(120deg, var(--color-gold), var(--color-text-primary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .word-evolution-lead {
+      max-width: 720px;
+      margin: 12px auto 0;
+      color: var(--color-text-secondary);
+      font-family: var(--font-display);
+      font-size: var(--fs-body);
+      line-height: 1.55;
+    }
+    .word-evolution-board {
+      width: 100%;
+      padding: clamp(16px, 2.2vw, 26px);
+      border: 1px solid rgba(255,215,106,0.17);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 24px 90px rgba(0,0,0,0.27), inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      opacity: 0;
+      transform: translateY(24px);
+      pointer-events: auto;
+    }
+    .word-evolution-board-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 9px;
+    }
+    .word-evolution-label {
+      color: var(--color-text-primary);
+      font-size: var(--fs-small);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .word-evolution-legend {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: var(--color-text-muted);
+      font-size: var(--fs-micro);
+    }
+    .word-evolution-legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .legend-dot {
+      width: 7px;
+      height: 7px;
+      display: inline-block;
+      border-radius: 50%;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .legend-dot.hawkish { color: var(--color-gold); background: var(--color-gold); }
+    .legend-dot.dovish { color: var(--color-dovish); background: var(--color-dovish); }
+    .word-evolution-chart-wrap {
+      width: 100%;
+      height: clamp(270px, 39vh, 410px);
+      overflow: hidden;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    #wordEvolutionSvg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    #wordEvolutionSvg .word-grid-line {
+      stroke: rgba(255,255,255,0.09);
+      stroke-width: 1;
+    }
+    #wordEvolutionSvg .word-axis-label {
+      fill: var(--color-text-faint);
+      font: 11px var(--font-body);
+      font-variant-numeric: tabular-nums;
+    }
+    #wordEvolutionSvg .word-lane-label {
+      font: 600 10px var(--font-body);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    #wordEvolutionSvg .word-lane-label.hawkish { fill: rgba(255,215,106,0.86); }
+    #wordEvolutionSvg .word-lane-label.dovish { fill: rgba(138,180,248,0.88); }
+    #wordEvolutionSvg .word-zero-line {
+      stroke: rgba(255,255,255,0.15);
+      stroke-width: 1;
+    }
+    #wordEvolutionSvg .word-path {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    #wordEvolutionSvg .word-path.hawkish { stroke: var(--color-gold); }
+    #wordEvolutionSvg .word-path.dovish { stroke: var(--color-dovish); }
+    #wordEvolutionSvg .word-point {
+      stroke: #0b1020;
+      stroke-width: 2;
+    }
+    #wordEvolutionSvg .word-point.hawkish { fill: var(--color-gold); }
+    #wordEvolutionSvg .word-point.dovish { fill: var(--color-dovish); }
+    #wordEvolutionSvg .word-end-label {
+      font: 600 12px var(--font-display);
+    }
+    #wordEvolutionSvg .word-end-label.hawkish { fill: var(--color-gold); }
+    #wordEvolutionSvg .word-end-label.dovish { fill: var(--color-dovish); }
+    #wordEvolutionSvg .word-cursor {
+      stroke: rgba(255,255,255,0.65);
+      stroke-width: 1;
+      stroke-dasharray: 3 5;
+      pointer-events: none;
+    }
+    .word-evolution-readout {
+      display: flex;
+      align-items: baseline;
+      gap: 13px;
+      min-height: 30px;
+      margin-top: 13px;
+    }
+    .word-evolution-year {
+      color: var(--color-gold);
+      font-family: var(--font-display);
+      font-size: clamp(24px, 3vw, 36px);
+      font-variant-numeric: tabular-nums;
+    }
+    .word-evolution-readout-text {
+      color: var(--color-text-secondary);
+      font-size: var(--fs-small);
+      line-height: 1.45;
+    }
+    .word-evolution-note {
+      max-width: 760px;
+      margin: 0 auto;
+      color: var(--color-text-faint);
+      font-size: 11px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    /* ─── STAGE 6 — Navegador de actas ─── */
+    .stage-acts {
+      position: relative;
+      z-index: 30;
+      height: 280vh;
+    }
+    .acts-pin-wrapper {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(34px, 6vh, 70px) 5%;
+      overflow: hidden;
+    }
+    .acts-shell {
+      width: min(1180px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(14px, 2.2vh, 22px);
+    }
+    .acts-intro {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    .acts-kicker {
+      color: var(--color-gold);
+      font-size: var(--fs-micro);
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .acts-title {
+      margin-top: 9px;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: clamp(27px, 3.7vw, 50px);
+      font-weight: 500;
+      line-height: 1.1;
+      background: linear-gradient(120deg, var(--color-gold), var(--color-text-primary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .acts-lead {
+      max-width: 720px;
+      margin: 11px auto 0;
+      color: var(--color-text-secondary);
+      font-family: var(--font-display);
+      font-size: var(--fs-body);
+      line-height: 1.5;
+    }
+    .acts-browser {
+      display: grid;
+      grid-template-columns: minmax(212px, 0.42fr) minmax(0, 1.58fr);
+      gap: 14px;
+      width: 100%;
+      min-width: 0;
+      padding: clamp(14px, 1.8vw, 22px);
+      border: 1px solid rgba(255,215,106,0.17);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 24px 90px rgba(0,0,0,0.27), inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      opacity: 0;
+      transform: translateY(24px);
+      pointer-events: auto;
+    }
+    .acts-index,
+    .act-reader {
+      min-width: 0;
+    }
+    .acts-index {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding-right: 14px;
+      border-right: 1px solid rgba(255,255,255,0.09);
+    }
+    .acts-index-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .acts-index-label,
+    .act-reading-label {
+      color: var(--color-text-primary);
+      font-size: var(--fs-small);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .acts-index-meta {
+      display: block;
+      margin-top: 4px;
+      color: var(--color-text-faint);
+      font-size: 10px;
+      line-height: 1.35;
+      font-variant-numeric: tabular-nums;
+    }
+    .acts-year-control {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+    .acts-year-control label {
+      color: var(--color-text-faint);
+      font-size: 9px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+    .acts-year-filter {
+      max-width: 104px;
+      padding: 5px 20px 5px 8px;
+      border: 1px solid rgba(255,215,106,0.22);
+      border-radius: 6px;
+      color: var(--color-text-secondary);
+      background: rgba(7,11,22,0.62);
+      font: 500 10px var(--font-body);
+      cursor: pointer;
+    }
+    .acts-list {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 0;
+      max-height: clamp(260px, 42vh, 390px);
+      overflow-y: auto;
+      padding-right: 5px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,215,106,0.42) transparent;
+    }
+    .acts-list::-webkit-scrollbar { width: 4px; }
+    .acts-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); border-radius: 99px; }
+    .acts-list::-webkit-scrollbar-thumb { background: rgba(255,215,106,0.42); border-radius: 99px; }
+    .act-list-item {
+      display: grid;
+      grid-template-columns: 7px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 8px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--color-text-secondary);
+      background: rgba(255,255,255,0.018);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+    }
+    .act-list-item:hover,
+    .act-list-item:focus-visible {
+      border-color: rgba(255,215,106,0.27);
+      background: rgba(255,215,106,0.06);
+      transform: translateX(2px);
+    }
+    .act-list-item[aria-current="true"] {
+      border-color: rgba(255,215,106,0.45);
+      background: linear-gradient(110deg, rgba(255,215,106,0.13), rgba(255,255,255,0.025));
+      color: var(--color-text-primary);
+    }
+    .act-tone-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      box-shadow: 0 0 9px currentColor;
+    }
+    .act-tone-dot.hawkish { color: var(--color-gold); background: var(--color-gold); }
+    .act-tone-dot.dovish { color: var(--color-dovish); background: var(--color-dovish); }
+    .act-tone-dot.neutral,
+    .act-tone-dot.mixed { color: rgba(207,214,228,0.8); background: rgba(207,214,228,0.8); }
+    .act-list-date {
+      display: block;
+      color: inherit;
+      font: 500 11px var(--font-body);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.25;
+    }
+    .act-list-meta {
+      display: block;
+      margin-top: 2px;
+      color: var(--color-text-faint);
+      font-size: 9px;
+      line-height: 1.25;
+    }
+    .act-list-signal {
+      color: var(--color-text-faint);
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .acts-empty {
+      padding: 20px 10px;
+      color: var(--color-text-muted);
+      font: italic 14px var(--font-display);
+      line-height: 1.4;
+    }
+    .act-reader {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      min-height: 0;
+    }
+    .act-reader-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.09);
+    }
+    .act-reader-kicker {
+      color: var(--color-gold);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2.3px;
+      text-transform: uppercase;
+    }
+    .act-date {
+      margin-top: 4px;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: clamp(24px, 2.6vw, 38px);
+      font-weight: 500;
+      line-height: 1.05;
+    }
+    .act-date-sub {
+      margin-top: 5px;
+      color: var(--color-text-faint);
+      font-size: 10px;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+      font-variant-numeric: tabular-nums;
+    }
+    .act-era-badge {
+      flex: 0 0 auto;
+      padding: 6px 9px;
+      border: 1px solid rgba(255,215,106,0.23);
+      border-radius: 999px;
+      color: var(--color-gold);
+      background: rgba(255,215,106,0.06);
+      font-size: 9px;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .act-facts {
+      display: grid;
+      grid-template-columns: minmax(170px, 0.7fr) minmax(0, 1.3fr);
+      gap: 10px;
+    }
+    .act-fact {
+      min-width: 0;
+      padding: 10px 11px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 9px;
+      background: rgba(4,8,18,0.25);
+    }
+    .act-fact-label {
+      color: var(--color-text-faint);
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .act-signal-line {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-top: 5px;
+    }
+    .act-signal-name {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .act-signal-name.hawkish { color: var(--color-gold); }
+    .act-signal-name.dovish { color: var(--color-dovish); }
+    .act-signal-name.neutral,
+    .act-signal-name.mixed { color: var(--color-text-primary); }
+    .act-signal-count {
+      color: var(--color-text-faint);
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+    .act-signal-track {
+      display: flex;
+      width: 100%;
+      height: 4px;
+      margin-top: 9px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.08);
+    }
+    .act-signal-track i { display: block; height: 100%; min-width: 0; }
+    .act-signal-track .hawkish { background: var(--color-gold); }
+    .act-signal-track .dovish { background: var(--color-dovish); }
+    .act-signal-track .neutral { background: rgba(207,214,228,0.7); }
+    .act-participants {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .act-participant {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      padding: 4px 7px;
+      border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 999px;
+      color: var(--color-text-secondary);
+      background: rgba(255,255,255,0.035);
+      font-size: 10px;
+      line-height: 1.15;
+    }
+    .act-reading {
+      min-width: 0;
+      padding: 11px 12px 12px;
+      border: 1px solid rgba(255,215,106,0.14);
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(255,215,106,0.045), rgba(255,255,255,0.018));
+    }
+    .act-reading-label {
+      display: block;
+      color: var(--color-gold);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.7px;
+    }
+    .act-signal-explanation {
+      max-width: 760px;
+      margin-top: 5px;
+      color: var(--color-text-secondary);
+      font-family: var(--font-display);
+      font-size: 13px;
+      line-height: 1.42;
+    }
+    .act-term-network-wrap {
+      margin-top: 8px;
+      padding: 5px 7px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    #actTermNetwork {
+      display: block;
+      width: 100%;
+      height: 72px;
+      overflow: visible;
+    }
+    #actTermNetwork .act-network-link {
+      stroke: rgba(255,215,106,0.28);
+      stroke-width: 1;
+    }
+    #actTermNetwork .act-network-signal {
+      fill: rgba(255,215,106,0.14);
+      stroke: rgba(255,215,106,0.68);
+      stroke-width: 1;
+    }
+    #actTermNetwork .act-network-signal.dovish { fill: rgba(138,180,248,0.14); stroke: rgba(138,180,248,0.68); }
+    #actTermNetwork .act-network-signal.neutral { fill: rgba(207,214,228,0.12); stroke: rgba(207,214,228,0.55); }
+    #actTermNetwork .act-network-term {
+      fill: var(--color-text-primary);
+      font: 500 11px var(--font-display);
+    }
+    #actTermNetwork .act-network-caption {
+      fill: var(--color-text-faint);
+      font: 600 8px var(--font-body);
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+    }
+    .act-term-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 9px;
+    }
+    .act-term-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 7px;
+      border: 1px solid rgba(255,215,106,0.2);
+      border-radius: 999px;
+      color: var(--color-text-secondary);
+      background: rgba(255,215,106,0.045);
+      font: 500 10px var(--font-body);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+    .act-term-chip:hover,
+    .act-term-chip:focus-visible,
+    .act-term-chip[aria-pressed="true"] {
+      border-color: rgba(255,215,106,0.58);
+      color: var(--color-gold);
+      background: rgba(255,215,106,0.11);
+    }
+    .act-term-chip small {
+      color: var(--color-text-faint);
+      font-size: 9px;
+      font-variant-numeric: tabular-nums;
+    }
+    .act-evidence-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 10px 0 6px;
+    }
+    .act-evidence-heading span:first-child {
+      color: var(--color-text-primary);
+      font-size: 10px;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+    }
+    .act-evidence-heading span:last-child {
+      color: var(--color-text-faint);
+      font-size: 9px;
+    }
+    .act-evidence-grid {
+      display: grid;
+      grid-template-columns: minmax(150px, 0.58fr) minmax(0, 1.42fr);
+      gap: 9px;
+      min-width: 0;
+    }
+    .act-evidence-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 104px;
+      overflow-y: auto;
+      padding-right: 3px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,215,106,0.35) transparent;
+    }
+    .act-evidence-row {
+      min-width: 0;
+      padding: 6px 7px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--color-text-secondary);
+      background: rgba(255,255,255,0.025);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .act-evidence-row:hover,
+    .act-evidence-row:focus-visible,
+    .act-evidence-row[aria-current="true"] {
+      border-color: rgba(255,215,106,0.34);
+      background: rgba(255,215,106,0.08);
+    }
+    .act-evidence-person {
+      display: block;
+      overflow: hidden;
+      color: var(--color-text-primary);
+      font: 500 10px var(--font-body);
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .act-evidence-tone {
+      display: block;
+      margin-top: 2px;
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .act-evidence-tone.hawkish { color: var(--color-gold); }
+    .act-evidence-tone.dovish { color: var(--color-dovish); }
+    .act-evidence-tone.neutral { color: var(--color-text-muted); }
+    .act-selected-evidence {
+      min-width: 0;
+      padding: 8px 9px;
+      border-left: 1px solid rgba(255,255,255,0.12);
+    }
+    .act-evidence-quote {
+      display: -webkit-box;
+      overflow: hidden;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-style: italic;
+      line-height: 1.38;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+    .act-evidence-citation {
+      display: block;
+      margin-top: 5px;
+      color: var(--color-text-faint);
+      font-size: 9px;
+      line-height: 1.35;
+    }
+    .act-evidence-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 6px;
+    }
+    .act-open-evidence {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border: 1px solid rgba(255,215,106,0.34);
+      border-radius: 6px;
+      color: var(--color-gold);
+      background: rgba(255,215,106,0.045);
+      font: 600 9px var(--font-body);
+      letter-spacing: 0.6px;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .act-open-evidence:hover {
+      border-color: var(--color-gold);
+      background: rgba(255,215,106,0.11);
+    }
+    .acts-browser-note {
+      max-width: 780px;
+      margin: 0 auto;
+      color: var(--color-text-faint);
+      font-size: 10px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .stage-acts { height: 310vh; }
+      .acts-pin-wrapper {
+        padding: max(22px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      }
+      .acts-shell { gap: 12px; }
+      .acts-title { margin-top: 7px; font-size: clamp(25px, 7vw, 38px); }
+      .acts-lead { margin-top: 8px; font-size: clamp(14px, 3.7vw, 17px); line-height: 1.4; }
+      .acts-browser { grid-template-columns: 1fr; gap: 10px; padding: 13px; }
+      .acts-index { padding-right: 0; padding-bottom: 9px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.09); }
+      .acts-list { display: flex; flex-direction: row; max-height: none; overflow-x: auto; overflow-y: hidden; padding: 1px 0 5px; }
+      .act-list-item { flex: 0 0 150px; min-height: 72px; }
+      .act-reader { gap: 8px; }
+      .act-reader-head { padding-bottom: 8px; }
+      .act-date { font-size: clamp(23px, 7vw, 32px); }
+      .act-facts { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 7px; }
+      .act-fact { padding: 8px 9px; }
+      .act-signal-name { font-size: 16px; }
+      .act-participant { font-size: 9px; }
+      .act-signal-explanation { font-size: 12px; }
+      #actTermNetwork { height: 68px; }
+      .act-evidence-grid { grid-template-columns: 1fr; gap: 6px; }
+      .act-evidence-list { flex-direction: row; max-height: none; overflow-x: auto; overflow-y: hidden; padding: 0 0 3px; }
+      .act-evidence-row { flex: 0 0 142px; }
+      .act-selected-evidence { padding: 7px 0 0; border-top: 1px solid rgba(255,255,255,0.10); border-left: none; }
+      .act-evidence-quote { font-size: 13px; -webkit-line-clamp: 2; }
+      .acts-browser-note { font-size: 9px; }
+    }
+
+    @media (max-width: 430px) {
+      .act-reader-head { position: relative; display: block; min-height: 60px; padding-bottom: 6px; }
+      .act-date { max-width: 100%; padding-right: 92px; font-size: 23px; white-space: nowrap; }
+      .act-era-badge { position: absolute; top: 0; right: 0; }
+      .act-term-list { flex-wrap: nowrap; overflow-x: auto; gap: 3px; margin-top: 5px; padding-bottom: 2px; }
+      .act-evidence-grid { grid-template-columns: minmax(100px, 0.43fr) minmax(0, 0.57fr); gap: 6px; }
+      .act-evidence-list { flex-direction: column; max-height: 76px; overflow-x: hidden; overflow-y: auto; padding: 0 3px 0 0; }
+      .act-evidence-row { flex: 0 0 auto; padding: 5px; }
+      .act-selected-evidence { padding: 0 0 0 7px; border-top: none; border-left: 1px solid rgba(255,255,255,0.10); }
+      .act-evidence-quote { font-size: 12px; line-height: 1.3; -webkit-line-clamp: 3; }
+    }
+
+    @media (max-width: 430px) and (max-height: 620px) {
+      .stage-acts { height: 330vh; }
+      .acts-pin-wrapper { padding-top: 18px; padding-bottom: 14px; }
+      .acts-shell { gap: 8px; }
+      .acts-intro { display: none; }
+      .acts-kicker { font-size: 9px; letter-spacing: 2.4px; }
+      .acts-title { font-size: 25px; }
+      .acts-lead { font-size: 12px; line-height: 1.3; }
+      .acts-browser { gap: 7px; padding: 10px; border-radius: 12px; }
+      .acts-index { padding-bottom: 6px; }
+      .acts-index-head { margin-bottom: 6px; }
+      .acts-index-label { font-size: 10px; }
+      .acts-index-meta { font-size: 8px; }
+      .acts-year-control label { font-size: 8px; }
+      .acts-year-filter { max-width: 86px; padding: 4px 15px 4px 6px; font-size: 9px; }
+      .act-list-item { flex-basis: 135px; min-height: 63px; padding: 7px; }
+      .act-list-date { font-size: 10px; }
+      .act-list-meta, .act-list-signal { font-size: 8px; }
+      .act-reader { gap: 6px; }
+      .act-reader-head { position: relative; display: block; min-height: 60px; padding-bottom: 6px; }
+      .act-reader-kicker { font-size: 8px; letter-spacing: 1.8px; }
+      .act-date { max-width: 100%; padding-right: 92px; font-size: 21px; white-space: nowrap; }
+      .act-era-badge { position: absolute; top: 0; right: 0; }
+      .act-date-sub { margin-top: 3px; font-size: 8px; }
+      .act-era-badge { padding: 4px 6px; font-size: 8px; }
+      .act-facts { gap: 5px; }
+      .act-fact { padding: 6px 7px; }
+      .act-fact-label { font-size: 8px; }
+      .act-signal-line { gap: 5px; margin-top: 3px; }
+      .act-signal-name { font-size: 14px; }
+      .act-signal-count { font-size: 8px; }
+      .act-signal-track { margin-top: 6px; height: 3px; }
+      .act-participants { gap: 3px; margin-top: 4px; max-height: 32px; overflow: hidden; }
+      .act-participant { padding: 3px 5px; font-size: 8px; }
+      .act-reading { padding: 8px; }
+      .act-reading-label { font-size: 8px; }
+      .act-signal-explanation { margin-top: 3px; font-size: 10px; line-height: 1.22; }
+      .act-term-network-wrap { margin-top: 5px; padding: 2px 4px; }
+      #actTermNetwork { height: 47px; }
+      .act-term-list { flex-wrap: nowrap; overflow-x: auto; gap: 3px; margin-top: 5px; padding-bottom: 2px; }
+      .act-term-chip { padding: 3px 5px; font-size: 8px; }
+      .act-term-chip small { font-size: 8px; }
+      .act-evidence-heading { margin: 6px 0 4px; }
+      .act-evidence-heading span:first-child { font-size: 8px; }
+      .act-evidence-heading span:last-child { font-size: 8px; }
+      .act-evidence-grid { grid-template-columns: minmax(82px, 0.43fr) minmax(0, 0.57fr); gap: 6px; }
+      .act-evidence-list { flex-direction: column; max-height: 64px; overflow-x: hidden; overflow-y: auto; padding: 0 3px 0 0; }
+      .act-evidence-row { flex: 0 0 auto; padding: 5px; }
+      .act-selected-evidence { padding: 0 0 0 7px; border-top: none; border-left: 1px solid rgba(255,255,255,0.10); }
+      .act-evidence-person { font-size: 9px; }
+      .act-evidence-tone { font-size: 8px; }
+      .act-selected-evidence { padding-top: 5px; }
+      .act-evidence-quote { font-size: 11px; line-height: 1.3; }
+      .act-evidence-citation { margin-top: 3px; font-size: 8px; }
+      .act-open-evidence { padding: 4px 6px; font-size: 8px; }
+      .acts-browser-note { display: none; }
+    }
+
+    @media (min-width: 600px) and (max-width: 900px) and (max-height: 620px) {
+      .stage-acts { height: 300vh; }
+      .acts-pin-wrapper { padding: 10px 18px; }
+      .acts-shell { gap: 8px; }
+      .acts-intro { display: none; }
+      .acts-title { margin-top: 5px; font-size: clamp(24px, 4vw, 34px); }
+      .acts-lead { margin-top: 5px; font-size: 13px; line-height: 1.25; }
+      .acts-browser { grid-template-columns: minmax(190px, 0.42fr) minmax(0, 1.58fr); gap: 10px; padding: 11px 12px; }
+      .acts-index { padding-right: 10px; }
+      .acts-list { max-height: 132px; }
+      .act-list-item { padding: 7px; }
+      .act-reader { gap: 4px; }
+      .act-reader-head { padding-bottom: 6px; }
+      .act-date { font-size: 23px; }
+      .act-facts { gap: 5px; }
+      .act-fact { padding: 6px 7px; }
+      .act-reading { padding: 6px 8px; }
+      .act-signal-explanation { margin-top: 3px; font-size: 10px; line-height: 1.2; }
+      .act-term-network-wrap { margin-top: 4px; padding: 1px 5px; }
+      #actTermNetwork { height: 39px; }
+      .act-term-list { margin-top: 4px; }
+      .act-evidence-heading { margin: 4px 0 3px; }
+      .act-evidence-list { max-height: 58px; }
+      .act-selected-evidence { padding: 5px 7px; }
+      .act-evidence-quote { font-size: 11px; line-height: 1.25; -webkit-line-clamp: 2; }
+      .acts-browser-note { display: none; }
+    }
 
     /* ─── STAGE 5 — Las voces ─── */
     .stage-voices {
@@ -1218,6 +2067,25 @@
     .voice-detail-empty[hidden] { display: none; }
 
     @media (max-width: 768px) {
+      .stage-word-evolution { height: 270vh; }
+      .word-evolution-pin-wrapper {
+        padding: max(22px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      }
+      .word-evolution-shell { gap: 13px; }
+      .word-evolution-intro { max-width: 520px; }
+      .word-evolution-title { margin-top: 7px; font-size: clamp(25px, 7.2vw, 36px); }
+      .word-evolution-lead { margin-top: 9px; font-size: clamp(14px, 3.7vw, 17px); line-height: 1.45; }
+      .word-evolution-board { padding: 14px; border-radius: 13px; }
+      .word-evolution-board-head { align-items: flex-start; margin-bottom: 5px; }
+      .word-evolution-label { font-size: 11px; letter-spacing: 1.2px; }
+      .word-evolution-legend { gap: 10px; font-size: 10px; }
+      .word-evolution-chart-wrap { height: clamp(230px, 36vh, 310px); }
+      #wordEvolutionSvg .word-axis-label { font-size: 10px; }
+      #wordEvolutionSvg .word-end-label { font-size: 11px; }
+      .word-evolution-readout { gap: 9px; margin-top: 9px; }
+      .word-evolution-year { font-size: 28px; }
+      .word-evolution-readout-text { font-size: 12px; }
+      .word-evolution-note { font-size: 10px; }
       .stage-voices { height: 280vh; }
       .voice-detail-actions {
         grid-column: 1 / -1;
@@ -1300,6 +2168,17 @@
     }
 
     @media (max-width: 430px) and (max-height: 620px) {
+      .stage-word-evolution { height: 290vh; }
+      .word-evolution-pin-wrapper { padding-top: 18px; padding-bottom: 14px; }
+      .word-evolution-title { font-size: 25px; }
+      .word-evolution-lead { font-size: 12px; line-height: 1.3; }
+      .word-evolution-board { padding: 11px; }
+      .word-evolution-legend { gap: 7px; font-size: 9px; }
+      .word-evolution-chart-wrap { height: 190px; }
+      .word-evolution-readout { margin-top: 6px; }
+      .word-evolution-year { font-size: 24px; }
+      .word-evolution-readout-text { font-size: 10px; }
+      .word-evolution-note { display: none; }
       .voice-profile-dialog {
         max-height: calc(100svh - 12px);
         padding: 16px 12px 12px;
@@ -1325,6 +2204,15 @@
     }
 
     @media (min-width: 600px) and (max-width: 900px) and (max-height: 620px) {
+      .stage-word-evolution { height: 280vh; }
+      .word-evolution-pin-wrapper { padding: 22px 18px 18px; }
+      .word-evolution-shell { gap: 10px; }
+      .word-evolution-title { margin-top: 5px; font-size: clamp(24px, 4vw, 34px); }
+      .word-evolution-lead { margin-top: 6px; font-size: 14px; line-height: 1.3; }
+      .word-evolution-board { padding: 12px 14px; }
+      .word-evolution-chart-wrap { height: 210px; }
+      .word-evolution-readout { margin-top: 5px; }
+      .word-evolution-note { display: none; }
       .stage-voices { height: 300vh; }
       .voice-profile-dialog { max-height: calc(100svh - 24px); padding: 18px 22px; }
       .voice-profile-grid { grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr); gap: 20px; margin-top: 12px; padding-top: 12px; }
@@ -2318,7 +3206,38 @@
     <div id="d3-canvas" style="position: fixed; inset: 0; pointer-events: none; z-index: 5;"></div>
   </section>
 
-  <!-- ═══════ STAGE 5 — LAS VOCES ═══════ -->
+  <!-- ═══════ STAGE 5 — EVOLUCIÓN DEL LENGUAJE ═══════ -->
+  <section class="stage-word-evolution" id="stageWordEvolution" aria-labelledby="wordEvolutionTitle">
+    <div class="word-evolution-pin-wrapper">
+      <div class="word-evolution-shell">
+        <header class="word-evolution-intro">
+          <div class="word-evolution-kicker">Acto 4 · El lenguaje cambia</div>
+          <h2 class="word-evolution-title" id="wordEvolutionTitle">Las palabras tambi&eacute;n se mueven.</h2>
+          <p class="word-evolution-lead">La orientaci&oacute;n de una deliberaci&oacute;n no vive solo en una etiqueta. Tambi&eacute;n aparece en el vocabulario que se repite, se desplaza y cambia de peso con el tiempo.</p>
+        </header>
+
+        <div class="word-evolution-board" id="wordEvolutionBoard">
+          <div class="word-evolution-board-head">
+            <span class="word-evolution-label">Huella de vocabulario</span>
+            <div class="word-evolution-legend" aria-label="Leyenda de orientaciones">
+              <span><i class="legend-dot hawkish"></i>Hawkish</span>
+              <span><i class="legend-dot dovish"></i>Dovish</span>
+            </div>
+          </div>
+          <div class="word-evolution-chart-wrap">
+            <svg id="wordEvolutionSvg" viewBox="0 0 1000 450" role="img" aria-label="Evolución temporal de palabras asociadas a señales hawkish y dovish"></svg>
+          </div>
+          <div class="word-evolution-readout" aria-live="polite">
+            <span class="word-evolution-year" id="wordEvolutionYear">2000</span>
+            <span class="word-evolution-readout-text" id="wordEvolutionReadout">Despl&aacute;zate para seguir las palabras que ganan presencia.</span>
+          </div>
+        </div>
+        <p class="word-evolution-note">Cada l&iacute;nea muestra la proporci&oacute;n de fragmentos de esa orientaci&oacute;n que contienen el t&eacute;rmino. Lectura exploratoria sobre la muestra disponible.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 6 — LAS VOCES ═══════ -->
   <section class="stage-voices" id="stageVoices" aria-labelledby="voicesTitle">
     <div class="voices-pin-wrapper">
       <div class="voices-shell">
@@ -2364,7 +3283,91 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 6 — Counters ═══════ -->
+  <!-- ═══════ STAGE 7 — NAVEGADOR DE ACTAS ═══════ -->
+  <section class="stage-acts" id="stageActs" aria-labelledby="actsTitle">
+    <div class="acts-pin-wrapper">
+      <div class="acts-shell">
+        <header class="acts-intro">
+          <div class="acts-kicker">Acto 6 · Volver al acta</div>
+          <h2 class="acts-title" id="actsTitle">Toda señal tiene un lugar.</h2>
+          <p class="acts-lead">Elige una reunión para seguir el hilo completo: fecha, participantes, términos y el fragmento que sostiene esta lectura.</p>
+        </header>
+
+        <div class="acts-browser" id="actsBrowser">
+          <aside class="acts-index" aria-label="Índice de actas disponibles">
+            <div class="acts-index-head">
+              <div>
+                <span class="acts-index-label">Índice de actas</span>
+                <span class="acts-index-meta" id="actsIndexMeta">— actas · — fragmentos</span>
+              </div>
+              <div class="acts-year-control">
+                <label for="actYearFilter">Año</label>
+                <select class="acts-year-filter" id="actYearFilter" aria-label="Filtrar actas por año">
+                  <option value="all">Todos</option>
+                </select>
+              </div>
+            </div>
+            <div class="acts-list" id="actsList" role="list" aria-label="Reuniones de política monetaria"></div>
+          </aside>
+
+          <article class="act-reader" id="actReader" aria-live="polite">
+            <div class="act-reader-head">
+              <div>
+                <div class="act-reader-kicker">Acta seleccionada</div>
+                <h3 class="act-date" id="actDate">—</h3>
+                <div class="act-date-sub" id="actDateSub">—</div>
+              </div>
+              <span class="act-era-badge" id="actEra">—</span>
+            </div>
+
+            <div class="act-facts">
+              <div class="act-fact">
+                <div class="act-fact-label">Señal en la muestra</div>
+                <div class="act-signal-line">
+                  <strong class="act-signal-name" id="actSignalName">—</strong>
+                  <span class="act-signal-count" id="actSignalCount">—</span>
+                </div>
+                <div class="act-signal-track" aria-hidden="true">
+                  <i class="hawkish" id="actHawkishBar"></i><i class="dovish" id="actDovishBar"></i><i class="neutral" id="actNeutralBar"></i>
+                </div>
+              </div>
+              <div class="act-fact">
+                <div class="act-fact-label">Participantes</div>
+                <div class="act-participants" id="actParticipants"></div>
+              </div>
+            </div>
+
+            <div class="act-reading">
+              <span class="act-reading-label">Cómo se produce la lectura</span>
+              <p class="act-signal-explanation" id="actSignalExplanation">Selecciona una intervención para ver qué términos acompañan la señal.</p>
+              <div class="act-term-network-wrap" aria-label="Relación entre la señal y los términos del fragmento">
+                <svg id="actTermNetwork" viewBox="0 0 520 86" role="img" aria-label="Términos que acompañan la señal del fragmento"></svg>
+              </div>
+              <div class="act-term-list" id="actTermList" aria-label="Términos observados en el acta"></div>
+
+              <div class="act-evidence-heading">
+                <span>Evidencia atribuida</span>
+                <span id="actEvidenceMeta">— fragmentos</span>
+              </div>
+              <div class="act-evidence-grid">
+                <div class="act-evidence-list" id="actEvidenceList" role="list" aria-label="Intervenciones del acta"></div>
+                <div class="act-selected-evidence">
+                  <blockquote class="act-evidence-quote" id="actEvidenceQuote">—</blockquote>
+                  <cite class="act-evidence-citation" id="actEvidenceCitation">—</cite>
+                  <div class="act-evidence-actions">
+                    <button class="act-open-evidence" id="actOpenEvidence" type="button">Abrir fragmento <span aria-hidden="true">↗</span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+        <p class="acts-browser-note">La fecha y la atribución vuelven a la fuente disponible. Los términos son una lectura exploratoria de esta muestra truncada; no sustituyen el acta completa.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 7 — Counters ═══════ -->
   <section class="stage-counters" id="stageCounters">
     <div class="counters-grid">
       <div class="counter-item" data-counter>
@@ -2386,7 +3389,7 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 7 — Pipeline ═══════ -->
+  <!-- ═══════ STAGE 8 — Pipeline ═══════ -->
   <section class="stage-pipeline" id="stagePipeline">
     <div class="pipeline-pin-wrapper">
       <header class="pipe-header">
@@ -2479,7 +3482,7 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 8 — Timeline ═══════ -->
+  <!-- ═══════ STAGE 9 — Timeline ═══════ -->
   <section class="stage-timeline" id="stageTimeline">
     <div class="timeline-pin-wrapper">
       <h2 class="timeline-title" data-timeline-title>Orientaci&oacute;n de pol&iacute;tica monetaria en el tiempo</h2>
@@ -2487,7 +3490,7 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 9 — Quotes ═══════ -->
+  <!-- ═══════ STAGE 11 — Quotes ═══════ -->
   <section class="stage-quotes" id="stageQuotes">
     <div class="quotes-grid">
       <div class="quote-card hawkish" data-quote data-quote-participant="Vittorio Corbo" data-quote-year="2007" tabindex="0" role="button" aria-label="Cita con se&ntilde;al hawkish de Vittorio Corbo, 13 de Septiembre de 2007. Click para ver m&aacute;s detalles.">
@@ -2503,7 +3506,7 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 10 — Closing ═══════ -->
+  <!-- ═══════ STAGE 12 — Closing ═══════ -->
   <section class="stage-closing" id="stageClosing">
     <p class="closing-text" data-closing>
       Convertir la palabra en dato abre una fuente nueva de informaci&oacute;n:
@@ -2738,7 +3741,7 @@
       });
     }, { threshold: 0.45 });
     stageObserver.observe(heroEl);
-    document.querySelectorAll('.stage-hook, .stage-voices, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing, #stageObjective, #stageHook, #stageAxes, #stageRoomContainer')
+    document.querySelectorAll('.stage-hook, .stage-voices, .stage-acts, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing, #stageObjective, #stageHook, #stageAxes, #stageRoomContainer')
       .forEach(el => stageObserver.observe(el));
 
     const scene = new THREE.Scene();
@@ -3248,7 +4251,7 @@
        bloquear el contenido ni el scroll. En touch sólo se usa pointerdown para
        fijar el panel; el hover queda reservado al mouse. */
     const isInteractiveTarget = (e) => !!(e.target && e.target.closest &&
-      e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term, .voice-explorer, .voice-card, .voice-detail, .voice-profile-panel'));
+      e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term, .voice-explorer, .voice-card, .voice-detail, .voice-profile-panel, .acts-browser, .act-list-item, .act-term-chip, .act-evidence-row, .act-open-evidence'));
     window.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'touch' || isInteractiveTarget(e)) return;
       lastPointerX = e.clientX;
@@ -3892,6 +4895,607 @@
 
     initVoiceExplorer();
 
+    /* ────────────────────────────────
+       Acto 6 — navegador por acta
+       La tarjeta no resume una "personalidad": vuelve de la señal al acta,
+       primero por fecha y participantes, después por el fragmento concreto y
+       los términos observables que acompañan la etiqueta exploratoria.
+    ──────────────────────────────── */
+    function initActBrowser() {
+      const list = document.getElementById('actsList');
+      const meta = document.getElementById('actsIndexMeta');
+      const yearFilter = document.getElementById('actYearFilter');
+      const dateEl = document.getElementById('actDate');
+      const dateSubEl = document.getElementById('actDateSub');
+      const eraEl = document.getElementById('actEra');
+      const signalNameEl = document.getElementById('actSignalName');
+      const signalCountEl = document.getElementById('actSignalCount');
+      const signalExplanationEl = document.getElementById('actSignalExplanation');
+      const participantsEl = document.getElementById('actParticipants');
+      const termNetwork = document.getElementById('actTermNetwork');
+      const termList = document.getElementById('actTermList');
+      const evidenceList = document.getElementById('actEvidenceList');
+      const evidenceMeta = document.getElementById('actEvidenceMeta');
+      const evidenceQuote = document.getElementById('actEvidenceQuote');
+      const evidenceCitation = document.getElementById('actEvidenceCitation');
+      const openEvidence = document.getElementById('actOpenEvidence');
+      const browser = document.getElementById('actsBrowser');
+      const intro = document.querySelector('.acts-intro');
+      if (!list || !meta || !yearFilter || !dateEl || !dateSubEl || !eraEl || !signalNameEl || !signalCountEl || !signalExplanationEl || !participantsEl || !termNetwork || !termList || !evidenceList || !evidenceMeta || !evidenceQuote || !evidenceCitation || !openEvidence || !browser || !intro || !quotes.length) return;
+
+      const termDictionary = [
+        { key: 'inflacion', label: 'inflación' },
+        { key: 'precios', label: 'precios' },
+        { key: 'expectativas', label: 'expectativas' },
+        { key: 'tasa', label: 'tasa' },
+        { key: 'tasas', label: 'tasas' },
+        { key: 'aumento', label: 'aumento' },
+        { key: 'alza', label: 'alza' },
+        { key: 'subir', label: 'subir' },
+        { key: 'mantener', label: 'mantener' },
+        { key: 'bajar', label: 'bajar' },
+        { key: 'riesgo', label: 'riesgo' },
+        { key: 'crecimiento', label: 'crecimiento' },
+        { key: 'actividad', label: 'actividad' },
+        { key: 'demanda', label: 'demanda' },
+        { key: 'producto', label: 'producto' },
+        { key: 'contexto', label: 'contexto' },
+        { key: 'escenario', label: 'escenario' },
+        { key: 'internacional', label: 'internacional' },
+        { key: 'mercado', label: 'mercado' },
+        { key: 'mercados', label: 'mercados' },
+        { key: 'petróleo', label: 'petróleo' },
+        { key: 'cobre', label: 'cobre' },
+        { key: 'energía', label: 'energía' },
+        { key: 'alimentos', label: 'alimentos' },
+        { key: 'empleo', label: 'empleo' },
+        { key: 'salarios', label: 'salarios' },
+        { key: 'gasto', label: 'gasto' },
+        { key: 'presupuesto', label: 'presupuesto' },
+        { key: 'déficit', label: 'déficit' },
+        { key: 'consumo', label: 'consumo' },
+        { key: 'inversión', label: 'inversión' },
+      ].map((term) => ({ ...term, normalized: normalizeTopicText(term.key) }));
+
+      const eras = [
+        { id: 'E1', name: 'Despegue', from: 2000, to: 2003 },
+        { id: 'E2', name: 'Fiebre', from: 2004, to: 2007 },
+        { id: 'E3', name: 'Crisis', from: 2008, to: 2009 },
+        { id: 'E4', name: 'Normalización', from: 2010, to: 2014 },
+        { id: 'E5', name: 'Giro', from: 2015, to: 2015 },
+      ];
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const makeSvg = (tag, attrs = {}) => {
+        const node = document.createElementNS(svgNS, tag);
+        Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, String(value)));
+        return node;
+      };
+      const sourceYear = (q) => {
+        const dateYear = String(q.date || '').match(/^(\d{4})/);
+        return dateYear ? Number(dateYear[1]) : Number(q.year);
+      };
+      const formatDate = (date, year) => {
+        const parsed = date && /^\d{4}-\d{2}-\d{2}$/.test(date)
+          ? new Date(`${date}T00:00:00Z`)
+          : null;
+        if (!parsed || Number.isNaN(parsed.getTime())) return year ? `Año ${year}` : 'Fecha no especificada';
+        return new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(parsed);
+      };
+      const compactViewport = () => window.matchMedia && window.matchMedia('(max-width: 430px)').matches;
+      const formatReaderDate = (date, year) => {
+        if (!compactViewport()) return formatDate(date, year);
+        const parsed = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T00:00:00Z`) : null;
+        if (!parsed || Number.isNaN(parsed.getTime())) return formatDate(date, year);
+        const parts = new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).formatToParts(parsed);
+        const values = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
+        return `${values.day} ${values.month} ${values.year}`;
+      };
+      const formatListDate = (date, year) => compactViewport() ? formatReaderDate(date, year) : formatDate(date, year);
+      const getEra = (year) => eras.find((era) => year >= era.from && year <= era.to) || { id: '—', name: 'fuera de período' };
+      const getTerms = (row) => termDictionary.filter((term) => row.normalizedText.includes(term.normalized));
+      const getTone = (q) => ['hawkish', 'dovish', 'neutral'].includes(q.label) ? q.label : 'neutral';
+      const toneText = { hawkish: 'Hawkish', dovish: 'Dovish', neutral: 'Neutral', mixed: 'Mixta' };
+      const toneDetail = { hawkish: 'restrictiva', dovish: 'expansiva', neutral: 'sin orientación dominante' };
+
+      const grouped = new Map();
+      let excludedRows = 0;
+      quotes.forEach((q, index) => {
+        const year = sourceYear(q);
+        /* El navegador respeta el período declarado de la pieza. El registro
+           1985 del fixture queda contabilizado como fuera de período, no
+           mezclado silenciosamente con las actas 2000–2015. */
+        if (!Number.isFinite(year) || year < 2000 || year > 2015) {
+          excludedRows += 1;
+          return;
+        }
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(String(q.date || '')) ? q.date : `${year}-01-01`;
+        if (!grouped.has(date)) grouped.set(date, []);
+        grouped.get(date).push({ q, index, normalizedText: normalizeTopicText(q.text) });
+      });
+
+      const acts = [...grouped.entries()].map(([date, rows]) => {
+        const year = sourceYear(rows[0].q);
+        const toneCounts = { hawkish: 0, dovish: 0, neutral: 0 };
+        const participantSet = new Set();
+        const termCounts = new Map();
+        rows.forEach((row) => {
+          const tone = getTone(row.q);
+          toneCounts[tone] += 1;
+          participantSet.add(row.q.participant || 'Participante anónimo');
+          getTerms(row).forEach((term) => termCounts.set(term.normalized, {
+            label: term.label,
+            count: (termCounts.get(term.normalized)?.count || 0) + 1,
+          }));
+        });
+        const activeTones = Object.entries(toneCounts).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]);
+        const dominantTone = activeTones.length > 1 && activeTones[0][1] === activeTones[1][1]
+          ? 'mixed'
+          : (activeTones[0]?.[0] || 'neutral');
+        return {
+          id: date,
+          date,
+          year,
+          rows,
+          count: rows.length,
+          participants: [...participantSet],
+          toneCounts,
+          dominantTone,
+          terms: [...termCounts.entries()].map(([key, item]) => ({ key, ...item })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'es')),
+        };
+      }).sort((a, b) => a.date.localeCompare(b.date));
+
+      if (!acts.length) return;
+      meta.textContent = `${acts.length} actas · ${acts.reduce((total, act) => total + act.count, 0)} fragmentos${excludedRows ? ` · ${excludedRows} fuera del período` : ''}`;
+      [...new Set(acts.map((act) => act.year))].sort((a, b) => a - b).forEach((year) => {
+        const option = document.createElement('option');
+        option.value = String(year);
+        option.textContent = year;
+        yearFilter.appendChild(option);
+      });
+
+      let activeAct = null;
+      let activeRowIndex = 0;
+      let activeTermKey = null;
+      const listItems = [];
+
+      const renderNetwork = (row) => {
+        termNetwork.innerHTML = '';
+        const terms = row ? getTerms(row).slice(0, 4) : [];
+        const tone = row ? getTone(row.q) : 'neutral';
+        const signalX = 48;
+        const signalY = 43;
+        const termStart = 125;
+        const termEnd = 492;
+        const step = terms.length > 1 ? (termEnd - termStart) / (terms.length - 1) : 0;
+        termNetwork.appendChild(makeSvg('text', { class: 'act-network-caption', x: signalX, y: 12, 'text-anchor': 'middle' })).textContent = 'SEÑAL';
+        termNetwork.appendChild(makeSvg('circle', { class: `act-network-signal ${tone}`, cx: signalX, cy: signalY, r: 22 }));
+        const signalText = makeSvg('text', { class: 'act-network-caption', x: signalX, y: signalY + 3, 'text-anchor': 'middle' });
+        signalText.textContent = toneText[tone].toUpperCase();
+        termNetwork.appendChild(signalText);
+        if (!terms.length) {
+          const emptyText = makeSvg('text', { class: 'act-network-term', x: 108, y: signalY + 4 });
+          emptyText.textContent = 'sin término de la taxonomía visible en este fragmento';
+          termNetwork.appendChild(emptyText);
+          termNetwork.setAttribute('aria-label', `La etiqueta ${toneText[tone]} no tiene términos de la taxonomía visible en este fragmento`);
+          return;
+        }
+        terms.forEach((term, index) => {
+          const x = terms.length === 1 ? 280 : termStart + step * index;
+          const y = index % 2 === 0 ? 29 : 65;
+          termNetwork.appendChild(makeSvg('line', { class: 'act-network-link', x1: signalX + 22, y1: signalY, x2: x - 8, y2: y - 3 }));
+          termNetwork.appendChild(makeSvg('circle', { class: 'act-network-signal', cx: x - 8, cy: y - 3, r: 3.5 }));
+          const label = makeSvg('text', { class: 'act-network-term', x, y, 'text-anchor': 'middle' });
+          label.textContent = term.label;
+          termNetwork.appendChild(label);
+        });
+        termNetwork.setAttribute('aria-label', `${toneText[tone]} conectada con ${terms.map((term) => term.label).join(', ')}`);
+      };
+
+      const renderEvidence = (act, rowIndex, termKey = null) => {
+        if (!act?.rows.length) return;
+        activeAct = act;
+        activeRowIndex = Math.max(0, Math.min(rowIndex, act.rows.length - 1));
+        activeTermKey = termKey;
+        const row = act.rows[activeRowIndex];
+        const terms = getTerms(row);
+        const tone = getTone(row.q);
+        const termNames = terms.slice(0, compactViewport() ? 3 : 5).map((term) => term.label);
+        const termPhrase = termNames.length ? `«${termNames.join('», «')}»` : 'ningún término de la taxonomía visible';
+        signalExplanationEl.textContent = compactViewport()
+          ? `${termPhrase} acompañan la etiqueta ${toneText[tone]} (${toneDetail[tone]}).`
+          : `Este fragmento reúne ${termPhrase}; en esta lectura exploratoria, esa evidencia léxica acompaña la etiqueta ${toneText[tone]} (${toneDetail[tone]}).`;
+        renderNetwork(row);
+        [...evidenceList.querySelectorAll('.act-evidence-row')].forEach((button) => {
+          button.setAttribute('aria-current', String(Number(button.dataset.rowIndex) === activeRowIndex));
+        });
+        [...termList.querySelectorAll('.act-term-chip')].forEach((button) => {
+          button.setAttribute('aria-pressed', String(button.dataset.termKey === activeTermKey));
+        });
+        evidenceQuote.textContent = `“${row.q.text || 'Sin texto disponible'}”`;
+        evidenceCitation.textContent = `— ${row.q.participant || 'Participante anónimo'}, ${row.q.formatted_date || formatDate(act.date, act.year)}`;
+        openEvidence.dataset.quoteIndex = String(row.index);
+      };
+
+      const renderAct = (act) => {
+        if (!act) return;
+        activeAct = act;
+        activeRowIndex = Math.min(activeRowIndex, act.rows.length - 1);
+        activeTermKey = null;
+        const era = getEra(act.year);
+        dateEl.textContent = formatReaderDate(act.date, act.year);
+        dateSubEl.textContent = `${act.count} ${act.count === 1 ? 'fragmento' : 'fragmentos'} · ${act.participants.length} ${act.participants.length === 1 ? 'participante' : 'participantes'}`;
+        eraEl.textContent = `${era.id} · ${era.name}`;
+        signalNameEl.textContent = toneText[act.dominantTone];
+        signalNameEl.className = `act-signal-name ${act.dominantTone}`;
+        const dominantCount = act.dominantTone === 'mixed' ? Math.max(...Object.values(act.toneCounts)) : (act.toneCounts[act.dominantTone] || 0);
+        signalCountEl.textContent = `${dominantCount}/${act.count} fragmentos`;
+        ['hawkish', 'dovish', 'neutral'].forEach((tone) => {
+          const bar = document.getElementById(`act${tone.charAt(0).toUpperCase()}${tone.slice(1)}Bar`);
+          if (bar) bar.style.width = `${(act.toneCounts[tone] / act.count) * 100}%`;
+        });
+        participantsEl.innerHTML = '';
+        act.participants.forEach((participant) => {
+          const pill = document.createElement('span');
+          pill.className = 'act-participant';
+          pill.textContent = participant;
+          participantsEl.appendChild(pill);
+        });
+
+        termList.innerHTML = '';
+        if (act.terms.length) {
+          act.terms.slice(0, 7).forEach((term) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'act-term-chip';
+            button.dataset.termKey = term.key;
+            button.setAttribute('aria-pressed', 'false');
+            button.innerHTML = `<span></span><small></small>`;
+            button.querySelector('span').textContent = term.label;
+            button.querySelector('small').textContent = term.count;
+            button.addEventListener('click', () => {
+              const rowIndex = act.rows.findIndex((row) => getTerms(row).some((item) => item.normalized === term.key));
+              renderEvidence(act, rowIndex >= 0 ? rowIndex : 0, term.key);
+            });
+            termList.appendChild(button);
+          });
+        } else {
+          const emptyTerm = document.createElement('span');
+          emptyTerm.className = 'acts-index-meta';
+          emptyTerm.textContent = 'sin términos directos en la muestra';
+          termList.appendChild(emptyTerm);
+        }
+
+        evidenceList.innerHTML = '';
+        evidenceMeta.textContent = `${act.count} ${act.count === 1 ? 'fragmento' : 'fragmentos'}`;
+        act.rows.forEach((row, rowIndex) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'act-evidence-row';
+          button.dataset.rowIndex = String(rowIndex);
+          button.setAttribute('role', 'listitem');
+          button.setAttribute('aria-current', 'false');
+          const person = document.createElement('span');
+          person.className = 'act-evidence-person';
+          person.textContent = row.q.participant || 'Participante anónimo';
+          const tone = document.createElement('span');
+          tone.className = `act-evidence-tone ${getTone(row.q)}`;
+          tone.textContent = toneText[getTone(row.q)];
+          button.append(person, tone);
+          button.addEventListener('click', () => renderEvidence(act, rowIndex));
+          evidenceList.appendChild(button);
+        });
+        renderEvidence(act, activeRowIndex);
+        listItems.forEach(({ button, act: listAct }) => button.setAttribute('aria-current', String(listAct.id === act.id)));
+      };
+
+      const selectAct = (act) => {
+        if (!act) return;
+        activeRowIndex = 0;
+        renderAct(act);
+        const selected = listItems.find(({ act: listAct }) => listAct.id === act.id);
+        selected?.button.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      };
+
+      const renderList = (yearValue = yearFilter.value) => {
+        const visibleActs = yearValue === 'all' ? acts : acts.filter((act) => String(act.year) === String(yearValue));
+        list.innerHTML = '';
+        listItems.length = 0;
+        if (!visibleActs.length) {
+          const emptyState = document.createElement('div');
+          emptyState.className = 'acts-empty';
+          emptyState.textContent = 'No hay actas disponibles para este año.';
+          list.appendChild(emptyState);
+          return;
+        }
+        visibleActs.forEach((act) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'act-list-item';
+          button.setAttribute('role', 'listitem');
+          button.setAttribute('aria-current', String(activeAct?.id === act.id));
+          button.setAttribute('aria-label', `Abrir acta del ${formatDate(act.date, act.year)}, ${act.count} fragmentos`);
+          const dot = document.createElement('i');
+          dot.className = `act-tone-dot ${act.dominantTone}`;
+          dot.setAttribute('aria-hidden', 'true');
+          const body = document.createElement('span');
+          const date = document.createElement('span');
+          date.className = 'act-list-date';
+          date.textContent = formatListDate(act.date, act.year);
+          const listMeta = document.createElement('span');
+          listMeta.className = 'act-list-meta';
+          listMeta.textContent = `${act.count} ${act.count === 1 ? 'fragmento' : 'fragmentos'} · ${act.participants.length} ${act.participants.length === 1 ? 'voz' : 'voces'}`;
+          body.append(date, listMeta);
+          const tone = document.createElement('span');
+          tone.className = 'act-list-signal';
+          tone.textContent = toneText[act.dominantTone];
+          button.append(dot, body, tone);
+          button.addEventListener('click', () => selectAct(act));
+          list.appendChild(button);
+          listItems.push({ button, act });
+        });
+      };
+
+      openEvidence.addEventListener('click', () => {
+        const quoteIndex = Number(openEvidence.dataset.quoteIndex);
+        if (!Number.isFinite(quoteIndex) || !quotes[quoteIndex]) return;
+        pinnedIndex = quoteIndex;
+        hoverIndex = -1;
+        openQuote(quoteIndex, { x: window.innerWidth * 0.62, y: window.innerHeight * 0.62 });
+      });
+      yearFilter.addEventListener('change', () => {
+        renderList(yearFilter.value);
+        const firstVisible = acts.find((act) => yearFilter.value === 'all' || String(act.year) === yearFilter.value);
+        if (firstVisible) selectAct(firstVisible);
+      });
+
+      renderList('all');
+      const defaultAct = acts.find((act) => act.date === '2010-05-13') || acts.slice().sort((a, b) => b.count - a.count || a.date.localeCompare(b.date))[0] || acts[0];
+      selectAct(defaultAct);
+
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: '#stageActs',
+          start: 'top 85%',
+          end: 'bottom bottom',
+          scrub: true,
+        },
+      })
+        .fromTo(intro, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.13, ease: 'none' }, 0.04)
+        .fromTo(browser, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.16, ease: 'none' }, 0.16)
+        .to(intro, { opacity: 0, y: -14, duration: 0.08, ease: 'none' }, 0.90);
+    }
+
+    /* ────────────────────────────────
+       Acto 4 — evolución del vocabulario
+       La vista cuenta presencia de términos por fragmento y por año; no
+       convierte la frecuencia en una medida de importancia política. La
+       taxonomía de palabras se mantiene deliberadamente legible para que el
+       lector pueda seguir la evidencia hasta el acta.
+    ──────────────────────────────── */
+    function initWordEvolution() {
+      const svg = document.getElementById('wordEvolutionSvg');
+      const intro = document.querySelector('.word-evolution-intro');
+      const board = document.getElementById('wordEvolutionBoard');
+      const yearEl = document.getElementById('wordEvolutionYear');
+      const readoutEl = document.getElementById('wordEvolutionReadout');
+      if (!svg || !intro || !board || !yearEl || !readoutEl || !quotes.length || !window.d3) return;
+
+      const years = d3.range(2000, 2016);
+      const labels = ['hawkish', 'dovish'];
+      const candidateTerms = [
+        'inflación', 'precios', 'expectativas', 'tasa', 'tasas', 'aumento', 'subir', 'mantener', 'bajar', 'alza', 'riesgo',
+        'crecimiento', 'actividad', 'demanda', 'producto', 'contexto', 'escenario', 'internacional', 'mercado', 'mercados',
+        'empresas', 'hogares', 'endeudamiento', 'petróleo', 'cobre', 'energía', 'alimentos', 'empleo', 'salarios', 'fiscal',
+        'gasto', 'presupuesto', 'déficit', 'consumo', 'inversión', 'exportaciones', 'importaciones'
+      ].map(normalizeTopicText);
+      const candidateSet = new Set(candidateTerms);
+      const stopWords = new Set([
+        'para', 'como', 'desde', 'entre', 'sobre', 'esta', 'este', 'estas', 'estos', 'también', 'tambien', 'cada', 'cuando',
+        'donde', 'señala', 'senala', 'indica', 'señor', 'senor', 'presidente', 'consejero', 'gerente', 'gerencia', 'división',
+        'division', 'estudios', 'reunión', 'reunion', 'anterior', 'opción', 'opciones', 'oportunidad', 'respecto', 'puntos',
+        'base', 'parte', 'lugar', 'forma', 'manera', 'mayor', 'menor', 'dado', 'considera', 'elementos', 'siguiente',
+        'siguientes', 'además', 'ademas', 'aunque', 'ellos', 'ellas', 'ello', 'hasta', 'hace', 'tiene', 'tienen', 'puede',
+        'podría', 'podria', 'sería', 'seria', 'chile', 'banco', 'central', 'política', 'politica', 'monetaria', 'fragmento',
+        'intervención', 'intervencion', 'acta', 'actas', 'muestra'
+      ].map(normalizeTopicText));
+      const participantTokens = new Set(quotes.flatMap((q) => normalizeTopicText(q.participant).match(/[a-zñ]{4,}/g) || []));
+      const rowCounts = { hawkish: new Map(), dovish: new Map() };
+      const termCounts = { hawkish: new Map(), dovish: new Map() };
+      const displayTerms = {
+        inflacion: 'inflación', precios: 'precios', expectativas: 'expectativas', tasa: 'tasa', tasas: 'tasas', aumento: 'aumento',
+        subir: 'subir', mantener: 'mantener', bajar: 'bajar', alza: 'alza', riesgo: 'riesgo', crecimiento: 'crecimiento',
+        actividad: 'actividad', demanda: 'demanda', producto: 'producto', contexto: 'contexto', escenario: 'escenario',
+        internacional: 'internacional', mercado: 'mercado', mercados: 'mercados', empresas: 'empresas', hogares: 'hogares',
+        endeudamiento: 'endeudamiento', petroleo: 'petróleo', cobre: 'cobre', energia: 'energía', alimentos: 'alimentos',
+        empleo: 'empleo', salarios: 'salarios', fiscal: 'fiscal', gasto: 'gasto', presupuesto: 'presupuesto', deficit: 'déficit',
+        consumo: 'consumo', inversion: 'inversión', exportaciones: 'exportaciones', importaciones: 'importaciones'
+      };
+
+      const sourceYear = (q) => {
+        const match = String(q.date || '').match(/^(\d{4})/);
+        return match ? Number(match[1]) : Number(q.year);
+      };
+      quotes.forEach((q) => {
+        const label = labels.includes(q.label) ? q.label : null;
+        const year = sourceYear(q);
+        if (!label || !years.includes(year)) return;
+        rowCounts[label].set(year, (rowCounts[label].get(year) || 0) + 1);
+        const words = new Set((normalizeTopicText(q.text).match(/[a-zñ]{4,}/g) || []).filter((word) => candidateSet.has(word) && !stopWords.has(word) && !participantTokens.has(word)));
+        words.forEach((word) => {
+          if (!termCounts[label].has(word)) termCounts[label].set(word, new Map());
+          const yearly = termCounts[label].get(word);
+          yearly.set(year, (yearly.get(year) || 0) + 1);
+        });
+      });
+
+      const topTerms = {};
+      labels.forEach((label) => {
+        topTerms[label] = [...termCounts[label].entries()]
+          .map(([term, yearly]) => ({
+            term,
+            total: [...yearly.values()].reduce((sum, value) => sum + value, 0),
+            yearly,
+          }))
+          .sort((a, b) => b.total - a.total || a.term.localeCompare(b.term, 'es'))
+          .slice(0, 3);
+      });
+
+      /* El SVG usa coordenadas del tamaño visible, no un viewBox fijo de
+         1000×450. Así las etiquetas siguen siendo tipográficas en 320px y el
+         trazo aprovecha el ancho disponible en desktop. */
+      const chartWrap = svg.parentElement;
+      const chartRect = chartWrap?.getBoundingClientRect();
+      const W = Math.max(280, Math.round(chartRect?.width || svg.clientWidth || 1000));
+      const H = Math.max(180, Math.round(chartRect?.height || svg.clientHeight || 450));
+      const compactChart = W < 520 || H < 240;
+      const margin = compactChart
+        ? {
+          top: H < 220 ? 31 : 36,
+          right: W < 360 ? 74 : 84,
+          bottom: H < 220 ? 25 : 30,
+          left: W < 360 ? 34 : 48,
+        }
+        : { top: 42, right: 128, bottom: 42, left: 72 };
+      const laneGap = compactChart ? (H < 220 ? 25 : 34) : 42;
+      const laneHeight = (H - margin.top - margin.bottom - laneGap) / 2;
+      const x = d3.scaleLinear().domain([2000, 2015]).range([margin.left, W - margin.right]);
+      const svgEl = d3.select(svg)
+        .attr('viewBox', `0 0 ${W} ${H}`)
+        .attr('preserveAspectRatio', 'none');
+      const chartGroup = svgEl.append('g').attr('class', 'word-chart-group');
+      const cursor = svgEl.append('line')
+        .attr('class', 'word-cursor')
+        .attr('x1', x(2000)).attr('x2', x(2000))
+        .attr('y1', margin.top - 4).attr('y2', H - margin.bottom + 3);
+      const series = [];
+
+      const formatValue = (label, term, year) => {
+        const numerator = term.yearly.get(year) || 0;
+        const denominator = rowCounts[label].get(year) || 0;
+        return denominator ? (numerator / denominator) * 100 : 0;
+      };
+
+      labels.forEach((label, laneIndex) => {
+        const laneTop = margin.top + laneIndex * (laneHeight + laneGap);
+        const laneBottom = laneTop + laneHeight;
+        const laneTerms = topTerms[label];
+        const maxValue = Math.max(20, ...laneTerms.flatMap((item) => years.map((year) => formatValue(label, item, year))));
+        const y = d3.scaleLinear().domain([0, maxValue]).range([laneBottom, laneTop]);
+        const lane = chartGroup.append('g').attr('class', `word-lane word-lane--${label}`);
+        lane.append('text').attr('class', `word-lane-label ${label}`).attr('x', margin.left).attr('y', laneTop - 14).text(label === 'hawkish' ? 'Hawkish · restrictiva' : 'Dovish · expansiva');
+        [0, maxValue / 2, maxValue].forEach((value) => {
+          lane.append('line').attr('class', value === 0 ? 'word-zero-line' : 'word-grid-line')
+            .attr('x1', margin.left).attr('x2', W - margin.right).attr('y1', y(value)).attr('y2', y(value));
+        });
+        lane.append('text').attr('class', 'word-axis-label').attr('x', margin.left - 10).attr('y', laneBottom + 4).attr('text-anchor', 'end').text('0%');
+        lane.append('text').attr('class', 'word-axis-label').attr('x', margin.left - 10).attr('y', laneTop + 4).attr('text-anchor', 'end').text(`${Math.round(maxValue)}%`);
+
+        /* En el borde derecho las tres palabras comparten un espacio pequeño.
+           Ordenarlas y darles una separación mínima evita que dos términos con
+           el mismo valor final se impriman uno encima de otro. */
+        const labelGap = compactChart ? 13 : 15;
+        const labelMinY = laneTop + (compactChart ? 9 : 11);
+        const labelMaxY = laneBottom - (compactChart ? 3 : 4);
+        const labelPositions = new Map();
+        const labelSpecs = laneTerms.map((item, rank) => {
+          const finalValue = formatValue(label, item, 2015);
+          return { rank, desired: y(finalValue) + (rank - 1) * labelGap };
+        }).sort((a, b) => a.desired - b.desired);
+        let nextLabelY = labelMinY;
+        labelSpecs.forEach((spec) => {
+          const position = Math.max(nextLabelY, Math.min(labelMaxY, spec.desired));
+          labelPositions.set(spec.rank, position);
+          nextLabelY = position + labelGap;
+        });
+        const labelOverflow = nextLabelY - labelGap - labelMaxY;
+        if (labelOverflow > 0) {
+          labelSpecs.forEach((spec) => labelPositions.set(spec.rank, labelPositions.get(spec.rank) - labelOverflow));
+        }
+
+        laneTerms.forEach((item, rank) => {
+          const values = years.map((year) => ({ year, value: formatValue(label, item, year) }));
+          const line = d3.line().x((point) => x(point.year)).y((point) => y(point.value)).curve(d3.curveMonotoneX);
+          const path = lane.append('path')
+            .attr('class', `word-path ${label}`)
+            .attr('d', line(values))
+            .attr('stroke-width', rank === 0 ? 2.7 : 1.8)
+            .style('opacity', rank === 0 ? 1 : rank === 1 ? 0.68 : 0.42);
+          const pathNode = path.node();
+          if (pathNode) {
+            const length = pathNode.getTotalLength();
+            path.attr('stroke-dasharray', length).attr('stroke-dashoffset', length).attr('data-length', length);
+          }
+          values.forEach((point) => {
+            lane.append('circle')
+              .attr('class', `word-point ${label}`)
+              .attr('cx', x(point.year)).attr('cy', y(point.value)).attr('r', rank === 0 ? 2.8 : 2)
+              .style('opacity', rank === 0 ? 0.95 : rank === 1 ? 0.58 : 0.36);
+          });
+          const last = values[values.length - 1];
+          lane.append('text').attr('class', `word-end-label ${label}`).attr('x', x(last.year) + 8).attr('y', labelPositions.get(rank) + 4).text(displayTerms[item.term] || item.term);
+          series.push({ label, term: item.term, values, path: pathNode });
+        });
+      });
+
+      years.forEach((year) => {
+        const tick = compactChart
+          ? [2000, 2005, 2010, 2015].includes(year)
+          : ((year - 2000) % 3 === 0 || year === 2015);
+        if (!tick) return;
+        svgEl.append('text').attr('class', 'word-axis-label').attr('x', x(year)).attr('y', H - 12).attr('text-anchor', 'middle').text(year);
+      });
+
+      const updateYear = (year, reveal = 1) => {
+        const safeYear = Math.round(d3.max([2000, Math.min(2015, year)]));
+        yearEl.textContent = safeYear;
+        cursor.attr('x1', x(safeYear)).attr('x2', x(safeYear));
+        series.forEach((item) => {
+          if (!item.path) return;
+          const length = Number(item.path.getAttribute('data-length') || 0);
+          item.path.style.strokeDashoffset = String(length * (1 - reveal));
+        });
+        const readout = labels.map((label) => {
+          const current = series.filter((item) => item.label === label).map((item) => {
+            const point = item.values.find((value) => value.year === safeYear);
+            return `${displayTerms[item.term] || item.term} ${Math.round(point?.value || 0)}%`;
+          }).join(' · ');
+          return `${label === 'hawkish' ? 'Hawkish' : 'Dovish'}: ${current || 'sin registros'}`;
+        }).join('   /   ');
+        readoutEl.textContent = readout || 'No hay términos suficientes en la muestra disponible.';
+      };
+
+      updateYear(2000, 0);
+      svg.addEventListener('pointermove', (event) => {
+        const rect = svg.getBoundingClientRect();
+        const localX = ((event.clientX - rect.left) / rect.width) * W;
+        updateYear(x.invert(localX), 1);
+      });
+      chartWrap?.addEventListener('pointerleave', () => updateYear(2000 + 15 * 0.5, 1));
+
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: '#stageWordEvolution',
+          start: 'top 85%',
+          end: 'bottom bottom',
+          scrub: true,
+        },
+      })
+        .fromTo(intro, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.04)
+        .fromTo(board, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.15, ease: 'none' }, 0.16)
+        .to(intro, { opacity: 0, y: -14, duration: 0.08, ease: 'none' }, 0.90);
+
+      ScrollTrigger.create({
+        trigger: '#stageWordEvolution',
+        start: 'top 85%',
+        end: 'bottom bottom',
+        scrub: true,
+        onUpdate: (self) => {
+          const reveal = d3.min([1, d3.max([0, (self.progress - 0.08) / 0.52])]);
+          updateYear(2000 + self.progress * 15, reveal);
+        },
+      });
+    }
+
     function animate() {
       const time = clock.getElapsedTime();
       /* crossT EFECTIVO: mientras dura la salida de la sala (exitT) la cámara
@@ -4442,12 +6046,13 @@
       ...(DOOR_MODE === 'doorway' ? [{ label: 'sala', start: 0.16 }] : []),
       { label: 'hook', start: 0.24 },
       { label: 'axes', start: 0.40 },
-      { label: 'voices', start: 0.51 },
-      { label: 'counters', start: 0.62 },
-      { label: 'pipeline', start: 0.69 },
-      { label: 'timeline', start: 0.78 },
-      { label: 'quotes', start: 0.87 },
-      { label: 'closing', start: 0.96 }
+      { label: 'voices', start: 0.49 },
+      { label: 'acts', start: 0.59 },
+      { label: 'counters', start: 0.68 },
+      { label: 'pipeline', start: 0.75 },
+      { label: 'timeline', start: 0.83 },
+      { label: 'quotes', start: 0.91 },
+      { label: 'closing', start: 0.98 }
     ];
 
     const progressBar = document.getElementById('progressBar');
@@ -4495,6 +6100,11 @@
     CustomEase.create("cinematicInOut", "0.65,0,0.35,1");
     CustomEase.create("cinematicSilk", "0.45,0.05,0.55,0.95");
     CustomEase.create("cinematicSnap", "0.16,1,0.3,1");
+
+    /* El gráfico de evolución necesita que ScrollTrigger y las curvas estén
+       registradas; se inicializa aquí, después de construir el canvas D3. */
+    initWordEvolution();
+    initActBrowser();
 
     const lenis = new Lenis({
       duration: 1.2,
