@@ -1171,7 +1171,7 @@
         Cada part&iacute;cula de luz que ves es un fragmento de lo que se dijo en una de estas reuniones.
       </p>
       <p id="roomHint" data-room-hint style="font-size: var(--fs-small); color: var(--color-text-muted); font-family: var(--font-body); text-align: center; margin-top: 1.6rem; letter-spacing: 0.3px; opacity: 0;">
-        Una peque&ntilde;a muestra de dos d&eacute;cadas en deliberaciones
+        Pasa el cursor sobre una voz para leer lo que dijo &middot; haz click para fijarla
       </p>
     </div>
   </section>
@@ -1574,6 +1574,7 @@
         scrollHint.classList.add('hidden');
       }
       if (coin.children.length > 0) coin.visible = (stage === 1) && coinFade > 0.01;
+      document.body.style.cursor = stage === 1 ? 'grab' : '';
     }
 
     const stageObserver = new IntersectionObserver((entries) => {
@@ -1581,14 +1582,11 @@
         if (!entry.isIntersecting) return;
         if (entry.target === heroEl) {
           setStage(1);
-          canvas.style.pointerEvents = 'auto';
         } else {
           setStage(2);
-          /* El canvas es interactivo en el hero (moneda), en Citas y — en modo
-             doorway — en La Sala (hover/click sobre las voces). */
-          const interactive = entry.target.id === 'stageQuotes'
-            || (DOOR_MODE === 'doorway' && entry.target.id === 'stageRoomContainer');
-          canvas.style.pointerEvents = interactive ? 'auto' : 'none';
+          /* Las partículas se interactúan desde listeners globales (window),
+             no desde el canvas fijo: así se pueden presionar aunque un marco o
+             una sección esté visualmente por encima, sin bloquear el scroll. */
         }
       });
     }, { threshold: 0.45 });
@@ -1993,15 +1991,25 @@
     function onPointerDown(cx, cy) { isDragging = true; dragStartX = cx; dragStartY = cy; }
     function onPointerUp() { isDragging = false; }
 
-    window.addEventListener('mousemove', (e) => onPointerMove(e.clientX, e.clientY));
-    canvas.addEventListener('mousedown', (e) => onPointerDown(e.clientX, e.clientY));
-    window.addEventListener('mouseup', onPointerUp);
+    /* Interacción global (no sobre el canvas, que está con pointer-events:none):
+       así las partículas de fondo se pueden presionar en cualquier sección sin
+       bloquear el contenido ni el scroll. En touch sólo se usa pointerdown para
+       fijar el panel; el hover queda reservado al mouse. */
+    const isInteractiveTarget = (e) => !!(e.target && e.target.closest &&
+      e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term'));
+    window.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch' || isInteractiveTarget(e)) return;
+      onPointerMove(e.clientX, e.clientY);
+    });
+    window.addEventListener('pointerdown', (e) => {
+      /* No robar el click de tarjetas, botones, links ni del panel abierto. */
+      if (isInteractiveTarget(e)) return;
+      onPointerDown(e.clientX, e.clientY, e);
+    });
+    window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
     window.addEventListener('blur', onPointerUp);
     document.addEventListener('visibilitychange', onPointerUp);
-    canvas.addEventListener('touchstart', (e) => { const t = e.touches[0]; onPointerDown(t.clientX, t.clientY); }, { passive: true });
-    canvas.addEventListener('touchmove', (e) => { const t = e.touches[0]; onPointerMove(t.clientX, t.clientY); }, { passive: true });
-    canvas.addEventListener('touchend', onPointerUp, { passive: true });
 
     const projectedPos = new THREE.Vector3();
 
@@ -2176,23 +2184,23 @@
       const hasHit = hitIdx >= 0;
       if (hasHit !== hoveredPoint) {
         hoveredPoint = hasHit;
-        canvas.classList.toggle('particle-hover', hasHit);
+        document.body.style.cursor = hasHit ? 'pointer' : (currentStage === 1 ? 'grab' : '');
       }
-      /* Solo dentro de la sala (y con el cruce casi completo) el hover abre el
-         panel; en el resto del recorrido se mantiene el comportamiento clásico. */
-      if (!(DOOR_MODE === 'doorway' && inRoom && crossT > 0.6)) return;
-      if (pointerOverPanel(cx, cy)) return;  // leyendo el panel: no lo hagamos saltar
       if (pinnedIndex >= 0) return;          // panel fijado: el hover no lo toca
       if (hasHit) {
+        if (pointerOverPanel(cx, cy)) return; // leyendo el panel: no lo cerremos
         if (hitIdx === hoverIndex && hoverIndex >= 0) return;
         if (hoverTimer) clearTimeout(hoverTimer);
         hoverTimer = setTimeout(() => {
           hoverIndex = hitIdx;
           syncQuotePanel();
-        }, 140);
+        }, 110);
       } else if (hoverIndex >= 0) {
         hoverIndex = -1;
         syncQuotePanel();
+      } else if (quotePanelEl.classList.contains('visible')) {
+        /* Al alejar el cursor sin que haya click fijado, el panel se cierra. */
+        closeQuotePanel();
       }
     }
 
@@ -2206,10 +2214,13 @@
     onPointerDown = function(cx, cy) {
       const hit = pickPoint(cx, cy);
       if (hit >= 0) {
-        pinnedIndex = hit;   // La Sala (b1): click fija el panel (✕/Escape lo cierra)
+        pinnedIndex = hit;   // click sobre una partícula fija el panel (✕/Escape lo cierra)
+        hoverIndex = -1;
         openQuote(hit);
         return;
       }
+      /* click en el fondo cierra el panel fijado (mismo gesto que en tarjetas) */
+      if (pinnedIndex >= 0) closeQuotePanel();
       origOnPointerDown(cx, cy);
     };
 
@@ -3454,6 +3465,8 @@
         if (idx < 0) idx = quotes.findIndex(q => q.participant === name);
         if (idx >= 0) {
           lastFocusedCard = el;
+          pinnedIndex = idx;
+          hoverIndex = -1;
           openQuote(idx);
         }
       });
