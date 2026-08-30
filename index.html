@@ -34,6 +34,15 @@
       --color-surface-border: rgba(255, 255, 255, 0.06);
       --color-bg: #0a0e1a;
 
+      /* ── Ambient light ──
+         The large gold glow is intentional in the hero, but it should not
+         flatten the hierarchy of every later stage. JavaScript lowers this
+         alpha as the story moves from object to data. */
+      --ambient-x: 50%;
+      --ambient-y: 42%;
+      --ambient-alpha: 0.16;
+      --ambient-size: 35%;
+
       /* ── Typography Tokens ── */
       --font-display: 'Playfair Display', Georgia, serif;
       --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -86,7 +95,7 @@
       pointer-events: none;
       z-index: 0;
       background:
-        radial-gradient(circle at 50% 42%, var(--color-gold-dim), transparent 35%),
+        radial-gradient(circle at var(--ambient-x) var(--ambient-y), rgba(255,215,106,var(--ambient-alpha)), transparent var(--ambient-size)),
         radial-gradient(circle at 50% 50%, transparent 52%, rgba(0,0,0,0.4) 100%);
     }
 
@@ -4110,6 +4119,52 @@
             gsap.to('body', { backgroundColor: color, duration: 1.2, ease: 'power2.inOut' });
           }
         }
+      });
+    });
+
+    /* 1b. LUZ AMBIENTAL — jerarquía narrativa
+       El halo fuerte pertenece al hero y al umbral. Una luz fija durante todo
+       el documento hacía que los gráficos, las actas y las citas parecieran
+       vivir en el mismo plano. Se conserva un resplandor muy tenue en los
+       momentos editoriales y se limpia el fondo cuando el dato debe ser el
+       protagonista. */
+    const ambientLayer = document.documentElement;
+    const ambientStates = [
+      { trigger: '#hero',          alpha: 0.16 },
+      { trigger: '#stageObjective', alpha: 0.10 },
+      { trigger: '#stageRoom',     alpha: 0.07 },
+      { trigger: '#stageHook',     alpha: 0.025 },
+      { trigger: '#stageAxes',     alpha: 0.015 },
+      { trigger: '#stageCounters', alpha: 0.025 },
+      { trigger: '#stagePipeline', alpha: 0.018 },
+      { trigger: '#stageTimeline', alpha: 0.035 },
+      { trigger: '#stageQuotes',   alpha: 0.018 },
+      { trigger: '#stageClosing',  alpha: 0.08 },
+    ];
+
+    function setAmbientAlpha(alpha, immediate = false) {
+      if (immediate) {
+        ambientLayer.style.setProperty('--ambient-alpha', String(alpha));
+        return;
+      }
+      gsap.to(ambientLayer, {
+        '--ambient-alpha': alpha,
+        duration: 1.25,
+        ease: 'power2.inOut',
+        overwrite: 'auto',
+      });
+    }
+
+    /* Estado inicial: el primer frame debe conservar la luz del hero incluso
+       antes de que ScrollTrigger termine de medir todos los pin-spacers. */
+    setAmbientAlpha(0.16, true);
+    ambientStates.forEach(({ trigger, alpha }) => {
+      ScrollTrigger.create({
+        trigger,
+        start: 'top center',
+        end: 'bottom center',
+        onEnter: () => setAmbientAlpha(alpha),
+        onEnterBack: () => setAmbientAlpha(alpha),
       });
     });
 
