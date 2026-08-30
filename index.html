@@ -368,6 +368,27 @@
       text-wrap: balance;
     }
 
+    @media (max-height: 740px) {
+      #stageHook h2[data-hook] { margin-bottom: 0.85rem !important; }
+      .hook-inner { width: min(720px, 90vw); }
+      .hook-lead {
+        font-size: clamp(22px, 2.7vw, 34px);
+        line-height: 1.22;
+      }
+      .hook-caption { margin-top: 18px; }
+      .hook-divider { margin-top: 24px; }
+      .signal-list {
+        margin-top: 18px;
+        gap: 10px;
+      }
+      .signal-card { padding: 16px 20px; }
+      .signal-caption { margin-bottom: 4px; }
+      .hook-footnote {
+        margin-top: 22px;
+        line-height: 1.55;
+      }
+    }
+
     @media (max-width: 600px) {
       .hook-lead { font-size: clamp(22px, 2.7vw, 32px); }
       .hook-divider { margin-top: 32px; }
@@ -1095,16 +1116,16 @@
       <h2 id="stageObjectiveTitle" data-objective style="font-family: var(--font-body); font-size: var(--fs-h3); font-weight: 600; text-transform: uppercase; letter-spacing: 4px; color: var(--color-text-secondary); margin-bottom: 1rem; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">
         La Reuni&oacute;n
       </h2>
-      <p id="stageObjectiveParagraph" data-objective style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 660px; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin: 0 20px;">
+      <p id="stageObjectiveParagraph" data-objective style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 720px; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin: 0 20px;">
         El Banco Central se re&uacute;ne una vez al mes <span>a puerta cerrada</span> <br>
-        para discutir y tomar decisiones de <span>pol&iacute;tica monetaria</span> <br>
-        que impactan a toda la econom&iacute;a.
+        para discutir y tomar decisiones de <span>pol&iacute;tica monetaria</span>. <br>
+        Cada reuni&oacute;n deja un acta que registra lo que se dijo.
       </p>
     </div>
   </section>
 
   <!-- ═══════ STAGE 3 — Hook (ACTO 3: EL MÉTODO) ═══════ -->
-  <section id="stageHook" style="position: relative; width: 100%; height: 240vh; pointer-events: none;">
+  <section id="stageHook" style="position: relative; width: 100%; height: 200vh; pointer-events: none;">
     <div class="sticky-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;" id="textParticleSection">
       
       <!-- TÍTULO -->
@@ -2340,19 +2361,21 @@
       })
         .fromTo('.hook-lead',
           { opacity: 0, y: 18 },
-          { opacity: 1, y: 0, duration: 0.16, ease: 'none' }, 0)
+          { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.02)
         .fromTo('.hook-caption',
           { opacity: 0, y: 12 },
-          { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.18)
-        .fromTo(rows,
-          { opacity: 0, y: 28 },
-          { opacity: 1, y: 0, duration: 0.16, ease: 'none', stagger: 0.10 }, 0.30)
+          { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.18)
         .fromTo(dividerSpan,
           { scaleX: 0 },
-          { scaleX: 1, duration: 0.18, ease: 'none' }, 0.32)
+          { scaleX: 1, duration: 0.14, ease: 'none' }, 0.32)
+        .fromTo(rows,
+          { opacity: 0, y: 28 },
+          { opacity: 1, y: 0, duration: 0.16, ease: 'none', stagger: 0.08 }, 0.42)
         .fromTo(footnote,
           { opacity: 0, y: 14 },
-          { opacity: 1, y: 0, duration: 0.16, ease: 'none' }, 0.58);
+          { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.68)
+        .to(['#stageHook h2[data-hook]', hookContent],
+          { opacity: 0, y: -18, duration: 0.12, ease: 'none' }, 0.86);
     }
 
 
