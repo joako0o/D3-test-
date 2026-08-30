@@ -422,6 +422,110 @@
       .hook-footnote { margin-top: 30px; }
     }
 
+    /* ─── STAGE 4 — Mapa de intervenciones ─── */
+    /* La explicación funciona como una leyenda editorial del plano, no como
+       un bloque de texto independiente: conserva la jerarquía tipográfica y
+       el lenguaje de línea fina que ya usan los gráficos de la historia. */
+    .axes-reading-key {
+      width: min(1100px, calc(100% - 48px));
+      display: grid;
+      grid-template-columns: auto auto minmax(44px, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      color: var(--color-text-secondary);
+      text-align: left;
+      position: relative;
+      z-index: 2;
+    }
+    .axes-reading-kicker {
+      color: var(--color-gold);
+      font-family: var(--font-body);
+      font-size: var(--fs-micro);
+      font-weight: 600;
+      letter-spacing: 2.4px;
+      line-height: 1.2;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .axes-reading-copy {
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: clamp(15px, 1.35vw, 19px);
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+    .axes-reading-divider {
+      height: 1px;
+      min-width: 44px;
+      background: linear-gradient(90deg, rgba(255,215,106,0.38), rgba(255,255,255,0.08));
+    }
+    .axes-reading-direction {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--color-text-muted);
+      font-family: var(--font-body);
+      font-size: var(--fs-micro);
+      letter-spacing: 1px;
+      line-height: 1.2;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .axes-reading-tone {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .axes-reading-tone strong {
+      font-size: 1.15em;
+      font-weight: 500;
+    }
+    .axes-reading-tone--hawkish strong { color: var(--color-gold); }
+    .axes-reading-tone--dovish strong { color: var(--color-dovish); }
+
+    @media (max-width: 600px) {
+      .axes-reading-key {
+        width: calc(100% - 28px);
+        grid-template-columns: 1fr auto;
+        gap: 9px 12px;
+        padding-bottom: 10px;
+      }
+      .axes-reading-kicker {
+        font-size: 10px;
+        letter-spacing: 1.8px;
+      }
+      .axes-reading-copy {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        font-size: clamp(15px, 4vw, 18px);
+      }
+      .axes-reading-divider { display: none; }
+      .axes-reading-direction {
+        gap: 8px;
+        font-size: 9px;
+        letter-spacing: 0.7px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .axes-reading-key {
+        grid-template-columns: 1fr;
+        gap: 7px;
+      }
+      .axes-reading-kicker,
+      .axes-reading-copy,
+      .axes-reading-direction {
+        grid-column: 1;
+      }
+      .axes-reading-copy { grid-row: auto; }
+      .axes-reading-direction {
+        justify-content: flex-start;
+        font-size: 9px;
+      }
+    }
+
     /* ─── STAGE 6 — Counters ─── */
     .stage-counters {
       position: relative; z-index: 4;
@@ -3199,9 +3303,15 @@
   <!-- ═══════ STAGE 4 — Alfabetización Visual (#stageAxes) ═══════ -->
   <section id="stageAxes" style="position: relative; width: 100%; height: 200vh; pointer-events: none;">
     <div class="sticky-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 15vh; z-index: 10;">
-      <p style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); text-align: center; max-width: 600px;">
-        Cada punto es una intervenci&oacute;n. Arriba, tono restrictivo. Abajo, tono expansivo.
-      </p>
+      <div class="axes-reading-key" aria-label="C&oacute;mo leer el mapa de intervenciones">
+        <span class="axes-reading-kicker">Mapa de intervenciones</span>
+        <span class="axes-reading-copy">Cada punto es una intervenci&oacute;n</span>
+        <span class="axes-reading-divider" aria-hidden="true"></span>
+        <span class="axes-reading-direction" aria-label="Direcci&oacute;n del tono">
+          <span class="axes-reading-tone axes-reading-tone--hawkish"><strong aria-hidden="true">&uarr;</strong> restrictivo</span>
+          <span class="axes-reading-tone axes-reading-tone--dovish"><strong aria-hidden="true">&darr;</strong> expansivo</span>
+        </span>
+      </div>
     </div>
     <div id="d3-canvas" style="position: fixed; inset: 0; pointer-events: none; z-index: 5;"></div>
   </section>
