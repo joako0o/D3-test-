@@ -1734,14 +1734,13 @@
     let coinModel = null;
     let coinScaleBase = 0;
 
-    /* Dimensiones robustas del viewport: visualViewport refleja mejor el área
-       visible en móvil (barra de URL/orientación) que window.innerWidth/Height.
-       En desktop cae al fallback de window.*. */
+    /* Basis de tamaño del layout: window.innerWidth/Height, como antes de la
+       corrección de resize. visualViewport se usa SOLO como disparador de
+       resize (barra URL/orientación), no como base de dimensiones: si se usara
+       como base, la moneda y la puerta pasaban a renderizarse contra un
+       viewport potencialmente más chico y quedaban mucho más pequeñas. */
     function getViewportSize() {
-      const vv = window.visualViewport;
-      const width = vv && vv.width > 0 ? vv.width : window.innerWidth;
-      const height = vv && vv.height > 0 ? vv.height : window.innerHeight;
-      return { width: Math.max(width, 1), height: Math.max(height, 1) };
+      return { width: Math.max(window.innerWidth, 1), height: Math.max(window.innerHeight, 1) };
     }
 
     function getResponsiveCoinScale() {
