@@ -40,13 +40,15 @@
       /* Escala tipográfica compartida. Los máximos estaban capados demasiado
          bajo para monitores grandes (17px de cuerpo, 13px de texto auxiliar),
          por eso los stages posteriores se veían pequeños. Se suben los topes y
-         los coeficientes vw; el mínimo (móvil) se mantiene igual. */
+         los coeficientes vw; los mínimos (móvil) respetan legibilidad:
+         cuerpo ≥16px y micro ≥12px (recomendación WCAG / clamp()).
+         Ver best practices: min 16px cuerpo, máximo ≤2.5× mínimo. */
       --fs-hero: clamp(18px, 2.6vw, 34px);
       --fs-h2: clamp(22px, 3.2vw, 40px);
       --fs-h3: clamp(16px, 1.8vw, 22px);
-      --fs-body: clamp(15px, 1.9vw, 19px);
+      --fs-body: clamp(16px, 1.9vw, 19px);
       --fs-small: clamp(13px, 1.3vw, 16px);
-      --fs-micro: clamp(11px, 0.95vw, 13px);
+      --fs-micro: clamp(12px, 0.95vw, 13px);
       --lh-tight: 1.25;
       --lh-normal: 1.6;
       --lh-relaxed: 1.8;
@@ -1021,6 +1023,11 @@
       }
       .pipeline-pin-wrapper, .timeline-pin-wrapper { max-height: 100dvh; }
       .sticky-container, .room-container { height: 100dvh !important; }
+      /* 100vh en móvil usa el viewport GRANDE (barra de URL plegada), así que
+         el pin se alarga por debajo de lo visible. 100dvh lo ajusta en tiempo
+         real a la barra de URL sin dejar un salto ni recortar el pin. */
+      .pipeline-pin-wrapper { height: 100dvh; }
+      .timeline-pin-wrapper { min-height: 100dvh; }
     }
 
     /* ─── Accessibility: Reduced Motion ─── */
@@ -1759,11 +1766,12 @@
       const dist = CONFIG.camera.z;
       const worldPxPerUnit = h / (2 * tanHalf * dist);
       /* Objetivo en píxeles CSS: el mayor entre el tamaño tipográfico previo
-         (fontPx * 9) y ~40% del lado menor del viewport. En pantallas grandes
+         (fontPx * 9) y ~40% del lado menor del viewport (46% en móvil, donde
+         la moneda queda más presente sin tapar el título). En pantallas grandes
          se acababa achatando a 288px fijos y las dos figuras se veían muy
          chicas; ahora crecen con el viewport sin pasarse (≤50% del ancho o
          680px). En móvil/computadoras chicas el resultado es casi el mismo. */
-      const minTargetPx = Math.min(w, h) * 0.40;
+      const minTargetPx = Math.min(w, h) * (isMobile ? 0.46 : 0.40);
       const targetPx = Math.min(Math.max(fontPx * 9, minTargetPx), Math.min(w * 0.5, 680));
       return THREE.MathUtils.clamp(targetPx / (CONFIG.coin.scale * worldPxPerUnit), 0.25, 1.8);
     }
@@ -2676,7 +2684,7 @@
         .selectAll('text')
         .style('fill', 'rgba(255,255,255,0.4)')
         .style('font-family', 'sans-serif')
-        .style('font-size', '11px');
+        .style('font-size', 'clamp(12px, 1.05vw, 13px)');
 
       g.selectAll('.domain, .tick line')
         .style('stroke', 'rgba(255,255,255,0.1)');
@@ -2691,13 +2699,13 @@
       svg.append('text')
         .attr('x', toneX).attr('y', margin.top - 4)
         .attr('text-anchor', toneAnchor)
-        .style('fill', 'rgba(255,215,106,0.75)').style('font-size', '11px')
+        .style('fill', 'rgba(255,215,106,0.75)').style('font-size', 'clamp(12px, 1.05vw, 13px)')
         .style('letter-spacing', '2px').style('text-transform', 'uppercase')
         .text('Hawkish ↑');
       svg.append('text')
         .attr('x', toneX).attr('y', margin.top + innerH + 2)
         .attr('text-anchor', toneAnchor)
-        .style('fill', 'rgba(138,180,248,0.75)').style('font-size', '11px')
+        .style('fill', 'rgba(138,180,248,0.75)').style('font-size', 'clamp(12px, 1.05vw, 13px)')
         .style('letter-spacing', '2px').style('text-transform', 'uppercase')
         .text('Dovish ↓');
 
@@ -3475,12 +3483,12 @@
       g.append('g')
         .attr('transform', `translate(0,${innerH})`)
         .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat('%Y')))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(12px, 1.05vw, 13px)');
       g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');
 
       g.append('g')
         .call(d3.axisLeft(y).ticks(5).tickFormat(d => d > 0 ? `+${d}` : d))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', '11px');
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(12px, 1.05vw, 13px)');
       g.selectAll('.domain').style('stroke', 'none');
       g.selectAll('.tick line').style('stroke', 'rgba(255,255,255,0.06)');
 
@@ -3527,7 +3535,7 @@
         .attr('x', d => x(d.date))
         .attr('y', -8)
         .attr('text-anchor', 'middle')
-        .style('font-size', '11px')
+        .style('font-size', 'clamp(12px, 1.05vw, 13px)')
         .style('fill', '#ffd76a')
         .style('opacity', 0.7)
         .text(d => d.label);
