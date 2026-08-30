@@ -1613,7 +1613,8 @@
     const scene = new THREE.Scene();
     const camBaseY = 0.7;
     scene.fog = new THREE.FogExp2(CONFIG.door?.fog ?? 0x0a0e1a, 0);
-    const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, window.innerWidth / window.innerHeight, 0.1, 100);
+    const initialVp = getViewportSize();
+    const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, initialVp.width / initialVp.height, 0.1, 100);
     camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
     camera.lookAt(0, 0.7, 0);
 
@@ -1622,7 +1623,7 @@
       try {
         renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(initialVp.width, initialVp.height);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = CONFIG.exposure;
@@ -1732,9 +1733,19 @@
     const coinMats = [];
     let coinModel = null;
     let coinScaleBase = 0;
+
+    /* Dimensiones robustas del viewport: visualViewport refleja mejor el área
+       visible en móvil (barra de URL/orientación) que window.innerWidth/Height.
+       En desktop cae al fallback de window.*. */
+    function getViewportSize() {
+      const vv = window.visualViewport;
+      const width = vv && vv.width > 0 ? vv.width : window.innerWidth;
+      const height = vv && vv.height > 0 ? vv.height : window.innerHeight;
+      return { width: Math.max(width, 1), height: Math.max(height, 1) };
+    }
+
     function getResponsiveCoinScale() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const { width: w, height: h } = getViewportSize();
       const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 32);
       const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
       const dist = CONFIG.camera.z;
@@ -1870,7 +1881,8 @@
       /* En ventanas muy anchas y bajas la moneda de referencia conserva un
          tamaño tipográfico que haría crecer demasiado la puerta en vertical.
          El límite solo actúa por encima de ~19:10; 16:9 y móvil no cambian. */
-      const aspect = window.innerWidth / Math.max(window.innerHeight, 1);
+      const vp = getViewportSize();
+      const aspect = vp.width / Math.max(vp.height, 1);
       const aspectFit = THREE.MathUtils.clamp(1.9 / aspect, 0.78, 1);
       const widthWorld = getCoinWorldSize() * (cfg.widthVsCoin ?? 1.4) * aspectFit;
       const s = widthWorld / Math.max(doorFootprint.width, 1e-3);
@@ -2001,8 +2013,9 @@
     let isDragging = false, dragStartX = 0, dragStartY = 0, dragRotY = 0, dragRotX = 0;
 
     function onPointerMove(cx, cy) {
-      mouseX = (cx / window.innerWidth) * 2 - 1;
-      mouseY = (cy / window.innerHeight) * 2 - 1;
+      const vp = getViewportSize();
+      mouseX = (cx / vp.width) * 2 - 1;
+      mouseY = (cy / vp.height) * 2 - 1;
       if (isDragging) { dragRotY += (cx - dragStartX) * 0.005; dragRotX += (cy - dragStartY) * 0.005; dragStartX = cx; dragStartY = cy; }
     }
     function onPointerDown(cx, cy) { isDragging = true; dragStartX = cx; dragStartY = cy; }
@@ -2149,9 +2162,10 @@
 
     function pickPoint(cx, cy) {
       if (!QUOTES_N) return -1;
+      const vp = getViewportSize();
       setPickThreshold();
-      ndc.x = (cx / window.innerWidth) * 2 - 1;
-      ndc.y = -(cy / window.innerHeight) * 2 + 1;
+      ndc.x = (cx / vp.width) * 2 - 1;
+      ndc.y = -(cy / vp.height) * 2 + 1;
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObject(points, false);
       if (hits.length === 0) return -1;
@@ -2161,8 +2175,8 @@
       let best = hits[0].index, bestDist = Infinity;
       for (let h = 0; h < hits.length; h++) {
         _pickProjected.copy(hits[h].point).project(camera);
-        const sx = (_pickProjected.x * 0.5 + 0.5) * window.innerWidth;
-        const sy = (-_pickProjected.y * 0.5 + 0.5) * window.innerHeight;
+        const sx = (_pickProjected.x * 0.5 + 0.5) * vp.width;
+        const sy = (-_pickProjected.y * 0.5 + 0.5) * vp.height;
         const dx = sx - cx, dy = sy - cy;
         const d = dx * dx + dy * dy;
         if (d < bestDist) { bestDist = d; best = hits[h].index; }
@@ -2183,6 +2197,7 @@
         panelEl.style.right = '';
         return;
       }
+      const vp = getViewportSize();
       const w = panelEl.offsetWidth || 380;
       const h = panelEl.offsetHeight || 220;
       const margin = 16;
@@ -2190,9 +2205,9 @@
       const ay = anchor && typeof anchor.y === 'number' ? anchor.y : lastPointerY;
       let left = ax + 22;
       let top = ay - h / 2;
-      if (left + w > window.innerWidth - margin) left = ax - w - 22;
+      if (left + w > vp.width - margin) left = ax - w - 22;
       if (left < margin) left = margin;
-      top = THREE.MathUtils.clamp(top, margin, Math.max(margin, window.innerHeight - h - margin));
+      top = THREE.MathUtils.clamp(top, margin, Math.max(margin, vp.height - h - margin));
       panelEl.style.left = left + 'px';
       panelEl.style.top = top + 'px';
       panelEl.style.right = 'auto';
@@ -2356,7 +2371,8 @@
         mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
         coin.getWorldPosition(projectedPos);
         projectedPos.project(camera);
-        haloWrap.style.transform = `translate3d(${(projectedPos.x * 0.5 + 0.5) * window.innerWidth}px, ${(-projectedPos.y * 0.5 + 0.5) * window.innerHeight}px, 0)`;
+        const vp = getViewportSize();
+        haloWrap.style.transform = `translate3d(${(projectedPos.x * 0.5 + 0.5) * vp.width}px, ${(-projectedPos.y * 0.5 + 0.5) * vp.height}px, 0)`;
 
         coinFade = THREE.MathUtils.clamp(1 - (scatterProgress / 0.45), 0, 1);
         coin.visible = (currentStage === 1) && (coinFade > 0.01);
@@ -2576,14 +2592,26 @@
       if (e.key === 'Escape' && quotePanelEl.classList.contains('visible')) closeQuotePanel();
     });
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+    /* Un único handler de tamaño para la cámara, el renderer y los objetos 3D.
+       Incluye visualViewport (móvil/orientación) y repite setPixelRatio porque
+       al cambiar de display/DPR ese valor puede variar aunque el viewport CSS
+       no cambie. */
+    function syncViewportAndObjects() {
+      const { width, height } = getViewportSize();
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      if (renderer) renderer.setSize(window.innerWidth, window.innerHeight);
+      if (renderer) {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        renderer.setSize(width, height);
+      }
       applyCoinScale();
       applyDoorScale();
       applyDoorTextStyle();
-    });
+    }
+    window.addEventListener('resize', syncViewportAndObjects);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', syncViewportAndObjects);
+    }
 
     /* ────────────────────────────────
        Acto 4: D3.js + WebGL Bridge
@@ -2601,8 +2629,9 @@
       if (!container) return;
       container.innerHTML = '';
 
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+      const vp = getViewportSize();
+      const width = vp.width;
+      const height = vp.height;
 
       const svg = d3.select(container)
         .append('svg')
@@ -2661,33 +2690,57 @@
       return d3Scales;
     }
 
-    function get3DPosFromData(date, sentiment, camera) {
+    /* Cámara de "layout" para proyectar el scatter de intervenciones SIEMPRE
+       con el encuadre base (hero), no con la cámara animada del momento. Si se
+       redimensiona durante La Sala, el dolly deja la cámara en otro lugar y el
+       scatter quedaría proyectado con coordenadas incorrectas para los ejes. */
+    const _layoutCamera = new THREE.PerspectiveCamera();
+    function getLayoutCamera() {
+      const { width, height } = getViewportSize();
+      _layoutCamera.aspect = width / height;
+      _layoutCamera.fov = CONFIG.camera.fov;
+      _layoutCamera.near = camera.near;
+      _layoutCamera.far = camera.far;
+      _layoutCamera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
+      _layoutCamera.up.set(0, 1, 0);
+      _layoutCamera.lookAt(0, camBaseY, 0);
+      _layoutCamera.updateProjectionMatrix();
+      _layoutCamera.updateMatrixWorld(true);
+      return _layoutCamera;
+    }
+
+    function get3DPosFromData(date, sentiment) {
       const { xScale, yScale } = d3Scales;
       if (!xScale || !yScale) return new THREE.Vector3(0, 0, 0);
 
       const px = xScale(date);
       const py = yScale(sentiment);
+      const vp = getViewportSize();
+      const xNDC = (px / vp.width) * 2 - 1;
+      const pyNDC = -(py / vp.height) * 2 + 1;
 
-      const xNDC = (px / window.innerWidth) * 2 - 1;
-      const pyNDC = -(py / window.innerHeight) * 2 + 1;
-
-      const vector = new THREE.Vector3(xNDC, pyNDC, 0.5).unproject(camera);
-      const dir = vector.sub(camera.position).normalize();
-      const distance = -camera.position.z / dir.z;
-      return camera.position.clone().add(dir.multiplyScalar(distance));
+      const layoutCam = getLayoutCamera();
+      const vector = new THREE.Vector3(xNDC, pyNDC, 0.5).unproject(layoutCam);
+      const dir = vector.sub(layoutCam.position).normalize();
+      const distance = -layoutCam.position.z / dir.z;
+      return layoutCam.position.clone().add(dir.multiplyScalar(distance));
     }
 
     initD3Axes();
     /* Debounce: en mobile el resize dispara varias veces (barra de URL) y
        reconstruir el SVG entero en cada evento era innecesario */
     let d3ResizeT;
-    window.addEventListener('resize', () => {
+    function onViewportResizeDebounced() {
       clearTimeout(d3ResizeT);
       d3ResizeT = setTimeout(() => {
         initD3Axes();
         if (bgScatter) bgScatter.rebuild();
       }, 150);
-    });
+    }
+    window.addEventListener('resize', onViewportResizeDebounced);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onViewportResizeDebounced);
+    }
 
     /* ────────────────────────────────
        Hook — señales hawkish/dovish
@@ -2719,7 +2772,7 @@
           const sentiment = q.label === 'hawkish' ? 0.3 + seededRandom(seed) * 0.4
                           : q.label === 'dovish' ? -0.3 - seededRandom(seed + 1) * 0.4
                           : (seededRandom(seed + 2) - 0.5) * 0.3;
-          const pos = get3DPosFromData(date, sentiment, camera);
+          const pos = get3DPosFromData(date, sentiment);
           bgPositions[i * 3]     = pos.x;
           bgPositions[i * 3 + 1] = pos.y;
           bgPositions[i * 3 + 2] = pos.z;
@@ -2760,7 +2813,7 @@
               const s = q.label === 'hawkish' ? 0.3 + seededRandom(sd) * 0.4
                       : q.label === 'dovish' ? -0.3 - seededRandom(sd + 1) * 0.4
                       : (seededRandom(sd + 2) - 0.5) * 0.3;
-              const p3 = get3DPosFromData(d, s, camera);
+              const p3 = get3DPosFromData(d, s);
               arr[i * 3] = p3.x; arr[i * 3 + 1] = p3.y; arr[i * 3 + 2] = p3.z;
             });
             geo.attributes.position.needsUpdate = true;
@@ -2832,7 +2885,8 @@
 
     function updateScrubber() {
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const vp = getViewportSize();
+      const docHeight = document.documentElement.scrollHeight - vp.height;
       const p = docHeight > 0 ? scrollTop / docHeight : 0;
 
       // Debug scrubber
@@ -3351,7 +3405,8 @@
       }
       timelineBuilt = true;
       const margin = { top: 40, right: 30, bottom: 60, left: 50 };
-      const width = Math.min(1060, window.innerWidth - 40);
+      const vp = getViewportSize();
+      const width = Math.min(1060, vp.width - 40);
       const height = 320;
       const innerW = width - margin.left - margin.right;
       const innerH = height - margin.top - margin.bottom;
