@@ -75,7 +75,7 @@
     html { background: var(--color-bg); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
     body {
       font-family: var(--font-body);
-      color: var(--color-text-primary); overflow-x: hidden;
+      color: var(--color-text-primary); overflow-x: clip;
       font-weight: 400; letter-spacing: 0.01em;
     }
 
@@ -120,10 +120,10 @@
     #canvas:active { cursor: grabbing; }
     #canvas.hidden-stage { opacity: 0; pointer-events: none; }
 
-    .stage-hook, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing {
+    .stage-hook, .stage-voices, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing {
       pointer-events: none;
     }
-    .closing-cta, .quote-card, #timelineContainer {
+    .closing-cta, .quote-card, #timelineContainer, .voice-explorer, .voice-card, .voice-detail button {
       pointer-events: auto;
     }
 
@@ -422,7 +422,7 @@
       .hook-footnote { margin-top: 30px; }
     }
 
-    /* ─── STAGE 3 — Counters ─── */
+    /* ─── STAGE 6 — Counters ─── */
     .stage-counters {
       position: relative; z-index: 4;
       min-height: 100vh;
@@ -489,7 +489,7 @@
       font-weight: 500;
     }
 
-    /* ─── STAGE 4 — Pipeline (horizontal scroll) ─── */
+    /* ─── STAGE 7 — Pipeline (horizontal scroll) ─── */
     .stage-pipeline { position: relative; z-index: 4; padding: 0; }
     .pipeline-pin-wrapper {
       height: 100vh; overflow: hidden; position: relative;
@@ -649,7 +649,349 @@
     .data-tag.hawkish:hover { background: rgba(255,215,106,0.18); border-color: rgba(255,215,106,0.35); }
     .data-tag.dovish:hover { background: rgba(138,180,248,0.18); border-color: rgba(138,180,248,0.35); }
 
-    /* ─── STAGE 5 — Timeline ─── */
+    /* ─── STAGE 5 — Las voces ─── */
+    .stage-voices {
+      position: relative;
+      z-index: 30;
+      height: 240vh;
+    }
+    .voices-pin-wrapper {
+      position: sticky;
+      top: 0;
+      min-height: 100svh;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(44px, 8vh, 88px) 5%;
+      overflow: hidden;
+    }
+    .voices-shell {
+      width: min(1180px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: clamp(18px, 3vh, 30px);
+    }
+    .voices-intro {
+      max-width: 740px;
+      margin: 0 auto;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    .voices-kicker,
+    .voice-detail-kicker {
+      color: var(--color-gold);
+      font-size: var(--fs-micro);
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .voices-title {
+      margin-top: 10px;
+      font-family: var(--font-display);
+      font-size: clamp(28px, 4vw, 52px);
+      line-height: 1.12;
+      font-weight: 500;
+      background: linear-gradient(120deg, var(--color-gold), var(--color-text-primary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .voices-lead {
+      max-width: 690px;
+      margin: 14px auto 0;
+      color: var(--color-text-secondary);
+      font-family: var(--font-display);
+      font-size: var(--fs-body);
+      line-height: 1.55;
+    }
+    .voice-explorer {
+      width: 100%;
+      padding: clamp(16px, 2.3vw, 28px);
+      border: 1px solid rgba(255, 215, 106, 0.16);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+      box-shadow: 0 24px 90px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    .voice-explorer-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .voice-explorer-label {
+      color: var(--color-text-primary);
+      font-size: var(--fs-small);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .voice-explorer-meta {
+      color: var(--color-text-muted);
+      font-size: var(--fs-micro);
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .voice-rail {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      padding: 3px 2px 13px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,215,106,0.45) transparent;
+      scroll-snap-type: x proximity;
+    }
+    .voice-rail::-webkit-scrollbar { height: 4px; }
+    .voice-rail::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 99px; }
+    .voice-rail::-webkit-scrollbar-thumb { background: rgba(255,215,106,0.42); border-radius: 99px; }
+    .voice-card {
+      position: relative;
+      flex: 0 0 clamp(156px, 16vw, 194px);
+      min-height: 132px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 5px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 11px;
+      color: var(--color-text-primary);
+      background: rgba(9, 14, 27, 0.48);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      scroll-snap-align: start;
+      transition: border-color 0.3s cubic-bezier(0.16,1,0.3,1), background 0.3s cubic-bezier(0.16,1,0.3,1), transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease;
+    }
+    .voice-card:hover,
+    .voice-card:focus-visible {
+      border-color: rgba(255,215,106,0.48);
+      background: rgba(255,215,106,0.075);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 34px rgba(0,0,0,0.26);
+    }
+    .voice-card[aria-pressed="true"] {
+      border-color: var(--color-gold);
+      background: linear-gradient(145deg, rgba(255,215,106,0.15), rgba(255,255,255,0.035));
+      box-shadow: 0 0 34px rgba(255,215,106,0.11), inset 0 1px 0 rgba(255,215,106,0.18);
+    }
+    .voice-card-index {
+      color: var(--color-text-faint);
+      font-size: 10px;
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .voice-card-name {
+      min-height: 2.55em;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: clamp(15px, 1.35vw, 18px);
+      line-height: 1.2;
+    }
+    .voice-card-meta {
+      color: var(--color-text-secondary);
+      font-size: var(--fs-micro);
+      line-height: 1.35;
+    }
+    .voice-card-years {
+      color: var(--color-text-muted);
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      font-variant-numeric: tabular-nums;
+      text-transform: uppercase;
+    }
+    .voice-signal-bar {
+      display: flex;
+      width: 100%;
+      height: 3px;
+      margin-top: auto;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.08);
+    }
+    .voice-signal-bar i { display: block; height: 100%; min-width: 0; }
+    .voice-signal-bar .hawkish { background: var(--color-gold); }
+    .voice-signal-bar .dovish { background: var(--color-dovish); }
+    .voice-signal-bar .neutral { background: rgba(207,214,228,0.72); }
+    .voice-rail-hint {
+      margin-top: 8px;
+      color: var(--color-text-faint);
+      font-size: 10px;
+      letter-spacing: 1.3px;
+      text-align: right;
+      text-transform: uppercase;
+    }
+    .voice-detail {
+      display: grid;
+      grid-template-columns: minmax(160px, 0.62fr) minmax(0, 1.5fr) auto;
+      align-items: center;
+      gap: clamp(16px, 2.5vw, 32px);
+      min-height: 142px;
+      margin-top: 18px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+    }
+    .voice-detail-empty {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      grid-column: 1 / -1;
+      color: var(--color-text-secondary);
+      font-family: var(--font-display);
+      font-size: clamp(16px, 1.8vw, 21px);
+      line-height: 1.45;
+    }
+    .voice-detail-empty p { max-width: 700px; }
+    .voice-detail-number {
+      display: grid;
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid rgba(255,215,106,0.42);
+      border-radius: 50%;
+      color: var(--color-gold);
+      font: 600 11px var(--font-body);
+      letter-spacing: 1px;
+    }
+    .voice-detail-content { display: contents; }
+    .voice-detail-name {
+      margin-top: 7px;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: clamp(24px, 3vw, 38px);
+      line-height: 1.05;
+      font-weight: 500;
+    }
+    .voice-detail-meta {
+      margin-top: 7px;
+      color: var(--color-text-muted);
+      font-size: var(--fs-micro);
+      line-height: 1.45;
+      font-variant-numeric: tabular-nums;
+    }
+    .voice-detail-reading { min-width: 0; }
+    .voice-detail-summary {
+      color: var(--color-text-secondary);
+      font-size: var(--fs-small);
+      line-height: 1.4;
+    }
+    .voice-detail-quote {
+      display: -webkit-box;
+      overflow: hidden;
+      margin: 8px 0 4px;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: clamp(14px, 1.35vw, 18px);
+      font-style: italic;
+      line-height: 1.42;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+    .voice-detail-citation {
+      color: var(--color-text-faint);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .voice-detail-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      min-width: 138px;
+      padding: 11px 13px;
+      border: 1px solid rgba(255,215,106,0.42);
+      border-radius: 8px;
+      color: var(--color-gold);
+      background: rgba(255,215,106,0.04);
+      font: 600 var(--fs-micro) var(--font-body);
+      letter-spacing: 0.5px;
+      line-height: 1.25;
+      cursor: pointer;
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+    }
+    .voice-detail-open:hover {
+      border-color: var(--color-gold);
+      background: rgba(255,215,106,0.10);
+      transform: translateY(-2px);
+    }
+    .voice-detail-open span { font-size: 16px; line-height: 1; }
+    .voice-detail-note {
+      margin-top: 14px;
+      color: var(--color-text-faint);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .voice-tone--hawkish { color: var(--color-gold); }
+    .voice-tone--dovish { color: var(--color-dovish); }
+    .voice-tone--neutral { color: var(--color-text-secondary); }
+    .voice-detail-content[hidden],
+    .voice-detail-empty[hidden] { display: none; }
+
+    @media (max-width: 768px) {
+      .stage-voices { height: 280vh; }
+      .voices-pin-wrapper {
+        height: 100svh;
+        padding: max(22px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      }
+      .voices-shell { gap: 13px; }
+      .voices-intro { max-width: 520px; }
+      .voices-title { margin-top: 7px; font-size: clamp(25px, 7.2vw, 36px); }
+      .voices-lead { margin-top: 9px; font-size: clamp(14px, 3.7vw, 17px); line-height: 1.45; }
+      .voice-explorer { padding: 14px; border-radius: 13px; }
+      .voice-explorer-head { align-items: flex-start; margin-bottom: 10px; }
+      .voice-explorer-label { font-size: 11px; letter-spacing: 1.2px; }
+      .voice-explorer-meta { max-width: 45%; line-height: 1.35; }
+      .voice-rail { gap: 8px; padding-bottom: 10px; }
+      .voice-card { flex-basis: 154px; min-height: 116px; padding: 12px; }
+      .voice-card-name { font-size: 16px; }
+      .voice-rail-hint { margin-top: 5px; font-size: 9px; letter-spacing: 1px; }
+      .voice-detail {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        min-height: 0;
+        margin-top: 12px;
+        padding-top: 14px;
+      }
+      .voice-detail-empty { grid-column: 1 / -1; font-size: 15px; }
+      .voice-detail-content { display: contents; }
+      .voice-detail-main { min-width: 0; }
+      .voice-detail-name { font-size: clamp(23px, 7vw, 31px); }
+      .voice-detail-reading { grid-column: 1 / -1; }
+      .voice-detail-open { grid-column: 2; grid-row: 1; min-width: 112px; padding: 9px 10px; }
+      .voice-detail-summary { font-size: 12px; }
+      .voice-detail-quote { margin-top: 6px; font-size: 15px; -webkit-line-clamp: 2; }
+      .voice-detail-note { grid-column: 1 / -1; margin-top: 8px; font-size: 10px; }
+    }
+
+    @media (min-width: 600px) and (max-width: 900px) and (max-height: 620px) {
+      .stage-voices { height: 300vh; }
+      .voices-pin-wrapper { padding: 22px 18px 18px; }
+      .voices-shell { gap: 10px; }
+      .voices-intro { max-width: 650px; }
+      .voices-title { margin-top: 5px; font-size: clamp(24px, 4vw, 34px); }
+      .voices-lead { margin-top: 6px; font-size: 14px; line-height: 1.3; }
+      .voice-explorer { padding: 12px 14px; }
+      .voice-card { min-height: 94px; flex-basis: 145px; padding: 10px; }
+      .voice-card-name { min-height: 2.3em; font-size: 14px; }
+      .voice-card-meta, .voice-card-years { font-size: 10px; }
+      .voice-detail { margin-top: 8px; padding-top: 10px; min-height: 82px; }
+      .voice-detail-name { font-size: 24px; }
+      .voice-detail-quote { margin: 4px 0 2px; font-size: 13px; -webkit-line-clamp: 1; }
+      .voice-detail-summary, .voice-detail-citation { font-size: 10px; }
+      .voice-detail-note { display: none; }
+      .voice-detail-open { padding: 7px 9px; }
+    }
+
+    /* ─── STAGE 8 — Timeline ─── */
     .stage-timeline {
       position: relative; z-index: 4;
       padding: 0;
@@ -686,7 +1028,7 @@
       opacity: 0;
     }
 
-    /* ─── STAGE 6 — Quotes ─── */
+    /* ─── STAGE 9 — Quotes ─── */
     /* z-index sobre el canvas fijo (z:2): sin esto el canvas interceptaba
        hover/click de las tarjetas y ninguna interacción de esta sección funcionaba */
     .stage-quotes {
@@ -756,7 +1098,7 @@
       font-weight: 500;
     }
 
-    /* ─── STAGE 7 — Closing ─── */
+    /* ─── STAGE 10 — Closing ─── */
     .stage-closing {
       position: relative; z-index: 4;
       min-height: 80vh;
@@ -1105,6 +1447,9 @@
     ─────────────────────────────────────────────────────────────────────── */
     html, body {
       min-width: 0;
+      /* clip evita el overflow horizontal de capas fijas sin convertir html en
+         un scroll-container; esto mantiene operativos los sticky stages. */
+      overflow-x: clip;
     }
 
     #canvas {
@@ -1591,7 +1936,50 @@
     <div id="d3-canvas" style="position: fixed; inset: 0; pointer-events: none; z-index: 5;"></div>
   </section>
 
-  <!-- ═══════ STAGE 3 — Counters ═══════ -->
+  <!-- ═══════ STAGE 5 — LAS VOCES ═══════ -->
+  <section class="stage-voices" id="stageVoices" aria-labelledby="voicesTitle">
+    <div class="voices-pin-wrapper">
+      <div class="voices-shell">
+        <header class="voices-intro">
+          <div class="voices-kicker">Acto 5 · Las voces</div>
+          <h2 class="voices-title" id="voicesTitle">Las deliberaciones tambi&eacute;n tienen voces.</h2>
+          <p class="voices-lead">Hasta aqu&iacute; vimos el corpus. Ahora, una lectura por voz: qui&eacute;n aparece, cu&aacute;ndo, con qu&eacute; frecuencia y qu&eacute; se&ntilde;ales aparecen en sus intervenciones.</p>
+        </header>
+
+        <div class="voice-explorer" id="voiceExplorer">
+          <div class="voice-explorer-head">
+            <span class="voice-explorer-label">Directorio de intervenciones</span>
+            <span class="voice-explorer-meta" id="voiceDirectoryMeta">18 voces · 100 fragmentos</span>
+          </div>
+          <div class="voice-rail" id="voiceRail" role="list" aria-label="Participantes de la muestra"></div>
+          <div class="voice-rail-hint">Desliza para recorrer las voces</div>
+
+          <div class="voice-detail" id="voiceDetail" aria-live="polite">
+            <div class="voice-detail-empty" id="voiceDetailEmpty">
+              <span class="voice-detail-number">01</span>
+              <p>Selecciona una voz para ver su presencia en la muestra y abrir una intervenci&oacute;n atribuida.</p>
+            </div>
+            <div class="voice-detail-content" id="voiceDetailContent" hidden>
+              <div class="voice-detail-main">
+                <div class="voice-detail-kicker">Voz seleccionada</div>
+                <h3 class="voice-detail-name" id="voiceDetailName"></h3>
+                <p class="voice-detail-meta" id="voiceDetailMeta"></p>
+              </div>
+              <div class="voice-detail-reading">
+                <p class="voice-detail-summary" id="voiceDetailSummary"></p>
+                <blockquote class="voice-detail-quote" id="voiceDetailQuote"></blockquote>
+                <cite class="voice-detail-citation" id="voiceDetailCitation"></cite>
+              </div>
+              <button class="voice-detail-open" id="voiceDetailOpen" type="button">Leer intervenci&oacute;n <span aria-hidden="true">↗</span></button>
+              <p class="voice-detail-note">La clasificaci&oacute;n describe la orientaci&oacute;n detectada en el fragmento, no una identidad pol&iacute;tica permanente.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 6 — Counters ═══════ -->
   <section class="stage-counters" id="stageCounters">
     <div class="counters-grid">
       <div class="counter-item" data-counter>
@@ -1608,12 +1996,12 @@
       </div>
       <div class="counter-item" data-counter>
         <div class="counter-number" data-target="18" data-suffix="">0</div>
-        <div class="counter-label">Responsables identificados</div>
+        <div class="counter-label">Voces identificadas</div>
       </div>
     </div>
   </section>
 
-  <!-- ═══════ STAGE 4 — Pipeline ═══════ -->
+  <!-- ═══════ STAGE 7 — Pipeline ═══════ -->
   <section class="stage-pipeline" id="stagePipeline">
     <div class="pipeline-pin-wrapper">
       <header class="pipe-header">
@@ -1706,7 +2094,7 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 5 — Timeline ═══════ -->
+  <!-- ═══════ STAGE 8 — Timeline ═══════ -->
   <section class="stage-timeline" id="stageTimeline">
     <div class="timeline-pin-wrapper">
       <h2 class="timeline-title" data-timeline-title>Orientaci&oacute;n de pol&iacute;tica monetaria en el tiempo</h2>
@@ -1714,23 +2102,23 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 6 — Quotes ═══════ -->
+  <!-- ═══════ STAGE 9 — Quotes ═══════ -->
   <section class="stage-quotes" id="stageQuotes">
     <div class="quotes-grid">
-      <div class="quote-card hawkish" data-quote data-quote-participant="Vittorio Corbo" data-quote-year="2007" tabindex="0" role="button" aria-label="Cita hawkish de Vittorio Corbo, 2007. Click para ver m&aacute;s detalles.">
+      <div class="quote-card hawkish" data-quote data-quote-participant="Vittorio Corbo" data-quote-year="2007" tabindex="0" role="button" aria-label="Cita con se&ntilde;al hawkish de Vittorio Corbo, 13 de Septiembre de 2007. Click para ver m&aacute;s detalles.">
         <div class="quote-tag">Hawkish</div>
         <div class="quote-text">&ldquo;Mayor incertidumbre ciertamente no alcanza a dominar el efecto de primer orden que representa el aumento de la inflaci&oacute;n. Efectivamente, el aumento de la inflaci&oacute;n se ha dado en energ&iacute;a y alimentos, y una vez que descontamos estos componentes del IPC, el registro de inflaci&oacute;n subyacente se mantiene elevado.&rdquo;</div>
-        <div class="quote-author">&mdash; Vittorio Corbo, 2007</div>
+        <div class="quote-author">&mdash; Vittorio Corbo, 13 de Septiembre, 2007</div>
       </div>
-      <div class="quote-card dovish" data-quote data-quote-participant="Jos&eacute; De Gregorio" data-quote-year="2009" tabindex="0" role="button" aria-label="Cita dovish de Jos&eacute; De Gregorio, 2009. Click para ver m&aacute;s detalles.">
+      <div class="quote-card dovish" data-quote data-quote-participant="Jos&eacute; De Gregorio" data-quote-year="2009" tabindex="0" role="button" aria-label="Cita con se&ntilde;al dovish de Jos&eacute; De Gregorio, 7 de Mayo de 2009. Click para ver m&aacute;s detalles.">
         <div class="quote-tag">Dovish</div>
         <div class="quote-text">&ldquo;En el frente externo, los mercados financieros denotan una mayor inclinaci&oacute;n al riesgo, en tanto que los precios de las materias primas han vuelto a subir. Por su parte, las proyecciones de crecimiento han dejado de observar correcciones a la baja de la magnitud registrada en meses anteriores.&rdquo;</div>
-        <div class="quote-author">&mdash; Jos&eacute; De Gregorio, 2009</div>
+        <div class="quote-author">&mdash; Jos&eacute; De Gregorio, 7 de Mayo, 2009</div>
       </div>
     </div>
   </section>
 
-  <!-- ═══════ STAGE 7 — Closing ═══════ -->
+  <!-- ═══════ STAGE 10 — Closing ═══════ -->
   <section class="stage-closing" id="stageClosing">
     <p class="closing-text" data-closing>
       Convertir la palabra en dato abre una fuente nueva de informaci&oacute;n:
@@ -1965,7 +2353,7 @@
       });
     }, { threshold: 0.45 });
     stageObserver.observe(heroEl);
-    document.querySelectorAll('.stage-hook, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing, #stageObjective, #stageHook, #stageAxes, #stageRoomContainer')
+    document.querySelectorAll('.stage-hook, .stage-voices, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing, #stageObjective, #stageHook, #stageAxes, #stageRoomContainer')
       .forEach(el => stageObserver.observe(el));
 
     const scene = new THREE.Scene();
@@ -2098,7 +2486,16 @@
        como base, la moneda y la puerta pasaban a renderizarse contra un
        viewport potencialmente más chico y quedaban mucho más pequeñas. */
     function getViewportSize() {
-      return { width: Math.max(window.innerWidth, 1), height: Math.max(window.innerHeight, 1) };
+      /* En emulación móvil, innerWidth/innerHeight pueden incluir el viewport
+         visual grande del navegador (p. ej. 332×590 para un lienzo CSS de
+         320×568). El DOM y visualViewport son la referencia que realmente ve
+         el lector; usarla evita que renderer.setSize() cree 12px de overflow. */
+      const root = document.documentElement;
+      const visual = window.visualViewport;
+      return {
+        width: Math.max(root?.clientWidth || visual?.width || window.innerWidth, 1),
+        height: Math.max(root?.clientHeight || visual?.height || window.innerHeight, 1),
+      };
     }
 
     function getHeroTitleTop() {
@@ -2466,7 +2863,7 @@
        bloquear el contenido ni el scroll. En touch sólo se usa pointerdown para
        fijar el panel; el hover queda reservado al mouse. */
     const isInteractiveTarget = (e) => !!(e.target && e.target.closest &&
-      e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term'));
+      e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term, .voice-explorer, .voice-card, .voice-detail'));
     window.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'touch' || isInteractiveTarget(e)) return;
       lastPointerX = e.clientX;
@@ -2766,6 +3163,13 @@
        plano de visión — invisibles. */
     let exitT = 0;
     let inRoom = false;  // estamos en el stage #stageRoom (habilita el hover→cita)
+    /* Foco editorial de Las voces: la selección atenúa las intervenciones de
+       otras voces sin borrar su huella. Así el directorio conecta la lectura
+       nominal con la misma nube que el lector acaba de explorar. */
+    let voiceFocusParticipant = null;
+    let voiceFocusRenderedParticipant = null;
+    let voiceFocusMix = 0;
+    let selectedVoiceQuoteIndex = -1;
     let lastRoomWarm = -1;  // cache del tinte cálido de la nube (solo se escribe al cambiar)
     const _roomLook = new THREE.Vector3(0, 0.7, 0);
     const _roomLookTarget = new THREE.Vector3(
@@ -2788,6 +3192,149 @@
        alocaba uno nuevo en CADA frame → ~60 objetos/seg de basura para el GC). */
     const _spotTarget = new THREE.Vector3();
 
+    /* ────────────────────────────────
+       Las voces — directorio editorial derivado del dataset
+       Una voz no hereda una etiqueta: el color resume la orientación detectada
+       en cada fragmento. El directorio hace visible quién aparece, durante qué
+       años y con qué frecuencia, y ofrece una muestra atribuida antes de abrir
+       el panel documental completo.
+    ──────────────────────────────── */
+    function initVoiceExplorer() {
+      const rail = document.getElementById('voiceRail');
+      const meta = document.getElementById('voiceDirectoryMeta');
+      const empty = document.getElementById('voiceDetailEmpty');
+      const content = document.getElementById('voiceDetailContent');
+      const detailName = document.getElementById('voiceDetailName');
+      const detailMeta = document.getElementById('voiceDetailMeta');
+      const detailSummary = document.getElementById('voiceDetailSummary');
+      const detailQuote = document.getElementById('voiceDetailQuote');
+      const detailCitation = document.getElementById('voiceDetailCitation');
+      const detailOpen = document.getElementById('voiceDetailOpen');
+      if (!rail || !meta || !empty || !content || !detailOpen || !quotes.length) return;
+
+      const getSourceYear = (q) => {
+        const dateYear = String(q.date || '').match(/^(\d{4})/);
+        return dateYear ? Number(dateYear[1]) : Number(q.year);
+      };
+      const grouped = new Map();
+      quotes.forEach((q, index) => {
+        const name = q.participant || 'Participante anónimo';
+        if (!grouped.has(name)) grouped.set(name, []);
+        grouped.get(name).push({ q, index });
+      });
+
+      const voices = Array.from(grouped, ([name, rows]) => {
+        const toneCounts = { hawkish: 0, dovish: 0, neutral: 0 };
+        /* La fecha documental es la referencia temporal primaria; q.year queda
+           como fallback para registros que todavía no traen date. */
+        const years = rows.map(({ q }) => getSourceYear(q)).filter(Number.isFinite);
+        rows.forEach(({ q }) => {
+          const tone = q.label in toneCounts ? q.label : 'neutral';
+          toneCounts[tone] += 1;
+        });
+        return {
+          name,
+          rows,
+          count: rows.length,
+          toneCounts,
+          minYear: years.length ? Math.min(...years) : '—',
+          maxYear: years.length ? Math.max(...years) : '—',
+        };
+      }).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'es'));
+
+      meta.textContent = `${voices.length} voces · ${quotes.length} fragmentos`;
+      rail.innerHTML = '';
+      const cards = [];
+      let activeName = null;
+
+      const toneLabels = {
+        hawkish: 'hawkish (restrictiva)',
+        dovish: 'dovish (expansiva)',
+        neutral: 'neutral',
+      };
+
+      function updateDetail(voice) {
+        if (!voice) {
+          empty.hidden = false;
+          content.hidden = true;
+          selectedVoiceQuoteIndex = -1;
+          return;
+        }
+
+        const chronological = voice.rows.slice().sort((a, b) => {
+          const da = String(a.q.date || a.q.year || '');
+          const db = String(b.q.date || b.q.year || '');
+          return da.localeCompare(db) || a.index - b.index;
+        });
+        /* La muestra se toma del centro cronológico para no convertir la tarjeta
+           en un ranking ni privilegiar automáticamente la primera/última cita. */
+        const sample = chronological[Math.floor((chronological.length - 1) / 2)];
+        const toneSummary = [
+          `${voice.toneCounts.hawkish} ${toneLabels.hawkish}`,
+          `${voice.toneCounts.dovish} ${toneLabels.dovish}`,
+          `${voice.toneCounts.neutral} neutral${voice.toneCounts.neutral === 1 ? '' : 'es'}`,
+        ].join(' · ');
+
+        empty.hidden = true;
+        content.hidden = false;
+        detailName.textContent = voice.name;
+        detailMeta.textContent = `${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'} en la muestra · ${voice.minYear}–${voice.maxYear}`;
+        detailSummary.textContent = `Señales detectadas en sus fragmentos: ${toneSummary}.`;
+        detailQuote.textContent = `“${sample.q.text || 'Sin texto disponible'}”`;
+        detailCitation.textContent = `— ${sample.q.participant || voice.name}, ${sample.q.formatted_date || sample.q.date || sample.q.year || 'fecha no especificada'}`;
+        selectedVoiceQuoteIndex = sample.index;
+      }
+
+      function selectVoice(name) {
+        activeName = activeName === name ? null : name;
+        voiceFocusParticipant = activeName;
+        if (activeName) voiceFocusRenderedParticipant = activeName;
+        cards.forEach(({ card, voice }) => {
+          const selected = voice.name === activeName;
+          card.setAttribute('aria-pressed', String(selected));
+        });
+        updateDetail(activeName ? voices.find((voice) => voice.name === activeName) : null);
+        /* Si el lector estaba leyendo una cita del enjambre, una nueva selección
+           no debe dejar un panel perteneciente a otra voz flotando sobre el rail. */
+        if (typeof closeQuotePanel === 'function') closeQuotePanel();
+      }
+
+      voices.forEach((voice, index) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'voice-card';
+        card.setAttribute('role', 'listitem');
+        card.setAttribute('aria-pressed', 'false');
+        card.setAttribute('aria-label', `Seleccionar ${voice.name}: ${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'} entre ${voice.minYear} y ${voice.maxYear}.`);
+        card.innerHTML = `
+          <span class="voice-card-index"></span>
+          <span class="voice-card-name"></span>
+          <span class="voice-card-meta"></span>
+          <span class="voice-card-years"></span>
+          <span class="voice-signal-bar" aria-hidden="true">
+            <i class="hawkish"></i><i class="dovish"></i><i class="neutral"></i>
+          </span>`;
+        card.querySelector('.voice-card-index').textContent = String(index + 1).padStart(2, '0');
+        card.querySelector('.voice-card-name').textContent = voice.name;
+        card.querySelector('.voice-card-meta').textContent = `${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'}`;
+        card.querySelector('.voice-card-years').textContent = `${voice.minYear}–${voice.maxYear}`;
+        ['hawkish', 'dovish', 'neutral'].forEach((tone) => {
+          card.querySelector(`.voice-signal-bar .${tone}`).style.width = `${(voice.toneCounts[tone] / voice.count) * 100}%`;
+        });
+        card.addEventListener('click', () => selectVoice(voice.name));
+        rail.appendChild(card);
+        cards.push({ card, voice });
+      });
+
+      detailOpen.addEventListener('click', () => {
+        if (selectedVoiceQuoteIndex < 0) return;
+        pinnedIndex = selectedVoiceQuoteIndex;
+        hoverIndex = -1;
+        openQuote(selectedVoiceQuoteIndex, { x: window.innerWidth * 0.54, y: window.innerHeight * 0.62 });
+      });
+    }
+
+    initVoiceExplorer();
 
     function animate() {
       const time = clock.getElapsedTime();
@@ -2907,6 +3454,28 @@
           cols[i * 3 + 0] = THREE.MathUtils.lerp(pColors[i * 3 + 0], 1.00, t);
           cols[i * 3 + 1] = THREE.MathUtils.lerp(pColors[i * 3 + 1], 0.80, t);
           cols[i * 3 + 2] = THREE.MathUtils.lerp(pColors[i * 3 + 2], 0.52, t);
+        }
+        pGeo.attributes.color.needsUpdate = true;
+      }
+
+      /* Al elegir una voz, el resto no desaparece: baja de intensidad para que
+         la selección se pueda leer dentro del enjambre y la huella colectiva
+         siga visible. Al limpiar, el nombre renderizado se conserva hasta que
+         la transición termina para evitar un salto de color. */
+      const focusName = voiceFocusParticipant || voiceFocusRenderedParticipant;
+      voiceFocusMix = THREE.MathUtils.lerp(voiceFocusMix, voiceFocusParticipant ? 1 : 0, 0.08);
+      if (!voiceFocusParticipant && voiceFocusMix < 0.005) voiceFocusRenderedParticipant = null;
+      if (focusName || voiceFocusMix > 0.001) {
+        const cols = pGeo.attributes.color.array;
+        for (let i = 0; i < PCOUNT; i++) {
+          const q = quotes[i];
+          const selected = !!(focusName && q && q.participant === focusName);
+          const visibility = focusName
+            ? THREE.MathUtils.lerp(1, selected ? 1 : 0.10, voiceFocusMix)
+            : 1;
+          cols[i * 3 + 0] = pColors[i * 3 + 0] * visibility;
+          cols[i * 3 + 1] = pColors[i * 3 + 1] * visibility;
+          cols[i * 3 + 2] = pColors[i * 3 + 2] * visibility;
         }
         pGeo.attributes.color.needsUpdate = true;
       }
@@ -3317,11 +3886,12 @@
       ...(DOOR_MODE === 'doorway' ? [{ label: 'sala', start: 0.16 }] : []),
       { label: 'hook', start: 0.24 },
       { label: 'axes', start: 0.40 },
-      { label: 'counters', start: 0.54 },
-      { label: 'pipeline', start: 0.62 },
-      { label: 'timeline', start: 0.72 },
-      { label: 'quotes', start: 0.82 },
-      { label: 'closing', start: 0.93 }
+      { label: 'voices', start: 0.51 },
+      { label: 'counters', start: 0.62 },
+      { label: 'pipeline', start: 0.69 },
+      { label: 'timeline', start: 0.78 },
+      { label: 'quotes', start: 0.87 },
+      { label: 'closing', start: 0.96 }
     ];
 
     const progressBar = document.getElementById('progressBar');
@@ -3559,6 +4129,33 @@
           .to(roomSub,   { opacity: 0, y: -12, duration: 0.05, ease: 'none' }, 0.80)
           .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.94);
       }
+    }
+
+    /* ────────────────────────────────
+       Stage 5 — Las voces
+       La entrada conserva una zona de lectura: primero se presenta el marco
+       editorial y después aparece el directorio. El rail queda interactivo
+       durante el dwell completo del stage.
+    ──────────────────────────────── */
+    const voicesIntro = document.querySelector('.voices-intro');
+    const voiceExplorer = document.getElementById('voiceExplorer');
+    if (voicesIntro && voiceExplorer) {
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: '#stageVoices',
+          start: 'top 85%',
+          end: 'bottom bottom',
+          scrub: true,
+        },
+      })
+        .fromTo(voicesIntro,
+          { opacity: 0, y: 18 },
+          { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.04)
+        .fromTo(voiceExplorer,
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.16)
+        .to(voicesIntro,
+          { opacity: 0, y: -14, duration: 0.08, ease: 'none' }, 0.90);
     }
 
     /* Animación del texto de Stage 2 (La Reunión) */
@@ -4101,6 +4698,7 @@
       { trigger: '#stageRoom', color: '#0b0f1c' },
       { trigger: '#stageHook', color: '#0a0e1a' },
       { trigger: '#stageAxes', color: '#0d1225' },
+      { trigger: '#stageVoices', color: '#0b101c' },
       { trigger: '#stageCounters', color: '#0a0e1a' },
       { trigger: '#stagePipeline', color: '#0c1020' },
       { trigger: '#stageTimeline', color: '#0a0e1a' },
@@ -4135,6 +4733,7 @@
       { trigger: '#stageRoom',     alpha: 0.07 },
       { trigger: '#stageHook',     alpha: 0.025 },
       { trigger: '#stageAxes',     alpha: 0.015 },
+      { trigger: '#stageVoices',   alpha: 0.035 },
       { trigger: '#stageCounters', alpha: 0.025 },
       { trigger: '#stagePipeline', alpha: 0.018 },
       { trigger: '#stageTimeline', alpha: 0.035 },
