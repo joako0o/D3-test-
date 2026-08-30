@@ -484,6 +484,13 @@
     }
     .axes-reading-tone--hawkish strong { color: var(--color-gold); }
     .axes-reading-tone--dovish strong { color: var(--color-dovish); }
+    .axes-reading-trace {
+      color: var(--color-gold);
+      font-size: 0.88em;
+      letter-spacing: 0.7px;
+      opacity: 0.76;
+      text-transform: none;
+    }
 
     /* El plano se dibuja en SVG encima del fondo 3D: círculos nítidos para el
        dato, halo mínimo para conservar la sensación espacial y una retícula que
@@ -512,6 +519,13 @@
     #d3-canvas .axes-data-halo {
       opacity: 0.22;
       filter: blur(3px);
+    }
+    #d3-canvas .axes-data-mark:focus-visible {
+      outline: none;
+    }
+    #d3-canvas .axes-data-mark:focus-visible .axes-data-point {
+      stroke: var(--color-gold);
+      stroke-width: 2.5;
     }
     #d3-canvas .axes-data-point {
       stroke: #0a0e1a;
@@ -571,6 +585,7 @@
       .axes-reading-divider { display: none; }
       .axes-reading-direction {
         gap: 8px;
+        flex-wrap: wrap;
         font-size: 9px;
         letter-spacing: 0.7px;
       }
@@ -596,17 +611,47 @@
     /* ─── STAGE 6 — Counters ─── */
     .stage-counters {
       position: relative; z-index: 4;
-      min-height: 100vh;
+      min-height: clamp(440px, 70vh, 720px);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      padding: var(--space-section) 10%;
+      padding: clamp(56px, 8vh, 88px) 10%;
     }
     .counters-wrap {
       width: 100%;
-      max-width: 900px;
+      max-width: 980px;
       display: flex; flex-direction: column;
       align-items: center;
       gap: 20px;
+    }
+    .counters-kicker {
+      color: var(--color-gold);
+      font-size: var(--fs-micro);
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .counters-note {
+      max-width: 720px;
+      margin: 2px auto 0;
+      color: var(--color-text-faint);
+      font-size: var(--fs-small);
+      line-height: 1.5;
+      text-align: center;
+    }
+    .counter-kicker {
+      min-height: 2.4em;
+      color: var(--color-text-faint);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.4px;
+      line-height: 1.25;
+      text-transform: uppercase;
+    }
+    .counter-label small {
+      color: var(--color-text-faint);
+      font-size: 0.88em;
+      letter-spacing: 1px;
     }
     .chart-container {
       width: 100%;
@@ -733,8 +778,12 @@
     }
     .word-meter span { font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; opacity: 0.5; }
 
-    /* Panel 02 — etiquetado */
+    /* Panel 03 — clasificación guiada */
     .frag {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 5;
       font-family: Georgia, serif; font-style: italic;
       font-size: clamp(17px, 2.1vw, 24px); line-height: 1.7; color: var(--color-text-primary);
       border-left: 2px solid rgba(255,255,255,0.12); padding-left: 18px; margin-bottom: 22px;
@@ -751,30 +800,43 @@
     .confidence .bar i { display: block; height: 100%; width: 0; background: var(--color-gold); }
     .confidence .cap { font-size: var(--fs-micro); opacity: 0.5; margin-top: 6px; letter-spacing: 1px; }
 
-    /* Panel 03 — semilla */
+    /* Panel 02 — muestra de referencia */
     .seed-grid {
-      display: grid; grid-template-columns: repeat(26, 1fr); gap: 4px;
+      display: grid; grid-template-columns: repeat(20, 1fr); gap: 4px;
       border: 1px solid var(--color-surface-border); border-radius: 10px;
       background: var(--color-surface); padding: 18px;
     }
     .seed-dot { aspect-ratio: 1; border-radius: 2px; background: rgba(255,255,255,0.07); }
     .seed-dot.h.lit { background: var(--color-gold); }
     .seed-dot.d.lit { background: var(--color-dovish); }
+    .seed-dot.neutral.lit { background: rgba(207,214,228,0.8); }
 
-    /* Panel 04 — corpus */
+    /* Panel 04 — muestra analítica por año */
     .corpus-wrap {
       border: 1px solid var(--color-surface-border); border-radius: 10px;
       background: var(--color-surface); padding: 22px;
     }
     .corpus-field { position: relative; }
-    .corpus-grid { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 3px; }
-    .corpus-col { display: contents; }
+    .corpus-grid {
+      display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+      align-items: end; gap: clamp(3px, 0.7vw, 8px); min-height: 132px;
+    }
+    .corpus-col {
+      display: flex; flex-direction: column-reverse; align-items: center; justify-content: flex-start;
+      gap: 3px; min-height: 122px; padding-top: 5px;
+    }
     .corpus-dot {
-      aspect-ratio: 1; border-radius: 50%;
+      width: min(12px, 100%); aspect-ratio: 1; border-radius: 50%;
       background: rgba(255,255,255,0.09); transition: background 0.3s ease;
     }
     .corpus-col.lit > .h { background: var(--color-gold); }
     .corpus-col.lit > .d { background: var(--color-dovish); }
+    .corpus-col.lit > .n { background: rgba(207,214,228,0.78); }
+    .corpus-empty {
+      width: 7px; height: 7px; margin-top: auto; margin-bottom: 2px;
+      border: 1px dashed rgba(255,255,255,0.28); border-radius: 50%;
+      background: transparent;
+    }
     .corpus-head {
       position: absolute; top: -4px; bottom: -4px; width: 1px;
       background: rgba(255,255,255,0.55); pointer-events: none; opacity: 0;
@@ -788,8 +850,9 @@
       display: flex; justify-content: space-between; margin-top: 12px;
       font-size: var(--fs-micro); letter-spacing: 2px; opacity: 0.4; font-variant-numeric: tabular-nums;
     }
-    .corpus-status { margin-top: 14px; font-size: var(--fs-small); color: var(--color-text-secondary); }
+    .corpus-status { margin-top: 14px; font-size: var(--fs-small); color: var(--color-text-secondary); line-height: 1.5; }
     .corpus-status strong { color: var(--color-gold); font-variant-numeric: tabular-nums; }
+    .corpus-status-note { color: var(--color-text-faint); font-size: 0.9em; }
 
     /* Rail de progreso */
     .pipe-rail {
@@ -1345,6 +1408,21 @@
       font-weight: 600;
       letter-spacing: 1.7px;
     }
+    .act-reader-kicker > span {
+      margin-left: 8px;
+      color: var(--color-text-faint);
+      font-size: 0.86em;
+      font-weight: 500;
+      letter-spacing: 1.2px;
+    }
+    .act-support-label {
+      margin-top: 11px;
+      color: var(--color-text-faint);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
     .act-signal-explanation {
       max-width: 760px;
       margin-top: 5px;
@@ -1358,6 +1436,7 @@
       padding: 5px 7px;
       border-top: 1px solid rgba(255,255,255,0.08);
       border-bottom: 1px solid rgba(255,255,255,0.08);
+      opacity: 0.74;
     }
     #actTermNetwork {
       display: block;
@@ -1422,11 +1501,14 @@
       align-items: baseline;
       justify-content: space-between;
       gap: 10px;
-      margin: 10px 0 6px;
+      margin: 14px 0 7px;
+      padding-top: 11px;
+      border-top: 1px solid rgba(255,215,106,0.18);
     }
     .act-evidence-heading span:first-child {
-      color: var(--color-text-primary);
+      color: var(--color-gold);
       font-size: 10px;
+      font-weight: 600;
       letter-spacing: 1.6px;
       text-transform: uppercase;
     }
@@ -1439,6 +1521,10 @@
       grid-template-columns: minmax(150px, 0.58fr) minmax(0, 1.42fr);
       gap: 9px;
       min-width: 0;
+      padding: 9px;
+      border: 1px solid rgba(255,215,106,0.13);
+      border-radius: 8px;
+      background: rgba(4,8,18,0.28);
     }
     .act-evidence-list {
       display: flex;
@@ -1490,7 +1576,8 @@
     .act-selected-evidence {
       min-width: 0;
       padding: 8px 9px;
-      border-left: 1px solid rgba(255,255,255,0.12);
+      border-left: 1px solid rgba(255,215,106,0.27);
+      background: rgba(255,215,106,0.025);
     }
     .act-evidence-quote {
       display: -webkit-box;
@@ -1585,6 +1672,28 @@
 
     @media (max-width: 430px) and (max-height: 620px) {
       .stage-acts { height: 330vh; }
+      .pipe-header { top: 14px; }
+      .pipe-header h2 { font-size: 24px; }
+      .pipe-panel h3 { font-size: 20px; line-height: 1.12; margin-bottom: 8px; }
+      .pipe-panel .pipe-p { font-size: 11px; line-height: 1.45; margin-bottom: 12px; }
+      .doc-card { padding: 14px 16px; font-size: 11px; line-height: 1.65; }
+      .doc-head { margin-bottom: 9px; font-size: 8px; }
+      .word-meter { gap: 7px; margin-top: 12px; }
+      .word-meter strong { font-size: 32px; }
+      .word-meter span { font-size: 8px; line-height: 1.25; }
+      .seed-grid { gap: 3px; padding: 13px; }
+      .frag { max-height: 112px; margin-bottom: 12px; padding-left: 12px; font-size: 15px; line-height: 1.48; }
+      .verdict-row { gap: 10px; min-height: 42px; }
+      .confidence { min-width: 112px; }
+      .pipe-meta { gap: 5px; margin-top: 10px; }
+      .data-tag { padding: 3px 7px; font-size: 8px; }
+      .corpus-wrap { padding: 14px; }
+      .corpus-grid { min-height: 105px; gap: 2px; }
+      .corpus-col { min-height: 98px; gap: 2px; }
+      .corpus-dot { width: 6px; }
+      .corpus-status { margin-top: 9px; font-size: 10px; }
+      .corpus-year { top: -18px; font-size: 8px; }
+      .corpus-axis { margin-top: 8px; font-size: 8px; }
       .acts-pin-wrapper { padding-top: 18px; padding-bottom: 14px; }
       .acts-shell { gap: 8px; }
       .acts-intro { display: none; }
@@ -2431,6 +2540,23 @@
       opacity: 0;
       transform: translateY(20px);
     }
+    .timeline-note {
+      max-width: 760px;
+      margin: -30px auto 32px;
+      color: var(--color-text-faint);
+      font-size: var(--fs-small);
+      line-height: 1.5;
+      text-align: center;
+    }
+    .timeline-note strong {
+      color: var(--color-text-secondary);
+      font-weight: 500;
+    }
+    .timeline-note code {
+      color: var(--color-gold);
+      font-family: var(--font-body);
+      font-size: 0.92em;
+    }
     .timeline-container {
       max-width: 1100px;
       margin: 0 auto;
@@ -2444,15 +2570,60 @@
       fill: var(--color-gold);
       opacity: 0;
     }
+    .timeline-direction {
+      fill: var(--color-text-faint);
+      font: 600 9px var(--font-body);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+    .timeline-absence line {
+      stroke: rgba(255,255,255,0.3);
+      stroke-dasharray: 2 3;
+    }
+    .timeline-absence text {
+      fill: var(--color-text-faint);
+      font: 500 9px var(--font-body);
+      letter-spacing: 0.6px;
+    }
 
     /* ─── STAGE 9 — Quotes ─── */
     /* z-index sobre el canvas fijo (z:2): sin esto el canvas interceptaba
        hover/click de las tarjetas y ninguna interacción de esta sección funcionaba */
     .stage-quotes {
       position: relative; z-index: 30;
-      min-height: 100vh;
+      min-height: clamp(500px, 72vh, 760px);
       display: flex; align-items: center; justify-content: center;
-      padding: var(--space-section) 10%;
+      padding: clamp(64px, 9vh, 96px) 10%;
+    }
+    .quotes-shell {
+      width: min(980px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+    .quotes-kicker {
+      color: var(--color-gold);
+      font-size: var(--fs-micro);
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .quotes-title {
+      max-width: 760px;
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: var(--fs-h2);
+      font-weight: 500;
+      line-height: 1.15;
+    }
+    .quotes-lead {
+      max-width: 620px;
+      margin-bottom: 10px;
+      color: var(--color-text-secondary);
+      font-size: var(--fs-small);
+      line-height: 1.5;
     }
     .quotes-grid {
       display: grid;
@@ -2785,7 +2956,7 @@
 
 
   @supports (height: 100dvh) {
-      .hero, .stage-hook, .stage-counters, .stage-quotes,
+      .hero, .stage-hook,
       .pipeline-pin-wrapper, .timeline-pin-wrapper {
         min-height: 100dvh;
       }
@@ -3142,11 +3313,45 @@
         padding: 24px max(16px, env(safe-area-inset-right)) 20px max(16px, env(safe-area-inset-left)) !important;
       }
 
+      #stageQuotes {
+        min-height: 500px;
+        padding: 36px 14px;
+      }
+      #stageQuotes .quotes-shell { gap: 8px; }
+      #stageQuotes .quotes-title { font-size: 24px; line-height: 1.12; }
+      #stageQuotes .quotes-lead { margin-bottom: 4px; font-size: 11px; line-height: 1.35; }
+      #stageQuotes .quotes-grid { gap: 8px; }
+      #stageQuotes .quote-card { padding: 14px; }
+      #stageQuotes .quote-tag { margin-bottom: 8px; font-size: 10px; letter-spacing: 2px; }
+      #stageQuotes .quote-text { font-size: 16px; line-height: 1.4; margin-bottom: 8px; }
+      #stageQuotes .quote-author { margin-top: 6px; font-size: 9px; }
+
       #stageTimeline .timeline-title {
         font-size: clamp(20px, 3vw, 30px);
         line-height: 1.1;
-        margin-bottom: 16px;
+        margin-bottom: 8px;
       }
+
+      #stageTimeline .timeline-note {
+        margin: -2px auto 12px;
+        font-size: 10px;
+        line-height: 1.35;
+      }
+    }
+
+    @media (max-width: 430px) {
+      #stageQuotes {
+        min-height: 500px;
+        padding: clamp(36px, 6vh, 52px) 16px;
+      }
+      #stageQuotes .quotes-shell { gap: 9px; }
+      #stageQuotes .quotes-title { font-size: clamp(24px, 7vw, 30px); line-height: 1.12; }
+      #stageQuotes .quotes-lead { margin-bottom: 5px; font-size: 12px; line-height: 1.4; }
+      #stageQuotes .quotes-grid { gap: 9px; }
+      #stageQuotes .quote-card { padding: 14px; }
+      #stageQuotes .quote-tag { margin-bottom: 8px; font-size: 10px; letter-spacing: 2px; }
+      #stageQuotes .quote-text { font-size: 16px; line-height: 1.45; margin-bottom: 8px; }
+      #stageQuotes .quote-author { margin-top: 6px; font-size: 10px; }
     }
 
     /* Un teléfono en paisaje tiene un ancho de tablet pero una altura de
@@ -3374,9 +3579,10 @@
         <span class="axes-reading-kicker">Mapa de intervenciones</span>
         <span class="axes-reading-copy">Cada punto es una intervenci&oacute;n</span>
         <span class="axes-reading-divider" aria-hidden="true"></span>
-        <span class="axes-reading-direction" aria-label="Direcci&oacute;n del tono">
+        <span class="axes-reading-direction" aria-label="Direcci&oacute;n del tono. Selecciona un punto para volver a su fecha, voz y fragmento.">
           <span class="axes-reading-tone axes-reading-tone--hawkish"><strong aria-hidden="true">&uarr;</strong> restrictivo</span>
           <span class="axes-reading-tone axes-reading-tone--dovish"><strong aria-hidden="true">&darr;</strong> expansivo</span>
+          <span class="axes-reading-trace">clic &rarr; fecha &middot; voz &middot; fragmento</span>
         </span>
       </div>
     </div>
@@ -3427,7 +3633,7 @@
         <div class="voice-explorer" id="voiceExplorer">
           <div class="voice-explorer-head">
             <span class="voice-explorer-label">Directorio de intervenciones</span>
-            <span class="voice-explorer-meta" id="voiceDirectoryMeta">18 voces · 100 fragmentos</span>
+            <span class="voice-explorer-meta" id="voiceDirectoryMeta">Muestra visual · 18 voces · 100 fragmentos</span>
           </div>
           <div class="voice-rail" id="voiceRail" role="list" aria-label="Participantes de la muestra"></div>
           <div class="voice-rail-hint">Desliza para recorrer las voces</div>
@@ -3465,17 +3671,17 @@
     <div class="acts-pin-wrapper">
       <div class="acts-shell">
         <header class="acts-intro">
-          <div class="acts-kicker">Acto 6 · Volver al acta</div>
-          <h2 class="acts-title" id="actsTitle">Toda señal tiene un lugar.</h2>
-          <p class="acts-lead">Elige una reunión para seguir el hilo completo: fecha, participantes, términos y el fragmento que sostiene esta lectura.</p>
+          <div class="acts-kicker">Acto 6 · Navegador de actas</div>
+          <h2 class="acts-title" id="actsTitle">De la se&ntilde;al a la fuente</h2>
+          <p class="acts-lead">Encuentra la reunión y abre la intervención que sostiene esta lectura.</p>
         </header>
 
         <div class="acts-browser" id="actsBrowser">
           <aside class="acts-index" aria-label="Índice de actas disponibles">
             <div class="acts-index-head">
               <div>
-                <span class="acts-index-label">Índice de actas</span>
-                <span class="acts-index-meta" id="actsIndexMeta">— actas · — fragmentos</span>
+                <span class="acts-index-label">01 · Elige una reunión</span>
+                <span class="acts-index-meta" id="actsIndexMeta">Muestra visible: — actas · — fragmentos</span>
               </div>
               <div class="acts-year-control">
                 <label for="actYearFilter">Año</label>
@@ -3490,7 +3696,7 @@
           <article class="act-reader" id="actReader" aria-live="polite">
             <div class="act-reader-head">
               <div>
-                <div class="act-reader-kicker">Acta seleccionada</div>
+                <div class="act-reader-kicker">02 · Sigue la señal <span>Acta seleccionada</span></div>
                 <h3 class="act-date" id="actDate">—</h3>
                 <div class="act-date-sub" id="actDateSub">—</div>
               </div>
@@ -3515,15 +3721,11 @@
             </div>
 
             <div class="act-reading">
-              <span class="act-reading-label">Cómo se produce la lectura</span>
+              <span class="act-reading-label">03 · Por qué aparece esta señal</span>
               <p class="act-signal-explanation" id="actSignalExplanation">Selecciona una intervención para ver qué términos acompañan la señal.</p>
-              <div class="act-term-network-wrap" aria-label="Relación entre la señal y los términos del fragmento">
-                <svg id="actTermNetwork" viewBox="0 0 520 86" role="img" aria-label="Términos que acompañan la señal del fragmento"></svg>
-              </div>
-              <div class="act-term-list" id="actTermList" aria-label="Términos observados en el acta"></div>
 
               <div class="act-evidence-heading">
-                <span>Evidencia atribuida</span>
+                <span>04 · Lee la evidencia atribuida</span>
                 <span id="actEvidenceMeta">— fragmentos</span>
               </div>
               <div class="act-evidence-grid">
@@ -3532,10 +3734,16 @@
                   <blockquote class="act-evidence-quote" id="actEvidenceQuote">—</blockquote>
                   <cite class="act-evidence-citation" id="actEvidenceCitation">—</cite>
                   <div class="act-evidence-actions">
-                    <button class="act-open-evidence" id="actOpenEvidence" type="button">Abrir fragmento <span aria-hidden="true">↗</span></button>
+                    <button class="act-open-evidence" id="actOpenEvidence" type="button">Leer intervención completa <span aria-hidden="true">↗</span></button>
                   </div>
                 </div>
               </div>
+
+              <div class="act-support-label">Términos que acompañan esta lectura</div>
+              <div class="act-term-network-wrap" aria-label="Relación entre la señal y los términos del fragmento">
+                <svg id="actTermNetwork" viewBox="0 0 520 86" role="img" aria-label="Términos que acompañan la señal del fragmento"></svg>
+              </div>
+              <div class="act-term-list" id="actTermList" aria-label="Términos observados en el acta"></div>
             </div>
           </article>
         </div>
@@ -3544,25 +3752,33 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 7 — Counters ═══════ -->
+  <!-- ═══════ STAGE 7 — Alcance de los datos ═══════ -->
   <section class="stage-counters" id="stageCounters">
-    <div class="counters-grid">
-      <div class="counter-item" data-counter>
-        <div class="counter-number" data-target="16" data-suffix="">0</div>
-        <div class="counter-label">A&ntilde;os cubiertos</div>
+    <div class="counters-wrap">
+      <div class="counters-kicker">Antes de seguir: dos escalas de lectura</div>
+      <div class="counters-grid">
+        <div class="counter-item" data-counter>
+          <div class="counter-kicker">Ventana del corpus</div>
+          <div class="counter-number" data-target="16" data-suffix="">0</div>
+          <div class="counter-label">a&ntilde;os declarados<br><small>2000&ndash;2015</small></div>
+        </div>
+        <div class="counter-item" data-counter>
+          <div class="counter-kicker">Corpus total declarado</div>
+          <div class="counter-number" data-target="182" data-suffix="">0</div>
+          <div class="counter-label">reuniones de referencia</div>
+        </div>
+        <div class="counter-item" data-counter>
+          <div class="counter-kicker">Muestra visual</div>
+          <div class="counter-number" data-target="100" data-suffix="">0</div>
+          <div class="counter-label">fragmentos en la pieza</div>
+        </div>
+        <div class="counter-item" data-counter>
+          <div class="counter-kicker">Muestra visual</div>
+          <div class="counter-number" data-target="18" data-suffix="">0</div>
+          <div class="counter-label">participantes representados</div>
+        </div>
       </div>
-      <div class="counter-item" data-counter>
-        <div class="counter-number" data-target="182" data-suffix="">0</div>
-        <div class="counter-label">Reuniones analizadas</div>
-      </div>
-      <div class="counter-item" data-counter>
-        <div class="counter-number" data-target="100" data-suffix="">0</div>
-        <div class="counter-label">Intervenciones clasificadas</div>
-      </div>
-      <div class="counter-item" data-counter>
-        <div class="counter-number" data-target="18" data-suffix="">0</div>
-        <div class="counter-label">Voces identificadas</div>
-      </div>
+      <p class="counters-note">El corpus de referencia y la muestra interactiva no son la misma escala: esta pieza permite seguir 100 fragmentos de 18 participantes; no presenta las 182 reuniones completas.</p>
     </div>
   </section>
 
@@ -3571,7 +3787,7 @@
     <div class="pipeline-pin-wrapper">
       <header class="pipe-header">
         <div class="pipe-kicker">Metodolog&iacute;a</div>
-        <h2>Del texto crudo <em>al dato</em></h2>
+        <h2>De la fuente <em>a la trazabilidad</em></h2>
       </header>
 
       <div class="pipe-viewport">
@@ -3581,8 +3797,9 @@
           <article class="pipe-panel">
             <span class="pipe-index">01</span>
             <div class="pipe-body">
-              <div class="pipe-label">Input</div>
-              <h3>Las actas, tal como fueron habladas</h3>
+              <div class="pipe-label">Fuente</div>
+              <h3>Las actas, tal como fueron registradas</h3>
+              <p class="pipe-p">El corpus de referencia reúne las reuniones; la pieza visible trabaja con una muestra de fragmentos, conservando fecha, participante y texto para volver a la fuente.</p>
               <div class="doc-card">
                 <div class="doc-head"><span>Acta &middot; Sesi&oacute;n de Pol&iacute;tica Monetaria</span><span>2007</span></div>
                 <span class="doc-line"><span>&hellip;el alza del IPC sorprendi&oacute; al alza y la lectura de</span></span>
@@ -3591,61 +3808,63 @@
               </div>
               <div class="word-meter">
                 <strong id="wordCount">0</strong>
-                <span>palabras en 182 actas &middot; 2000&ndash;2015</span>
+                <span>palabras en los textos truncados visibles</span>
               </div>
             </div>
           </article>
 
-          <!-- 02 · Etiquetado -->
+          <!-- 02 · Muestra y criterio -->
           <article class="pipe-panel">
             <span class="pipe-index">02</span>
             <div class="pipe-body">
-              <div class="pipe-label">Proceso</div>
-              <h3>Un LLM aprende de ejemplos y etiqueta</h3>
-              <p class="pipe-p">Etiquetado few-shot: el modelo recibe fragmentos de ejemplo y asigna a cada fragmento nuevo una orientaci&oacute;n y un nivel de confianza.</p>
+              <div class="pipe-label">Muestra / criterio</div>
+              <h3>Ejemplos que orientan la lectura</h3>
+              <p class="pipe-p">Los 100 registros visibles ya llevan una etiqueta observable: hawkish, dovish o neutral. La guía few-shot usa ejemplos para la consulta; no entrena un modelo general.</p>
+              <div class="seed-grid" id="seedGrid" aria-hidden="true"></div>
+              <div class="word-meter" style="margin-top:14px">
+                <strong id="seedCount">0</strong>
+                <span>fragmentos etiquetados en la muestra visual</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- 03 · Clasificación guiada -->
+          <article class="pipe-panel">
+            <span class="pipe-index">03</span>
+            <div class="pipe-body">
+              <div class="pipe-label">Clasificaci&oacute;n guiada</div>
+              <h3>Cada fragmento recibe una se&ntilde;al exploratoria</h3>
+              <p class="pipe-p">El modelo compara un fragmento nuevo con el criterio de referencia y devuelve una orientaci&oacute;n y un nivel de confianza. La confianza no es una validaci&oacute;n estad&iacute;stica.</p>
               <div class="frag">&laquo;el riesgo de inflaci&oacute;n domina el panorama&raquo;</div>
               <div class="verdict-row">
                 <span class="verdict" id="verdictStamp">Hawkish</span>
                 <div class="confidence">
                   <div class="bar"><i id="confBar"></i></div>
-                  <div class="cap">confianza <span id="confVal">0.00</span></div>
+                  <div class="cap">confianza del ejemplo <span id="confVal">0.00</span></div>
                 </div>
               </div>
               <div class="pipe-meta">
                 <span class="data-tag hawkish">Hawkish</span>
                 <span class="data-tag dovish">Dovish</span>
-                <span class="data-tag neutral">Validaci&oacute;n experta</span>
+                <span class="data-tag neutral">Neutral</span>
               </div>
             </div>
           </article>
 
-          <!-- 03 · Semilla -->
-          <article class="pipe-panel">
-            <span class="pipe-index">03</span>
-            <div class="pipe-body">
-              <div class="pipe-label">Entrenamiento</div>
-              <h3>La semilla etiquetada a mano</h3>
-              <div class="seed-grid" id="seedGrid" aria-hidden="true"></div>
-              <div class="word-meter" style="margin-top:14px">
-                <strong id="seedCount">0</strong>
-                <span>fragmentos etiquetados</span>
-              </div>
-            </div>
-          </article>
-
-          <!-- 04 · Corpus -->
+          <!-- 04 · Revisión y trazabilidad -->
           <article class="pipe-panel pipe-panel--wide">
             <span class="pipe-index">04</span>
             <div class="pipe-body">
-              <div class="pipe-label">Resultado</div>
-              <h3>El clasificador barre todo el corpus</h3>
+              <div class="pipe-label">Revisi&oacute;n / trazabilidad</div>
+              <h3>La salida vuelve a la fuente</h3>
+              <p class="pipe-p">El recorrido ordena la muestra por fecha; cada señal conserva el camino hasta el participante, el fragmento y el acta. Los a&ntilde;os sin registros no se rellenan.</p>
               <div class="corpus-wrap">
                 <div class="corpus-field">
                   <div class="corpus-grid" id="corpusGrid" aria-hidden="true"></div>
                   <div class="corpus-head" id="corpusHead"><span class="corpus-year" id="corpusYear">2000</span></div>
                 </div>
                 <div class="corpus-axis"><span>2000</span><span>2015</span></div>
-                <div class="corpus-status"><strong id="corpusPct">0%</strong> del corpus clasificado</div>
+                <div class="corpus-status"><strong id="corpusPct">0%</strong> de la muestra anal&iacute;tica recorrida <span class="corpus-status-note" id="corpusCoverageNote"></span></div>
               </div>
             </div>
           </article>
@@ -3662,23 +3881,29 @@
   <!-- ═══════ STAGE 9 — Timeline ═══════ -->
   <section class="stage-timeline" id="stageTimeline">
     <div class="timeline-pin-wrapper">
-      <h2 class="timeline-title" data-timeline-title>Orientaci&oacute;n de pol&iacute;tica monetaria en el tiempo</h2>
+      <h2 class="timeline-title" data-timeline-title>&Iacute;ndice exploratorio de orientaci&oacute;n por a&ntilde;o</h2>
+      <p class="timeline-note" id="timelineNote">Se calcula como <strong>(hawkish &minus; dovish) / fragmentos con etiqueta</strong>; los fragmentos neutrales no desplazan el &iacute;ndice. Solo aparecen a&ntilde;os con muestra en <code>quotes.js</code>.</p>
       <div class="timeline-container" id="timelineContainer"></div>
     </div>
   </section>
 
-  <!-- ═══════ STAGE 11 — Quotes ═══════ -->
-  <section class="stage-quotes" id="stageQuotes">
-    <div class="quotes-grid">
-      <div class="quote-card hawkish" data-quote data-quote-participant="Vittorio Corbo" data-quote-year="2007" tabindex="0" role="button" aria-label="Cita con se&ntilde;al hawkish de Vittorio Corbo, 13 de Septiembre de 2007. Click para ver m&aacute;s detalles.">
-        <div class="quote-tag">Hawkish</div>
-        <div class="quote-text">&ldquo;Mayor incertidumbre ciertamente no alcanza a dominar el efecto de primer orden que representa el aumento de la inflaci&oacute;n. Efectivamente, el aumento de la inflaci&oacute;n se ha dado en energ&iacute;a y alimentos, y una vez que descontamos estos componentes del IPC, el registro de inflaci&oacute;n subyacente se mantiene elevado.&rdquo;</div>
-        <div class="quote-author">&mdash; Vittorio Corbo, 13 de Septiembre, 2007</div>
-      </div>
-      <div class="quote-card dovish" data-quote data-quote-participant="Jos&eacute; De Gregorio" data-quote-year="2009" tabindex="0" role="button" aria-label="Cita con se&ntilde;al dovish de Jos&eacute; De Gregorio, 7 de Mayo de 2009. Click para ver m&aacute;s detalles.">
-        <div class="quote-tag">Dovish</div>
-        <div class="quote-text">&ldquo;En el frente externo, los mercados financieros denotan una mayor inclinaci&oacute;n al riesgo, en tanto que los precios de las materias primas han vuelto a subir. Por su parte, las proyecciones de crecimiento han dejado de observar correcciones a la baja de la magnitud registrada en meses anteriores.&rdquo;</div>
-        <div class="quote-author">&mdash; Jos&eacute; De Gregorio, 7 de Mayo, 2009</div>
+  <!-- ═══════ STAGE 11 — Volver a la evidencia ═══════ -->
+  <section class="stage-quotes" id="stageQuotes" aria-labelledby="quotesTitle">
+    <div class="quotes-shell">
+      <div class="quotes-kicker">Ep&iacute;logo &middot; Volver a la evidencia</div>
+      <h2 class="quotes-title" id="quotesTitle">La lectura termina donde empez&oacute;: en la voz.</h2>
+      <p class="quotes-lead">Dos fragmentos para cerrar el recorrido. T&oacute;calos para volver a abrir la cita atribuida en la muestra.</p>
+      <div class="quotes-grid">
+        <div class="quote-card hawkish" data-quote data-quote-participant="Vittorio Corbo" data-quote-year="2007" tabindex="0" role="button" aria-label="Abrir cita hawkish de Vittorio Corbo, 13 de Septiembre de 2007.">
+          <div class="quote-tag">Hawkish</div>
+          <div class="quote-text">&ldquo;El registro de inflaci&oacute;n subyacente se mantiene elevado.&rdquo;</div>
+          <div class="quote-author">&mdash; Vittorio Corbo, 13 de Septiembre, 2007</div>
+        </div>
+        <div class="quote-card dovish" data-quote data-quote-participant="Jos&eacute; De Gregorio" data-quote-year="2009" tabindex="0" role="button" aria-label="Abrir cita dovish de Jos&eacute; De Gregorio, 7 de Mayo de 2009.">
+          <div class="quote-tag">Dovish</div>
+          <div class="quote-text">&ldquo;Las proyecciones de crecimiento han dejado de observar correcciones a la baja.&rdquo;</div>
+          <div class="quote-author">&mdash; Jos&eacute; De Gregorio, 7 de Mayo, 2009</div>
+        </div>
       </div>
     </div>
   </section>
@@ -4832,7 +5057,7 @@
         };
       }).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'es'));
 
-      meta.textContent = `${voices.length} voces · ${quotes.length} fragmentos`;
+      meta.textContent = `Muestra visual · ${voices.length} voces · ${quotes.length} fragmentos`;
       rail.innerHTML = '';
       const cards = [];
       let activeName = null;
@@ -5222,7 +5447,7 @@
       }).sort((a, b) => a.date.localeCompare(b.date));
 
       if (!acts.length) return;
-      meta.textContent = `${acts.length} actas · ${acts.reduce((total, act) => total + act.count, 0)} fragmentos${excludedRows ? ` · ${excludedRows} fuera del período` : ''}`;
+      meta.textContent = `Muestra visible: ${acts.length} actas · ${acts.reduce((total, act) => total + act.count, 0)} fragmentos${excludedRows ? ` · ${excludedRows} fuera del período` : ''}`;
       [...new Set(acts.map((act) => act.year))].sort((a, b) => a - b).forEach((year) => {
         const option = document.createElement('option');
         option.value = String(year);
@@ -6006,13 +6231,20 @@
         .append('svg')
         .attr('width', width)
         .attr('height', height)
+        .attr('role', 'img')
+        .attr('aria-label', 'Mapa de intervenciones: cada punto conserva su fecha, participante y fragmento')
         .style('position', 'absolute')
         .style('inset', '0');
 
       /* Más área vertical para que la diferencia entre tonos se lea como un
          mapa y no como una hilera de puntos. El eje cero permanece cerca del
          centro óptico de la pantalla. */
-      const margin = { top: height * 0.28, right: width * 0.15, bottom: height * 0.18, left: width * 0.15 };
+      const margin = {
+        top: height * (width < 640 ? 0.34 : 0.28),
+        right: width * 0.15,
+        bottom: height * 0.18,
+        left: width * 0.15,
+      };
       const innerW = width - margin.left - margin.right;
       const innerH = height - margin.top - margin.bottom;
 
@@ -6082,6 +6314,15 @@
         .attr('transform', ({ q, date }) => `translate(${xScale(date)}, ${yScale(getQuoteAxisSentiment(q))})`)
         .attr('data-quote-index', ({ index }) => index)
         .attr('class', ({ q }) => `axes-data-mark axes-data-mark--${q.label || 'neutral'}`)
+        .attr('tabindex', '0')
+        .attr('role', 'button')
+        .attr('aria-label', ({ q }) => `Abrir intervención ${q.label || 'neutral'} de ${q.participant || 'participante anónimo'}, ${q.formatted_date || q.date || q.year || 'fecha no especificada'}`)
+        .on('keydown', (event, d) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          lastFocusedCard = event.currentTarget;
+          openQuote(d.index, { x: window.innerWidth * 0.55, y: window.innerHeight * 0.58 });
+        })
         .each(function ({ q }) {
           const score = THREE.MathUtils.clamp(Number(q.score) || 0.7, 0, 1);
           const radius = 2.8 + score * 2.1;
@@ -6669,48 +6910,78 @@
       const viewport = track?.closest('.pipe-viewport');
       if (!track || !viewport) return;
 
-      /* — Semilla (panel 03) — */
+      /* — Muestra de referencia (panel 02) — */
       const seedGrid = document.getElementById('seedGrid');
       const seedDots = [];
-      for (let i = 0; i < 26 * 6; i++) {
+      const labelledRows = quotes.filter((q) => ['hawkish', 'dovish', 'neutral'].includes(q.label));
+      labelledRows.forEach((q, index) => {
         const d = document.createElement('i');
-        d.className = 'seed-dot ' + (Math.random() < 0.46 ? 'h' : 'd');
-        d.dataset.th = (0.05 + Math.random() * 0.8).toFixed(3);
+        d.className = `seed-dot ${q.label}`;
+        d.dataset.th = (0.04 + (index / Math.max(labelledRows.length, 1)) * 0.76).toFixed(3);
+        d.title = `${q.label} · ${q.participant || 'Participante anónimo'} · ${q.date || q.year || 'fecha no especificada'}`;
         seedGrid.appendChild(d);
         seedDots.push(d);
-      }
+      });
+      const seedTotal = labelledRows.length;
 
-      /* — Corpus (panel 04) — */
+      /* — Muestra analítica por año (panel 04) — */
       const corpusGrid = document.getElementById('corpusGrid');
       const corpusHead = document.getElementById('corpusHead');
       const corpusYear = document.getElementById('corpusYear');
       const corpusPct  = document.getElementById('corpusPct');
-      const isNarrow = () => window.matchMedia('(max-width: 640px)').matches;
-      /* wasNarrow no estaba declarado → ReferenceError en strict mode al
-         hacer resize cruzando el breakpoint; mataba el refresh completo */
-      let wasNarrow = isNarrow();
-      const ROWS = 12;
-      let COLS = 0, corpusCols = [], litCols = -1;
+      const corpusCoverageNote = document.getElementById('corpusCoverageNote');
+      const analysisYears = Array.from({ length: 16 }, (_, index) => 2000 + index);
+      const sourceYear = (q) => {
+        const match = String(q.date || '').match(/^(\d{4})/);
+        return match ? Number(match[1]) : Number(q.year);
+      };
+      const analysisRows = quotes.filter((q) => analysisYears.includes(sourceYear(q)));
+      const rowsByYear = new Map(analysisYears.map((year) => [year, []]));
+      analysisRows.forEach((q) => rowsByYear.get(sourceYear(q)).push(q));
+      const missingYears = analysisYears.filter((year) => rowsByYear.get(year).length === 0);
+      const outsidePeriod = quotes.length - analysisRows.length;
+      let corpusCols = [], litCols = -1;
+
+      const formatYearRanges = (years) => {
+        const ranges = [];
+        years.forEach((year) => {
+          const last = ranges[ranges.length - 1];
+          if (last && year === last[1] + 1) last[1] = year;
+          else ranges.push([year, year]);
+        });
+        return ranges.map(([from, to]) => from === to ? String(from) : `${from}–${to}`).join(', ');
+      };
 
       function buildCorpus() {
-        COLS = isNarrow() ? 26 : 40;
         corpusGrid.innerHTML = '';
-        corpusGrid.style.setProperty('--cols', COLS);
+        corpusGrid.style.setProperty('--cols', analysisYears.length);
         corpusCols = [];
-        for (let c = 0; c < COLS; c++) {
+        analysisYears.forEach((year) => {
           const col = document.createElement('span');
           col.className = 'corpus-col';
-          const bias = Math.sin((c / COLS) * Math.PI * 1.7 - 1.1);
-          const hawks = Math.round((0.5 + 0.42 * bias) * ROWS);
-          for (let r = 0; r < ROWS; r++) {
+          col.dataset.year = String(year);
+          rowsByYear.get(year).forEach((q) => {
             const dot = document.createElement('i');
-            dot.className = 'corpus-dot ' + (r < hawks ? 'h' : 'd');
+            const tone = ['hawkish', 'dovish', 'neutral'].includes(q.label) ? q.label : 'neutral';
+            dot.className = `corpus-dot ${tone === 'hawkish' ? 'h' : tone === 'dovish' ? 'd' : 'n'}`;
             col.appendChild(dot);
+          });
+          if (!rowsByYear.get(year).length) {
+            const empty = document.createElement('i');
+            empty.className = 'corpus-empty';
+            empty.setAttribute('aria-hidden', 'true');
+            col.appendChild(empty);
           }
           corpusGrid.appendChild(col);
           corpusCols.push(col);
-        }
+        });
         litCols = -1;
+        if (corpusCoverageNote) {
+          const parts = [];
+          if (missingYears.length) parts.push(`sin muestra: ${formatYearRanges(missingYears)}`);
+          if (outsidePeriod) parts.push(`${outsidePeriod} fuera de 2000–2015`);
+          corpusCoverageNote.textContent = parts.length ? ` · ${parts.join(' · ')}` : '';
+        }
       }
       buildCorpus();
 
@@ -6736,6 +7007,14 @@
       const easeOut3 = (t) => 1 - Math.pow(1 - t, 3);
       const easeInOut = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
       const fmt      = (n) => Math.round(n).toLocaleString('es-CL');
+      const sampleWordCount = quotes.reduce((total, q) => total + String(q.text || '').trim().split(/\s+/).filter(Boolean).length, 0);
+      const pipelineExample = quotes.find((q) => q.label === 'hawkish') || quotes[0];
+      const pipelineTone = ['hawkish', 'dovish', 'neutral'].includes(pipelineExample?.label) ? pipelineExample.label : 'neutral';
+      const pipelineScore = Number.isFinite(Number(pipelineExample?.score)) ? Number(pipelineExample.score) : 0;
+      const pipelineToneText = { hawkish: 'Hawkish', dovish: 'Dovish', neutral: 'Neutral' };
+      const pipelineExcerpt = String(pipelineExample?.text || 'Sin texto disponible').replace(/\s+/g, ' ').trim();
+      if (fragEl) fragEl.textContent = `«${pipelineExcerpt.length > 150 ? `${pipelineExcerpt.slice(0, 150)}…` : pipelineExcerpt}»`;
+      if (verdict) verdict.textContent = pipelineToneText[pipelineTone];
 
       const panels = track.querySelectorAll('.pipe-panel');
       const getPanelBounds = () => {
@@ -6777,40 +7056,38 @@
           line.style.transform = `translateY(${(1 - t) * 110}%)`;
         });
         // Contador más pausado
-        wordCount.textContent = fmt(150000 * easeOut3(seg(l1, 0.20, 0.90)));
+        wordCount.textContent = fmt(sampleWordCount * easeOut3(seg(l1, 0.20, 0.90)));
 
-        /* Panel 02 — fragmento + sello del veredicto + confianza */
-        // Transiciones más suaves para que se aprecie cada elemento
+        /* Panel 02 — muestra de referencia encendida + contador */
         const l2 = seg(p, bounds[1].start, bounds[1].end);
-        fragEl.style.opacity = easeOut3(seg(l2, 0.08, 0.40));
-        // Sello aparece más gradualmente
-        const stamp = easeOut3(seg(l2, 0.50, 0.75));
+        seedDots.forEach((d) => d.classList.toggle('lit', l2 > +d.dataset.th));
+        seedCount.textContent = fmt(seedTotal * easeOut3(seg(l2, 0.12, 0.92)));
+
+        /* Panel 03 — fragmento + sello del veredicto + confianza */
+        // La etiqueta y el score provienen de un registro visible de quotes.js.
+        const l3 = seg(p, bounds[2].start, bounds[2].end);
+        fragEl.style.opacity = easeOut3(seg(l3, 0.08, 0.40));
+        const stamp = easeOut3(seg(l3, 0.50, 0.75));
         verdict.style.opacity = stamp;
         verdict.style.transform = `scale(${1.9 - 0.9 * stamp}) rotate(${-9 + 6 * stamp}deg)`;
-        // Barra de confianza más lenta
-        const conf = seg(l2, 0.55, 0.95);
-        confBar.style.width = (conf * 94) + '%';
-        confVal.textContent = (conf * 0.94).toFixed(2);
+        const conf = easeOut3(seg(l3, 0.55, 0.95));
+        confBar.style.width = (conf * pipelineScore * 100) + '%';
+        confVal.textContent = (conf * pipelineScore).toFixed(2);
 
-        /* Panel 03 — semilla encendida + contador */
-        // Semilla se ilumina más lentamente para apreciarla
-        const l3 = seg(p, bounds[2].start, bounds[2].end);
-        seedDots.forEach((d) => d.classList.toggle('lit', l3 > +d.dataset.th));
-        seedCount.textContent = fmt(872 * easeOut3(seg(l3, 0.12, 0.92)));
-
-        /* Panel 04 — barrido del corpus, año por año */
-        // Barrido más pausado para ver cada año
+        /* Panel 04 — recorrido de la muestra analítica por año */
         const l4 = seg(p, bounds[3].start, bounds[3].end);
         const sweep = seg(l4, 0.10, 0.95);
-        const front = Math.floor(sweep * (COLS + 1));
+        const front = Math.floor(sweep * (analysisYears.length + 1));
         if (front !== litCols) {
           corpusCols.forEach((col, c) => col.classList.toggle('lit', c < front));
           litCols = front;
         }
         corpusHead.style.left = (sweep * 100) + '%';
         corpusHead.style.opacity = (l4 > 0.02 && sweep < 0.999) ? 1 : 0;
-        corpusYear.textContent = 2000 + Math.round(sweep * 15);
-        corpusPct.textContent = Math.round(sweep * 100) + '%';
+        const yearIndex = Math.min(analysisYears.length - 1, Math.round(sweep * (analysisYears.length - 1)));
+        corpusYear.textContent = analysisYears[yearIndex];
+        const processedRows = analysisYears.slice(0, front).reduce((total, year) => total + rowsByYear.get(year).length, 0);
+        corpusPct.textContent = Math.min(100, Math.round((processedRows / Math.max(analysisRows.length, 1)) * 100)) + '%';
 
         /* Rail de progreso */
         let activeIdx = 0;
@@ -6829,7 +7106,7 @@
           debugEl.classList.add('visible');
           debugSection.textContent = 'Pipeline';
           debugProgress.textContent = Math.round(p * 100) + '%';
-          const panelNames = ['01 · Fuente', '02 · Etiquetado', '03 · Semilla', '04 · Corpus'];
+          const panelNames = ['01 · Fuente', '02 · Muestra / criterio', '03 · Clasificación guiada', '04 · Revisión / trazabilidad'];
           debugPanelInfo.textContent = panelNames[activeIdx] || '—';
           debugBar.style.width = (p * 100) + '%';
         }
@@ -6855,7 +7132,6 @@
       updatePipe(0);
 
       window.addEventListener('resize', () => {
-        if (isNarrow() !== wasNarrow) { wasNarrow = isNarrow(); buildCorpus(); }
         ScrollTrigger.refresh();
       });
     })();
@@ -6905,33 +7181,56 @@
         .attr('width', width)
         .attr('height', height)
         .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('role', 'img')
+        .attr('aria-label', 'Índice exploratorio de orientación por año, agregado desde los fragmentos visibles')
+        .attr('aria-describedby', 'timelineNote')
         .style('max-width', '100%')
         .style('height', 'auto');
 
       const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-      /* Datos de orientación de política monetaria */
-      const sampleData = [
-        { date: new Date(2000, 0), value: 0.2 },
-        { date: new Date(2001, 0), value: -0.1 },
-        { date: new Date(2002, 0), value: 0.05 },
-        { date: new Date(2003, 0), value: 0.3 },
-        { date: new Date(2004, 0), value: 0.15 },
-        { date: new Date(2005, 0), value: -0.05 },
-        { date: new Date(2006, 0), value: 0.25 },
-        { date: new Date(2007, 0), value: 0.4 },
-        { date: new Date(2008, 0), value: -0.3 },
-        { date: new Date(2009, 0), value: -0.15 },
-        { date: new Date(2010, 0), value: 0.1 },
-        { date: new Date(2011, 0), value: 0.35 },
-        { date: new Date(2012, 0), value: 0.05 },
-        { date: new Date(2013, 0), value: -0.1 },
-        { date: new Date(2014, 0), value: 0.2 },
-        { date: new Date(2015, 0), value: -0.05 },
-      ];
-
-      const x = d3.scaleTime().domain(d3.extent(sampleData, d => d.date)).range([0, innerW]);
-      const y = d3.scaleLinear().domain([-0.5, 0.5]).range([innerH, 0]);
+      /* El índice se agrega desde los registros visibles de quotes.js.
+         Convención explícita: (hawkish − dovish) / total de fragmentos del año;
+         neutral no desplaza el índice, pero sí permanece en el denominador. */
+      const years = d3.range(2000, 2016);
+      const byYear = new Map(years.map((year) => [year, { year, hawkish: 0, dovish: 0, neutral: 0, total: 0 }]));
+      const sourceYear = (q) => {
+        const match = String(q.date || '').match(/^(\d{4})/);
+        return match ? Number(match[1]) : Number(q.year);
+      };
+      quotes.forEach((q) => {
+        const year = sourceYear(q);
+        const bucket = byYear.get(year);
+        if (!bucket) return;
+        const tone = ['hawkish', 'dovish', 'neutral'].includes(q.label) ? q.label : 'neutral';
+        bucket[tone] += 1;
+        bucket.total += 1;
+      });
+      const timelineData = years
+        .filter((year) => byYear.get(year).total > 0)
+        .map((year) => {
+          const bucket = byYear.get(year);
+          return {
+            ...bucket,
+            date: new Date(year, 6, 1),
+            value: (bucket.hawkish - bucket.dovish) / bucket.total,
+            hasSample: true,
+          };
+        });
+      const missingYears = years.filter((year) => byYear.get(year).total === 0);
+      const formatYearRanges = (items) => {
+        const ranges = [];
+        items.forEach((year) => {
+          const last = ranges[ranges.length - 1];
+          if (last && year === last[1] + 1) last[1] = year;
+          else ranges.push([year, year]);
+        });
+        return ranges.map(([from, to]) => from === to ? String(from) : `${from}–${to}`).join(', ');
+      };
+      const domainStart = new Date(2000, 0, 1);
+      const domainEnd = new Date(2015, 11, 31);
+      const x = d3.scaleTime().domain([domainStart, domainEnd]).range([0, innerW]);
+      const y = d3.scaleLinear().domain([-1, 1]).range([innerH, 0]);
 
       g.append('g')
         .attr('transform', `translate(0,${innerH})`)
@@ -6959,13 +7258,17 @@
       gradient.append('stop').attr('offset', '50%').attr('stop-color', '#ffd76a');
       gradient.append('stop').attr('offset', '100%').attr('stop-color', '#8ab4f8');
 
+      const fullTimeline = years.map((year) => byYear.get(year).total > 0
+        ? timelineData.find((item) => item.year === year)
+        : { year, date: new Date(year, 6, 1), value: null, hasSample: false });
       const line = d3.line()
+        .defined((d) => d.hasSample)
         .x(d => x(d.date))
         .y(d => y(d.value))
-        .curve(d3.curveMonotoneX);
+        .curve(d3.curveLinear);
 
       timelinePath = g.append('path')
-        .datum(sampleData)
+        .datum(fullTimeline)
         .attr('fill', 'none')
         .attr('stroke', 'url(#lineGrad)')
         .attr('stroke-width', 2.5)
@@ -6975,6 +7278,47 @@
       timelinePath
         .attr('stroke-dasharray', timelineTotalLen)
         .attr('stroke-dashoffset', timelineTotalLen);
+
+      const toneColor = (d) => d.value > 0 ? '#ffd76a' : d.value < 0 ? '#8ab4f8' : '#cfd6e4';
+      const points = g.append('g').attr('class', 'timeline-points')
+        .selectAll('circle')
+        .data(timelineData)
+        .enter()
+        .append('circle')
+        .attr('class', 'timeline-point')
+        .attr('cx', d => x(d.date))
+        .attr('cy', d => y(d.value))
+        .attr('r', 4)
+        .style('fill', toneColor)
+        .style('stroke', '#0a0e1a')
+        .style('stroke-width', 2)
+        .style('opacity', 0.95);
+      points.append('title').text((d) => `${d.year}: índice ${d.value >= 0 ? '+' : ''}${d.value.toFixed(2)} · ${d.total} fragmentos (H ${d.hawkish} / D ${d.dovish} / N ${d.neutral})`);
+
+      g.append('text')
+        .attr('class', 'timeline-direction timeline-direction--high')
+        .attr('x', 0).attr('y', 11)
+        .text('hawkish +');
+      g.append('text')
+        .attr('class', 'timeline-direction timeline-direction--low')
+        .attr('x', 0).attr('y', innerH - 8)
+        .text('dovish −');
+
+      if (missingYears.length) {
+        const absence = g.append('g').attr('class', 'timeline-absence');
+        absence.selectAll('line')
+          .data(missingYears)
+          .enter()
+          .append('line')
+          .attr('x1', year => x(new Date(year, 6, 1)))
+          .attr('x2', year => x(new Date(year, 6, 1)))
+          .attr('y1', innerH - 3).attr('y2', innerH + 8);
+        absence.append('text')
+          .attr('x', d3.mean(missingYears, year => x(new Date(year, 6, 1))))
+          .attr('y', innerH + 36)
+          .attr('text-anchor', 'middle')
+          .text(`sin muestra: ${formatYearRanges(missingYears)}`);
+      }
 
       /* Eventos macro importantes */
       const events = [
