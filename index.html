@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>In the room where monetary policy happens: Learning from Two Decades of Central Bank Deliberation in Chile</title>
 
   <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
@@ -104,7 +104,7 @@
 
     #canvas {
       display: block; position: fixed; inset: 0;
-      z-index: 25; cursor: grab;
+      z-index: 2; cursor: grab;
       pointer-events: none;
       transition: opacity 0.35s ease;
     }
@@ -678,7 +678,7 @@
     }
 
     /* ─── STAGE 6 — Quotes ─── */
-    /* z-index sobre el canvas fijo (z:25): sin esto el canvas interceptaba
+    /* z-index sobre el canvas fijo (z:2): sin esto el canvas interceptaba
        hover/click de las tarjetas y ninguna interacción de esta sección funcionaba */
     .stage-quotes {
       position: relative; z-index: 30;
@@ -970,7 +970,7 @@
       position: fixed;
       right: 24px;
       top: 50%;
-      z-index: 60; /* sobre .stage-quotes (z:30) para que las tarjetas no lo tapen */
+      z-index: 60; /* sobre el canvas y .stage-quotes para que nada lo tape */
       width: min(380px, 88vw);
       background: rgba(10, 14, 26, 0.88);
       backdrop-filter: blur(20px);
@@ -1085,6 +1085,339 @@
     a:focus-visible, button:focus-visible {
       outline: 2px solid var(--color-gold);
       outline-offset: 2px;
+    }
+
+    /* ───────────────────────────────────────────────────────────────────────
+       Composición responsive
+       El lienzo 3D ocupa toda la ventana, pero el hero y su copy deben
+       conservar una composición estable. Estos overrides se mantienen al final
+       del stylesheet para que también corrijan los estilos históricos que aún
+       viven en los bloques de media query anteriores.
+    ─────────────────────────────────────────────────────────────────────── */
+    html, body {
+      min-width: 0;
+    }
+
+    #canvas {
+      /* El 3D es una capa visual de fondo. El contenido DOM queda por encima y
+         no vuelve a quedar oculto cuando la moneda crece en un viewport corto. */
+      z-index: 2;
+    }
+
+    .hero {
+      min-height: 100svh;
+      height: 100svh;
+      overflow: hidden;
+      z-index: 3;
+    }
+
+    .top {
+      width: 100%;
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-right: max(clamp(16px, 5vw, 40px), env(safe-area-inset-right));
+      padding-bottom: 0;
+      padding-left: max(clamp(16px, 5vw, 40px), env(safe-area-inset-left));
+      gap: 16px;
+    }
+
+    .top > .brand:last-child {
+      text-align: right;
+    }
+
+    .hero-title {
+      width: 100%;
+      padding: 0 clamp(16px, 4vw, 64px) clamp(72px, 14vh, 150px);
+      z-index: 1;
+    }
+
+    .hero-title h1 {
+      width: min(100%, 1180px);
+      max-width: 1180px;
+      text-wrap: balance;
+    }
+
+    .hero-title p {
+      max-width: 100%;
+      text-wrap: balance;
+    }
+
+    .scroll-hint {
+      bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    /* El formato panorámico tiene menos altura disponible. Se reduce la
+       densidad del copy y se le da al título una sola zona de lectura, en vez
+       de dejar que la moneda y el tercer renglón compitan por el mismo espacio. */
+    @media (min-width: 769px) and (max-height: 740px) {
+      .hero-title {
+        padding-bottom: clamp(68px, 11vh, 96px);
+      }
+
+      .hero-title h1 {
+        font-size: clamp(24px, 2.2vw, 34px);
+        line-height: 1.12;
+        max-width: min(1180px, calc(100vw - 64px));
+      }
+
+      .hero-title p {
+        margin-top: 9px;
+        font-size: clamp(12px, 1.15vw, 16px);
+      }
+
+      .scroll-hint {
+        gap: 3px;
+      }
+
+      .scroll-hint svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    /* En pantallas de escritorio el segundo bloque del título necesita una
+       línea de lectura más ancha; el límite anterior dejaba "Chile" huérfano
+       en monitores de 1.5K y 1.6K. */
+    @media (min-width: 1100px) and (min-height: 621px) {
+      .hero-title h1 {
+        width: min(100%, 1800px);
+        max-width: min(1800px, calc(100vw - 80px));
+      }
+    }
+
+    /* En monitores muy grandes la tipografía no debe quedarse en el tope de
+       34px, que se percibe pequeña a 2.5K. El tamaño crece con el viewport sin
+       perder un ancho de lectura controlado. */
+    @media (min-width: 1800px) and (min-height: 621px) {
+      .hero-title h1 {
+        font-size: clamp(34px, 2.05vw, 46px);
+        line-height: 1.15;
+      }
+
+      .hero-title p {
+        font-size: clamp(17px, 1.05vw, 20px);
+      }
+
+      .brand {
+        font-size: clamp(14px, 0.8vw, 20px);
+        letter-spacing: 5px;
+      }
+    }
+
+    /* En móvil el encabezado vuelve a ser una línea: apilarlo hacía crecer la
+       zona superior y cambiaba demasiado el punto de partida del título entre
+       navegadores con barras de dirección de distinto tamaño. */
+    @media (max-width: 768px) {
+      .top {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        text-align: left;
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-right: max(14px, env(safe-area-inset-right));
+        padding-left: max(14px, env(safe-area-inset-left));
+      }
+
+      .brand {
+        font-size: clamp(11px, 2.7vw, 14px);
+        letter-spacing: clamp(2px, 0.8vw, 4px);
+        line-height: 1.2;
+      }
+
+      .hero-title {
+        padding-right: max(16px, env(safe-area-inset-right));
+        padding-bottom: max(64px, calc(10svh + env(safe-area-inset-bottom)));
+        padding-left: max(16px, env(safe-area-inset-left));
+      }
+
+      .hero-title h1 {
+        font-size: clamp(22px, 6.2vw, 32px);
+        line-height: 1.18;
+        letter-spacing: 0;
+        max-width: 100%;
+      }
+
+      .hero-title p {
+        margin-top: 12px;
+        font-size: clamp(12px, 3.2vw, 15px);
+        line-height: 1.45;
+        letter-spacing: 0.02em;
+      }
+
+      .scroll-hint {
+        gap: 4px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .top {
+        gap: 8px;
+      }
+
+      .brand {
+        font-size: 10px;
+        letter-spacing: 1.8px;
+      }
+
+      .hero-title h1 {
+        font-size: clamp(20px, 6vw, 26px);
+      }
+    }
+
+    /* En dispositivos muy bajos el copy no puede ocupar toda la altura. La
+       moneda ya se reduce desde JavaScript; aquí se compacta el texto para que
+       siempre quede una separación real entre ambos elementos. */
+    @media (max-height: 620px) {
+      .hero-title {
+        padding-bottom: max(56px, calc(8svh + env(safe-area-inset-bottom)));
+      }
+
+      .hero-title h1 {
+        font-size: clamp(20px, 5.5vw, 29px);
+        line-height: 1.12;
+      }
+
+      .hero-title p {
+        margin-top: 8px;
+        font-size: 12px;
+      }
+
+      /* El contenido editorial del hook supera una altura corta si las tarjetas
+         mantienen el layout de móvil vertical. En paisaje y teléfonos pequeños
+         las dos señales pasan a una fila compacta de tres columnas; así ninguna
+         tarjeta queda fuera del viewport durante su reveal con scroll. */
+      #stageHook > .sticky-container {
+        justify-content: center !important;
+        padding: 24px max(16px, env(safe-area-inset-right)) 20px max(16px, env(safe-area-inset-left)) !important;
+      }
+
+      #stageHook h2[data-hook] {
+        font-size: clamp(12px, 2vw, 16px) !important;
+        letter-spacing: 3px !important;
+        margin-bottom: 0.65rem !important;
+      }
+
+      #stageHook .hook-inner {
+        width: min(760px, 100%);
+      }
+
+      #stageHook .hook-lead {
+        font-size: clamp(20px, 3vw, 28px);
+        line-height: 1.12;
+      }
+
+      #stageHook .hook-caption {
+        margin-top: 10px;
+        letter-spacing: 2px;
+      }
+
+      #stageHook .hook-divider {
+        margin-top: 12px;
+      }
+
+      #stageHook .signal-list {
+        margin-top: 10px;
+        gap: 8px;
+      }
+
+      #stageHook .signal-card {
+        grid-template-columns: 30px minmax(0, 1fr) auto;
+        gap: 8px;
+        padding: 10px 12px;
+      }
+
+      #stageHook .signal-caption {
+        margin-bottom: 2px;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+      }
+
+      #stageHook .signal-phrase {
+        font-size: clamp(15px, 2.1vw, 20px);
+        line-height: 1.2;
+      }
+
+      #stageHook .signal-result {
+        grid-column: auto;
+        align-items: flex-end;
+        flex-direction: column;
+        gap: 3px;
+        margin-top: 0;
+        padding-left: 8px;
+        border-left: 1px solid rgba(255,255,255,0.10);
+      }
+
+      #stageHook .signal-tag {
+        padding: 4px 8px;
+        font-size: 10px;
+        letter-spacing: 1px;
+      }
+
+      #stageHook .signal-note {
+        font-size: 10px;
+        letter-spacing: 0;
+        white-space: nowrap;
+      }
+
+      #stageHook .hook-footnote {
+        margin-top: 14px;
+        font-size: clamp(11px, 2.2vw, 14px);
+        line-height: 1.35;
+      }
+
+      /* La gráfica tiene que caber junto con su título en un móvil horizontal;
+         el SVG se reduce desde buildTimeline() y aquí se elimina el exceso de
+         padding vertical del pin. */
+      #stageTimeline .timeline-pin-wrapper {
+        padding: 24px max(16px, env(safe-area-inset-right)) 20px max(16px, env(safe-area-inset-left)) !important;
+      }
+
+      #stageTimeline .timeline-title {
+        font-size: clamp(20px, 3vw, 30px);
+        line-height: 1.1;
+        margin-bottom: 16px;
+      }
+    }
+
+    /* Un teléfono en paisaje tiene un ancho de tablet pero una altura de
+       teléfono. El breakpoint por ancho dejaba dos tarjetas de cita de más de
+       500px de alto; esta variante conserva las dos columnas y las hace legibles
+       dentro del viewport corto. */
+    @media (min-width: 600px) and (max-width: 900px) and (max-height: 620px) {
+      .stage-quotes {
+        padding: 28px 16px;
+      }
+
+      .quotes-grid {
+        gap: 12px;
+      }
+
+      .quote-card {
+        padding: 14px;
+      }
+
+      .quote-tag {
+        margin-bottom: 8px;
+        font-size: 10px;
+        letter-spacing: 2px;
+      }
+
+      .quote-text {
+        font-size: clamp(13px, 1.8vw, 16px);
+        line-height: 1.45;
+        margin-bottom: 10px;
+      }
+
+      .quote-author {
+        margin-top: 8px;
+        font-size: 11px;
+      }
+    }
+
+    @supports (height: 100dvh) {
+      .hero {
+        min-height: 100dvh;
+        height: 100dvh;
+      }
     }
 
   </style>
@@ -1478,10 +1811,9 @@
         scale: 2.15, swaySpeedY: 0.45, tiltBase: -0.05,
         tiltOscillation: 0.025, tiltSpeed: 0.5,
         floatAmount: 0.04, floatSpeed: 0.7, baseY: 1.05,
-        /* baseY 1.05 proyecta la moneda a ~39% del alto del viewport (un poco
-           por arriba del centro de la aureola, que está en 42%). baseY 0.9 la
-           dejaba exactamente en el centro de la aureola; el usuario pidió
-           subirla un poco. */
+        /* baseY se recalcula en getResponsiveCoinBaseY(): la moneda se ancla
+           al espacio disponible justo encima del título, en vez de usar una
+           coordenada fija que cambia de composición entre viewports. */
         color: '#ffd76a', metalness: 1.0, roughness: 0.22,
         envMapIntensity: 1.05, emissive: '#3d2508', emissiveIntensity: 0.05,
       },
@@ -1593,6 +1925,7 @@
     const haloWrap = document.getElementById('haloWrap');
     const scrollHint = document.getElementById('scrollHint');
     const heroEl = document.getElementById('hero');
+    const heroTitle = document.querySelector('.hero-title');
 
     let currentStage = 1;
     function setStage(stage) {
@@ -1759,24 +2092,88 @@
       return { width: Math.max(window.innerWidth, 1), height: Math.max(window.innerHeight, 1) };
     }
 
-    function getResponsiveCoinScale() {
+    function getHeroTitleTop() {
+      if (!heroTitle) return NaN;
+      /* offsetTop ignora el y temporal que GSAP aplica al hacer scroll, por lo
+         que el cálculo sigue apuntando al layout del hero aunque se redimensione
+         la ventana desde otra sección. */
+      return Number.isFinite(heroTitle.offsetTop)
+        ? heroTitle.offsetTop
+        : heroTitle.getBoundingClientRect().top + (window.scrollY || 0);
+    }
+
+    function getResponsiveCoinTargetPx() {
       const { width: w, height: h } = getViewportSize();
       const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 34);
+      /* La moneda conserva una escala visual proporcional al viewport, pero no
+         puede crecer hasta invadir el bloque editorial del hero. */
+      const minTargetPx = Math.min(w, h) * (isMobile ? 0.46 : 0.40);
+      const baseTargetPx = Math.min(
+        Math.max(fontPx * 9, minTargetPx),
+        Math.min(w * 0.5, 680)
+      );
+
+      const titleTop = getHeroTitleTop();
+      const safeTop = Math.max(64, Math.min(108, h * 0.13));
+      const gap = Math.max(18, Math.min(32, Math.min(w, h) * 0.035));
+      const available = titleTop - safeTop - gap;
+      if (Number.isFinite(titleTop) && titleTop > 0 && available > 0) {
+        /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
+           evita que el diámetro de la moneda se coma el copy del título. */
+        return Math.min(baseTargetPx, available * 0.82);
+      }
+      return baseTargetPx;
+    }
+
+    function getResponsiveCoinScale() {
+      const { height: h } = getViewportSize();
       const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
       const dist = CONFIG.camera.z;
       const worldPxPerUnit = h / (2 * tanHalf * dist);
-      /* Objetivo en píxeles CSS: el mayor entre el tamaño tipográfico previo
-         (fontPx * 9) y ~40% del lado menor del viewport (46% en móvil, donde
-         la moneda queda más presente sin tapar el título). En pantallas grandes
-         se acababa achatando a 288px fijos y las dos figuras se veían muy
-         chicas; ahora crecen con el viewport sin pasarse (≤50% del ancho o
-         680px). En móvil/computadoras chicas el resultado es casi el mismo. */
-      const minTargetPx = Math.min(w, h) * (isMobile ? 0.46 : 0.40);
-      const targetPx = Math.min(Math.max(fontPx * 9, minTargetPx), Math.min(w * 0.5, 680));
-      return THREE.MathUtils.clamp(targetPx / (CONFIG.coin.scale * worldPxPerUnit), 0.25, 1.8);
+      return THREE.MathUtils.clamp(
+        getResponsiveCoinTargetPx() / (CONFIG.coin.scale * worldPxPerUnit),
+        0.25,
+        1.8
+      );
     }
+
+    /* El centro de la moneda se calcula contra el borde REAL del título, no
+       contra una coordenada fija en unidades 3D. Así el espacio entre moneda y
+       copy se conserva aunque el título pase de dos a cuatro líneas, cambie la
+       orientación o el navegador modifique el alto útil con sus barras. */
+    function getResponsiveCoinBaseY() {
+      const { width: w, height: h } = getViewportSize();
+      const targetPx = getResponsiveCoinTargetPx();
+      const safeTop = Math.max(64, Math.min(108, h * 0.13));
+      const gap = Math.max(18, Math.min(32, Math.min(w, h) * 0.035));
+      const titleTop = getHeroTitleTop();
+      /* La posición base conserva el lenguaje visual del hero (la moneda en
+         la franja superior-media), pero nunca permite que su borde inferior
+         entre en el título. */
+      let centerY = h * 0.41;
+
+      if (Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
+        centerY = Math.min(centerY, titleTop - gap - targetPx / 2);
+      }
+
+      const minCenter = Math.min(h / 2, safeTop + targetPx / 2);
+      const maxCenter = Math.max(minCenter, h - targetPx / 2 - 8);
+      centerY = THREE.MathUtils.clamp(centerY, minCenter, maxCenter);
+
+      const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
+      const worldPxPerUnit = h / (2 * tanHalf * CONFIG.camera.z);
+      return THREE.MathUtils.clamp(
+        camBaseY + (h * 0.5 - centerY) / worldPxPerUnit,
+        0.15,
+        2.5
+      );
+    }
+
     function applyCoinScale() {
-      if (coinModel && coinScaleBase) coinModel.scale.setScalar(coinScaleBase * getResponsiveCoinScale());
+      if (coinModel && coinScaleBase) {
+        coinModel.scale.setScalar(coinScaleBase * getResponsiveCoinScale());
+      }
+      CONFIG.coin.baseY = getResponsiveCoinBaseY();
     }
     /* Tamaño REAL de la moneda en unidades de mundo (su diámetro visible, ya con el
        factor responsive aplicado). Es la referencia con la que se dimensiona la
@@ -1785,6 +2182,10 @@
     function getCoinWorldSize() {
       return CONFIG.coin.scale * getResponsiveCoinScale();
     }
+
+    /* Primera posición antes de que cargue el GLB; applyCoinScale() la recalcula
+       al cargar fuentes, cambiar orientación o cambiar el viewport. */
+    CONFIG.coin.baseY = getResponsiveCoinBaseY();
 
     const manager = new THREE.LoadingManager();
     manager.onLoad = () => setTimeout(() => { if (renderer) loadEl.classList.add('hidden'); }, 300);
@@ -2502,15 +2903,20 @@
       }
 
       const positions = pGeo.attributes.position.array;
+      /* La escala del grupo no bastaba para reunir la nube: las posiciones
+         dispersas seguían ocupando varios radios de mundo y en móvil la sala
+         parecía vacía. Al cruzar el umbral, las voces vuelven a su anillo de
+         origen y luego se comprimen; al salir, recuperan la dispersión. */
+      const swarmScatter = THREE.MathUtils.lerp(scatterProgress, 0.06, roomSwarmT);
       for (let i = 0; i < PCOUNT; i++) {
         const idx = i * 3;
         const ox = pOriginalPos[idx], oy = pOriginalPos[idx+1], oz = pOriginalPos[idx+2];
         const sx = pScatterPos[idx], sy = pScatterPos[idx+1], sz = pScatterPos[idx+2];
         const wave = Math.sin(time * 0.9 + i * 0.5) * 0.08 * animMul;
 
-        positions[idx]   = THREE.MathUtils.lerp(ox, sx, scatterProgress) + wave;
-        positions[idx+1] = THREE.MathUtils.lerp(oy, sy, scatterProgress) + wave;
-        positions[idx+2] = THREE.MathUtils.lerp(oz, sz, scatterProgress);
+        positions[idx]   = THREE.MathUtils.lerp(ox, sx, swarmScatter) + wave;
+        positions[idx+1] = THREE.MathUtils.lerp(oy, sy, swarmScatter) + wave;
+        positions[idx+2] = THREE.MathUtils.lerp(oz, sz, swarmScatter);
       }
       pGeo.attributes.position.needsUpdate = true;
 
@@ -3448,10 +3854,18 @@
         d3.select(container).selectAll('*').remove();
       }
       timelineBuilt = true;
-      const margin = { top: 40, right: 30, bottom: 60, left: 50 };
       const vp = getViewportSize();
+      const shortViewport = vp.height < 620;
       const width = Math.min(1060, vp.width - 40);
-      const height = 320;
+      /* El SVG también forma parte del layout: 320px + el título no cabe en
+         un móvil en paisaje de 390px de alto y el encabezado quedaba cortado.
+         Se dibuja una versión más compacta solo en viewports bajos. */
+      const height = shortViewport
+        ? Math.max(230, Math.min(300, vp.height - 132))
+        : 320;
+      const margin = shortViewport
+        ? { top: 24, right: 18, bottom: 44, left: 42 }
+        : { top: 40, right: 30, bottom: 60, left: 50 };
       const innerW = width - margin.left - margin.right;
       const innerH = height - margin.top - margin.bottom;
 
@@ -3490,7 +3904,9 @@
 
       g.append('g')
         .attr('transform', `translate(0,${innerH})`)
-        .call(d3.axisBottom(x).ticks(d3.timeYear.every(2)).tickFormat(d3.timeFormat('%Y')))
+                .call(d3.axisBottom(x)
+          .ticks(d3.timeYear.every(shortViewport && width < 520 ? 4 : 2))
+          .tickFormat(d3.timeFormat('%Y')))
         .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(12px, 1.05vw, 13px)');
       g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');
 
@@ -3750,12 +4166,22 @@
     ──────────────────────────────── */
     const refreshST = () => ScrollTrigger.refresh();
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(refreshST);
+      document.fonts.ready.then(() => {
+        syncViewportAndObjects();
+        refreshST();
+      });
     }
-    window.addEventListener('load', refreshST);
+    window.addEventListener('load', () => {
+      syncViewportAndObjects();
+      refreshST();
+    });
     manager.onLoad = (() => {
       const original = manager.onLoad;
-      return () => { original(); refreshST(); };
+      return () => {
+        original();
+        syncViewportAndObjects();
+        refreshST();
+      };
     })();
   </script>
 
