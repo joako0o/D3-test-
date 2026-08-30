@@ -1482,8 +1482,9 @@
         ══════════════════════════════════════════════════════════════════════ */
         /* Ancho TOTAL de la puerta (pórtico + escalones) como múltiplo del
            diámetro de la moneda. MÁS GRANDE: 1.6, 1.8 | MÁS CHICA: 1.1, 1.25.
-           Con 1.25 la puerta mide ~36% del alto del viewport en 16:9. */
-        widthVsCoin: 1.1,
+           Con 1.25 la puerta mide ~36% del alto del viewport en 16:9.
+           1.1 dejaba las dos figuras más chicas que el tamaño de referencia. */
+        widthVsCoin: 1.25,
         /* Línea de suelo: el pie de los escalones se apoya acá (unidades de mundo).
            En 0.15 queda por encima del bloque de texto de La Reunión, incluso
            en ventanas bajas y anchas. SUBIR: valores mayores | BAJAR: menores. */
@@ -1745,12 +1746,18 @@
 
     function getResponsiveCoinScale() {
       const { width: w, height: h } = getViewportSize();
-      const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 32);
+      const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 34);
       const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
       const dist = CONFIG.camera.z;
       const worldPxPerUnit = h / (2 * tanHalf * dist);
-      const targetPx = fontPx * 9;
-      return THREE.MathUtils.clamp(targetPx / (CONFIG.coin.scale * worldPxPerUnit), 0.25, 1.6);
+      /* Objetivo en píxeles CSS: el mayor entre el tamaño tipográfico previo
+         (fontPx * 9) y ~35% del lado menor del viewport. En pantallas grandes
+         se acababa achatando a 288px fijos y las dos figuras se veían muy
+         chicas; ahora crecen con el viewport sin pasarse (≤50% del ancho o
+         620px). En móvil/computadoras chicas el resultado es casi el mismo. */
+      const minTargetPx = Math.min(w, h) * 0.35;
+      const targetPx = Math.min(Math.max(fontPx * 9, minTargetPx), Math.min(w * 0.5, 620));
+      return THREE.MathUtils.clamp(targetPx / (CONFIG.coin.scale * worldPxPerUnit), 0.25, 1.8);
     }
     function applyCoinScale() {
       if (coinModel && coinScaleBase) coinModel.scale.setScalar(coinScaleBase * getResponsiveCoinScale());
