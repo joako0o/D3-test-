@@ -1497,6 +1497,15 @@
     scene.add(doorGroup);
     doorGroup.visible = false;
 
+    /* Grupo intermedio dedicado a la escala de la puerta. Es imprescindible que
+       la escala NO se aplique sobre el mismo Object3D al que se le hizo
+       `position.sub(center)`: three.js compone `translate(position) × scale`,
+       por lo que escalar el modelo desplazaría su centro a `(scale-1)·center`.
+       Escalando un grupo padre en su lugar, la escala pivota alrededor del
+       origen ya centrado (igual que la moneda, cuyo centro ≈ origen). */
+    const doorModelGroup = new THREE.Group();
+    doorGroup.add(doorModelGroup);
+
     let doorModel = null;
     const doorMats = [];
     let doorScaleBase = 0;     // escala para que las HOJAS midan leafWidthWorld en el mundo
@@ -1525,7 +1534,7 @@
     function applyDoorScale() {
       if (!doorModel || !doorScaleBase) return;
       const s = doorScaleBase * getDoorViewportFactor();
-      doorModel.scale.set(s, s, s * doorDepthSquash);
+      doorModelGroup.scale.set(s, s, s * doorDepthSquash);
     }
 
     function applyDoorTextStyle() {
@@ -1623,7 +1632,7 @@
           doorMats.push(m);
         });
       });
-      doorGroup.add(model);
+      doorModelGroup.add(model);
     }, undefined, (err) => {
       console.error('Error cargando GLB:', err);
       loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la puerta</span>';
@@ -1868,8 +1877,9 @@
         if (scene.fog) scene.fog.density = doorActive ? CONFIG.door.fogDensity * doorEase : 0;
         /* Sombra de contacto pegada a la base real del modelo (escalones),
            no a la posición del pivote: la base se desplaza por la escala del
-           modelo en Y, así que se multiplica doorBottomOffset por doorModel.scale.y. */
-        const doorBottomWorld = (doorModel ? doorBottomOffset * doorModel.scale.y : doorBottomOffset) * doorGroup.scale.x;
+           modelo en Y, así que se multiplica doorBottomOffset por
+           doorModelGroup.scale.y. */
+        const doorBottomWorld = (doorModel ? doorBottomOffset * doorModelGroup.scale.y : doorBottomOffset) * doorGroup.scale.x;
         doorFloor.position.set(doorGroup.position.x, doorGroup.position.y + doorBottomWorld, doorGroup.position.z);
         if (doorActive) {
           const target = new THREE.Vector3(doorGroup.position.x, doorGroup.position.y, doorGroup.position.z);
