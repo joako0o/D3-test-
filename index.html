@@ -992,10 +992,19 @@
     #quotePanel .tag.dovish  { background: rgba(138,180,248,0.16); color: var(--color-dovish); }
     #quotePanel .tag.neutral { background: rgba(255,255,255,0.1);  color: #cfd6e4; }
     #quotePanel .txt { font-size: var(--fs-small); line-height: 1.75; color: var(--color-text-primary); }
+    #quotePanel .score { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+    #quotePanel .score-bar { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.12); overflow: hidden; }
+    #quotePanel .score-bar i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--color-gold-dim), var(--color-gold)); }
+    #quotePanel .score-val { font-size: var(--fs-micro); font-variant-numeric: tabular-nums; color: var(--color-text-primary); min-width: 30px; text-align: right; }
+    #quotePanel .score-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-faint); }
     #quotePanel .year { margin-top: 10px; font-size: var(--fs-micro); letter-spacing: 1px; text-transform: uppercase; opacity: 0.45; }
     #quotePanel .close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--color-text-primary); font-size: var(--fs-body); cursor: pointer; opacity: 0.55; transition: opacity 0.2s, transform 0.2s; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
     #quotePanel .close:hover { opacity: 1; background: rgba(255,255,255,0.08); }
     #quotePanel .close:active { transform: scale(0.95); }
+
+    /* Modo 'classic' (puerta anterior): el stage de La Sala no existe en ese modo */
+    body.mode-classic #stageRoom { display: none; }
+
     #canvas { cursor: grab; }
     #canvas.particle-hover { cursor: pointer; }
 
@@ -1006,7 +1015,7 @@
         min-height: 100dvh;
       }
       .pipeline-pin-wrapper, .timeline-pin-wrapper { max-height: 100dvh; }
-      .sticky-container { height: 100dvh !important; }
+      .sticky-container, .room-container { height: 100dvh !important; }
     }
 
     /* ─── Accessibility: Reduced Motion ─── */
@@ -1100,6 +1109,11 @@
     </div>
     <div class="when" id="qpWhen"></div>
     <div class="txt" id="qpText"></div>
+    <div class="score" id="qpScore" style="display:none">
+      <div class="score-bar"><i id="qpScoreBar"></i></div>
+      <span class="score-val" id="qpScoreVal">&mdash;</span>
+      <span class="score-label">puntuaci&oacute;n</span>
+    </div>
     <div class="year" id="qpYear"></div>
   </div>
 
@@ -1142,7 +1156,22 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 3 — Hook (ACTO 3: EL MÉTODO) ═══════ -->
+  <!-- ═══════ STAGE 3 — LA SALA (La Sala b1: cruce + voces) ═══════ -->
+  <section id="stageRoom" class="stage-room" style="position: relative; width: 100%; height: 260vh; pointer-events: none;">
+    <div id="stageRoomContainer" class="room-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 12vh; z-index: 30; pointer-events: none;">
+      <h2 id="roomTitle" data-room style="font-family: var(--font-body); font-size: var(--fs-h3); font-weight: 600; text-transform: uppercase; letter-spacing: 4px; color: var(--color-text-secondary); margin-bottom: 1rem; text-shadow: 0 2px 8px rgba(0,0,0,0.8); opacity: 0;">
+        La Sala
+      </h2>
+      <p id="roomLead" data-room style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 640px; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin: 0 20px; opacity: 0;">
+        Detr&aacute;s de esa puerta se dijo todo esto. <span>182 reuniones.</span>
+      </p>
+      <p id="roomHint" data-room-hint style="font-size: var(--fs-small); color: var(--color-text-muted); font-family: var(--font-body); text-align: center; margin-top: 1.6rem; letter-spacing: 0.3px; opacity: 0;">
+        Cada punto, una voz &middot; pasa el cursor por una de ellas
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════ STAGE 4 — Hook (ACTO 3: EL MÉTODO) ═══════ -->
   <section id="stageHook" style="position: relative; width: 100%; height: 200vh; pointer-events: none;">
     <div class="sticky-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;" id="textParticleSection">
       
@@ -1479,6 +1508,19 @@
         },
         fog: 0x0b101d,
         fogDensity: 0.08,
+
+        /* ── LA SALA (b1) — cruce del umbral ────────────────────────────────
+           transition: 'doorway' → coreografía nueva: la puerta se disuelve en
+                            luz cálida, la cámara hace dolly a través del umbral
+                            y un velo de fog revela la sala de las voces.
+                      'classic' → comportamiento ANTERIOR (fade-out simple).
+                            ← cambiar a 'classic' para volver a la versión previa */
+        transition: 'doorway',
+        roomCamZ: 2.2,     // z de cámara al terminar el dolly (0 = plano de la puerta)
+        roomCamY: 0.5,     // altura de cámara dentro de la sala
+        roomLook: { x: 0, y: 0.45, z: -1.6 },  // punto de mira al entrar a la sala
+        roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
+        veilFog: 0.06,     // pico del velo de niebla durante el cruce
       },
       doorText: {
         /* ══════════════════════════════════════════════════════════════════════
@@ -1522,12 +1564,16 @@
           canvas.style.pointerEvents = 'auto';
         } else {
           setStage(2);
-          canvas.style.pointerEvents = entry.target.id === 'stageQuotes' ? 'auto' : 'none';
+          /* El canvas es interactivo en el hero (moneda), en Citas y — en modo
+             doorway — en La Sala (hover/click sobre las voces). */
+          const interactive = entry.target.id === 'stageQuotes'
+            || (DOOR_MODE === 'doorway' && entry.target.id === 'stageRoomContainer');
+          canvas.style.pointerEvents = interactive ? 'auto' : 'none';
         }
       });
     }, { threshold: 0.45 });
     stageObserver.observe(heroEl);
-    document.querySelectorAll('.stage-hook, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing, #stageObjective, #stageHook, #stageAxes')
+    document.querySelectorAll('.stage-hook, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing, #stageObjective, #stageHook, #stageAxes, #stageRoomContainer')
       .forEach(el => stageObserver.observe(el));
 
     const scene = new THREE.Scene();
@@ -1740,6 +1786,22 @@
     const doorGroup = new THREE.Group();
     scene.add(doorGroup);
     doorGroup.visible = false;
+
+    /* La Sala (b1): luz cálida del INTERIOR de la sala. Vive siempre en la escena
+       (intensity 0 hasta el cruce, así que en modo 'classic' no interviene).
+       Se enciende cuando la cámara cruza el umbral y "ilumina" las voces. */
+    const roomLight = new THREE.PointLight(
+      CONFIG.door?.roomLight?.color ?? 0xffbe73,
+      0,
+      16,
+      1.8
+    );
+    roomLight.position.set(
+      CONFIG.door?.roomLight?.x ?? 0,
+      CONFIG.door?.roomLight?.y ?? 0.9,
+      CONFIG.door?.roomLight?.z ?? -0.45
+    );
+    scene.add(roomLight);
 
     /* Grupo intermedio dedicado a la escala de la puerta. Es imprescindible que
        la escala NO se aplique sobre el mismo Object3D al que se le hizo
@@ -2028,19 +2090,68 @@
       document.getElementById('qpWhen').textContent = q.formatted_date || q.date || 'Fecha no especificada';
       document.getElementById('qpText').textContent = '\u201C' + (q.text || 'Sin texto disponible') + '\u201D';
       document.getElementById('qpYear').textContent = q.year ? 'Año ' + q.year : 'Año no especificado';
+      /* Puntuación hawk/dov del clasificador. En maqueta: valor de referencia 0–1
+         determinístico (ver js/quotes.js); el dato real la reemplaza al llegar. */
+      const scoreRow = document.getElementById('qpScore');
+      if (scoreRow) {
+        const sc = (typeof q.score === 'number') ? q.score : null;
+        if (sc == null) {
+          scoreRow.style.display = 'none';
+        } else {
+          scoreRow.style.display = 'flex';
+          document.getElementById('qpScoreBar').style.width = (THREE.MathUtils.clamp(sc, 0, 1) * 100).toFixed(0) + '%';
+          document.getElementById('qpScoreVal').textContent = sc.toFixed(2);
+        }
+      }
       document.getElementById('quotePanel').classList.add('visible');
     }
 
     let hoveredPoint = false;
     let lastHoverAt = 0;
+    /* La Sala (b1): HOVER → panel "peek" (se cierra al salir); CLICK → panel
+       fijado (pin, se cierra con ✕/Escape). En modo 'classic' no hay hover→panel:
+       solo el cambio de cursor (comportamiento previo). */
+    let hoverIndex = -1;
+    let pinnedIndex = -1;
+    let hoverTimer = null;
+
+    function syncQuotePanel() {
+      const idx = pinnedIndex >= 0 ? pinnedIndex : hoverIndex;
+      if (idx >= 0) openQuote(idx);
+      else closeQuotePanel();
+    }
+
+    function pointerOverPanel(cx, cy) {
+      if (!quotePanelEl.classList.contains('visible')) return false;
+      const r = quotePanelEl.getBoundingClientRect();
+      return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+    }
+
     function updateHover(cx, cy) {
       const now = performance.now();
       if (now - lastHoverAt < 32) return;
       lastHoverAt = now;
-      const hit = pickPoint(cx, cy) >= 0;
-      if (hit !== hoveredPoint) {
-        hoveredPoint = hit;
-        canvas.classList.toggle('particle-hover', hit);
+      const hitIdx = pickPoint(cx, cy);
+      const hasHit = hitIdx >= 0;
+      if (hasHit !== hoveredPoint) {
+        hoveredPoint = hasHit;
+        canvas.classList.toggle('particle-hover', hasHit);
+      }
+      /* Solo dentro de la sala (y con el cruce casi completo) el hover abre el
+         panel; en el resto del recorrido se mantiene el comportamiento clásico. */
+      if (!(DOOR_MODE === 'doorway' && inRoom && crossT > 0.6)) return;
+      if (pointerOverPanel(cx, cy)) return;  // leyendo el panel: no lo hagamos saltar
+      if (pinnedIndex >= 0) return;          // panel fijado: el hover no lo toca
+      if (hasHit) {
+        if (hitIdx === hoverIndex && hoverIndex >= 0) return;
+        if (hoverTimer) clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(() => {
+          hoverIndex = hitIdx;
+          syncQuotePanel();
+        }, 140);
+      } else if (hoverIndex >= 0) {
+        hoverIndex = -1;
+        syncQuotePanel();
       }
     }
 
@@ -2053,7 +2164,11 @@
     const origOnPointerDown = onPointerDown;
     onPointerDown = function(cx, cy) {
       const hit = pickPoint(cx, cy);
-      if (hit >= 0) { openQuote(hit); return; }
+      if (hit >= 0) {
+        pinnedIndex = hit;   // La Sala (b1): click fija el panel (✕/Escape lo cierra)
+        openQuote(hit);
+        return;
+      }
       origOnPointerDown(cx, cy);
     };
 
@@ -2061,6 +2176,21 @@
     let coinFade = 1;
     let doorFade = 0;
     let doorTarget = 0;
+
+    /* La Sala (b1) — estado del cruce del umbral.
+       DOOR_MODE = 'doorway' activa la coreografía nueva; 'classic' restaura
+       EXACTAMENTE el comportamiento previo (todo lo nuevo queda inactivo). */
+    const DOOR_MODE = (CONFIG.door && CONFIG.door.transition === 'doorway') ? 'doorway' : 'classic';
+    if (DOOR_MODE === 'classic') document.body.classList.add('mode-classic');
+    let crossT = 0;      // 0 = afuera de la puerta · 1 = dentro de la sala
+    let inRoom = false;  // estamos en el stage #stageRoom (habilita el hover→cita)
+    let lastRoomWarm = -1;  // cache del tinte cálido de la nube (solo se escribe al cambiar)
+    const _roomLook = new THREE.Vector3(0, 0.7, 0);
+    const _roomLookTarget = new THREE.Vector3(
+      CONFIG.door?.roomLook?.x ?? 0,
+      CONFIG.door?.roomLook?.y ?? 0.45,
+      CONFIG.door?.roomLook?.z ?? -1.6
+    );
 
 
     function animate() {
@@ -2090,13 +2220,20 @@
       }
 
       /* puerta: acto 2 — fade sutil + parallax de frente (sin giro 360°) */
+      let doorVisOpacity = doorFade;
       if (doorGroup.children.length > 0) {
         doorFade = THREE.MathUtils.lerp(doorFade, doorTarget, 0.12);
         if (doorTarget === 0 && doorFade < 0.03) doorFade = 0;
+        /* La Sala (b1): la puerta se DISUELVE en la luz cálida al cruzar el umbral
+           (en modo 'classic' dissolve=0 → comportamiento previo intacto). */
+        const dissolve = DOOR_MODE === 'doorway'
+          ? THREE.MathUtils.smoothstep((crossT - 0.15) / 0.55, 0, 1)
+          : 0;
+        doorVisOpacity = doorFade * (1 - dissolve);
         /* doorModel (no solo doorGroup.children) porque el grupo intermedio
            doorModelGroup se añade siempre: si el GLB no cargó, la escena sigue
            "teniendo" la puerta y se encendían niebla y sombra sobre la nada. */
-        doorGroup.visible = doorFade > 0.001 && !!doorModel;
+        doorGroup.visible = doorVisOpacity > 0.001 && !!doorModel;
         const doorEase = doorFade * doorFade * (3 - 2 * doorFade);
         doorGroup.rotation.y = smoothMouseX * 0.05 * doorEase;
         doorGroup.rotation.x = smoothMouseY * -0.03 * doorEase;
@@ -2111,14 +2248,14 @@
         doorGroup.position.y = (CONFIG.door.groundY ?? 0) - doorBottomWorld + smoothMouseY * -0.06 * doorEase;
         for (let i = 0; i < doorMats.length; i++) {
           doorMats[i].transparent = true;
-          doorMats[i].opacity = doorFade;
+          doorMats[i].opacity = doorVisOpacity;
         }
 
         /* rig de luces + fog solo mientras la puerta está presente */
-        const doorActive = doorFade > 0.01 && !!doorModel;
+        const doorActive = doorVisOpacity > 0.01 && !!doorModel;
         if (doorLightGroup) doorLightGroup.visible = doorActive;
         doorFloor.visible = doorActive;
-        doorFloor.material.opacity = 0.8 * doorEase;
+        doorFloor.material.opacity = 0.8 * doorEase * (1 - dissolve);
         if (scene.fog) scene.fog.density = doorActive ? CONFIG.door.fogDensity * doorEase : 0;
         /* La sombra vive exactamente en la línea de suelo (doorBottomWorld ya se
            usó arriba para apoyar el modelo), y solo existe si la puerta existe. */
@@ -2135,6 +2272,24 @@
       /* enjambre: orbita y se dispersa por la pantalla al hacer scroll */
       swarm.rotation.y = time * 0.12 + scatterProgress * 0.8;
 
+      /* La Sala (b1): dentro de la sala la nube se tiñe de cálido (la "luz del
+         interior"). Las partículas son unlit (PointsMaterial), así que la luz
+         cálida se expresa teñiendo color; al salir, vuelve al tono base. */
+      const roomWarm = (DOOR_MODE === 'doorway')
+        ? THREE.MathUtils.smoothstep((crossT - 0.3) / 0.5, 0, 1)
+        : 0;
+      if (roomWarm !== lastRoomWarm) {
+        lastRoomWarm = roomWarm;
+        const t = roomWarm * 0.22;
+        const cols = pGeo.attributes.color.array;
+        for (let i = 0; i < PCOUNT; i++) {
+          cols[i * 3 + 0] = THREE.MathUtils.lerp(pColors[i * 3 + 0], 1.00, t);
+          cols[i * 3 + 1] = THREE.MathUtils.lerp(pColors[i * 3 + 1], 0.80, t);
+          cols[i * 3 + 2] = THREE.MathUtils.lerp(pColors[i * 3 + 2], 0.52, t);
+        }
+        pGeo.attributes.color.needsUpdate = true;
+      }
+
       const positions = pGeo.attributes.position.array;
       for (let i = 0; i < PCOUNT; i++) {
         const idx = i * 3;
@@ -2148,8 +2303,10 @@
       }
       pGeo.attributes.position.needsUpdate = true;
 
-      /* atenuar las luces genéricas de la moneda cuando la puerta domina */
-      const camBlend = doorGroup.children.length > 0 ? doorFade : 0;
+      /* atenuar las luces genéricas de la moneda cuando la puerta domina.
+         En doorway se usa la opacidad REAL de la puerta: cuando se disuelve en
+         el umbral, las luces vuelven a su nivel (la sala no queda a oscuras). */
+      const camBlend = doorGroup.children.length > 0 ? doorVisOpacity : 0;
       const dim = 1 - camBlend * 0.85;
       key.intensity = L.key.intensity * dim;
       fill.intensity = L.fill.intensity * dim;
@@ -2159,8 +2316,38 @@
       const baseCamY = CONFIG.camera.y;
       const lowCamY = baseCamY - 0.15;
       const currentCamY = THREE.MathUtils.lerp(baseCamY, lowCamY, camBlend);
-      camera.position.set(CONFIG.camera.x, currentCamY, CONFIG.camera.z + camBlend * 0.3);
-      camera.lookAt(0, camBaseY, 0);
+      const baseCamZ = CONFIG.camera.z + camBlend * 0.3;
+
+      /* La Sala (b1): dolly a través del umbral + luz cálida del interior + velo de fog.
+         En modo 'classic' crossT queda en 0 → rama clásica intacta. */
+      if (DOOR_MODE === 'doorway' && crossT > 0.001) {
+        const crossEase = THREE.MathUtils.smoothstep(crossT, 0, 1);
+        camera.position.set(
+          CONFIG.camera.x,
+          THREE.MathUtils.lerp(currentCamY, CONFIG.door.roomCamY ?? 0.5, crossEase),
+          THREE.MathUtils.lerp(baseCamZ, CONFIG.door.roomCamZ ?? 2.2, crossEase)
+        );
+        _roomLook.set(0, camBaseY, 0).lerp(_roomLookTarget, crossEase);
+        camera.lookAt(_roomLook);
+      } else {
+        camera.position.set(CONFIG.camera.x, currentCamY, baseCamZ);
+        camera.lookAt(0, camBaseY, 0);
+      }
+
+      /* La Sala (b1): la luz del interior sube con el cruce y se mantiene en la sala */
+      if (roomLight) {
+        const lightT = DOOR_MODE === 'doorway'
+          ? THREE.MathUtils.smoothstep((crossT - 0.2) / 0.5, 0, 1)
+          : 0;
+        roomLight.intensity = lightT * (CONFIG.door?.roomLight?.intensity ?? 10);
+      }
+
+      /* La Sala (b1): velo de niebla durante el cruce (sube y baja; oculta el
+         cambio de plano aunque la puerta no haya cargado). */
+      if (DOOR_MODE === 'doorway' && scene.fog) {
+        const veil = Math.sin(Math.PI * THREE.MathUtils.clamp(crossT, 0, 1)) * (CONFIG.door?.veilFog ?? 0);
+        scene.fog.density = Math.max(scene.fog.density, veil);
+      }
 
       if (renderer) renderer.render(scene, camera);
     }
@@ -2172,6 +2359,8 @@
     let lastFocusedCard = null;
     const closeQuotePanel = () => {
       quotePanelEl.classList.remove('visible');
+      pinnedIndex = -1;
+      hoverIndex = -1;
       if (lastFocusedCard) { lastFocusedCard.focus({ preventScroll: true }); lastFocusedCard = null; }
     };
     document.getElementById('quotePanelClose').addEventListener('click', closeQuotePanel);
@@ -2408,13 +2597,14 @@
     const sections = [
       { label: 'hero', start: 0 },
       { label: 'door', start: 0.08 },
-      { label: 'hook', start: 0.18 },
-      { label: 'axes', start: 0.38 },
-      { label: 'counters', start: 0.52 },
-      { label: 'pipeline', start: 0.60 },
-      { label: 'timeline', start: 0.70 },
-      { label: 'quotes', start: 0.80 },
-      { label: 'closing', start: 0.92 }
+      ...(DOOR_MODE === 'doorway' ? [{ label: 'sala', start: 0.16 }] : []),
+      { label: 'hook', start: 0.24 },
+      { label: 'axes', start: 0.40 },
+      { label: 'counters', start: 0.54 },
+      { label: 'pipeline', start: 0.62 },
+      { label: 'timeline', start: 0.72 },
+      { label: 'quotes', start: 0.82 },
+      { label: 'closing', start: 0.93 }
     ];
 
     const progressBar = document.getElementById('progressBar');
@@ -2524,6 +2714,12 @@
       scrub: true,
       onUpdate: (self) => {
         const p = self.progress;
+        if (DOOR_MODE === 'doorway') {
+          /* La Sala (b1): la puerta se mantiene presente hasta el cruce;
+             la disolución la gobierna #stageRoom (crossT). */
+          doorTarget = p < 0.15 ? p / 0.15 : 1;
+          return;
+        }
         if (p <= 0) {
           doorTarget = 0;
         } else if (p < 0.15) {
@@ -2539,9 +2735,65 @@
           doorTarget = 0;
         }
       },
-      onLeave: () => { doorTarget = 0; },
-      onLeaveBack: () => { doorTarget = 0; }
+      onLeave: () => { if (DOOR_MODE !== 'doorway') doorTarget = 0; },
+      onLeaveBack: () => { if (DOOR_MODE !== 'doorway') doorTarget = 0; }
     });
+
+    /* ────────────────────────────────
+       La Sala (b1) — cruce del umbral + beats de texto
+       (solo en modo 'doorway'; en 'classic' no se crea nada)
+    ──────────────────────────────── */
+    if (DOOR_MODE === 'doorway') {
+      /* El cruce: dolly + disolución de la puerta + velo. Se completa en los
+         primeros ~80vh del stage (el resto del stage es "dwell" interactivo). */
+      ScrollTrigger.create({
+        trigger: '#stageRoom',
+        start: 'top 85%',
+        end: '+=80%',
+        scrub: true,
+        onUpdate: (self) => { crossT = self.progress; },
+      });
+
+      /* Presencia en la sala: habilita el hover→cita y limpia el panel al salir */
+      ScrollTrigger.create({
+        trigger: '#stageRoom',
+        start: 'top 100%',
+        end: 'bottom 0%',
+        onEnter: () => { inRoom = true; },
+        onEnterBack: () => { inRoom = true; },
+        onLeave: () => {
+          inRoom = false;
+          pinnedIndex = -1; hoverIndex = -1;
+          syncQuotePanel();
+        },
+        onLeaveBack: () => {
+          inRoom = false;
+          pinnedIndex = -1; hoverIndex = -1;
+          syncQuotePanel();
+        },
+      });
+
+      /* Beats de texto: entran al revelarse la sala, se van antes del dwell final */
+      const roomTitle = document.getElementById('roomTitle');
+      const roomLead = document.getElementById('roomLead');
+      const roomHint = document.getElementById('roomHint');
+      if (roomTitle && roomLead && roomHint) {
+        gsap.timeline({
+          scrollTrigger: {
+            trigger: '#stageRoom',
+            start: 'top 85%',
+            end: '+=160%',
+            scrub: true,
+          },
+        })
+          .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.22)
+          .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.30)
+          .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.42)
+          .to(roomTitle, { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.68)
+          .to(roomLead,  { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.74)
+          .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.88);
+      }
+    }
 
     /* Animación del texto de Stage 2 (La Reunión) */
     const objTimeline = gsap.timeline({
@@ -3054,6 +3306,7 @@
     /* 1. BACKGROUND COLOR TRANSITIONS — El fondo cambia suavemente entre secciones */
     const bgSections = [
       { trigger: '#stageObjective', color: '#0c1020' },
+      { trigger: '#stageRoom', color: '#0b0f1c' },
       { trigger: '#stageHook', color: '#0a0e1a' },
       { trigger: '#stageAxes', color: '#0d1225' },
       { trigger: '#stageCounters', color: '#0a0e1a' },
