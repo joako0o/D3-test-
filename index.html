@@ -1219,20 +1219,35 @@
       door: {
         /* ══════════════════════════════════════════════════════════════════════
            AJUSTES FÁCILES DE LA PUERTA 3D (ACTO 2):
-           Cambia estos valores para mover o escalar la puerta:
+           El tamaño de la puerta NO se fija "a ciegas": se DERIVA del tamaño real
+           de la moneda del Acto 1 (ver getCoinWorldSize). Las dos figuras salen de
+           la misma fórmula, así que la proporción entre ellas es idéntica en
+           cualquier viewport. Antes cada una tenía su propia regla de px y la
+           puerta terminaba ocupando ~90% del alto de la ventana (cortada arriba y
+           encima del texto de "La Reunión").
         ══════════════════════════════════════════════════════════════════════ */
-        baseY: 1.2,             // Altura en pantalla: SUBIR (1.8, 2.2) | BAJAR (1.0, 0.5)
+        /* Ancho TOTAL de la puerta (pórtico + escalones) como múltiplo del
+           diámetro de la moneda. MÁS GRANDE: 1.6, 1.8 | MÁS CHICA: 1.1, 1.25.
+           Con 1.4 la puerta mide ~40% del alto del viewport en 16:9. */
+        widthVsCoin: 1.4,
+        /* Línea de suelo: el pie de los escalones se apoya acá (unidades de mundo).
+           SUBIR (0.2, 0.4) | BAJAR (-0.2, -0.5). */
+        groundY: 0.0,
         baseX: 0.0,             // Horizontal: DERECHA (> 0) | IZQUIERDA (< 0)
         baseZ: 0.0,             // Profundidad: MÁS CERCA (> 0) | MÁS LEJOS (< 0)
-        /* Tamaño de referencia de las HOJAS (mallas 'toroide'). El cálculo
-           responsive traduce esta referencia a píxeles sin perder el centro visual.
-           MÁS GRANDE (8, 9) | MÁS CHICO (5, 6). */
-        leafWidthWorld: 7.0,
-        /* Si el conjunto (pórtico + escalones) intenta quedar más profundo que esto,
-           se aplasta en Z para que no sobresalga hacia la cámara. */
-        maxDepthWorld: 6.0,
-        /* Factor 0..1 de aplastamiento adicional de profundidad (1 = sin aplastar). */
-        doorDepthSquash: 0.7,
+        /* Aplastamiento de profundidad (1 = sin aplastar): la escultura es muy
+           "gruesa" para una lectura frontal y se comprime en Z a propósito.
+           0.55 reproduce el grosor que la puerta ya tenía en pantalla. */
+        doorDepthSquash: 0.55,
+        /* Red de seguridad: si aun aplastada la puerta sobresaliera más de esto
+           hacia la cámara (p. ej. subiendo mucho widthVsCoin), se recalcula el
+           squash en Z para respetarlo. */
+        maxDepthWorld: 3.0,
+        /* Sombra de contacto, en múltiplos de la huella de la puerta: se dimensiona
+           con el modelo (antes era un cuadrado fijo que no seguía ni al modelo ni
+           al viewport). */
+        shadowWidthMul: 1.3,
+        shadowDepthMul: 2.2,
 
         /* ── Materiales e Iluminación ── */
         color: '#ffd76a', metalness: 1.0, roughness: 0.22,
@@ -1393,8 +1408,11 @@
     sCtx.fillRect(0, 0, 256, 256);
     const shadowTex = new THREE.CanvasTexture(shadowCanvas);
 
+    /* Geometría 1×1 a propósito: applyDoorScale() la escala al tamaño real de la
+       puerta, así que scale == tamaño en unidades de mundo (antes era un cuadrado
+       fijo de 2.8 unidades que no seguía ni al modelo ni al viewport). */
     const doorFloor = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.8, 2.8),
+      new THREE.PlaneGeometry(1, 1),
       new THREE.MeshBasicMaterial({
         map: shadowTex,
         transparent: true,
@@ -1427,6 +1445,13 @@
     }
     function applyCoinScale() {
       if (coinModel && coinScaleBase) coinModel.scale.setScalar(coinScaleBase * getResponsiveCoinScale());
+    }
+    /* Tamaño REAL de la moneda en unidades de mundo (su diámetro visible, ya con el
+       factor responsive aplicado). Es la referencia con la que se dimensiona la
+       puerta: comparar las dos figuras en el MISMO espacio es lo que las mantiene
+       coherentes entre sí y entre viewports. */
+    function getCoinWorldSize() {
+      return CONFIG.coin.scale * getResponsiveCoinScale();
     }
 
     const manager = new THREE.LoadingManager();
@@ -1508,33 +1533,29 @@
 
     let doorModel = null;
     const doorMats = [];
-    let doorScaleBase = 0;     // escala para que las HOJAS midan leafWidthWorld en el mundo
-    let doorDepthSquash = 1;   // aplastamiento en Z para respetar maxDepthWorld
-    let doorResizeTimer = null;
+    /* Huella del modelo en sus unidades originales (medida al cargar). Toda la
+       escala de la puerta sale de applyDoorScale(), que es la ÚNICA fuente de
+       tamaño: ancho objetivo = diámetro de la moneda × CONFIG.door.widthVsCoin. */
+    let doorFootprint = null;  // { width, depth } en unidades del modelo
 
-    /* leafWidthWorld se expresa en unidades de mundo, pero la puerta se presenta
-       con una escala legible en pantalla. Este es el ancho de referencia usado
-       para que el cambio de viewport no cambie de forma brusca el tamaño aparente;
-       el valor configurable sigue multiplicando la escala final. */
-    const DOOR_REFERENCE_WIDTH_WORLD = 7.0;
-    function getDoorViewportFactor() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 32);
-      const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
-      const dist = Math.max(0.1, camera.position.z - (CONFIG.door.baseZ ?? 0));
-      const worldPxPerUnit = h / (2 * tanHalf * dist);
-      const targetPx = fontPx * 8.2;
-      /* Convertimos el tamaño objetivo de píxeles a unidades de mundo y lo
-         comparamos con una puerta de referencia. No dividir por leafWidthWorld:
-         hacerlo cancelaría el ajuste editable del bloque CONFIG.door. */
-      const targetWorldWidth = targetPx / Math.max(worldPxPerUnit, 1e-3);
-      return THREE.MathUtils.clamp(targetWorldWidth / DOOR_REFERENCE_WIDTH_WORLD, 0.25, 2.5);
-    }
     function applyDoorScale() {
-      if (!doorModel || !doorScaleBase) return;
-      const s = doorScaleBase * getDoorViewportFactor();
-      doorModelGroup.scale.set(s, s, s * doorDepthSquash);
+      if (!doorModel || !doorFootprint) return;
+      const cfg = CONFIG.door;
+      const widthWorld = getCoinWorldSize() * (cfg.widthVsCoin ?? 1.4);
+      const s = widthWorld / Math.max(doorFootprint.width, 1e-3);
+      /* Squash de profundidad calculado sobre la escala FINAL. Antes se medía con
+         una escala intermedia que nunca se llegaba a usar, así que el valor de Z
+         salía prácticamente al azar según el viewport. */
+      const squash = THREE.MathUtils.clamp(cfg.doorDepthSquash ?? 1, 0.05, 1);
+      const depthWorld = doorFootprint.depth * s * squash;
+      const depthFix = Math.min(1, (cfg.maxDepthWorld ?? Infinity) / Math.max(depthWorld, 1e-6));
+      doorModelGroup.scale.set(s, s, s * squash * depthFix);
+      /* La sombra de contacto sigue a la puerta (en X y en Z), no es un cuadrado fijo. */
+      doorFloor.scale.set(
+        widthWorld * (cfg.shadowWidthMul ?? 1.3),
+        depthWorld * depthFix * (cfg.shadowDepthMul ?? 2.2),
+        1
+      );
     }
 
     function applyDoorTextStyle() {
@@ -1560,7 +1581,8 @@
 
     const doorLoader = new GLTFLoader(manager);
     doorLoader.setDRACOLoader(dracoLoader);
-    /* Base real de la puerta relativa al pivote (para la sombra de contacto).
+    /* Base real de la puerta relativa al pivote, en unidades del modelo. Se usa
+       para apoyar la puerta en CONFIG.door.groundY y para la sombra de contacto.
        Se recalcula al cargar el modelo; -1.15 es solo el valor de reserva. */
     let doorBottomOffset = -1.15;
     doorLoader.load('puerta-draco.glb', (gltf) => {
@@ -1585,18 +1607,14 @@
            en la parte visual que el usuario reconoce como la puerta. */
         model.position.sub(center);
         model.updateMatrixWorld(true);
-        /* Escala basada en el ANCHO de las hojas (no del bounding box completo):
-           así el tamaño en pantalla lo gobiernan las hojas y no el pórtico. */
-        const refSize = (leafBox.isEmpty() ? box : leafBox).getSize(new THREE.Vector3());
-        const leafWidth = Math.max(refSize.x, 1e-3);
-        doorScaleBase = CONFIG.door.leafWidthWorld / leafWidth;
-        /* Aplastar la profundidad: el conjunto (pórtico + escalones) no debe
-           sobresalir más de maxDepthWorld hacia la cámara. */
-        const size = box.getSize(new THREE.Vector3());
-        const rawDepth = size.z * doorScaleBase;
-        const depthClamp = Math.min(1, CONFIG.door.maxDepthWorld / Math.max(rawDepth, 1e-3));
-        doorDepthSquash = depthClamp * CONFIG.door.doorDepthSquash;
-        /* Base del modelo (escalones) relativa al pivote, para la sombra */
+        /* La huella que se dimensiona es el ANCHO TOTAL del conjunto (pórtico +
+           escalones), que es lo que el ojo lee como "la puerta". Gobernar solo las
+           hojas (como hacía la versión anterior) hacía que el pórtico midiera ~2×
+           más de lo que el knob prometía. */
+        const wholeSize = box.getSize(new THREE.Vector3());
+        doorFootprint = { width: Math.max(wholeSize.x, 1e-3), depth: Math.max(wholeSize.z, 1e-3) };
+        /* Base del modelo (escalones) relativa al pivote: sirve para apoyar la
+           puerta en CONFIG.door.groundY y para pegar ahí la sombra de contacto. */
         doorBottomOffset = box.min.y - center.y;
         doorModel = model;
         applyDoorScale();
@@ -1856,30 +1874,35 @@
       if (doorGroup.children.length > 0) {
         doorFade = THREE.MathUtils.lerp(doorFade, doorTarget, 0.12);
         if (doorTarget === 0 && doorFade < 0.03) doorFade = 0;
-        doorGroup.visible = doorFade > 0.001;
+        /* doorModel (no solo doorGroup.children) porque el grupo intermedio
+           doorModelGroup se añade siempre: si el GLB no cargó, la escena sigue
+           "teniendo" la puerta y se encendían niebla y sombra sobre la nada. */
+        doorGroup.visible = doorFade > 0.001 && !!doorModel;
         const doorEase = doorFade * doorFade * (3 - 2 * doorFade);
         doorGroup.rotation.y = smoothMouseX * 0.05 * doorEase;
         doorGroup.rotation.x = smoothMouseY * -0.03 * doorEase;
         doorGroup.position.x = CONFIG.door.baseX;
-        doorGroup.position.y = CONFIG.door.baseY + smoothMouseY * -0.06 * doorEase;
         doorGroup.position.z = CONFIG.door.baseZ ?? 0;
         doorGroup.scale.setScalar(0.94 + 0.06 * doorEase);
+        /* La puerta se APOYA, no flota: el pivote (centro de las hojas) se pone
+           donde haga falta para que la base de los escalones quede en groundY.
+           Anclar el pivote (el `baseY` anterior) hacía que al cambiar el tamaño la
+           puerta subiera o bajara sola y se despegara de su propia sombra. */
+        const doorBottomWorld = doorModel ? doorBottomOffset * doorModelGroup.scale.y * doorGroup.scale.x : 0;
+        doorGroup.position.y = (CONFIG.door.groundY ?? 0) - doorBottomWorld + smoothMouseY * -0.06 * doorEase;
         for (let i = 0; i < doorMats.length; i++) {
           doorMats[i].transparent = true;
           doorMats[i].opacity = doorFade;
         }
 
         /* rig de luces + fog solo mientras la puerta está presente */
-        const doorActive = doorFade > 0.01;
+        const doorActive = doorFade > 0.01 && !!doorModel;
         if (doorLightGroup) doorLightGroup.visible = doorActive;
         doorFloor.visible = doorActive;
         doorFloor.material.opacity = 0.8 * doorEase;
         if (scene.fog) scene.fog.density = doorActive ? CONFIG.door.fogDensity * doorEase : 0;
-        /* Sombra de contacto pegada a la base real del modelo (escalones),
-           no a la posición del pivote: la base se desplaza por la escala del
-           modelo en Y, así que se multiplica doorBottomOffset por
-           doorModelGroup.scale.y. */
-        const doorBottomWorld = (doorModel ? doorBottomOffset * doorModelGroup.scale.y : doorBottomOffset) * doorGroup.scale.x;
+        /* La sombra vive exactamente en la línea de suelo (doorBottomWorld ya se
+           usó arriba para apoyar el modelo), y solo existe si la puerta existe. */
         doorFloor.position.set(doorGroup.position.x, doorGroup.position.y + doorBottomWorld, doorGroup.position.z);
         if (doorActive) {
           const target = new THREE.Vector3(doorGroup.position.x, doorGroup.position.y, doorGroup.position.z);
