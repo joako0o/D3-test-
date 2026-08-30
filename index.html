@@ -412,7 +412,7 @@
       position: relative; z-index: 4;
       min-height: 100vh;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-start;
+      align-items: center; justify-content: center;
       padding: var(--space-section) 10%;
     }
     .counters-wrap {
@@ -754,8 +754,10 @@
       max-width: 640px;
       font-size: var(--fs-body);
       line-height: var(--lh-relaxed);
-      opacity: 0;
-      transform: translateY(20px);
+      /* El estado inicial oculto lo gobierna GSAP (chars via SplitText). Tener
+         opacity:0 ADEMÁS en CSS dejaba el padre invisible para siempre: la
+         animación revelaba los caracteres hijos, pero la opacidad se multiplica
+         por la del padre → la sección final nunca se veía. */
       margin-bottom: 40px;
       font-weight: 300;
       letter-spacing: 0.01em;
@@ -775,8 +777,7 @@
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       transition: background 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      opacity: 0;
-      transform: translateY(16px);
+      /* Misma corrección: sin opacity:0 estático (ver .closing-text). */
     }
     .closing-cta:hover {
       background: rgba(255,215,106,0.12);
@@ -1383,7 +1384,7 @@
       formulaci&oacute;n de pol&iacute;tica monetaria en una econom&iacute;a emergente,
       combinando datos textuales con indicadores macroecon&oacute;micos tradicionales.
     </p>
-    <a href="#" class="closing-cta" data-closing>Explorar el dataset completo &rarr;</a>
+    <a href="#hero" class="closing-cta" data-closing>Volver al comienzo &uarr;</a>
   </section>
   </main>
 
@@ -2217,6 +2218,12 @@
     const DOOR_MODE = (CONFIG.door && CONFIG.door.transition === 'doorway') ? 'doorway' : 'classic';
     if (DOOR_MODE === 'classic') document.body.classList.add('mode-classic');
     let crossT = 0;      // 0 = afuera de la puerta · 1 = dentro de la sala
+    /* Al terminar el dwell de La Sala la cámara deshace el cruce (exitT 0→1).
+       Sin esta salida crossT quedaba en 1 PARA SIEMPRE: la cámara seguía dentro
+       de la sala en todas las secciones posteriores y los overlays 3D calculados
+       para la cámara base (p. ej. el scatter de #stageAxes) quedaban detrás del
+       plano de visión — invisibles. */
+    let exitT = 0;
     let inRoom = false;  // estamos en el stage #stageRoom (habilita el hover→cita)
     let lastRoomWarm = -1;  // cache del tinte cálido de la nube (solo se escribe al cambiar)
     const _roomLook = new THREE.Vector3(0, 0.7, 0);
@@ -2236,10 +2243,19 @@
                     punto bajo y detrás de la puerta). */
     const _lookBase = new THREE.Vector3(0, camBaseY, 0);
     const _doorLook = new THREE.Vector3();
+    /* Vector reutilizado para apuntar los spotlights de la puerta (antes se
+       alocaba uno nuevo en CADA frame → ~60 objetos/seg de basura para el GC). */
+    const _spotTarget = new THREE.Vector3();
 
 
     function animate() {
       const time = clock.getElapsedTime();
+      /* crossT EFECTIVO: mientras dura la salida de la sala (exitT) la cámara
+         deshace el cruce y toda la coreografía vinculada (mira, FOV, velo, luz
+         cálida, tinte) vuelve suavemente al estado base. EXCEPCIÓN intencional:
+         la disolución de la puerta usa crossT CRUDO — si la puerta se
+         "materializara" de nuevo durante la retirada sería un glitch evidente. */
+      const crossEff = crossT * (1 - exitT);
       smoothMouseX = THREE.MathUtils.lerp(smoothMouseX, mouseX, 0.06);
       smoothMouseY = THREE.MathUtils.lerp(smoothMouseY, mouseY, 0.06);
       if (!isDragging) { dragRotY = THREE.MathUtils.lerp(dragRotY, 0, 0.05); dragRotX = THREE.MathUtils.lerp(dragRotX, 0, 0.05); }
@@ -2306,9 +2322,9 @@
            usó arriba para apoyar el modelo), y solo existe si la puerta existe. */
         doorFloor.position.set(doorGroup.position.x, doorGroup.position.y + doorBottomWorld, doorGroup.position.z);
         if (doorActive) {
-          const target = new THREE.Vector3(doorGroup.position.x, doorGroup.position.y, doorGroup.position.z);
+          _spotTarget.set(doorGroup.position.x, doorGroup.position.y, doorGroup.position.z);
           doorSpots.forEach((sp) => {
-            sp.target.position.copy(target);
+            sp.target.position.copy(_spotTarget);
             sp.target.updateMatrixWorld();
           });
         }
@@ -2321,7 +2337,7 @@
          interior"). Las partículas son unlit (PointsMaterial), así que la luz
          cálida se expresa teñiendo color; al salir, vuelve al tono base. */
       const roomWarm = (DOOR_MODE === 'doorway')
-        ? THREE.MathUtils.smoothstep((crossT - 0.3) / 0.5, 0, 1)
+        ? THREE.MathUtils.smoothstep((crossEff - 0.3) / 0.5, 0, 1)
         : 0;
       if (roomWarm !== lastRoomWarm) {
         lastRoomWarm = roomWarm;
@@ -2365,8 +2381,8 @@
 
       /* La Sala (b1): dolly a través del umbral + luz cálida del interior + velo de fog.
          En modo 'classic' crossT queda en 0 → rama clásica intacta. */
-      if (DOOR_MODE === 'doorway' && crossT > 0.001) {
-        const crossEase = THREE.MathUtils.smoothstep(crossT, 0, 1);
+      if (DOOR_MODE === 'doorway' && crossEff > 0.001) {
+        const crossEase = THREE.MathUtils.smoothstep(crossEff, 0, 1);
         camera.position.set(
           CONFIG.camera.x,
           THREE.MathUtils.lerp(currentCamY, CONFIG.door.roomCamY ?? 0.62, crossEase),
@@ -2381,8 +2397,8 @@
            dolly comparten easings suaves, la transición no tiene saltos. */
         const [ad0, ad1] = CONFIG.door.aimDoorT ?? [0, 0.45];
         const [ar0, ar1] = CONFIG.door.aimRoomT ?? [0.55, 0.95];
-        const aimDoor = THREE.MathUtils.smoothstep((crossT - ad0) / Math.max(ad1 - ad0, 1e-3), 0, 1);
-        const aimRoom = THREE.MathUtils.smoothstep((crossT - ar0) / Math.max(ar1 - ar0, 1e-3), 0, 1);
+        const aimDoor = THREE.MathUtils.smoothstep((crossEff - ad0) / Math.max(ad1 - ad0, 1e-3), 0, 1);
+        const aimRoom = THREE.MathUtils.smoothstep((crossEff - ar0) / Math.max(ar1 - ar0, 1e-3), 0, 1);
         _doorLook.set(
           doorGroup.position.x,
           doorGroup.position.y + (doorBottomOffset + doorTopOffset) * 0.5 * doorModelGroup.scale.y * doorGroup.scale.x,
@@ -2398,7 +2414,7 @@
       /* La Sala (b1): la luz del interior sube con el cruce y se mantiene en la sala */
       if (roomLight) {
         const lightT = DOOR_MODE === 'doorway'
-          ? THREE.MathUtils.smoothstep((crossT - 0.2) / 0.5, 0, 1)
+          ? THREE.MathUtils.smoothstep((crossEff - 0.2) / 0.5, 0, 1)
           : 0;
         roomLight.intensity = lightT * (CONFIG.door?.roomLight?.intensity ?? 10);
       }
@@ -2408,7 +2424,7 @@
          permanente al terminar el dolly. */
       const targetFov = CONFIG.camera.fov + (
         DOOR_MODE === 'doorway'
-          ? Math.sin(Math.PI * THREE.MathUtils.clamp(crossT, 0, 1)) * (CONFIG.door?.fovKick ?? 4)
+          ? Math.sin(Math.PI * THREE.MathUtils.clamp(crossEff, 0, 1)) * (CONFIG.door?.fovKick ?? 4)
           : 0
       );
       if (Math.abs(camera.fov - targetFov) > 0.01) {
@@ -2420,15 +2436,22 @@
          centro arbitrario del trigger. Termina en 1 para devolver la escena a
          su luminosidad normal una vez dentro. */
       const veilShape = DOOR_MODE === 'doorway'
-        ? Math.sin(Math.PI * THREE.MathUtils.clamp((crossT - 0.6) / 0.4, 0, 1))
+        ? Math.sin(Math.PI * THREE.MathUtils.clamp((crossEff - 0.6) / 0.4, 0, 1))
         : 0;
       if (scene.fog) {
         const veil = veilShape * (CONFIG.door?.veilFog ?? 0);
         scene.fog.density = Math.max(scene.fog.density, veil);
       }
-      /* Atenuación puntual de la nube: evita que una partícula cercana se lea
-         como un parche al pasar la cámara por el umbral. */
-      pMat.opacity = 0.95 * (1 - 0.5 * veilShape);
+      /* Opacidad de la nube en tres factores:
+         1) scatterProgress: al dispersarse, los 100 sprites aditivos se apilan
+            en el centro del frame y forman un "disco" quemado (ACES lo viraba a
+            dorado). Bajar la opacidad con la dispersión mantiene el polvo sutil
+            y el centro limpio para leer los datos.
+         2) veilShape: atenuación puntual al pasar la cámara por el umbral (una
+            partícula cercana no debe leerse como un parche).
+         3) axesFocusT: cuando la sección de ejes está al frente, la nube cede
+            aún más — lo importante es el scatter de intervenciones. */
+      pMat.opacity = (0.95 - 0.5 * scatterProgress) * (1 - 0.5 * veilShape) * (1 - 0.55 * axesFocusT);
 
       if (renderer) renderer.render(scene, camera);
     }
@@ -2466,6 +2489,9 @@
        pero su visibilidad principal es #stageAxes. Hoisted para que el
        ScrollTrigger de los ejes pueda controlarlo. */
     let bgScatter = null;
+    /* 0→1 mientras #stageAxes es protagonista: el enjambre ambiental cede
+       protagonismo (opacidad) para que el scatter de intervenciones mande. */
+    let axesFocusT = 0;
     function initD3Axes() {
       const container = document.getElementById('d3-canvas');
       if (!container) return;
@@ -2509,16 +2535,21 @@
         .style('stroke', 'rgba(255,255,255,0.1)');
 
       /* Etiquetas de tono en el eje Y — el copy de la sección lo promete
-         ("arriba restrictivo, abajo expansivo") pero el eje no se dibujaba */
+         ("arriba restrictivo, abajo expansivo") pero el eje no se dibujaba.
+         En pantallas angostas el anclaje 'end' las cortaba por el borde
+         izquierdo: allí van ancladas al inicio, pegadas al margen. */
+      const narrowAxes = width < 640;
+      const toneX = narrowAxes ? 10 : margin.left - 16;
+      const toneAnchor = narrowAxes ? 'start' : 'end';
       svg.append('text')
-        .attr('x', margin.left - 16).attr('y', margin.top - 4)
-        .attr('text-anchor', 'end')
+        .attr('x', toneX).attr('y', margin.top - 4)
+        .attr('text-anchor', toneAnchor)
         .style('fill', 'rgba(255,215,106,0.75)').style('font-size', '11px')
         .style('letter-spacing', '2px').style('text-transform', 'uppercase')
         .text('Hawkish ↑');
       svg.append('text')
-        .attr('x', margin.left - 16).attr('y', margin.top + innerH + 2)
-        .attr('text-anchor', 'end')
+        .attr('x', toneX).attr('y', margin.top + innerH + 2)
+        .attr('text-anchor', toneAnchor)
         .style('fill', 'rgba(138,180,248,0.75)').style('font-size', '11px')
         .style('letter-spacing', '2px').style('text-transform', 'uppercase')
         .text('Dovish ↓');
@@ -2600,12 +2631,15 @@
         geo.setAttribute('color', new THREE.BufferAttribute(bgColors, 3));
 
         const mat = new THREE.PointsMaterial({
-          size: 0.04,
+          /* Las intervenciones son DATO: deben leerse como puntos de un gráfico,
+             no como polvo. size 3× mayor y blending NORMAL — con additive los
+             colores hawkish/dovish se lavaban a blanco sobre el fondo claro. */
+          size: 0.13,
           vertexColors: true,
           map: getParticleTexture(),
           transparent: true,
           opacity: 0,
-          blending: THREE.AdditiveBlending,
+          blending: THREE.NormalBlending,
           depthWrite: false
         });
 
@@ -2771,7 +2805,11 @@
       scrub: true,
       onUpdate: (self) => {
         scatterProgress = self.progress;
-        if (self.progress < 0.98) {
+        /* Solo la zona estrictamente del hero resetea la puerta: desde ~25% de
+           este trigger la gobierna el fade anticipado de la puerta (ver abajo).
+           Antes el reset corría hasta p<0.98 y pisaba ese fade, dejando un
+           "pasillo" de ~1/2 viewport SIN nada en pantalla entre actos. */
+        if (self.progress < 0.25) {
           doorTarget = 0;
           doorFade = 0;
           if (doorGroup) doorGroup.visible = false;
@@ -2788,6 +2826,21 @@
        Stage 2 (Door) ScrollTrigger — control continuo, suave y sin parpadeos
        La puerta desaparece ANTES de llegar al siguiente título para evitar colisiones
     ──────────────────────────────── */
+    /* Fade ANTICIPADO de la puerta (solo doorway): empieza a materializarse
+       mientras el hero termina de dispersarse — el "corredor" vacío entre actos
+       desaparece y la lectura es continua: moneda → polvo → puerta que emerge
+       de ese mismo polvo. Termina antes del pin de #stageObjective, donde el
+       trigger clásico toma el mando con el mismo valor (1). */
+    if (DOOR_MODE === 'doorway') {
+      ScrollTrigger.create({
+        trigger: '#stageObjective',
+        start: 'top 70%',
+        end: 'top 15%',
+        scrub: true,
+        onUpdate: (self) => { doorTarget = THREE.MathUtils.clamp(self.progress, 0, 1); },
+      });
+    }
+
     ScrollTrigger.create({
       trigger: '#stageObjective',
       start: 'top top',
@@ -2797,8 +2850,10 @@
         const p = self.progress;
         if (DOOR_MODE === 'doorway') {
           /* La Sala (b1): la puerta se mantiene presente hasta el cruce;
-             la disolución la gobierna #stageRoom (crossT). */
-          doorTarget = p < 0.15 ? p / 0.15 : 1;
+             la disolución la gobierna #stageRoom (crossT) y la entrada el
+             trigger anticipado — aquí solo se sostiene el 1 (re-fundir la
+             entrada causaba un parpadeo al solaparse ambos triggers). */
+          doorTarget = 1;
           return;
         }
         if (p <= 0) {
@@ -2833,6 +2888,20 @@
         end: '+=80%',
         scrub: true,
         onUpdate: (self) => { crossT = self.progress; },
+      });
+
+      /* SALIDA DE LA SALA: cuando el dwell está por terminar, la cámara deshace
+         el cruce (exitT 0→1) y recupera la posición base — espejo del cruce de
+         entrada (mismo easing, velo y kick de FOV). Termina justo cuando el
+         sticky de la sala se libera, así "El Método" entra con la cámara ya en
+         su encuadre estándar y los overlays 3D de los ejes vuelven a coincidir
+         con su proyección. */
+      ScrollTrigger.create({
+        trigger: '#stageRoom',
+        start: 'bottom 230%',
+        end: 'bottom bottom',
+        scrub: true,
+        onUpdate: (self) => { exitT = self.progress; },
       });
 
       /* Presencia en la sala: habilita el hover→cita y limpia el panel al salir */
@@ -3332,6 +3401,7 @@
         const fadeIn = gsap.utils.clamp(0, 1, p / 0.15);
         const fadeOut = gsap.utils.clamp(0, 1, (1 - p) / 0.15);
         bgScatter.mat.opacity = Math.min(fadeIn, fadeOut) * 0.9;
+        axesFocusT = Math.min(fadeIn, fadeOut);
       }
     });
 
