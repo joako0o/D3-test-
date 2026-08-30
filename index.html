@@ -3275,7 +3275,11 @@
       const clamp01  = gsap.utils.clamp(0, 1);
       // Segmentos de transición más suaves y con más holgura para apreciar cada panel
       // Cada panel tiene su propia "ventana de animación" más amplia
-      const seg = (p, a, b) => clamp01((p - a) / (b - a));
+      const seg = (p, a, b) => {
+        const span = b - a;
+        if (span <= 1e-6) return p >= b ? 1 : 0;
+        return clamp01((p - a) / span);
+      };
       const easeOut3 = (t) => 1 - Math.pow(1 - t, 3);
       const easeInOut = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
       const fmt      = (n) => Math.round(n).toLocaleString('es-CL');
@@ -3283,13 +3287,20 @@
       const panels = track.querySelectorAll('.pipe-panel');
       const getPanelBounds = () => {
         const totalW = track.scrollWidth - viewport.clientWidth;
-        // Ajuste: empezar más centrado y terminar más centrado
-        // Antes: viewport.clientWidth * 0.35 (empujaba muy a la izquierda)
-        // Ahora: viewport.clientWidth * 0.28 (más centrado, más tiempo para ver)
+        const cw = viewport.clientWidth;
+        /* La animación de cada panel se ancla a su CENTRO, no a sus bordes.
+           Empieza cuando el centro entra por la derecha (línea al 78% del
+           ancho) y TERMINA cuando el centro llega al centro real del viewport
+           (50%). Antes el final se calculaba con el borde derecho cruzando una
+           línea al 28%, así que cada panel seguía animándose después de haber
+           pasado el centro y terminaba desplazado a la izquierda. */
+        const focusStart = cw * 0.78;
+        const focusEnd = cw * 0.5;
         return Array.from(panels).map(panel => {
-          const left = panel.offsetLeft - viewport.clientWidth * 0.28;
-          const right = left + panel.offsetWidth;
-          return { start: clamp01(left / totalW), end: clamp01(right / totalW) };
+          const panelCenter = panel.offsetLeft + panel.offsetWidth / 2;
+          const start = (panelCenter - focusStart) / totalW;
+          const end = (panelCenter - focusEnd) / totalW;
+          return { start: clamp01(start), end: clamp01(end) };
         });
       };
 
