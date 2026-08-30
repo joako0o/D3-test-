@@ -1529,6 +1529,11 @@
         roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
         veilFog: 0.06,     // pico del velo de niebla durante el cruce
         fovKick: 4,        // grados extra de FOV durante el dolly (0 → 1 → 0)
+        /* Nube de voces dentro de la sala: centro y escala con los que se
+           recoloca el enjambre al cruzar el umbral. La nube queda DELANTE de
+           la cámara (z < roomCamZ) y se comprime, así el giro alrededor del
+           eje Y nunca la barre hacia atrás y la sala no queda sin partículas. */
+        roomSwarm: { x: 0, y: 0.55, z: -2.5, scale: 0.35 },
         /* Encuadre del acercamiento (ventanas de crossT en las que la mira viaja):
            aimDoorT: mira neutra de "La Reunión" → centro VISUAL de la puerta.
                      Que termine a ~0.45 hace que "un instante antes de entrar" la
@@ -2331,8 +2336,26 @@
         }
       }
 
-      /* enjambre: orbita y se dispersa por la pantalla al hacer scroll */
-      swarm.rotation.y = time * 0.12 + scatterProgress * 0.8;
+      /* enjambre: orbita y se dispersa por la pantalla al hacer scroll.
+         En La Sala la nube se recoloca delante de la cámara y se comprime;
+         de lo contrario el giro continuo la pasa detrás de la cámara en
+         ciertos ángulos y la sección queda sin partículas. */
+      const roomSwarmCfg = CONFIG.door?.roomSwarm ?? { x: 0, y: 0.55, z: -2.5, scale: 0.35 };
+      const roomSwarmT = (DOOR_MODE === 'doorway' && crossEff > 0)
+        ? THREE.MathUtils.smoothstep((crossEff - 0.25) / 0.5, 0, 1)
+        : 0;
+      const roomSwarmScale = THREE.MathUtils.lerp(1, roomSwarmCfg.scale ?? 0.35, roomSwarmT);
+      swarm.position.set(
+        THREE.MathUtils.lerp(0, roomSwarmCfg.x ?? 0, roomSwarmT),
+        THREE.MathUtils.lerp(0, roomSwarmCfg.y ?? 0.55, roomSwarmT),
+        THREE.MathUtils.lerp(0, roomSwarmCfg.z ?? -2.5, roomSwarmT)
+      );
+      swarm.scale.setScalar(roomSwarmScale);
+      /* Dentro de la sala se frena el giro completo y queda una oscilación
+         suave: movimiento sin barrer la nube fuera del encuadre. */
+      const baseSwirl = time * 0.12 + scatterProgress * 0.8;
+      const roomSway = roomSwarmT * Math.sin(time * 0.35) * 0.06;
+      swarm.rotation.y = baseSwirl * (1 - roomSwarmT) + roomSway;
 
       /* La Sala (b1): dentro de la sala la nube se tiñe de cálido (la "luz del
          interior"). Las partículas son unlit (PointsMaterial), así que la luz
