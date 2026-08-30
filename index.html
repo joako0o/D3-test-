@@ -8,7 +8,7 @@
   <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
   <meta name="theme-color" content="#0a0e1a" />
   <meta property="og:title" content="In the room where monetary policy happens — Two decades of Central Bank deliberations in Chile" />
-  <meta property="og:description" content="Exploración interactiva de 15 años de reuniones de política monetaria en Chile." />
+  <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
   <meta property="og:type" content="website" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1224,11 +1224,17 @@
         baseY: 1.2,             // Altura en pantalla: SUBIR (1.8, 2.2) | BAJAR (1.0, 0.5)
         baseX: 0.0,             // Horizontal: DERECHA (> 0) | IZQUIERDA (< 0)
         baseZ: 0.0,             // Profundidad: MÁS CERCA (> 0) | MÁS LEJOS (< 0)
-        scaleMultiplier: 12.0,   // Tamaño en pantalla: MÁS GRANDE (9.5, 11) | MÁS CHICO (7.0, 6.0)
-        centerOffsetX: -0.78,   // SOLO fallback (si no se hallan las hojas 'toroide'). El pivote normal es el centro de las hojas
+        /* Tamaño en pantalla = ancho de las HOJAS (mallas 'toroide') en unidades
+           de mundo. MÁS GRANDE (13, 15) | MÁS CHICO (9, 7). El pivote queda fijado al
+           centro visual de las hojas, así que ya no hacen falta scale/centerOffsetX. */
+        leafWidthWorld: 12.0,
+        /* Si el conjunto (pórtico + escalones) intenta quedar más profundo que esto,
+           se aplasta en Z para que no sobresalga hacia la cámara. */
+        maxDepthWorld: 6.0,
+        /* Factor 0..1 de aplastamiento adicional de profundidad (1 = sin aplastar). */
+        doorDepthSquash: 0.7,
 
         /* ── Materiales e Iluminación ── */
-        scale: 2.5,
         color: '#ffd76a', metalness: 1.0, roughness: 0.22,
         envMapIntensity: 1.3,
         emissive: '#3d2508', emissiveIntensity: 0.05,
@@ -1493,20 +1499,25 @@
 
     let doorModel = null;
     const doorMats = [];
-    let doorScaleBase = 0;
+    let doorScaleBase = 0;     // escala para que las HOJAS midan leafWidthWorld en el mundo
+    let doorDepthSquash = 1;   // aplastamiento en Z para respetar maxDepthWorld
     let doorResizeTimer = null;
-    function getResponsiveDoorScale() {
+    /* Factor de responsividad: mantiene la puerta con un tamaño percibido estable
+       según el viewport (análogo al de la moneda, pero basado en leafWidthWorld). */
+    function getDoorViewportFactor() {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 32);
       const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
       const dist = CONFIG.camera.z;
       const worldPxPerUnit = h / (2 * tanHalf * dist);
-      const targetPx = fontPx * (CONFIG.door.scaleMultiplier ?? 8.2);
-      return THREE.MathUtils.clamp(targetPx / (CONFIG.door.scale * worldPxPerUnit), 0.25, 2.5);
+      const targetPx = fontPx * 8.2; // referencia constante (comparable a la de la moneda)
+      return THREE.MathUtils.clamp(targetPx / (CONFIG.door.leafWidthWorld * worldPxPerUnit), 0.25, 2.5);
     }
     function applyDoorScale() {
-      if (doorModel && doorScaleBase) doorModel.scale.setScalar(doorScaleBase * getResponsiveDoorScale());
+      if (!doorModel || !doorScaleBase) return;
+      const s = doorScaleBase * getDoorViewportFactor();
+      doorModel.scale.set(s, s, s * doorDepthSquash);
     }
 
     function applyDoorTextStyle() {
@@ -1542,8 +1553,7 @@
         /* Pivote = centro de las HOJAS de la puerta (mallas 'toroide'), no el
            centro del bounding box completo: el pórtico es asimétrico y corrida
            el centro geométrico, así que la puerta giraba/escalaba alrededor de
-           un punto que no era su centro visual (y obligaba al parche manual
-           centerOffsetX, que a su vez descentraba el pivote). */
+           un punto que no era su centro visual. */
         const leafBox = new THREE.Box3();
         model.traverse((o) => {
           if (o.isMesh && (o.name || '').toLowerCase().includes('toroide')) leafBox.expandByObject(o);
@@ -1551,12 +1561,17 @@
         const pivotBox = leafBox.isEmpty() ? box : leafBox;
         const center = pivotBox.getCenter(new THREE.Vector3());
         model.position.sub(center);
-        /* El offset manual aplica solo en fallback (sin hojas identificables) */
-        if (leafBox.isEmpty() && CONFIG.door.centerOffsetX) {
-          model.position.x += CONFIG.door.centerOffsetX;
-        }
+        /* Escala basada en el ANCHO de las hojas (no del bounding box completo):
+           así el tamaño en pantalla lo gobiernan las hojas y no el pórtico. */
+        const refSize = (leafBox.isEmpty() ? box : leafBox).getSize(new THREE.Vector3());
+        const leafWidth = Math.max(refSize.x, 1e-3);
+        doorScaleBase = CONFIG.door.leafWidthWorld / leafWidth;
+        /* Aplastar la profundidad: el conjunto (pórtico + escalones) no debe
+           sobresalir más de maxDepthWorld hacia la cámara. */
         const size = box.getSize(new THREE.Vector3());
-        doorScaleBase = CONFIG.door.scale / Math.max(size.x, size.y, size.z);
+        const rawDepth = size.z * doorScaleBase;
+        const depthClamp = Math.min(1, CONFIG.door.maxDepthWorld / Math.max(rawDepth, 1e-3));
+        doorDepthSquash = depthClamp * CONFIG.door.doorDepthSquash;
         /* Base del modelo (escalones) relativa al pivote, para la sombra */
         doorBottomOffset = box.min.y - center.y;
         doorModel = model;
@@ -1836,7 +1851,11 @@
         doorFloor.visible = doorActive;
         doorFloor.material.opacity = 0.8 * doorEase;
         if (scene.fog) scene.fog.density = doorActive ? CONFIG.door.fogDensity * doorEase : 0;
-        doorFloor.position.set(doorGroup.position.x, doorGroup.position.y + doorBottomOffset * doorGroup.scale.x, doorGroup.position.z);
+        /* Sombra de contacto pegada a la base real del modelo (escalones),
+           no a la posición del pivote: la base se desplaza por la escala del
+           modelo en Y, así que se multiplica doorBottomOffset por doorModel.scale.y. */
+        const doorBottomWorld = (doorModel ? doorBottomOffset * doorModel.scale.y : doorBottomOffset) * doorGroup.scale.x;
+        doorFloor.position.set(doorGroup.position.x, doorGroup.position.y + doorBottomWorld, doorGroup.position.z);
         if (doorActive) {
           const target = new THREE.Vector3(doorGroup.position.x, doorGroup.position.y, doorGroup.position.z);
           doorSpots.forEach((sp) => {
