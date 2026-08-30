@@ -1224,10 +1224,10 @@
         baseY: 1.2,             // Altura en pantalla: SUBIR (1.8, 2.2) | BAJAR (1.0, 0.5)
         baseX: 0.0,             // Horizontal: DERECHA (> 0) | IZQUIERDA (< 0)
         baseZ: 0.0,             // Profundidad: MÁS CERCA (> 0) | MÁS LEJOS (< 0)
-        /* Tamaño en pantalla = ancho de las HOJAS (mallas 'toroide') en unidades
-           de mundo. MÁS GRANDE (13, 15) | MÁS CHICO (9, 7). El pivote queda fijado al
-           centro visual de las hojas, así que ya no hacen falta scale/centerOffsetX. */
-        leafWidthWorld: 12.0,
+        /* Tamaño de referencia de las HOJAS (mallas 'toroide'). El cálculo
+           responsive traduce esta referencia a píxeles sin perder el centro visual.
+           MÁS GRANDE (8, 9) | MÁS CHICO (5, 6). */
+        leafWidthWorld: 7.0,
         /* Si el conjunto (pórtico + escalones) intenta quedar más profundo que esto,
            se aplasta en Z para que no sobresalga hacia la cámara. */
         maxDepthWorld: 6.0,
@@ -1502,17 +1502,25 @@
     let doorScaleBase = 0;     // escala para que las HOJAS midan leafWidthWorld en el mundo
     let doorDepthSquash = 1;   // aplastamiento en Z para respetar maxDepthWorld
     let doorResizeTimer = null;
-    /* Factor de responsividad: mantiene la puerta con un tamaño percibido estable
-       según el viewport (análogo al de la moneda, pero basado en leafWidthWorld). */
+
+    /* leafWidthWorld se expresa en unidades de mundo, pero la puerta se presenta
+       con una escala legible en pantalla. Este es el ancho de referencia usado
+       para que el cambio de viewport no cambie de forma brusca el tamaño aparente;
+       el valor configurable sigue multiplicando la escala final. */
+    const DOOR_REFERENCE_WIDTH_WORLD = 7.0;
     function getDoorViewportFactor() {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 32);
       const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
-      const dist = CONFIG.camera.z;
+      const dist = Math.max(0.1, camera.position.z - (CONFIG.door.baseZ ?? 0));
       const worldPxPerUnit = h / (2 * tanHalf * dist);
-      const targetPx = fontPx * 8.2; // referencia constante (comparable a la de la moneda)
-      return THREE.MathUtils.clamp(targetPx / (CONFIG.door.leafWidthWorld * worldPxPerUnit), 0.25, 2.5);
+      const targetPx = fontPx * 8.2;
+      /* Convertimos el tamaño objetivo de píxeles a unidades de mundo y lo
+         comparamos con una puerta de referencia. No dividir por leafWidthWorld:
+         hacerlo cancelaría el ajuste editable del bloque CONFIG.door. */
+      const targetWorldWidth = targetPx / Math.max(worldPxPerUnit, 1e-3);
+      return THREE.MathUtils.clamp(targetWorldWidth / DOOR_REFERENCE_WIDTH_WORLD, 0.25, 2.5);
     }
     function applyDoorScale() {
       if (!doorModel || !doorScaleBase) return;
@@ -1548,6 +1556,9 @@
     let doorBottomOffset = -1.15;
     doorLoader.load('puerta-draco.glb', (gltf) => {
       const model = gltf.scene;
+      /* Asegura que las transformaciones del GLB ya estén aplicadas al medirlo;
+         de lo contrario el pivote puede quedar corrido según el navegador. */
+      model.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(model);
       if (!box.isEmpty()) {
         /* Pivote = centro de las HOJAS de la puerta (mallas 'toroide'), no el
@@ -1560,7 +1571,11 @@
         });
         const pivotBox = leafBox.isEmpty() ? box : leafBox;
         const center = pivotBox.getCenter(new THREE.Vector3());
+        /* El desplazamiento se calcula con el centro de las hojas y no con el
+           centro del marco: así la rotación/parallax de doorGroup queda centrada
+           en la parte visual que el usuario reconoce como la puerta. */
         model.position.sub(center);
+        model.updateMatrixWorld(true);
         /* Escala basada en el ANCHO de las hojas (no del bounding box completo):
            así el tamaño en pantalla lo gobiernan las hojas y no el pórtico. */
         const refSize = (leafBox.isEmpty() ? box : leafBox).getSize(new THREE.Vector3());
