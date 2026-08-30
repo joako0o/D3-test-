@@ -4,6 +4,7 @@ window.QUOTES = [
     "participant": "Vittorio Corbo",
     "year": 2007,
     "label": "hawkish",
+    "score": 0.72,
     "date": "2007-09-13",
     "formatted_date": "13 de Septiembre, 2007"
   },
@@ -12,6 +13,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2011,
     "label": "hawkish",
+    "score": 0.75,
     "date": "2011-05-12",
     "formatted_date": "12 de Mayo, 2011"
   },
@@ -20,6 +22,7 @@ window.QUOTES = [
     "participant": "José De Gregorio",
     "year": 2007,
     "label": "hawkish",
+    "score": 0.91,
     "date": "2007-11-13",
     "formatted_date": "13 de Noviembre, 2007"
   },
@@ -28,6 +31,7 @@ window.QUOTES = [
     "participant": "Jorge Desormeaux",
     "year": 2007,
     "label": "hawkish",
+    "score": 0.59,
     "date": "2007-02-08",
     "formatted_date": "8 de Febrero, 2007"
   },
@@ -36,6 +40,7 @@ window.QUOTES = [
     "participant": "Luis Felipe Céspedes",
     "year": 2010,
     "label": "hawkish",
+    "score": 0.86,
     "date": "2010-05-13",
     "formatted_date": "13 de Mayo, 2010"
   },
@@ -44,6 +49,7 @@ window.QUOTES = [
     "participant": "Claudio Raddatz",
     "year": 2015,
     "label": "hawkish",
+    "score": 0.73,
     "date": "2015-10-15",
     "formatted_date": "15 de Octubre, 2015"
   },
@@ -52,6 +58,7 @@ window.QUOTES = [
     "participant": "Vittorio Corbo",
     "year": 2007,
     "label": "hawkish",
+    "score": 0.72,
     "date": "2007-09-13",
     "formatted_date": "13 de Septiembre, 2007"
   },
@@ -60,6 +67,7 @@ window.QUOTES = [
     "participant": "Pablo García",
     "year": 2008,
     "label": "hawkish",
+    "score": 0.59,
     "date": "2008-03-13",
     "formatted_date": "13 de Marzo, 2008"
   },
@@ -68,6 +76,7 @@ window.QUOTES = [
     "participant": "Luis Óscar Herrera",
     "year": 2010,
     "label": "hawkish",
+    "score": 0.80,
     "date": "2010-10-14",
     "formatted_date": "14 de Octubre, 2010"
   },
@@ -76,6 +85,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2014,
     "label": "hawkish",
+    "score": 0.98,
     "date": "2014-08-14",
     "formatted_date": "14 de Agosto, 2014"
   },
@@ -84,6 +94,7 @@ window.QUOTES = [
     "participant": "Rodrigo Valdés",
     "year": 2007,
     "label": "hawkish",
+    "score": 0.75,
     "date": "2007-08-09",
     "formatted_date": "9 de Agosto, 2007"
   },
@@ -92,6 +103,7 @@ window.QUOTES = [
     "participant": "Vittorio Corbo",
     "year": 2007,
     "label": "hawkish",
+    "score": 0.72,
     "date": "2007-09-13",
     "formatted_date": "13 de Septiembre, 2007"
   },
@@ -100,6 +112,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2008,
     "label": "hawkish",
+    "score": 0.88,
     "date": "2008-08-14",
     "formatted_date": "14 de Agosto, 2008"
   },
@@ -108,6 +121,7 @@ window.QUOTES = [
     "participant": "Claudio Soto",
     "year": 2008,
     "label": "hawkish",
+    "score": 0.81,
     "date": "2008-06-10",
     "formatted_date": "10 de Junio, 2008"
   },
@@ -116,6 +130,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2008,
     "label": "hawkish",
+    "score": 0.88,
     "date": "2008-07-10",
     "formatted_date": "10 de Julio, 2008"
   },
@@ -124,6 +139,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2013,
     "label": "hawkish",
+    "score": 0.75,
     "date": "2013-10-17",
     "formatted_date": "17 de Octubre, 2013"
   },
@@ -132,6 +148,7 @@ window.QUOTES = [
     "participant": "José De Gregorio",
     "year": 2011,
     "label": "hawkish",
+    "score": 0.91,
     "date": "2010-12-16",
     "formatted_date": "16 de Diciembre, 2010"
   },
@@ -140,6 +157,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2012,
     "label": "hawkish",
+    "score": 0.88,
     "date": "2012-01-12",
     "formatted_date": "12 de Enero, 2012"
   },
@@ -148,6 +166,7 @@ window.QUOTES = [
     "participant": "Claudio Soto",
     "year": 2010,
     "label": "hawkish",
+    "score": 0.81,
     "date": "2010-06-15",
     "formatted_date": "15 de Junio, 2010"
   },
@@ -156,6 +175,7 @@ window.QUOTES = [
     "participant": "José De Gregorio",
     "year": 2011,
     "label": "hawkish",
+    "score": 0.91,
     "date": "2010-12-16",
     "formatted_date": "16 de Diciembre, 2010"
   },
@@ -164,6 +184,7 @@ window.QUOTES = [
     "participant": "Claudio Soto",
     "year": 2008,
     "label": "hawkish",
+    "score": 0.81,
     "date": "2008-09-04",
     "formatted_date": "4 de Septiembre, 2008"
   },
@@ -172,6 +193,7 @@ window.QUOTES = [
     "participant": "Joaquín Vial",
     "year": 2014,
     "label": "hawkish",
+    "score": 0.96,
     "date": "2014-03-13",
     "formatted_date": "13 de Marzo, 2014"
   },
@@ -180,6 +202,7 @@ window.QUOTES = [
     "participant": "Claudio Raddatz",
     "year": 2015,
     "label": "hawkish",
+    "score": 0.73,
     "date": "2015-10-15",
     "formatted_date": "15 de Octubre, 2015"
   },
@@ -188,6 +211,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2011,
     "label": "hawkish",
+    "score": 0.88,
     "date": "2011-02-17",
     "formatted_date": "17 de Febrero, 2011"
   },
@@ -196,6 +220,7 @@ window.QUOTES = [
     "participant": "Claudio Soto",
     "year": 2011,
     "label": "hawkish",
+    "score": 0.81,
     "date": "2011-01-13",
     "formatted_date": "13 de Enero, 2011"
   },
@@ -204,6 +229,7 @@ window.QUOTES = [
     "participant": "Pablo García",
     "year": 2005,
     "label": "hawkish",
+    "score": 0.59,
     "date": "2005-02-10",
     "formatted_date": "10 de Febrero, 2005"
   },
@@ -212,6 +238,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2005,
     "label": "hawkish",
+    "score": 0.88,
     "date": "2005-12-13",
     "formatted_date": "13 de Diciembre, 2005"
   },
@@ -220,6 +247,7 @@ window.QUOTES = [
     "participant": "Andrés Velasco",
     "year": 2008,
     "label": "hawkish",
+    "score": 0.95,
     "date": "2008-10-09",
     "formatted_date": "9 de Octubre, 2008"
   },
@@ -228,6 +256,7 @@ window.QUOTES = [
     "participant": "Luis Felipe Céspedes",
     "year": 2010,
     "label": "hawkish",
+    "score": 0.86,
     "date": "2010-05-13",
     "formatted_date": "13 de Mayo, 2010"
   },
@@ -236,6 +265,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2011,
     "label": "hawkish",
+    "score": 0.75,
     "date": "2011-05-12",
     "formatted_date": "12 de Mayo, 2011"
   },
@@ -244,6 +274,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2010,
     "label": "hawkish",
+    "score": 0.88,
     "date": "2010-05-13",
     "formatted_date": "13 de Mayo, 2010"
   },
@@ -252,6 +283,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2009,
     "label": "hawkish",
+    "score": 0.88,
     "date": "2009-01-08",
     "formatted_date": "8 de Enero, 2009"
   },
@@ -260,6 +292,7 @@ window.QUOTES = [
     "participant": "Pablo García",
     "year": 2005,
     "label": "hawkish",
+    "score": 0.59,
     "date": "2005-02-10",
     "formatted_date": "10 de Febrero, 2005"
   },
@@ -268,6 +301,7 @@ window.QUOTES = [
     "participant": "Institucional",
     "year": 2005,
     "label": "hawkish",
+    "score": 0.59,
     "date": "2005-11-10",
     "formatted_date": "10 de Noviembre, 2005"
   },
@@ -276,6 +310,7 @@ window.QUOTES = [
     "participant": "Claudio Soto",
     "year": 2011,
     "label": "hawkish",
+    "score": 0.81,
     "date": "2011-02-17",
     "formatted_date": "17 de Febrero, 2011"
   },
@@ -284,6 +319,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2014,
     "label": "dovish",
+    "score": 0.86,
     "date": "2014-08-14",
     "formatted_date": "14 de Agosto, 2014"
   },
@@ -292,6 +328,7 @@ window.QUOTES = [
     "participant": "José De Gregorio",
     "year": 2009,
     "label": "dovish",
+    "score": 0.88,
     "date": "2009-05-07",
     "formatted_date": "7 de Mayo, 2009"
   },
@@ -300,6 +337,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2014,
     "label": "dovish",
+    "score": 0.86,
     "date": "2014-03-13",
     "formatted_date": "13 de Marzo, 2014"
   },
@@ -308,6 +346,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2005,
     "label": "dovish",
+    "score": 0.85,
     "date": "2005-01-11",
     "formatted_date": "11 de Enero, 2005"
   },
@@ -316,6 +355,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2014,
     "label": "dovish",
+    "score": 0.78,
     "date": "2012-02-14",
     "formatted_date": "14 de Febrero, 2012"
   },
@@ -324,6 +364,7 @@ window.QUOTES = [
     "participant": "Pablo García",
     "year": 2009,
     "label": "dovish",
+    "score": 0.85,
     "date": "2009-12-15",
     "formatted_date": "15 de Diciembre, 2009"
   },
@@ -332,6 +373,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2009,
     "label": "dovish",
+    "score": 0.85,
     "date": "2009-07-09",
     "formatted_date": "9 de Julio, 2009"
   },
@@ -340,6 +382,7 @@ window.QUOTES = [
     "participant": "Vittorio Corbo",
     "year": 2007,
     "label": "dovish",
+    "score": 0.59,
     "date": "2007-01-11",
     "formatted_date": "11 de Enero, 2007"
   },
@@ -348,6 +391,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2014,
     "label": "dovish",
+    "score": 0.86,
     "date": "2014-08-14",
     "formatted_date": "14 de Agosto, 2014"
   },
@@ -356,6 +400,7 @@ window.QUOTES = [
     "participant": "Luis Óscar Herrera",
     "year": 2013,
     "label": "dovish",
+    "score": 0.88,
     "date": "2013-09-12",
     "formatted_date": "12 de Septiembre, 2013"
   },
@@ -364,6 +409,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2013,
     "label": "dovish",
+    "score": 0.78,
     "date": "2013-11-19",
     "formatted_date": "19 de Noviembre, 2013"
   },
@@ -372,6 +418,7 @@ window.QUOTES = [
     "participant": "Pablo García",
     "year": 2010,
     "label": "dovish",
+    "score": 0.85,
     "date": "2010-05-13",
     "formatted_date": "13 de Mayo, 2010"
   },
@@ -380,6 +427,7 @@ window.QUOTES = [
     "participant": "Pablo García",
     "year": 2010,
     "label": "dovish",
+    "score": 0.85,
     "date": "2010-05-13",
     "formatted_date": "13 de Mayo, 2010"
   },
@@ -388,6 +436,7 @@ window.QUOTES = [
     "participant": "Enrique Marshall",
     "year": 2013,
     "label": "dovish",
+    "score": 0.64,
     "date": "2013-08-13",
     "formatted_date": "13 de Agosto, 2013"
   },
@@ -396,6 +445,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2014,
     "label": "dovish",
+    "score": 0.78,
     "date": "2014-07-15",
     "formatted_date": "15 de Julio, 2014"
   },
@@ -404,6 +454,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2014,
     "label": "dovish",
+    "score": 0.86,
     "date": "2014-08-14",
     "formatted_date": "14 de Agosto, 2014"
   },
@@ -412,6 +463,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2007,
     "label": "dovish",
+    "score": 0.85,
     "date": "2007-02-08",
     "formatted_date": "8 de Febrero, 2007"
   },
@@ -420,6 +472,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2015,
     "label": "dovish",
+    "score": 0.86,
     "date": "2015-08-13",
     "formatted_date": "13 de Agosto, 2015"
   },
@@ -428,6 +481,7 @@ window.QUOTES = [
     "participant": "Vittorio Corbo",
     "year": 2007,
     "label": "dovish",
+    "score": 0.59,
     "date": "2007-01-11",
     "formatted_date": "11 de Enero, 2007"
   },
@@ -436,6 +490,7 @@ window.QUOTES = [
     "participant": "Jorge Desormeaux",
     "year": 2009,
     "label": "dovish",
+    "score": 0.76,
     "date": "2009-05-07",
     "formatted_date": "7 de Mayo, 2009"
   },
@@ -444,6 +499,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2015,
     "label": "dovish",
+    "score": 0.78,
     "date": "2015-11-12",
     "formatted_date": "12 de Noviembre, 2015"
   },
@@ -452,6 +508,7 @@ window.QUOTES = [
     "participant": "Enrique Marshall",
     "year": 2013,
     "label": "dovish",
+    "score": 0.64,
     "date": "2013-08-13",
     "formatted_date": "13 de Agosto, 2013"
   },
@@ -460,6 +517,7 @@ window.QUOTES = [
     "participant": "Enrique Marshall",
     "year": 2014,
     "label": "dovish",
+    "score": 0.64,
     "date": "2014-09-11",
     "formatted_date": "11 de Septiembre, 2014"
   },
@@ -468,6 +526,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2008,
     "label": "dovish",
+    "score": 0.85,
     "date": "2008-11-13",
     "formatted_date": "13 de Noviembre, 2008"
   },
@@ -476,6 +535,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2009,
     "label": "dovish",
+    "score": 0.85,
     "date": "2009-01-08",
     "formatted_date": "8 de Enero, 2009"
   },
@@ -484,6 +544,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2015,
     "label": "dovish",
+    "score": 0.78,
     "date": "2015-11-12",
     "formatted_date": "12 de Noviembre, 2015"
   },
@@ -492,6 +553,7 @@ window.QUOTES = [
     "participant": "Pablo García",
     "year": 2009,
     "label": "dovish",
+    "score": 0.85,
     "date": "2009-07-09",
     "formatted_date": "9 de Julio, 2009"
   },
@@ -500,6 +562,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2009,
     "label": "dovish",
+    "score": 0.86,
     "date": "2009-06-16",
     "formatted_date": "16 de Junio, 2009"
   },
@@ -508,6 +571,7 @@ window.QUOTES = [
     "participant": "Vittorio Corbo",
     "year": 2007,
     "label": "dovish",
+    "score": 0.59,
     "date": "2007-01-11",
     "formatted_date": "11 de Enero, 2007"
   },
@@ -516,6 +580,7 @@ window.QUOTES = [
     "participant": "Jorge Desormeaux",
     "year": 2008,
     "label": "dovish",
+    "score": 0.76,
     "date": "2008-12-11",
     "formatted_date": "11 de Diciembre, 2008"
   },
@@ -524,6 +589,7 @@ window.QUOTES = [
     "participant": "José De Gregorio",
     "year": 2010,
     "label": "dovish",
+    "score": 0.88,
     "date": "2010-07-15",
     "formatted_date": "15 de Julio, 2010"
   },
@@ -532,6 +598,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2009,
     "label": "dovish",
+    "score": 0.86,
     "date": "2009-06-16",
     "formatted_date": "16 de Junio, 2009"
   },
@@ -540,6 +607,7 @@ window.QUOTES = [
     "participant": "Vittorio Corbo",
     "year": 2007,
     "label": "dovish",
+    "score": 0.59,
     "date": "2007-01-11",
     "formatted_date": "11 de Enero, 2007"
   },
@@ -548,6 +616,7 @@ window.QUOTES = [
     "participant": "Enrique Marshall",
     "year": 2014,
     "label": "dovish",
+    "score": 0.64,
     "date": "2014-09-11",
     "formatted_date": "11 de Septiembre, 2014"
   },
@@ -556,6 +625,7 @@ window.QUOTES = [
     "participant": "Enrique Marshall",
     "year": 2014,
     "label": "dovish",
+    "score": 0.64,
     "date": "2015-04-16",
     "formatted_date": "16 de Abril, 2015"
   },
@@ -564,6 +634,7 @@ window.QUOTES = [
     "participant": "Institucional",
     "year": 2001,
     "label": "neutral",
+    "score": 0.82,
     "date": "2001-10-08",
     "formatted_date": "8 de Octubre, 2001"
   },
@@ -572,6 +643,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2014,
     "label": "neutral",
+    "score": 0.61,
     "date": "2013-04-11",
     "formatted_date": "11 de Abril, 2013"
   },
@@ -580,6 +652,7 @@ window.QUOTES = [
     "participant": "Miguel Fuentes",
     "year": 2014,
     "label": "neutral",
+    "score": 0.70,
     "date": "2014-04-17",
     "formatted_date": "17 de Abril, 2014"
   },
@@ -588,6 +661,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2014,
     "label": "neutral",
+    "score": 0.70,
     "date": "2011-12-13",
     "formatted_date": "13 de Diciembre, 2011"
   },
@@ -596,6 +670,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2012,
     "label": "neutral",
+    "score": 0.61,
     "date": "2012-06-14",
     "formatted_date": "14 de Junio, 2012"
   },
@@ -604,6 +679,7 @@ window.QUOTES = [
     "participant": "José De Gregorio",
     "year": 2011,
     "label": "neutral",
+    "score": 0.87,
     "date": "2011-04-12",
     "formatted_date": "12 de Abril, 2011"
   },
@@ -612,6 +688,7 @@ window.QUOTES = [
     "participant": "Miguel Fuentes",
     "year": 2015,
     "label": "neutral",
+    "score": 0.70,
     "date": "2015-10-15",
     "formatted_date": "15 de Octubre, 2015"
   },
@@ -620,6 +697,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2014,
     "label": "neutral",
+    "score": 0.70,
     "date": "2015-07-14",
     "formatted_date": "14 de Julio, 2015"
   },
@@ -628,6 +706,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2013,
     "label": "neutral",
+    "score": 0.70,
     "date": "2013-04-11",
     "formatted_date": "11 de Abril, 2013"
   },
@@ -636,6 +715,7 @@ window.QUOTES = [
     "participant": "Joaquín Vial",
     "year": 2014,
     "label": "neutral",
+    "score": 0.84,
     "date": "2014-10-16",
     "formatted_date": "16 de Octubre, 2014"
   },
@@ -644,6 +724,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2012,
     "label": "neutral",
+    "score": 0.70,
     "date": "2012-01-12",
     "formatted_date": "12 de Enero, 2012"
   },
@@ -652,6 +733,7 @@ window.QUOTES = [
     "participant": "Enrique Marshall",
     "year": 2011,
     "label": "neutral",
+    "score": 0.96,
     "date": "2011-08-18",
     "formatted_date": "18 de Agosto, 2011"
   },
@@ -660,6 +742,7 @@ window.QUOTES = [
     "participant": "Claudio Soto",
     "year": 2011,
     "label": "neutral",
+    "score": 0.93,
     "date": "2011-05-12",
     "formatted_date": "12 de Mayo, 2011"
   },
@@ -668,6 +751,7 @@ window.QUOTES = [
     "participant": "Joaquín Vial",
     "year": 2015,
     "label": "neutral",
+    "score": 0.84,
     "date": "2015-11-12",
     "formatted_date": "12 de Noviembre, 2015"
   },
@@ -676,6 +760,7 @@ window.QUOTES = [
     "participant": "Manuel Marfán",
     "year": 2009,
     "label": "neutral",
+    "score": 0.92,
     "date": "2009-03-12",
     "formatted_date": "12 de Marzo, 2009"
   },
@@ -684,6 +769,7 @@ window.QUOTES = [
     "participant": "Eduardo García",
     "year": 1985,
     "label": "neutral",
+    "score": 0.57,
     "date": "1985-04-03",
     "formatted_date": "3 de Abril, 1985"
   },
@@ -692,6 +778,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2010,
     "label": "neutral",
+    "score": 0.70,
     "date": "2010-07-15",
     "formatted_date": "15 de Julio, 2010"
   },
@@ -700,6 +787,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2014,
     "label": "neutral",
+    "score": 0.61,
     "date": "2015-04-16",
     "formatted_date": "16 de Abril, 2015"
   },
@@ -708,6 +796,7 @@ window.QUOTES = [
     "participant": "José De Gregorio",
     "year": 2010,
     "label": "neutral",
+    "score": 0.87,
     "date": "2010-09-16",
     "formatted_date": "16 de Septiembre, 2010"
   },
@@ -716,6 +805,7 @@ window.QUOTES = [
     "participant": "Joaquín Vial",
     "year": 2014,
     "label": "neutral",
+    "score": 0.84,
     "date": "2014-05-15",
     "formatted_date": "15 de Mayo, 2014"
   },
@@ -724,6 +814,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2014,
     "label": "neutral",
+    "score": 0.70,
     "date": "2014-02-18",
     "formatted_date": "18 de Febrero, 2014"
   },
@@ -732,6 +823,7 @@ window.QUOTES = [
     "participant": "José De Gregorio",
     "year": 2007,
     "label": "neutral",
+    "score": 0.87,
     "date": "2007-01-11",
     "formatted_date": "11 de Enero, 2007"
   },
@@ -740,6 +832,7 @@ window.QUOTES = [
     "participant": "Rodrigo Vergara",
     "year": 2013,
     "label": "neutral",
+    "score": 0.70,
     "date": "2015-10-15",
     "formatted_date": "15 de Octubre, 2015"
   },
@@ -748,6 +841,7 @@ window.QUOTES = [
     "participant": "Claudio Soto",
     "year": 2011,
     "label": "neutral",
+    "score": 0.93,
     "date": "2011-12-13",
     "formatted_date": "13 de Diciembre, 2011"
   },
@@ -756,6 +850,7 @@ window.QUOTES = [
     "participant": "Sebastián Claro",
     "year": 2012,
     "label": "neutral",
+    "score": 0.61,
     "date": "2012-11-13",
     "formatted_date": "13 de Noviembre, 2012"
   },
@@ -764,6 +859,7 @@ window.QUOTES = [
     "participant": "Joaquín Vial",
     "year": 2013,
     "label": "neutral",
+    "score": 0.84,
     "date": "2013-10-17",
     "formatted_date": "17 de Octubre, 2013"
   },
@@ -772,6 +868,7 @@ window.QUOTES = [
     "participant": "José De Gregorio",
     "year": 2011,
     "label": "neutral",
+    "score": 0.87,
     "date": "2011-05-12",
     "formatted_date": "12 de Mayo, 2011"
   },
@@ -780,6 +877,7 @@ window.QUOTES = [
     "participant": "Joaquín Vial",
     "year": 2015,
     "label": "neutral",
+    "score": 0.84,
     "date": "2015-10-15",
     "formatted_date": "15 de Octubre, 2015"
   },
@@ -788,6 +886,7 @@ window.QUOTES = [
     "participant": "Jorge Desormeaux",
     "year": 2006,
     "label": "neutral",
+    "score": 0.77,
     "date": "2006-07-13",
     "formatted_date": "13 de Julio, 2006"
   },
@@ -796,6 +895,7 @@ window.QUOTES = [
     "participant": "Luis Felipe Céspedes",
     "year": 2010,
     "label": "neutral",
+    "score": 0.74,
     "date": "2010-10-14",
     "formatted_date": "14 de Octubre, 2010"
   }
