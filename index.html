@@ -1554,6 +1554,22 @@
         textSize: '1.2rem',        // Tamaño del párrafo
         gap: '0.8rem',             // Espacio entre título y párrafo
       },
+      interaction: {
+        /* ── Hover sobre partículas ──────────────────────────────────────────
+           hoverRadius: radio de detección en unidades de mundo para el
+                    raycaster de THREE.Points. Tres.js usa un "threshold" en
+                    unidades de mundo (por defecto 1), así que un valor grande
+                    hace que se dispare cerca del puntero aunque no esté sobre
+                    la partícula. 0.075 ≈ un área de ~15px por partícula; bajarlo
+                    a 0.04-0.05 lo hace más quirúrgico.
+           El radio se escala con el tamaño del enjambre (swarm.scale), igual
+           que el aspecto visual de la partícula, así en La Sala (escala 0.35)
+           el área también se achica.
+           hoverDelayMs: espera antes de abrir el panel para no disparar al
+                    cruzar la nube con el mouse. */
+        hoverRadius: 0.075,
+        hoverDelayMs: 90,
+      },
     };
 
     const canvas = document.getElementById('canvas');
@@ -1981,6 +1997,7 @@
     const C = CONFIG.coin;
     let coinBirth = -1;
     let mouseX = 0, mouseY = 0, smoothMouseX = 0, smoothMouseY = 0;
+    let lastPointerX = 0, lastPointerY = 0;
     let isDragging = false, dragStartX = 0, dragStartY = 0, dragRotY = 0, dragRotX = 0;
 
     function onPointerMove(cx, cy) {
@@ -1999,6 +2016,8 @@
       e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term'));
     window.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'touch' || isInteractiveTarget(e)) return;
+      lastPointerX = e.clientX;
+      lastPointerY = e.clientY;
       onPointerMove(e.clientX, e.clientY);
     });
     window.addEventListener('pointerdown', (e) => {
@@ -2114,22 +2133,72 @@
     swarm.add(points);
 
     const raycaster = new THREE.Raycaster();
-    raycaster.params.Points.threshold = 0.16;
     const ndc = new THREE.Vector2();
+    const _pickProjected = new THREE.Vector3();
+
+    /* El threshold de THREE.Points se interpreta en unidades de mundo y no se
+       ajusta solo al tamaño de la partícula. Se fija aquí en cada consulta,
+       escalado con swarm.scale (igual que el tamaño visual del enjambre).
+       Ver https://github.com/mrdoob/three.js/issues/26235 y
+       https://discourse.threejs.org/t/hover-functionality-with-three-points-and-raycaster/53978 */
+    function setPickThreshold() {
+      const base = CONFIG.interaction?.hoverRadius ?? 0.075;
+      const s = swarm.scale?.x || 1;
+      raycaster.params.Points.threshold = base * s;
+    }
 
     function pickPoint(cx, cy) {
       if (!QUOTES_N) return -1;
+      setPickThreshold();
       ndc.x = (cx / window.innerWidth) * 2 - 1;
       ndc.y = -(cy / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObject(points, false);
-      if (hits.length > 0) {
-        return hits[0].index;
+      if (hits.length === 0) return -1;
+      /* Entre varios aciertos, elegir el más cercano al puntero en pantalla:
+         si el threshold es amplio, el primer hit suele ser el más cercano a la
+         cámara, no necesariamente el que está bajo el cursor. */
+      let best = hits[0].index, bestDist = Infinity;
+      for (let h = 0; h < hits.length; h++) {
+        _pickProjected.copy(hits[h].point).project(camera);
+        const sx = (_pickProjected.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (-_pickProjected.y * 0.5 + 0.5) * window.innerHeight;
+        const dx = sx - cx, dy = sy - cy;
+        const d = dx * dx + dy * dy;
+        if (d < bestDist) { bestDist = d; best = hits[h].index; }
       }
-      return -1;
+      return best;
     }
 
-    function openQuote(i) {
+    /* Posicionamiento del panel: en desktop sigue al punto donde se abrió
+       (cursor o tarjeta) en lugar de quedar siempre pegado a la derecha, y se
+       corrige para no salirse del viewport. En móvil se usa el layout inferior
+       de la media query. */
+    function positionQuotePanel(anchor) {
+      const panelEl = document.getElementById('quotePanel');
+      if (!panelEl) return;
+      if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+        panelEl.style.left = '';
+        panelEl.style.top = '';
+        panelEl.style.right = '';
+        return;
+      }
+      const w = panelEl.offsetWidth || 380;
+      const h = panelEl.offsetHeight || 220;
+      const margin = 16;
+      const ax = anchor && typeof anchor.x === 'number' ? anchor.x : lastPointerX;
+      const ay = anchor && typeof anchor.y === 'number' ? anchor.y : lastPointerY;
+      let left = ax + 22;
+      let top = ay - h / 2;
+      if (left + w > window.innerWidth - margin) left = ax - w - 22;
+      if (left < margin) left = margin;
+      top = THREE.MathUtils.clamp(top, margin, Math.max(margin, window.innerHeight - h - margin));
+      panelEl.style.left = left + 'px';
+      panelEl.style.top = top + 'px';
+      panelEl.style.right = 'auto';
+    }
+
+    function openQuote(i, anchor) {
       const q = quotes[i];
       if (!q) return;
       document.getElementById('qpWho').textContent = q.participant || 'Participante anónimo';
@@ -2153,13 +2222,13 @@
         }
       }
       document.getElementById('quotePanel').classList.add('visible');
+      positionQuotePanel(anchor);
     }
 
     let hoveredPoint = false;
     let lastHoverAt = 0;
-    /* La Sala (b1): HOVER → panel "peek" (se cierra al salir); CLICK → panel
-       fijado (pin, se cierra con ✕/Escape). En modo 'classic' no hay hover→panel:
-       solo el cambio de cursor (comportamiento previo). */
+    /* Partículas: HOVER → panel "peek" (se cierra al salir); CLICK → panel
+       fijado (pin, se cierra con ✕/Escape). */
     let hoverIndex = -1;
     let pinnedIndex = -1;
     let hoverTimer = null;
@@ -2194,7 +2263,7 @@
         hoverTimer = setTimeout(() => {
           hoverIndex = hitIdx;
           syncQuotePanel();
-        }, 110);
+        }, CONFIG.interaction?.hoverDelayMs ?? 90);
       } else if (hoverIndex >= 0) {
         hoverIndex = -1;
         syncQuotePanel();
@@ -3467,7 +3536,8 @@
           lastFocusedCard = el;
           pinnedIndex = idx;
           hoverIndex = -1;
-          openQuote(idx);
+          const r = el.getBoundingClientRect();
+          openQuote(idx, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
         }
       });
 
