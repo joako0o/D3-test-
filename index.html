@@ -427,12 +427,12 @@
        un bloque de texto independiente: conserva la jerarquía tipográfica y
        el lenguaje de línea fina que ya usan los gráficos de la historia. */
     .axes-reading-key {
-      width: min(1100px, calc(100% - 48px));
+      width: min(1100px, 70vw);
       display: grid;
       grid-template-columns: auto auto minmax(44px, 1fr) auto;
       align-items: center;
       gap: 16px;
-      padding-bottom: 12px;
+      padding: 0 0 14px;
       border-bottom: 1px solid rgba(255,255,255,0.10);
       color: var(--color-text-secondary);
       text-align: left;
@@ -442,7 +442,7 @@
     .axes-reading-kicker {
       color: var(--color-gold);
       font-family: var(--font-body);
-      font-size: var(--fs-micro);
+      font-size: clamp(11px, 1vw, 14px);
       font-weight: 600;
       letter-spacing: 2.4px;
       line-height: 1.2;
@@ -484,6 +484,73 @@
     }
     .axes-reading-tone--hawkish strong { color: var(--color-gold); }
     .axes-reading-tone--dovish strong { color: var(--color-dovish); }
+
+    /* El plano se dibuja en SVG encima del fondo 3D: círculos nítidos para el
+       dato, halo mínimo para conservar la sensación espacial y una retícula que
+       ordena la lectura sin convertirla en un panel de dashboard. */
+    #d3-canvas svg {
+      shape-rendering: geometricPrecision;
+    }
+    #d3-canvas .axes-plot-field {
+      fill: rgba(10,14,26,0.14);
+      stroke: rgba(255,255,255,0.08);
+      stroke-width: 1;
+    }
+    #d3-canvas .axes-grid line {
+      stroke: rgba(255,255,255,0.045);
+      stroke-width: 1;
+    }
+    #d3-canvas .axes-grid .domain,
+    #d3-canvas .axes-grid .tick line,
+    #d3-canvas .axes-grid-guide {
+      stroke: rgba(255,255,255,0.045);
+    }
+    #d3-canvas .axes-zero-line {
+      stroke: rgba(255,255,255,0.20);
+      stroke-width: 1;
+    }
+    #d3-canvas .axes-data-halo {
+      opacity: 0.22;
+      filter: blur(3px);
+    }
+    #d3-canvas .axes-data-point {
+      stroke: #0a0e1a;
+      stroke-width: 1.25;
+      vector-effect: non-scaling-stroke;
+    }
+    #d3-canvas .axes-data-point--hawkish { fill: var(--color-gold); }
+    #d3-canvas .axes-data-point--dovish { fill: var(--color-dovish); }
+    #d3-canvas .axes-data-point--neutral { fill: #cfd6e4; }
+    #d3-canvas .axes-data-halo--hawkish { fill: var(--color-gold); }
+    #d3-canvas .axes-data-halo--dovish { fill: var(--color-dovish); }
+    #d3-canvas .axes-data-halo--neutral { fill: #cfd6e4; }
+
+    @media (min-width: 601px) and (max-width: 1100px) {
+      .axes-reading-key {
+        grid-template-columns: 1fr auto;
+        gap: 9px 12px;
+        padding-bottom: 10px;
+      }
+      .axes-reading-kicker {
+        font-size: clamp(10px, 1vw, 12px);
+        letter-spacing: 2px;
+      }
+      .axes-reading-copy {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        font-size: clamp(15px, 1.8vw, 18px);
+      }
+      .axes-reading-divider { display: none; }
+      .axes-reading-direction {
+        gap: 9px;
+        font-size: 10px;
+        letter-spacing: 0.7px;
+      }
+    }
+
+    @media (min-width: 601px) and (max-width: 1100px) and (max-height: 620px) {
+      #stageAxes > .sticky-container { padding-top: 10vh !important; }
+    }
 
     @media (max-width: 600px) {
       .axes-reading-key {
@@ -5855,7 +5922,9 @@
             partícula cercana no debe leerse como un parche).
          3) axesFocusT: cuando la sección de ejes está al frente, la nube cede
             aún más — lo importante es el scatter de intervenciones. */
-      pMat.opacity = (0.95 - 0.5 * scatterProgress) * (1 - 0.5 * veilShape) * (1 - 0.55 * axesFocusT);
+      /* En el plano los puntos dejan de competir con el polvo ambiental: la
+         atm&oacute;sfera queda como profundidad, no como ruido sobre el dato. */
+      pMat.opacity = (0.95 - 0.5 * scatterProgress) * (1 - 0.5 * veilShape) * (1 - 0.82 * axesFocusT);
 
       if (renderer) renderer.render(scene, camera);
     }
@@ -5908,6 +5977,22 @@
     /* 0→1 mientras #stageAxes es protagonista: el enjambre ambiental cede
        protagonismo (opacidad) para que el scatter de intervenciones mande. */
     let axesFocusT = 0;
+
+    /* La altura de cada punto usa la puntuación de orientación disponible en la
+       muestra. Así el plano comunica algo más que color: la distancia al eje
+       central conserva la diferencia entre señales fuertes y suaves, siempre de
+       forma determinística para que la composición no cambie al recargar. */
+    function getQuoteAxisSentiment(q) {
+      const label = q?.label || 'neutral';
+      const score = THREE.MathUtils.clamp(Number(q?.score) || 0.7, 0, 1);
+      const seed = String(q?.date || '').length + String(q?.text || '').length;
+      let x = Math.sin(seed * 9301 + 49297) * 233280;
+      const seeded = x - Math.floor(x);
+      if (label === 'hawkish') return 0.30 + score * 0.40;
+      if (label === 'dovish') return -(0.30 + score * 0.40);
+      return (seeded - 0.5) * 0.18;
+    }
+
     function initD3Axes() {
       const container = document.getElementById('d3-canvas');
       if (!container) return;
@@ -5924,7 +6009,10 @@
         .style('position', 'absolute')
         .style('inset', '0');
 
-      const margin = { top: height * 0.35, right: width * 0.15, bottom: height * 0.25, left: width * 0.15 };
+      /* Más área vertical para que la diferencia entre tonos se lea como un
+         mapa y no como una hilera de puntos. El eje cero permanece cerca del
+         centro óptico de la pantalla. */
+      const margin = { top: height * 0.28, right: width * 0.15, bottom: height * 0.18, left: width * 0.15 };
       const innerW = width - margin.left - margin.right;
       const innerH = height - margin.top - margin.bottom;
 
@@ -5938,36 +6026,107 @@
 
       d3Scales = { xScale, yScale };
 
+      const axisY = margin.top + innerH / 2;
       const g = svg.append('g');
-      const xAxis = d3.axisBottom(xScale).ticks(8).tickFormat(d3.timeFormat('%Y'));
-      g.append('g')
-        .attr('transform', `translate(0, ${margin.top + innerH / 2})`)
-        .call(xAxis)
-        .selectAll('text')
-        .style('fill', 'rgba(255,255,255,0.4)')
-        .style('font-family', 'sans-serif')
-        .style('font-size', 'clamp(12px, 1.05vw, 13px)');
 
-      g.selectAll('.domain, .tick line')
-        .style('stroke', 'rgba(255,255,255,0.1)');
+      /* Campo de lectura: una caja casi invisible, guías verticales y dos
+         referencias horizontales. El marco da estructura al mapa sin quitarle
+         aire ni hacerlo parecer un dashboard convencional. */
+      g.append('rect')
+        .attr('class', 'axes-plot-field')
+        .attr('x', margin.left)
+        .attr('y', margin.top)
+        .attr('width', innerW)
+        .attr('height', innerH)
+        .attr('rx', Math.min(8, width * 0.01));
+
+      const tickCount = width < 500 ? 4 : width < 900 ? 6 : 8;
+      const gridLayer = g.append('g').attr('class', 'axes-grid');
+      gridLayer.selectAll('.axes-grid-vertical')
+        .data(xScale.ticks(tickCount))
+        .join('line')
+        .attr('class', 'axes-grid-vertical')
+        .attr('x1', (date) => xScale(date)).attr('x2', (date) => xScale(date))
+        .attr('y1', margin.top).attr('y2', margin.top + innerH);
+
+      [-0.5, 0.5].forEach((value) => {
+        g.append('line')
+          .attr('class', 'axes-grid-guide')
+          .attr('x1', margin.left).attr('x2', width - margin.right)
+          .attr('y1', yScale(value)).attr('y2', yScale(value));
+      });
+      g.append('line')
+        .attr('class', 'axes-zero-line')
+        .attr('x1', margin.left).attr('x2', width - margin.right)
+        .attr('y1', axisY).attr('y2', axisY);
+
+      /* Puntos de dato nítidos en SVG. El enjambre 3D queda como atmósfera; este
+         plano es la lectura precisa de las 99 intervenciones dentro del rango
+         2000–2015 y el radio recupera el score de orientación. */
+      const domainStart = new Date(2000, 0, 1).getTime();
+      const domainEnd = new Date(2015, 11, 31).getTime();
+      const axisQuotes = quotes
+        .map((q, index) => ({ q, index, date: new Date(q.date) }))
+        .filter(({ date }) => date.getTime() >= domainStart && date.getTime() <= domainEnd);
+      const dataLayer = svg.append('g').attr('class', 'axes-data-layer');
+      const dataPoints = dataLayer.selectAll('.axes-data-point')
+        .data(axisQuotes, (d) => d.index)
+        .join((enter) => {
+          const group = enter.append('g').attr('class', 'axes-data-mark');
+          group.append('circle').attr('class', 'axes-data-halo');
+          group.append('circle').attr('class', 'axes-data-point');
+          return group;
+        });
+
+      dataPoints
+        .attr('transform', ({ q, date }) => `translate(${xScale(date)}, ${yScale(getQuoteAxisSentiment(q))})`)
+        .attr('data-quote-index', ({ index }) => index)
+        .attr('class', ({ q }) => `axes-data-mark axes-data-mark--${q.label || 'neutral'}`)
+        .each(function ({ q }) {
+          const score = THREE.MathUtils.clamp(Number(q.score) || 0.7, 0, 1);
+          const radius = 2.8 + score * 2.1;
+          const mark = d3.select(this);
+          mark.select('.axes-data-halo')
+            .attr('r', radius * 1.9)
+            .attr('class', `axes-data-halo axes-data-halo--${q.label || 'neutral'}`);
+          mark.select('.axes-data-point')
+            .attr('r', radius)
+            .attr('class', `axes-data-point axes-data-point--${q.label || 'neutral'}`);
+        });
+
+      const xAxis = d3.axisBottom(xScale)
+        .ticks(tickCount)
+        .tickSizeOuter(0)
+        .tickFormat(d3.timeFormat('%Y'));
+      const xAxisGroup = g.append('g')
+        .attr('class', 'axes-x-axis')
+        .attr('transform', `translate(0, ${axisY})`)
+        .call(xAxis);
+      xAxisGroup.selectAll('text')
+        .attr('dy', '1.55em')
+        .style('fill', 'rgba(255,255,255,0.48)')
+        .style('font-family', 'var(--font-body)')
+        .style('font-size', width < 500 ? '10px' : '12px')
+        .style('letter-spacing', '0.2px');
+      xAxisGroup.selectAll('.domain, .tick line')
+        .style('stroke', 'rgba(255,255,255,0.13)');
 
       /* Etiquetas de tono en el eje Y — el copy de la sección lo promete
-         ("arriba restrictivo, abajo expansivo") pero el eje no se dibujaba.
-         En pantallas angostas el anclaje 'end' las cortaba por el borde
-         izquierdo: allí van ancladas al inicio, pegadas al margen. */
+         ("arriba restrictivo, abajo expansivo") y ahora se apoyan en el marco
+         del plano, no flotan separadas del gráfico. */
       const narrowAxes = width < 640;
       const toneX = narrowAxes ? 10 : margin.left - 16;
       const toneAnchor = narrowAxes ? 'start' : 'end';
       svg.append('text')
-        .attr('x', toneX).attr('y', margin.top - 4)
+        .attr('x', toneX).attr('y', margin.top - 12)
         .attr('text-anchor', toneAnchor)
-        .style('fill', 'rgba(255,215,106,0.75)').style('font-size', 'clamp(12px, 1.05vw, 13px)')
+        .style('fill', 'rgba(255,215,106,0.82)').style('font-size', width < 500 ? '11px' : '13px')
         .style('letter-spacing', '2px').style('text-transform', 'uppercase')
         .text('Hawkish ↑');
       svg.append('text')
-        .attr('x', toneX).attr('y', margin.top + innerH + 2)
+        .attr('x', toneX).attr('y', margin.top + innerH + 20)
         .attr('text-anchor', toneAnchor)
-        .style('fill', 'rgba(138,180,248,0.75)').style('font-size', 'clamp(12px, 1.05vw, 13px)')
+        .style('fill', 'rgba(138,180,248,0.82)').style('font-size', width < 500 ? '11px' : '13px')
         .style('letter-spacing', '2px').style('text-transform', 'uppercase')
         .text('Dovish ↓');
 
@@ -6045,17 +6204,9 @@
         const cD = new THREE.Color(0x8ab4f8);
         const cN = new THREE.Color(0xcfd6e4);
 
-        function seededRandom(seed) {
-          let x = Math.sin(seed * 9301 + 49297) * 233280;
-          return x - Math.floor(x);
-        }
-
         quotes.forEach((q, i) => {
           const date = new Date(q.date);
-          const seed = q.date.length + q.text.length;
-          const sentiment = q.label === 'hawkish' ? 0.3 + seededRandom(seed) * 0.4
-                          : q.label === 'dovish' ? -0.3 - seededRandom(seed + 1) * 0.4
-                          : (seededRandom(seed + 2) - 0.5) * 0.3;
+          const sentiment = getQuoteAxisSentiment(q);
           const pos = get3DPosFromData(date, sentiment);
           bgPositions[i * 3]     = pos.x;
           bgPositions[i * 3 + 1] = pos.y;
@@ -6093,10 +6244,7 @@
             const arr = geo.attributes.position.array;
             quotes.forEach((q, i) => {
               const d = new Date(q.date);
-              const sd = q.date.length + q.text.length;
-              const s = q.label === 'hawkish' ? 0.3 + seededRandom(sd) * 0.4
-                      : q.label === 'dovish' ? -0.3 - seededRandom(sd + 1) * 0.4
-                      : (seededRandom(sd + 2) - 0.5) * 0.3;
+              const s = getQuoteAxisSentiment(q);
               const p3 = get3DPosFromData(d, s);
               arr[i * 3] = p3.x; arr[i * 3 + 1] = p3.y; arr[i * 3 + 2] = p3.z;
             });
@@ -6902,7 +7050,10 @@
         const p = self.progress;
         const fadeIn = gsap.utils.clamp(0, 1, p / 0.15);
         const fadeOut = gsap.utils.clamp(0, 1, (1 - p) / 0.15);
-        bgScatter.mat.opacity = Math.min(fadeIn, fadeOut) * 0.9;
+        /* La versión SVG del plano es la capa nítida y legible; el scatter 3D
+           queda reservado para la transición ambiental y no duplica los puntos
+           con un segundo halo borroso durante la lectura. */
+        bgScatter.mat.opacity = 0;
         axesFocusT = Math.min(fadeIn, fadeOut);
       }
     });
