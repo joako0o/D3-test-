@@ -1830,6 +1830,14 @@
     loader.setDRACOLoader(dracoLoader);
     loader.load('monedav5-draco.glb', (gltf) => {
       const model = gltf.scene;
+      /* El GLB se exportó con el disco en el plano Y-Z (su nodo raíz trae una
+         rotación de +90° en X): sin corrección, el eje fino de la moneda queda
+         en X y la cámara (en +Z) la ve DE CANTO en reposo, descuadrándose
+         respecto a la aureola. Rotar el modelo -90° en Y lleva el eje fino a Z,
+         es decir, la cara de la moneda mira a la cámara. El pivote es el centro
+         geométrico (la traslación de centrado va en model.position, no en el
+         giro), así que la proyección del halo no se altera. */
+      model.rotation.y = -Math.PI / 2;
       const box = new THREE.Box3().setFromObject(model);
       if (!box.isEmpty()) {
         const center = box.getCenter(new THREE.Vector3());
