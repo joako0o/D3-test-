@@ -1517,11 +1517,12 @@
                       'classic' → comportamiento ANTERIOR (fade-out simple).
                             ← cambiar a 'classic' para volver a la versión previa */
         transition: 'doorway',
-        roomCamZ: 2.2,     // z de cámara al terminar el dolly (0 = plano de la puerta)
-        roomCamY: 0.5,     // altura de cámara dentro de la sala
-        roomLook: { x: 0, y: 0.45, z: -1.6 },  // punto de mira al entrar a la sala
+        roomCamZ: -0.5,    // z al terminar el dolly: la cámara queda dentro (0 = umbral)
+        roomCamY: 0.62,    // altura que limpia los escalones al cruzar
+        roomLook: { x: 0, y: 0.45, z: -2.0 },  // punto de mira ya dentro de la sala
         roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
         veilFog: 0.06,     // pico del velo de niebla durante el cruce
+        fovKick: 4,        // grados extra de FOV durante el dolly (0 → 1 → 0)
       },
       doorText: {
         /* ══════════════════════════════════════════════════════════════════════
@@ -2195,7 +2196,7 @@
     const _roomLookTarget = new THREE.Vector3(
       CONFIG.door?.roomLook?.x ?? 0,
       CONFIG.door?.roomLook?.y ?? 0.45,
-      CONFIG.door?.roomLook?.z ?? -1.6
+      CONFIG.door?.roomLook?.z ?? -2.0
     );
 
 
@@ -2330,8 +2331,8 @@
         const crossEase = THREE.MathUtils.smoothstep(crossT, 0, 1);
         camera.position.set(
           CONFIG.camera.x,
-          THREE.MathUtils.lerp(currentCamY, CONFIG.door.roomCamY ?? 0.5, crossEase),
-          THREE.MathUtils.lerp(baseCamZ, CONFIG.door.roomCamZ ?? 2.2, crossEase)
+          THREE.MathUtils.lerp(currentCamY, CONFIG.door.roomCamY ?? 0.62, crossEase),
+          THREE.MathUtils.lerp(baseCamZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
         );
         _roomLook.set(0, camBaseY, 0).lerp(_roomLookTarget, crossEase);
         camera.lookAt(_roomLook);
@@ -2348,12 +2349,32 @@
         roomLight.intensity = lightT * (CONFIG.door?.roomLight?.intensity ?? 10);
       }
 
-      /* La Sala (b1): velo de niebla durante el cruce (sube y baja; oculta el
-         cambio de plano aunque la puerta no haya cargado). */
-      if (DOOR_MODE === 'doorway' && scene.fog) {
-        const veil = Math.sin(Math.PI * THREE.MathUtils.clamp(crossT, 0, 1)) * (CONFIG.door?.veilFog ?? 0);
+      /* La Sala (b1): la cámara cruza el plano de la puerta. El FOV hace un
+         push breve 0 → 1 → 0 para vender la aceleración sin dejar un zoom
+         permanente al terminar el dolly. */
+      const targetFov = CONFIG.camera.fov + (
+        DOOR_MODE === 'doorway'
+          ? Math.sin(Math.PI * THREE.MathUtils.clamp(crossT, 0, 1)) * (CONFIG.door?.fovKick ?? 4)
+          : 0
+      );
+      if (Math.abs(camera.fov - targetFov) > 0.01) {
+        camera.fov = targetFov;
+        camera.updateProjectionMatrix();
+      }
+
+      /* Velo concentrado en el cruce real del plano (crossT ≈ 0.8), no en el
+         centro arbitrario del trigger. Termina en 1 para devolver la escena a
+         su luminosidad normal una vez dentro. */
+      const veilShape = DOOR_MODE === 'doorway'
+        ? Math.sin(Math.PI * THREE.MathUtils.clamp((crossT - 0.6) / 0.4, 0, 1))
+        : 0;
+      if (scene.fog) {
+        const veil = veilShape * (CONFIG.door?.veilFog ?? 0);
         scene.fog.density = Math.max(scene.fog.density, veil);
       }
+      /* Atenuación puntual de la nube: evita que una partícula cercana se lea
+         como un parche al pasar la cámara por el umbral. */
+      pMat.opacity = 0.95 * (1 - 0.5 * veilShape);
 
       if (renderer) renderer.render(scene, camera);
     }
