@@ -1466,7 +1466,11 @@
       coin: {
         scale: 2.15, swaySpeedY: 0.45, tiltBase: -0.05,
         tiltOscillation: 0.025, tiltSpeed: 0.5,
-        floatAmount: 0.04, floatSpeed: 0.7, baseY: 1.4,
+        floatAmount: 0.04, floatSpeed: 0.7, baseY: 0.9,
+        /* baseY 0.9 proyecta la moneda a ~42% del alto del viewport, que es la
+           altura a la que la aureola dorada de fondo centra su círculo
+           (body::before: circle at 50% 42%). Con baseY 1.4 caía a ~30% y la
+           moneda quedaba por encima del círculo. */
         color: '#ffd76a', metalness: 1.0, roughness: 0.22,
         envMapIntensity: 1.05, emissive: '#3d2508', emissiveIntensity: 0.05,
       },
@@ -2960,7 +2964,10 @@
     });
     heroGroup.to('.hero-title', { opacity: 0, y: -60, ease: 'cinematicSilk' }, 0);
     heroGroup.to('.scroll-hint', { opacity: 0, ease: 'cinematicSilk' }, 0);
-    heroGroup.to('#haloWrap', { opacity: 0, y: -60, ease: 'cinematicSilk' }, 0);
+    /* #haloWrap no se anima con y aquí: su tranform se fija cada frame desde
+       animate() para seguir la proyección de la moneda. Un y de GSAP además
+       competía con ese transform y podía descuadrar el halo respecto a la moneda. */
+    heroGroup.to('#haloWrap', { opacity: 0, ease: 'cinematicSilk' }, 0);
 
     ScrollTrigger.create({
       trigger: '.hero',
