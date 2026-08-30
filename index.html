@@ -231,6 +231,159 @@
       font-weight: 300;
     }
 
+    /* ─── STAGE 3b — Hook editorial · señales hawkish/dovish ─── */
+    .hook-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: min(780px, 90vw);
+    }
+    .hook-lead {
+      max-width: 740px;
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: clamp(24px, 3vw, 44px);
+      font-weight: 500;
+      line-height: 1.28;
+      letter-spacing: -0.015em;
+      color: var(--color-text-primary);
+      text-wrap: balance;
+    }
+    .hook-lead .hook-signal {
+      font-style: italic;
+      color: var(--color-gold);
+    }
+    .hook-caption {
+      margin-top: 26px;
+      text-align: center;
+      font-size: var(--fs-micro);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+    }
+    .hook-divider {
+      width: min(600px, 78vw);
+      height: 1px;
+      margin: 42px auto 0;
+      overflow: hidden;
+    }
+    .hook-divider span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,215,106,0.45), transparent);
+      transform-origin: center center;
+    }
+    .signal-list {
+      width: min(680px, 90vw);
+      margin-top: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .signal-card {
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 22px 24px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      text-align: left;
+      pointer-events: auto;
+      transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+    }
+    .signal-card:hover { transform: translateY(-2px); }
+    .signal-card--hawkish:hover {
+      border-color: rgba(255,215,106,0.28);
+      background: rgba(255,215,106,0.04);
+    }
+    .signal-card--dovish:hover {
+      border-color: rgba(138,180,248,0.28);
+      background: rgba(138,180,248,0.04);
+    }
+    .signal-num {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.35);
+    }
+    .signal-caption {
+      display: block;
+      margin-bottom: 6px;
+      font-size: var(--fs-micro);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.38);
+    }
+    .signal-phrase {
+      font-family: var(--font-display);
+      font-size: clamp(16px, 1.8vw, 22px);
+      font-weight: 500;
+      line-height: 1.35;
+      color: #ffffff;
+    }
+    .signal-card--hawkish .signal-phrase strong { color: var(--color-gold); font-weight: 600; }
+    .signal-card--dovish .signal-phrase strong { color: var(--color-dovish); font-weight: 600; }
+    .signal-result {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      padding-left: 18px;
+      border-left: 1px solid rgba(255,255,255,0.10);
+    }
+    .signal-tag {
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: var(--fs-micro);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .signal-card--hawkish .signal-tag {
+      color: var(--color-gold);
+      background: rgba(255,215,106,0.10);
+      border: 1px solid rgba(255,215,106,0.18);
+    }
+    .signal-card--dovish .signal-tag {
+      color: var(--color-dovish);
+      background: rgba(138,180,248,0.10);
+      border: 1px solid rgba(138,180,248,0.18);
+    }
+    .signal-note {
+      font-size: var(--fs-micro);
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.45);
+    }
+    .hook-footnote {
+      max-width: 620px;
+      margin-top: 38px;
+      text-align: center;
+      font-size: var(--fs-small);
+      line-height: 1.7;
+      font-weight: 300;
+      color: var(--color-text-muted);
+      text-wrap: balance;
+    }
+
+    @media (max-width: 600px) {
+      .hook-lead { font-size: clamp(22px, 2.7vw, 32px); }
+      .hook-divider { margin-top: 32px; }
+      .signal-card { grid-template-columns: 32px 1fr; }
+      .signal-result {
+        grid-column: 1 / -1;
+        align-items: flex-start;
+        flex-direction: row;
+        gap: 12px;
+        margin-top: 8px;
+        padding-left: 0;
+        border-left: none;
+      }
+      .hook-footnote { margin-top: 30px; }
+    }
+
     /* ─── STAGE 3 — Counters ─── */
     .stage-counters {
       position: relative; z-index: 4;
@@ -951,26 +1104,53 @@
   </section>
 
   <!-- ═══════ STAGE 3 — Hook (ACTO 3: EL MÉTODO) ═══════ -->
-  <section id="stageHook" style="position: relative; width: 100%; height: 300vh; pointer-events: none;">
+  <section id="stageHook" style="position: relative; width: 100%; height: 240vh; pointer-events: none;">
     <div class="sticky-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;" id="textParticleSection">
       
       <!-- TÍTULO -->
-      <h2 data-hook style="font-family: var(--font-body); font-size: var(--fs-h3); font-weight: 600; text-transform: uppercase; letter-spacing: 4px; color: var(--color-text-secondary); margin-bottom: 1.5rem;">
+      <h2 data-hook style="font-family: var(--font-body); font-size: var(--fs-h3); font-weight: 600; text-transform: uppercase; letter-spacing: 4px; color: var(--color-text-secondary); margin-bottom: 1.4rem;">
         El M&eacute;todo
       </h2>
-      
-      <!-- PÁRRAFO PRINCIPAL -->
-      <p data-hook id="hookParagraph" style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 650px; position: relative;">
-        El modelo busca se&ntilde;ales de <span class="jargon-term" style="color: var(--color-gold); font-weight: 600; cursor: help; border-bottom: 1px dotted var(--color-gold-dim);" title="Tono restrictivo: se&ntilde;ales de preocupaci&oacute;n por inflaci&oacute;n o exceso de actividad">hawkish</span> y <span class="jargon-term" style="color: var(--color-dovish); font-weight: 600; cursor: help; border-bottom: 1px dotted var(--color-dovish-dim);" title="Tono expansivo: se&ntilde;ales de debilidad econ&oacute;mica o necesidad de est&iacute;mulo">dovish</span>. <br><br>
-        Una menci&oacute;n a un <span style="display: inline-block; text-align: center;"><span class="word-hawkish" data-sentiment="hawkish" style="color: var(--color-gold); display: inline-block;">riesgo de inflaci&oacute;n</span><span class="keyword-underline" style="display: block; width: 100%; height: 2px; background-color: var(--color-gold); transform: scaleX(0); transform-origin: center center; margin-top: 2px;"></span></span> genera una alerta restrictiva, <br>
-        mientras que la preocupaci&oacute;n por la <span style="display: inline-block; text-align: center;"><span class="word-dovish" data-sentiment="dovish" style="color: var(--color-dovish); display: inline-block;">holgura econ&oacute;mica</span><span class="keyword-underline" style="display: block; width: 100%; height: 2px; background-color: var(--color-dovish); transform: scaleX(0); transform-origin: center center; margin-top: 2px;"></span></span> sugiere expansi&oacute;n.
-      </p>
 
-      <!-- Scanning light bar -->
-      <div id="scanLight" style="position: absolute; top: 0; left: 0; width: 100px; height: 100%; pointer-events: none; opacity: 0; z-index: 20; background: linear-gradient(90deg, transparent 0%, rgba(255,215,106,0.15) 30%, rgba(255,215,106,0.25) 50%, rgba(255,215,106,0.15) 70%, transparent 100%); filter: blur(8px); mix-blend-mode: screen;"></div>
-      
-      <!-- Micro-label -->
-      <div id="microLabel" style="position: absolute; pointer-events: none; opacity: 0; z-index: 25; transition: opacity 0.25s ease; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 4px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); white-space: nowrap; transform: translate(-50%, -120%);"></div>
+      <!-- TEXTO PRINCIPAL -->
+      <div class="hook-inner" id="hookContent">
+        <p class="hook-lead">
+          El modelo no lee el acta como un documento.<br>
+          La convierte en <span class="hook-signal">se&ntilde;ales.</span>
+        </p>
+
+        <p class="hook-caption">Dos lecturas, un mismo texto</p>
+
+        <div class="hook-divider"><span></span></div>
+
+        <div class="signal-list">
+          <article class="signal-card signal-card--hawkish">
+            <span class="signal-num">01</span>
+            <div class="signal-text">
+              <span class="signal-caption">Mencionar un</span>
+              <span class="signal-phrase"><strong>riesgo de inflaci&oacute;n</strong></span>
+            </div>
+            <div class="signal-result">
+              <span class="signal-tag">Hawkish</span>
+              <span class="signal-note">alerta restrictiva</span>
+            </div>
+          </article>
+
+          <article class="signal-card signal-card--dovish">
+            <span class="signal-num">02</span>
+            <div class="signal-text">
+              <span class="signal-caption">Preocuparse por la</span>
+              <span class="signal-phrase"><strong>holgura econ&oacute;mica</strong></span>
+            </div>
+            <div class="signal-result">
+              <span class="signal-tag">Dovish</span>
+              <span class="signal-note">lectura expansiva</span>
+            </div>
+          </article>
+        </div>
+
+        <p class="hook-footnote">El mismo acta puede contener ambas lecturas. Lo que cambia es cu&aacute;l pesa al momento de decidir.</p>
+      </div>
       
     </div>
   </section>
@@ -2066,88 +2246,14 @@
     });
 
     /* ────────────────────────────────
-       Text-to-Particle v2 — Scanning Light + Burst + Micro-label
+       Hook — señales hawkish/dovish
+       Rediseño editorial: el texto ya no se "escanea" con una barra de luz
+       ni explota en partículas. La sección ahora cuenta la idea como un
+       encabezado serif + dos tarjetas de señal (una hawkish, una dovish).
+       El scatter de #stageAxes sigue construyéndose aquí para que la
+       sección de ejes tenga datos que proyectar en el lienzo WebGL.
     ──────────────────────────────── */
     function initTextToParticlePOC(scene, camera) {
-      const hookParagraph = document.querySelector('#hookParagraph');
-      if (!hookParagraph) return;
-
-      const hawkishSpan = hookParagraph.querySelector('.word-hawkish');
-      const dovishSpan  = hookParagraph.querySelector('.word-dovish');
-      if (!hawkishSpan || !dovishSpan) return;
-
-      const hawkContainer = hawkishSpan.parentElement;
-      const dovishContainer = dovishSpan.parentElement;
-
-      const scanLight = document.getElementById('scanLight');
-      const microLabel = document.getElementById('microLabel');
-
-      const KEYWORDS = [
-        { span: hawkishSpan, container: hawkContainer, sentiment: 0.8,  color: 0xffd76a, label: 'hawkish', cssColor: '#ffd76a' },
-        { span: dovishSpan,  container: dovishContainer, sentiment: -0.6, color: 0x8ab4f8, label: 'dovish',  cssColor: '#8ab4f8' }
-      ];
-
-      const BURST_COUNT = 12;
-      const allBursts = [];
-      const keywordTriggers = KEYWORDS.map(() => false);
-
-      function getElementWorldCenter(el) {
-        const rect = el.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return null;
-        const xNDC = ((rect.left + rect.width / 2) / window.innerWidth) * 2 - 1;
-        const yNDC = -(((rect.top + rect.height / 2) / window.innerHeight) * 2 - 1);
-        const v = new THREE.Vector3(xNDC, yNDC, 0.5).unproject(camera);
-        const d = v.sub(camera.position).normalize();
-        const dist = -camera.position.z / d.z;
-        return camera.position.clone().add(d.multiplyScalar(dist));
-      }
-
-      function createBurstParticles(kw, origin) {
-        const positions = new Float32Array(BURST_COUNT * 3);
-        const restPositions = new Float32Array(BURST_COUNT * 3);
-        const drift = [];
-        const dateMap = {
-          hawkish: new Date(2003, 0, 1),
-          dovish:  new Date(2012, 0, 1)
-        };
-        const targetDate = dateMap[kw.label] || new Date(2008, 0, 1);
-        const targetPos = get3DPosFromData(targetDate, kw.sentiment, camera);
-
-        for (let i = 0; i < BURST_COUNT; i++) {
-          positions[i * 3]     = origin.x;
-          positions[i * 3 + 1] = origin.y;
-          positions[i * 3 + 2] = origin.z;
-          restPositions[i * 3]     = origin.x;
-          restPositions[i * 3 + 1] = origin.y;
-          restPositions[i * 3 + 2] = origin.z;
-          const angle = Math.random() * Math.PI * 2;
-          const dist = 0.12 + Math.random() * 0.25;
-          drift.push({
-            x: Math.cos(angle) * dist,
-            y: Math.sin(angle) * dist,
-            z: (Math.random() - 0.5) * 0.08
-          });
-        }
-
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-        const mat = new THREE.PointsMaterial({
-          size: 0.1,
-          color: kw.color,
-          map: getParticleTexture(),
-          transparent: true,
-          opacity: 0,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false
-        });
-
-        const points = new THREE.Points(geo, mat);
-        scene.add(points);
-
-        return { positions, restPositions, drift, targetPos, geo, mat, points, origin, triggerP: 0, active: true };
-      }
-
       function populateScatterBackground() {
         const quotes = window.QUOTES || [];
         if (quotes.length === 0) return;
@@ -2218,173 +2324,37 @@
       const bgScatterLocal = populateScatterBackground();
       bgScatter = bgScatterLocal;
 
-      const clamp01 = (v) => Math.max(0, Math.min(1, v));
-      let lastProgress = 0;
-      let microLabelUntil = 0; // progreso de scroll hasta el que el micro-label queda visible
+      const hookContent = document.getElementById('hookContent');
+      if (!hookContent) return;
+      const rows = gsap.utils.toArray(hookContent.querySelectorAll('.signal-card'));
+      const dividerSpan = hookContent.querySelector('.hook-divider > span');
+      const footnote = hookContent.querySelector('.hook-footnote');
 
-      ScrollTrigger.create({
-        trigger: '#stageHook',
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 1,
-        onUpdate: (self) => {
-          const p = self.progress;
-          const scrollingDown = p >= lastProgress;
-
-          // Reset everything when scrolling back up past start
-          if (!scrollingDown && p < 0.02) {
-            // Remove all particles
-            allBursts.forEach(burst => {
-              if (burst.active) {
-                scene.remove(burst.points);
-                burst.geo.dispose();
-                burst.mat.dispose();
-                burst.active = false;
-              }
-            });
-            allBursts.length = 0;
-
-            // Reset keyword triggers
-            keywordTriggers.forEach((_, i) => keywordTriggers[i] = false);
-
-            // Reset text visibility
-            hookParagraph.style.opacity = 1;
-
-            // Reset keywords
-            KEYWORDS.forEach(kw => {
-              kw.span.style.textShadow = '';
-            });
-            hookParagraph.querySelectorAll('.keyword-underline').forEach(ul => {
-              ul.style.transform = 'scaleX(0)';
-            });
-
-            // Reset scan light
-            scanLight.style.opacity = 0;
-
-            // Reset micro label
-            microLabel.style.opacity = 0;
-            microLabelUntil = 0;
-
-            // Reset background scatter
-            if (bgScatter) bgScatter.mat.opacity = 0;
-          }
-
-          lastProgress = p;
-
-          /* Micro-label controlado por scroll (no por reloj: el setTimeout
-             se apagaba a mitad de camino si las dos keywords disparaban juntas) */
-          if (microLabelUntil && p > microLabelUntil) {
-            microLabel.style.opacity = 0;
-            microLabelUntil = 0;
-          }
-
-          /* ═══════════════════════════════════════════
-             PHASE 1: HIGHLIGHT KEYWORDS (0% – 8%)
-             Keywords glow + underlines appear
-             ═══════════════════════════════════════════ */
-          const hl = clamp01(p / 0.08);
-          KEYWORDS.forEach(kw => {
-            kw.span.style.textShadow = `0 0 ${hl * 25}px currentColor`;
-          });
-          hookParagraph.querySelectorAll('.keyword-underline').forEach(ul => {
-            ul.style.transform = `scaleX(${hl})`;
-          });
-
-          /* ═══════════════════════════════════════════
-             PHASE 2: SCANNING LIGHT (10% – 45%)
-             Light moves across the paragraph
-             ═══════════════════════════════════════════ */
-          const scanProgress = clamp01((p - 0.10) / 0.35);
-          const paraRect = hookParagraph.getBoundingClientRect();
-          const lightX = paraRect.left + scanProgress * paraRect.width - 50;
-
-          if (p > 0.10 && p < 0.50) {
-            // Fade in during first 10% of scan, fade out during last 5%
-            const scanFadeIn = clamp01((p - 0.10) / 0.03);
-            const scanFadeOut = p < 0.45 ? 1 : 1 - (p - 0.45) / 0.05;
-            scanLight.style.opacity = scanFadeIn * scanFadeOut;
-            scanLight.style.transform = `translateX(${lightX}px)`;
-          } else {
-            scanLight.style.opacity = 0;
-          }
-
-          /* ═══════════════════════════════════════════
-             PHASE 3: PARTICLES EMERGE (25% – 50%)
-             When light passes keyword, particles appear
-             ═══════════════════════════════════════════ */
-          KEYWORDS.forEach((kw, idx) => {
-            if (keywordTriggers[idx]) return;
-            if (p < 0.25 || p > 0.50) return; // Only check during this phase
-            const kwRect = kw.span.getBoundingClientRect();
-            const kwCenter = kwRect.left + kwRect.width / 2;
-            const lightCenter = lightX + 50;
-            const distance = Math.abs(kwCenter - lightCenter);
-
-            if (distance < 60 && scanProgress > 0.10) {
-              keywordTriggers[idx] = true;
-              const origin = getElementWorldCenter(kw.span);
-              if (!origin) return;
-
-              const burst = createBurstParticles(kw, origin);
-              burst.triggerP = p;
-              allBursts.push(burst);
-
-              microLabel.innerHTML = `<span style="color: ${kw.cssColor}">"${kw.span.textContent}"</span> → ${kw.label}`;
-              microLabel.style.opacity = 1;
-              microLabel.style.left = `${kwRect.left + kwRect.width / 2}px`;
-              microLabel.style.top = `${kwRect.top - 30}px`;
-              microLabel.style.color = kw.cssColor;
-              microLabelUntil = p + 0.14;
-            }
-          });
-
-          /* ═══════════════════════════════════════════
-             PHASE 4: PARTICLE DRIFT (45% – 75%)
-             Particles drift outward after scan ends
-             ═══════════════════════════════════════════ */
-          allBursts.forEach(burst => {
-            if (!burst.active) return;
-            const age = clamp01((p - burst.triggerP) / 0.45);
-
-            /* Fade-in rápido (10% de la vida): antes tardaba el 20% de un ciclo
-               más corto y las partículas alcanzaban opacidad plena recién a
-               mitad de su vida, justo antes de que el fade global las matara */
-            const fadeIn = clamp01(age / 0.10);
-            burst.mat.opacity = fadeIn * 0.85;
-
-            /* Drift moderado (×40 → ×8: antes volaban 5–10 unidades y salían de
-               pantalla) + migración hacia el punto de datos del scatter —
-               targetPos existía pero nunca se usaba */
-            const drift = 1 - Math.pow(1 - age, 2);
-            const mig = drift * 0.55;
-            for (let i = 0; i < BURST_COUNT; i++) {
-              const idx = i * 3;
-              burst.positions[idx]     = burst.restPositions[idx]     + burst.drift[i].x * drift * 8 + (burst.targetPos.x - burst.origin.x) * mig;
-              burst.positions[idx + 1] = burst.restPositions[idx + 1] + burst.drift[i].y * drift * 8 + (burst.targetPos.y - burst.origin.y) * mig;
-              burst.positions[idx + 2] = burst.restPositions[idx + 2] + burst.drift[i].z * drift * 4 + (burst.targetPos.z - burst.origin.z) * mig;
-            }
-            burst.geo.attributes.position.needsUpdate = true;
-          });
-
-          /* ═══════════════════════════════════════════
-             PHASE 5: BACKGROUND SCATTER → movido a #stageAxes
-             (el scatter vive ahora durante la sección de ejes; ver
-             ScrollTrigger más abajo. Antes nacía y moría dentro del Hook
-             con opacidad 0.15 y la sección Axes quedaba sin datos.)
-             ═══════════════════════════════════════════ */
-
-          /* ═══════════════════════════════════════════
-             PHASE 6: GLOBAL FADE (80% – 100%)
-             Everything fades together when leaving
-             ═══════════════════════════════════════════ */
-          const globalFade = p > 0.80 ? 1 - (p - 0.80) / 0.20 : 1;
-          hookParagraph.style.opacity = globalFade;
-          allBursts.forEach(burst => {
-            if (burst.active) burst.mat.opacity *= globalFade;
-          });
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: '#stageHook',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 1
         }
-      });
+      })
+        .fromTo('.hook-lead',
+          { opacity: 0, y: 18 },
+          { opacity: 1, y: 0, duration: 0.16, ease: 'none' }, 0)
+        .fromTo('.hook-caption',
+          { opacity: 0, y: 12 },
+          { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.18)
+        .fromTo(rows,
+          { opacity: 0, y: 28 },
+          { opacity: 1, y: 0, duration: 0.16, ease: 'none', stagger: 0.10 }, 0.30)
+        .fromTo(dividerSpan,
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.18, ease: 'none' }, 0.32)
+        .fromTo(footnote,
+          { opacity: 0, y: 14 },
+          { opacity: 1, y: 0, duration: 0.16, ease: 'none' }, 0.58);
     }
+
 
     initTextToParticlePOC(scene, camera);
 
