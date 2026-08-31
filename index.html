@@ -67,7 +67,7 @@
          los coeficientes vw; los mínimos (móvil) respetan legibilidad:
          cuerpo ≥16px y micro ≥12px (recomendación WCAG / clamp()).
          Ver best practices: min 16px cuerpo, máximo ≤2.5× mínimo. */
-      --fs-hero: clamp(18px, 2.6vw, 46px);
+      --fs-hero: clamp(16px, 2.1vw, 34px);
       --fs-h2: clamp(22px, 3.2vw, 52px);
       --fs-h3: clamp(16px, 1.8vw, 24px);
       --fs-body: clamp(16px, 1.9vw, 19px);
@@ -154,7 +154,7 @@
     .brand { font-size: var(--fs-small); letter-spacing: 4px; text-transform: uppercase; opacity: 0.7; }
     .brand strong { color: var(--color-gold); font-weight: 600; }
     .hero-title {
-      margin-top: auto; padding-bottom: 14vh; text-align: center;
+      margin-top: auto; padding-bottom: 7vh; text-align: center;
       position: relative;
     }
     .hero-title::before {
@@ -4204,6 +4204,9 @@
        (panel de debug, scrubber lateral, indicador de sección).
     ──────────────────────────────── */
     const DEBUG_MODE = /[?&]debug\b/.test(location.search);
+    /* Portada: la puerta GLB (puerta-draco.glb) entra desde el hero, detrás de
+       la moneda, y el scroll del acto 2 hace dolly hacia el umbral. */
+    const HERO_DOOR_LOCKUP = true;
     if (!DEBUG_MODE) {
       ['debugPanel', 'timelineScrubber', 'figureCabinet'].forEach((id) => {
         const el = document.getElementById(id);
@@ -4266,7 +4269,7 @@
            diámetro de la moneda. MÁS GRANDE: 1.6, 1.8 | MÁS CHICA: 1.1, 1.25.
            Con 1.25 la puerta mide ~36% del alto del viewport en 16:9.
            1.1 dejaba las dos figuras más chicas que el tamaño de referencia. */
-        widthVsCoin: 1.25,
+        widthVsCoin: 2.75,
         /* Línea de suelo: el pie de los escalones se apoya acá (unidades de mundo).
            En 0.15 queda por encima del bloque de texto de La Reunión, incluso
            en ventanas bajas y anchas. SUBIR: valores mayores | BAJAR: menores. */
@@ -4355,6 +4358,14 @@
       },
     };
 
+    if (HERO_DOOR_LOCKUP) {
+      CONFIG.door.widthVsCoin = 2.55;
+      CONFIG.door.fogDensity = 0.04;
+      CONFIG.camera.fov = 34;
+      CONFIG.camera.y = 0.72;
+      CONFIG.camera.z = 7.15;
+    }
+
     const canvas = document.getElementById('canvas');
     const loadEl = document.getElementById('load');
     const haloWrap = document.getElementById('haloWrap');
@@ -4401,7 +4412,7 @@
     const initialVp = getViewportSize();
     const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, initialVp.width / initialVp.height, 0.1, 100);
     camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
-    camera.lookAt(0, 0.7, 0);
+    camera.lookAt(0, HERO_DOOR_LOCKUP ? 0.95 : 0.7, HERO_DOOR_LOCKUP ? -0.25 : 0);
 
     let renderer = null;
     if (supportsWebGL) {
@@ -4560,10 +4571,12 @@
       const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 34);
       /* La moneda conserva una escala visual proporcional al viewport, pero no
          puede crecer hasta invadir el bloque editorial del hero. */
-      const minTargetPx = Math.min(w, h) * (isMobile ? 0.46 : 0.40);
+      const minTargetPx = Math.min(w, h) * (HERO_DOOR_LOCKUP
+        ? (isMobile ? 0.28 : 0.24)
+        : (isMobile ? 0.46 : 0.40));
       const baseTargetPx = Math.min(
-        Math.max(fontPx * 9, minTargetPx),
-        Math.min(w * 0.5, 680)
+        Math.max(fontPx * (HERO_DOOR_LOCKUP ? 6.2 : 9), minTargetPx),
+        Math.min(w * (HERO_DOOR_LOCKUP ? 0.28 : 0.5), HERO_DOOR_LOCKUP ? 320 : 680)
       );
 
       const titleTop = getHeroTitleTop();
@@ -4574,7 +4587,7 @@
         if (available > 0) {
           /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
              evita que el diámetro de la moneda se coma el copy del título. */
-          return Math.min(baseTargetPx, available * 0.82);
+          return Math.min(baseTargetPx, available * (HERO_DOOR_LOCKUP ? 0.48 : 0.82));
         }
         /* El título ya sube muy arriba: no hay cota positiva. En vez de dejar
            la moneda en su tamaño base (que choca con el texto), se reduce a un
@@ -5369,8 +5382,8 @@
        llega al capítulo cuando de verdad está en pantalla, y la coreografía
        se mantiene alineada al cambiar las alturas o el breakpoint. */
     const cameraChoreographyStops = [
-      { id: 'hero',               pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // base
-      { id: 'stageObjective',     pos: [0.00, 0.60, 5.10], look: [0.00, 0.60, 0.00] },   // acercamiento puerta
+      { id: 'hero',               pos: [0.00, 0.72, 7.15], look: [0.00, 0.95, -0.25] },  // lockup: moneda en el vano
+      { id: 'stageObjective',     pos: [0.00, 0.70, 4.45], look: [0.00, 0.78, -0.55] },  // dolly hacia el umbral
       /* #stageRoom se omite a propósito: el cruce puerta→sala lo gobierna el
          dolly propio (crossEff), así no lo pisamos con una deriva extra. */
       { id: 'stageHook',          pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },
@@ -5387,6 +5400,13 @@
 
     let cameraStops = [];
     function rebuildCameraChoreography() {
+      if (HERO_DOOR_LOCKUP) {
+        const y = CONFIG.coin.baseY;
+        cameraChoreographyStops[0].pos = [0, CONFIG.camera.y, CONFIG.camera.z];
+        cameraChoreographyStops[0].look = [0, y, -0.25];
+        cameraChoreographyStops[1].pos = [0, 0.62, 5.15];
+        cameraChoreographyStops[1].look = [0, 0.62, 0.00];
+      }
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
       const stops = [];
       const n = cameraChoreographyStops.length;
@@ -6454,6 +6474,7 @@
           objectReflection.style.opacity = (coinFade * 0.46).toFixed(3);
         }
         coin.visible = (currentStage === 1) && (coinFade > 0.01);
+        if (HERO_DOOR_LOCKUP) coin.position.z = 0.42;
         for (let i = 0; i < coinMats.length; i++) {
           coinMats[i].transparent = true;
           coinMats[i].opacity = coinFade;
@@ -6480,13 +6501,24 @@
         doorGroup.rotation.x = smoothMouseY * -0.03 * doorEase;
         doorGroup.position.x = CONFIG.door.baseX;
         doorGroup.position.z = CONFIG.door.baseZ ?? 0;
-        doorGroup.scale.setScalar(0.94 + 0.06 * doorEase);
+        const heroMul = HERO_DOOR_LOCKUP
+          ? THREE.MathUtils.lerp(
+              1.25 / Math.max(CONFIG.door.widthVsCoin, 1e-3),
+              1,
+              1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
+            )
+          : 1;
+        doorGroup.scale.setScalar((0.94 + 0.06 * doorEase) * heroMul);
         /* La puerta se APOYA, no flota: el pivote (centro de las hojas) se pone
            donde haga falta para que la base de los escalones quede en groundY.
            Anclar el pivote (el `baseY` anterior) hacía que al cambiar el tamaño la
            puerta subiera o bajara sola y se despegara de su propia sombra. */
         const doorBottomWorld = doorModel ? doorBottomOffset * doorModelGroup.scale.y * doorGroup.scale.x : 0;
-        doorGroup.position.y = (CONFIG.door.groundY ?? 0) - doorBottomWorld + smoothMouseY * -0.06 * doorEase;
+        const plantedY = (CONFIG.door.groundY ?? 0) - doorBottomWorld;
+        const lockupMix = HERO_DOOR_LOCKUP
+          ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
+          : 0;
+        doorGroup.position.y = THREE.MathUtils.lerp(plantedY, CONFIG.coin.baseY + 0.14, lockupMix) + smoothMouseY * -0.06 * doorEase;
         for (let i = 0; i < doorMats.length; i++) {
           doorMats[i].transparent = true;
           doorMats[i].opacity = doorVisOpacity;
@@ -6495,7 +6527,7 @@
         /* rig de luces + fog solo mientras la puerta está presente */
         const doorActive = doorVisOpacity > 0.01 && !!doorModel;
         if (doorLightGroup) doorLightGroup.visible = doorActive;
-        doorFloor.visible = doorActive;
+        doorFloor.visible = doorActive && !(HERO_DOOR_LOCKUP && scatterProgress < 0.55);
         doorFloor.material.opacity = 0.8 * doorEase * (1 - dissolve);
         if (scene.fog) scene.fog.density = doorActive ? CONFIG.door.fogDensity * doorEase : 0;
         /* La sombra vive exactamente en la línea de suelo (doorBottomWorld ya se
@@ -7304,13 +7336,17 @@
            este trigger la gobierna el fade anticipado de la puerta (ver abajo).
            Antes el reset corría hasta p<0.98 y pisaba ese fade, dejando un
            "pasillo" de ~1/2 viewport SIN nada en pantalla entre actos. */
-        if (self.progress < 0.25) {
+        if (!HERO_DOOR_LOCKUP && self.progress < 0.25) {
           doorTarget = 0;
           doorFade = 0;
           if (doorGroup) doorGroup.visible = false;
         }
       },
       onLeaveBack: () => {
+        if (HERO_DOOR_LOCKUP) {
+          doorTarget = 1;
+          return;
+        }
         doorTarget = 0;
         doorFade = 0;
         if (doorGroup) doorGroup.visible = false;
