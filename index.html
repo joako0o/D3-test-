@@ -1006,9 +1006,16 @@
       min-height: 100svh;
       display: flex;
       align-items: center;
+      /* "safe center": centra cuando cabe, pero si el contenido es más alto que
+         el viewport alinea al inicio en vez de recortar por arriba. */
+      align-items: safe center;
       justify-content: center;
       padding: clamp(34px, 7vh, 76px) 5%;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,215,106,0.35) transparent;
     }
     .word-evolution-shell {
       width: min(1180px, 100%);
@@ -1191,9 +1198,14 @@
       min-height: 100svh;
       display: flex;
       align-items: center;
+      align-items: safe center;
       justify-content: center;
       padding: clamp(34px, 6vh, 70px) 5%;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,215,106,0.35) transparent;
     }
     .acts-shell {
       width: min(1180px, 100%);
@@ -1901,9 +1913,14 @@
       height: 100vh;
       display: flex;
       align-items: center;
+      align-items: safe center;
       justify-content: center;
       padding: clamp(44px, 8vh, 88px) 5%;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,215,106,0.35) transparent;
     }
     .voices-shell {
       width: min(1180px, 100%);
@@ -3712,6 +3729,77 @@
     }
     @media (max-height: 700px) {
       #figureCabinet { display: none; }
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       FIX DE ALTURA ÚTIL (laptops reales: ~600–760px con barra del
+       navegador). Los stages "pinned" medían su contenido por encima
+       del viewport y, con overflow:hidden + align-items:center, se
+       recortaban por arriba y por abajo (título cortado, tabla que no
+       cabe, franja del canvas 3D asomando).
+       Aquí se compacta tipografía, paddings y alturas de gráfico para
+       que quepan enteros sin recortar.
+       ════════════════════════════════════════════════════════════════ */
+    @media (min-width: 769px) and (max-height: 760px) {
+      /* — Huella de vocabulario — */
+      .word-evolution-pin-wrapper { padding: 20px 4%; }
+      .word-evolution-shell { gap: 12px; }
+      .word-evolution-title { font-size: clamp(24px, 2.6vw, 34px); margin-top: 5px; }
+      .word-evolution-lead { margin-top: 7px; font-size: 13px; line-height: 1.45; }
+      .word-evolution-board { padding: 14px 16px; border-radius: 14px; }
+      .word-evolution-board-head { margin-bottom: 6px; }
+      .word-evolution-chart-wrap { height: clamp(210px, 32vh, 280px); }
+
+      /* — Navegador de actas — */
+      .acts-pin-wrapper { padding: 20px 4%; }
+      .acts-shell { gap: 11px; }
+      .acts-title { font-size: clamp(24px, 2.5vw, 33px); margin-top: 5px; }
+      .acts-lead { margin-top: 7px; font-size: 13px; line-height: 1.45; }
+      .acts-browser { padding: 13px; border-radius: 14px; gap: 12px; }
+      .acts-list { max-height: clamp(190px, 30vh, 270px); }
+
+      /* — Las voces — */
+      .voices-pin-wrapper { padding: 20px 4%; }
+      .voices-shell { gap: 14px; }
+      .voices-title { font-size: clamp(24px, 2.6vw, 34px); margin-top: 6px; }
+      .voices-lead { margin-top: 8px; font-size: 13px; line-height: 1.45; }
+      .voice-explorer { padding: 14px 16px; border-radius: 14px; }
+      .voice-explorer-head { margin-bottom: 10px; }
+    }
+
+    /* Tier intermedio (alturas 761–940px): compactación suave para que la
+       huella de vocabulario y el navegador de actas quepan enteros. */
+    @media (min-width: 769px) and (min-height: 761px) and (max-height: 940px) {
+      .word-evolution-chart-wrap { height: clamp(260px, 36vh, 360px); }
+      .word-evolution-shell { gap: clamp(12px, 2vh, 20px); }
+      .acts-shell { gap: clamp(11px, 1.8vh, 18px); }
+      .acts-list { max-height: clamp(230px, 36vh, 330px); }
+    }
+
+    /* El navegador de actas tiene dos columnas de alto variable (índice y
+       lector). Se limita la altura del panel y se deja que el lector haga
+       scroll interno, en vez de empujar la sección más allá del viewport. */
+    @media (min-width: 769px) {
+      .acts-shell { max-height: 100%; min-height: 0; }
+      .acts-browser { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+      .acts-index, .act-reader { min-height: 0; overflow: hidden; }
+      .acts-list { max-height: none; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+      .act-reading {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,215,106,0.35) transparent;
+      }
+    }
+
+    /* Título del pipeline: en alturas bajas el header absoluto se montaba
+       sobre los paneles del track. Se reduce y se sube para no colisionar. */
+    @media (min-width: 769px) and (max-height: 700px) {
+      .pipe-header { top: 14px; }
+      .pipe-header h2 { font-size: clamp(20px, 2.2vw, 28px); }
+      .pipe-kicker { margin-bottom: 4px; }
+      .pipe-viewport { padding-top: 64px; }
     }
 
   </style>
