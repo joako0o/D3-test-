@@ -4366,7 +4366,7 @@
       CONFIG.door.doorDepthSquash = 0.72;
       CONFIG.door.maxDepthWorld = 4.8;
       CONFIG.camera.fov = 32;
-      CONFIG.camera.y = 0.72;
+      CONFIG.camera.y = 1.55;
       CONFIG.camera.z = 7.7;
       CONFIG.exposure = 0.94;
       CONFIG.door.spots.key = { color: 0xd4e0f2, intensity: 12, angle: 0.72, penumbra: 0.62, decay: 1.35, distance: 0, x: -3.8, y: 3.5, z: 4.4, tx: 0, ty: 0.2, tz: 0 };
@@ -4631,7 +4631,7 @@
       /* La posición base conserva el lenguaje visual del hero (la moneda en
          la franja superior-media), pero nunca permite que su borde inferior
          entre en el título. */
-      let centerY = h * (HERO_DOOR_LOCKUP ? 0.36 : 0.41);
+      let centerY = h * (HERO_DOOR_LOCKUP ? 0.31 : 0.41);
 
       if (!HERO_DOOR_LOCKUP && Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
         /* Deja un colchón extra para que la moneda nunca toque el título,
@@ -5543,8 +5543,9 @@
     function rebuildCameraChoreography() {
       if (HERO_DOOR_LOCKUP) {
         const y = CONFIG.coin.baseY;
+        CONFIG.camera.y = y + 0.22;
         cameraChoreographyStops[0].pos = [0, CONFIG.camera.y, CONFIG.camera.z];
-        cameraChoreographyStops[0].look = [0, y, -0.25];
+        cameraChoreographyStops[0].look = [0, y, 0];
         cameraChoreographyStops[1].pos = [0, 0.62, 5.15];
         cameraChoreographyStops[1].look = [0, 0.62, 0.00];
       }
@@ -6599,7 +6600,9 @@
         coin.rotation.y = Math.sin(tElapsed * C.swaySpeedY) * swayAmp * introEase * motionScale
           + smoothMouseX * (HERO_DOOR_LOCKUP ? 0.08 : 0.22) * motionScale
           + dragRotY;
-        coin.rotation.x = C.tiltBase + C.tiltOscillation * Math.sin(tElapsed * C.tiltSpeed * motionScale) + smoothMouseY * -0.12 * motionScale + dragRotX;
+        coin.rotation.x = (HERO_DOOR_LOCKUP ? 0.02 : C.tiltBase)
+          + (HERO_DOOR_LOCKUP ? 0 : C.tiltOscillation * Math.sin(tElapsed * C.tiltSpeed * motionScale))
+          + smoothMouseY * -0.12 * motionScale + dragRotX;
         coin.position.y = C.baseY + C.floatAmount * Math.sin(tElapsed * C.floatSpeed * motionScale) * motionScale;
         mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
         coin.getWorldPosition(projectedPos);
@@ -6644,7 +6647,6 @@
         doorGroup.visible = doorVisOpacity > 0.001 && !!doorModel;
         const doorEase = doorFade * doorFade * (3 - 2 * doorFade);
         doorGroup.rotation.y = smoothMouseX * 0.05 * doorEase;
-        doorGroup.rotation.x = smoothMouseY * -0.03 * doorEase;
         doorGroup.position.x = CONFIG.door.baseX;
         doorGroup.position.z = CONFIG.door.baseZ ?? 0;
         const heroMul = HERO_DOOR_LOCKUP
@@ -6664,6 +6666,7 @@
         const lockupMix = HERO_DOOR_LOCKUP
           ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
           : 0;
+        doorGroup.rotation.x = -0.20 * lockupMix + smoothMouseY * -0.03 * doorEase;
         doorGroup.position.y = THREE.MathUtils.lerp(plantedY, CONFIG.coin.baseY, lockupMix) + smoothMouseY * -0.06 * doorEase;
         for (let i = 0; i < doorMats.length; i++) {
           doorMats[i].transparent = true;
