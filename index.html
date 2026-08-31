@@ -4478,7 +4478,8 @@
            en ventanas bajas y anchas. SUBIR: valores mayores | BAJAR: menores. */
         groundY: 0.15,
         baseX: 0.0,             // Horizontal: DERECHA (> 0) | IZQUIERDA (< 0)
-        baseZ: 0.0,             // Profundidad: MÁS CERCA (> 0) | MÁS LEJOS (< 0)
+        baseZ: 0.0,             // Profundidad del Acto 2: MÁS CERCA (> 0) | MÁS LEJOS (< 0)
+        heroBaseZ: -0.85,         // El lockup inicial queda detrás de la moneda para separar siluetas
         /* Aplastamiento de profundidad (1 = sin aplastar): la escultura es muy
            "gruesa" para una lectura frontal y se comprime en Z a propósito.
            0.55 reproduce el grosor que la puerta ya tenía en pantalla. */
@@ -6906,7 +6907,9 @@
         const doorMouse = HERO_DOOR_LOCKUP ? (1 - lockupMix) : 1;
         doorGroup.rotation.y = smoothMouseX * 0.05 * doorEase * doorMouse;
         doorGroup.position.x = CONFIG.door.baseX;
-        doorGroup.position.z = CONFIG.door.baseZ ?? 0;
+        doorGroup.position.z = HERO_DOOR_LOCKUP
+          ? (CONFIG.door.heroBaseZ ?? (CONFIG.door.baseZ ?? 0))
+          : (CONFIG.door.baseZ ?? 0);
         const heroMul = HERO_DOOR_LOCKUP
           ? THREE.MathUtils.lerp(
               1.25 / Math.max(CONFIG.door.widthVsCoin, 1e-3),
