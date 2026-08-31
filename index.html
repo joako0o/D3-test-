@@ -67,7 +67,7 @@
          los coeficientes vw; los mínimos (móvil) respetan legibilidad:
          cuerpo ≥16px y micro ≥12px (recomendación WCAG / clamp()).
          Ver best practices: min 16px cuerpo, máximo ≤2.5× mínimo. */
-      --fs-hero: clamp(18px, 2.6vw, 46px);
+      --fs-hero: clamp(16px, 2.1vw, 34px);
       --fs-h2: clamp(22px, 3.2vw, 52px);
       --fs-h3: clamp(16px, 1.8vw, 24px);
       --fs-body: clamp(16px, 1.9vw, 19px);
@@ -4188,6 +4188,7 @@
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     import { initFigureSystem } from './js/figures.js';
+    import { createStoneArch } from './js/stoneArch.js';
 
     /* Los timelines de la escena se crean durante la inicialización de los
        gráficos. Registrar los plugins antes de construir cualquiera de ellos
@@ -4204,6 +4205,9 @@
        (panel de debug, scrubber lateral, indicador de sección).
     ──────────────────────────────── */
     const DEBUG_MODE = /[?&]debug\b/.test(location.search);
+    /* Stage 1–2: arco de piedra procedural (still de referencia).
+       false = puerta GLB anterior. */
+    const USE_STONE_ARCH = true;
     if (!DEBUG_MODE) {
       ['debugPanel', 'timelineScrubber', 'figureCabinet'].forEach((id) => {
         const el = document.getElementById(id);
@@ -4233,7 +4237,7 @@
        Three.js — Coin & Setup
     ──────────────────────────────── */
     const CONFIG = {
-      camera: { fov: 38, x: 0, y: 0.6, z: 5.8 },
+      camera: { fov: 34, x: 0, y: 0.85, z: 8.6 },
       lights: {
         ambient: { color: 0xfff4df, intensity: 0.25 },
         key:     { color: 0xffe8b0, intensity: 2.2,  x: 3.5, y: 4.5, z: 4.5 },
@@ -4266,7 +4270,7 @@
            diámetro de la moneda. MÁS GRANDE: 1.6, 1.8 | MÁS CHICA: 1.1, 1.25.
            Con 1.25 la puerta mide ~36% del alto del viewport en 16:9.
            1.1 dejaba las dos figuras más chicas que el tamaño de referencia. */
-        widthVsCoin: 1.25,
+        widthVsCoin: 2.85,
         /* Línea de suelo: el pie de los escalones se apoya acá (unidades de mundo).
            En 0.15 queda por encima del bloque de texto de La Reunión, incluso
            en ventanas bajas y anchas. SUBIR: valores mayores | BAJAR: menores. */
@@ -4297,7 +4301,7 @@
           under: { color: 0xffba80, intensity: 12, angle: 0.9, penumbra: 0.8, decay: 1.6, distance: 0, x: 0, y: -2.0, z: 2.2, tx: 0, ty: -0.3, tz: 0 },
         },
         fog: 0x0b101d,
-        fogDensity: 0.08,
+        fogDensity: 0.055,
 
         /* ── LA SALA (b1) — cruce del umbral ────────────────────────────────
            transition: 'doorway' → coreografía nueva: la puerta se disuelve en
@@ -4374,7 +4378,7 @@
         haloWrap.classList.add('hidden-stage');
         scrollHint.classList.add('hidden');
       }
-      if (coin.children.length > 0) coin.visible = (stage === 1) && coinFade > 0.01;
+      if (coin.children.length > 0) coin.visible = coinFade > 0.01;
       document.body.style.cursor = stage === 1 ? 'grab' : '';
     }
 
@@ -4397,11 +4401,11 @@
 
     const scene = new THREE.Scene();
     const camBaseY = 0.7;
-    scene.fog = new THREE.FogExp2(CONFIG.door?.fog ?? 0x0a0e1a, 0);
+    scene.fog = new THREE.FogExp2(CONFIG.door?.fog ?? 0x0a0e1a, USE_STONE_ARCH ? (CONFIG.door.fogDensity * 0.55) : 0);
     const initialVp = getViewportSize();
     const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, initialVp.width / initialVp.height, 0.1, 100);
     camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
-    camera.lookAt(0, 0.7, 0);
+    camera.lookAt(0, 1.05, -0.35);
 
     let renderer = null;
     if (supportsWebGL) {
@@ -4825,7 +4829,23 @@
        doorBottomOffset da el centro VISUAL de la figura completa, que es el punto
        de mira durante el dolly de cruce (ver animate — rama 'doorway'). */
     let doorTopOffset = 1.15;
-    doorLoader.load('puerta-draco.glb', (gltf) => {
+    let archDust = null;
+    function installDoorModel(model, footprint, bottom, top, mats) {
+      doorModel = model;
+      doorFootprint = footprint;
+      doorBottomOffset = bottom;
+      doorTopOffset = top;
+      mats.forEach((m) => doorMats.push(m));
+      doorModelGroup.add(model);
+      applyDoorScale();
+      doorGroup.visible = true;
+    }
+    if (USE_STONE_ARCH) {
+      const arch = createStoneArch();
+      archDust = arch.dust;
+      installDoorModel(arch.group, arch.footprint, arch.bottomOffset, arch.topOffset, arch.materials);
+    }
+    if (!USE_STONE_ARCH) doorLoader.load('puerta-draco.glb', (gltf) => {
       const model = gltf.scene;
       /* Asegura que las transformaciones del GLB ya estén aplicadas al medirlo;
          de lo contrario el pivote puede quedar corrido según el navegador. */
@@ -5292,8 +5312,8 @@
     let scatterProgress = 0;
     let storyProgress = 0;   // 0→1 a lo largo de todo el documento (para la coreografía)
     let coinFade = 1;
-    let doorFade = 0;
-    let doorTarget = 0;
+    let doorFade = USE_STONE_ARCH ? 1 : 0;
+    let doorTarget = USE_STONE_ARCH ? 1 : 0;
 
     /* Máquina de estados visual: ScrollTrigger escribe los objetivos y el loop
        único de GSAP interpola. Así la nube puede volver atrás sin saltos y una
@@ -5369,8 +5389,8 @@
        llega al capítulo cuando de verdad está en pantalla, y la coreografía
        se mantiene alineada al cambiar las alturas o el breakpoint. */
     const cameraChoreographyStops = [
-      { id: 'hero',               pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // base
-      { id: 'stageObjective',     pos: [0.00, 0.60, 5.10], look: [0.00, 0.60, 0.00] },   // acercamiento puerta
+      { id: 'hero',               pos: [0.00, 0.85, 8.60], look: [0.00, 1.05, -0.35] },  // lockup: moneda en el vano
+      { id: 'stageObjective',     pos: [0.00, 0.78, 4.35], look: [0.00, 1.00, -0.80] },  // dolly hacia el umbral
       /* #stageRoom se omite a propósito: el cruce puerta→sala lo gobierna el
          dolly propio (crossEff), así no lo pisamos con una deriva extra. */
       { id: 'stageHook',          pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },
@@ -6115,17 +6135,7 @@
           button.addEventListener('click', () => selectAct(act));
           list.appendChild(button);
           listItems.push({ button, act });
-        });
-      };
-
-      openEvidence.addEventListener('click', () => {
-        const quoteIndex = Number(openEvidence.dataset.quoteIndex);
-        if (!Number.isFinite(quoteIndex) || !quotes[quoteIndex]) return;
-        pinnedIndex = quoteIndex;
-        hoverIndex = -1;
-        openQuote(quoteIndex, { x: window.innerWidth * 0.62, y: window.innerHeight * 0.62 });
-      });
-      yearFilter.addEventListener('change', () => {
+         yearFilter.addEventListener('change', () => {
         renderList(yearFilter.value);
         const firstVisible = acts.find((act) => yearFilter.value === 'all' || String(act.year) === yearFilter.value);
         if (firstVisible) selectAct(firstVisible);
@@ -6418,6 +6428,13 @@
       particleStoryKeys.forEach((key) => {
         particleStoryMix[key] = THREE.MathUtils.lerp(
           particleStoryMix[key],
+          particleStoryTarget[key],cional:
+         la disolución de la puerta usa crossT CRUDO — si la puerta se
+         "materializara" de nuevo durante la retirada sería un glitch evidente. */
+      const crossEff = crossT * (1 - exitT);
+      particleStoryKeys.forEach((key) => {
+        particleStoryMix[key] = THREE.MathUtils.lerp(
+          particleStoryMix[key],
           particleStoryTarget[key],
           reduceMotion ? 1 : 0.14
         );
@@ -6439,6 +6456,7 @@
           + dragRotY;
         coin.rotation.x = C.tiltBase + C.tiltOscillation * Math.sin(tElapsed * C.tiltSpeed * motionScale) + smoothMouseY * -0.12 * motionScale + dragRotX;
         coin.position.y = C.baseY + C.floatAmount * Math.sin(tElapsed * C.floatSpeed * motionScale) * motionScale;
+        if (archDust) archDust.rotation.y = time * 0.05;
         mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
         coin.getWorldPosition(projectedPos);
         projectedPos.project(camera);
@@ -6453,7 +6471,8 @@
           objectReflection.style.transform = `translate3d(${coinScreenX}px, ${coinScreenY + reflectionDistance}px, 0) scale(${0.82 + coinFade * 0.18})`;
           objectReflection.style.opacity = (coinFade * 0.46).toFixed(3);
         }
-        coin.visible = (currentStage === 1) && (coinFade > 0.01);
+        coin.visible = coinFade > 0.01;
+        if (USE_STONE_ARCH) coin.position.z = 0.48;
         for (let i = 0; i < coinMats.length; i++) {
           coinMats[i].transparent = true;
           coinMats[i].opacity = coinFade;
@@ -6645,7 +6664,12 @@
          En doorway se usa la opacidad REAL de la puerta: cuando se disuelve en
          el umbral, las luces vuelven a su nivel (la sala no queda a oscuras). */
       const camBlend = doorGroup.children.length > 0 ? doorVisOpacity : 0;
-      const dim = 1 - camBlend * 0.85;
+      /* Con el arco ya en el hero, no apagar la key de la moneda. El dim
+         sigue al acercamiento (scatter), no a la mera presencia del umbral. */
+      const approach = USE_STONE_ARCH
+        ? THREE.MathUtils.smoothstep(scatterProgress, 0.12, 0.85)
+        : camBlend;
+      const dim = 1 - approach * (USE_STONE_ARCH ? 0.35 : 0.85);
       key.intensity = L.key.intensity * dim;
       fill.intensity = L.fill.intensity * dim;
       rim.intensity = L.rim.intensity * dim;
@@ -6653,8 +6677,12 @@
       ambient.intensity = L.ambient.intensity * dim;
       const baseCamY = CONFIG.camera.y;
       const lowCamY = baseCamY - 0.15;
-      const currentCamY = THREE.MathUtils.lerp(baseCamY, lowCamY, camBlend);
-      const baseCamZ = CONFIG.camera.z + camBlend * 0.3;
+      const currentCamY = USE_STONE_ARCH
+        ? 0.78
+        : THREE.MathUtils.lerp(baseCamY, lowCamY, camBlend);
+      const baseCamZ = USE_STONE_ARCH
+        ? 4.35
+        : CONFIG.camera.z + camBlend * 0.3;
 
       /* La Sala (b1): dolly a través del umbral + luz cálida del interior + velo de fog.
          En modo 'classic' crossT queda en 0 → rama clásica intacta. */
@@ -7304,13 +7332,17 @@
            este trigger la gobierna el fade anticipado de la puerta (ver abajo).
            Antes el reset corría hasta p<0.98 y pisaba ese fade, dejando un
            "pasillo" de ~1/2 viewport SIN nada en pantalla entre actos. */
-        if (self.progress < 0.25) {
+        if (!USE_STONE_ARCH && self.progress < 0.25) {
           doorTarget = 0;
           doorFade = 0;
           if (doorGroup) doorGroup.visible = false;
         }
       },
       onLeaveBack: () => {
+        if (USE_STONE_ARCH) {
+          doorTarget = 1;
+          return;
+        }
         doorTarget = 0;
         doorFade = 0;
         if (doorGroup) doorGroup.visible = false;
