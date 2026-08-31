@@ -242,6 +242,41 @@
       letter-spacing: 0.04em !important;
     }
 
+    /* Scrim premium detrás del texto de La Sala: la estatua central seguirá
+       siendo la pieza de museo, pero el copy gana contraste. El elipsoide
+       central oscurece la estatua JUSTO detrás del bloque de texto (título +
+       párrafos) y deja nítida la cabeza y la balanza de arriba; el gradiente
+       inferior asienta la base y da profundidad. Todo queda por encima del
+       canvas 3D (z-index 30 del container), así que sí atenúa la estatua. */
+    #stageRoomContainer {
+      position: relative;
+    }
+    #stageRoomContainer::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(
+          ellipse 56% 42% at 50% 47%,
+          rgba(4, 7, 15, 0.84) 0%,
+          rgba(4, 7, 15, 0.56) 46%,
+          rgba(4, 7, 15, 0.00) 78%
+        ),
+        linear-gradient(
+          to bottom,
+          rgba(4, 7, 15, 0.00) 0%,
+          rgba(4, 7, 15, 0.00) 20%,
+          rgba(4, 7, 15, 0.18) 58%,
+          rgba(4, 7, 15, 0.52) 100%
+        );
+      pointer-events: none;
+      z-index: 0;
+    }
+    #stageRoomContainer > * {
+      position: relative;
+      z-index: 1;
+    }
+
     .scroll-hint {
       position: absolute;
       bottom: 24px; left: 50%;
@@ -4551,6 +4586,24 @@
     let figureSystem = initFigureSystem(scene, { debug: DEBUG_MODE });
 
     /* ────────────────────────────────
+       Luz de acento tipo museo para las figuras centrales de la sala.
+       Se enciende al cruzar el umbral (figureReveal→1) y apunta al centro
+       visual de la estatua: la piedra mate destaca sobre el navy sin volver
+       a competir con la nube de partículas (que además se despeja al frente).
+    ──────────────────────────────── */
+    const figureAccent = new THREE.SpotLight(0xffd9a8, 0, 9, 0.55, 0.62, 1.4);
+    figureAccent.position.set(0, 2.8, -3.0);
+    const figureAccentTarget = new THREE.Object3D();
+    figureAccentTarget.position.set(0, 0.6, -4.8);
+    figureAccent.target = figureAccentTarget;
+    scene.add(figureAccent);
+    scene.add(figureAccentTarget);
+    /* Relleno frío desde la izquierda para no dejar la piedra plana. */
+    const figureFill = new THREE.PointLight(0x9fb4d8, 0, 8, 1.8);
+    figureFill.position.set(-2.4, 1.4, -2.4);
+    scene.add(figureFill);
+
+    /* ────────────────────────────────
        Door light rig — spotlights dedicados (no reutiliza los de la moneda)
     ──────────────────────────────── */
     const doorSpots = [];
@@ -4669,8 +4722,15 @@
           /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
              evita que el diámetro de la moneda se coma el copy del título. */
           if (HERO_DOOR_LOCKUP) {
-            if (h <= 700) return Math.min(baseTargetPx, Math.max(minTargetPx * 0.7, available * 0.86));
-            return baseTargetPx;
+            /* Cota por espacio disponible SIEMPRE (antes solo si h <= 700):
+               al cruzar ese umbral la moneda volvía a su tamaño base y podía
+               volver a pisar el título justo encima de 700px o en paisaje.
+               available*0.86 + el piso minTargetPx*0.7 conservan el tamaño
+               visual; el Math.min(fit, available) es la cota dura: la moneda
+               nunca puede ser más grande que el hueco entre la zona segura y
+               el título, por muy estrecho que sea el viewport. */
+            const fit = Math.min(baseTargetPx, Math.max(minTargetPx * 0.7, available * 0.86));
+            return Math.min(fit, available);
           }
           return Math.min(baseTargetPx, available * 0.82);
         }
@@ -4706,10 +4766,12 @@
       const titleTop = getHeroTitleTop();
       /* La posición base conserva el lenguaje visual del hero (la moneda en
          la franja superior-media), pero nunca permite que su borde inferior
-         entre en el título. */
+         entre en el título. La cota se aplica en TODAS las ramas (también en
+         el lockup): antes quedaba solo fuera del lockup, así que en el hero
+         con vano la moneda podía llegar a tocar el copy. */
       let centerY = h * (HERO_DOOR_LOCKUP ? 0.31 : 0.41);
 
-      if (!HERO_DOOR_LOCKUP && Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
+      if (Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
         /* Deja un colchón extra para que la moneda nunca toque el título,
            incluso cuando el título ocupa gran parte del viewport. */
         centerY = Math.min(centerY, titleTop - gap - targetPx / 2 - targetPx * 0.06);
@@ -7067,7 +7129,14 @@
          todos los capítulos (solo cede protagonismo al dato activo). */
       const stageAlpha = Math.max(0.36, 1 - 0.60 * stageDensity);
       const ambientMin = Math.max(0.42, 0.82 - 0.30 * scatterProgress);
-      pMat.opacity = ambientMin * (1 - 0.5 * veilShape) * stageAlpha;
+      /* Cuando la estatua central está al frente (dentro de La Sala), el
+         centro se despeja de partículas: la nube queda como polvo de fondo
+         (nunca se apaga) pero deja de ocultar a la figura. figureClear es
+         1 fuera de la sala, así el resto de la pieza no cambia. */
+      const figureClear = (DOOR_MODE === 'doorway')
+        ? 1 - 0.55 * THREE.MathUtils.smoothstep((roomSwarmT - 0.1) / 0.5, 0, 1)
+        : 1;
+      pMat.opacity = ambientMin * (1 - 0.5 * veilShape) * stageAlpha * figureClear;
 
       /* Figuras de la sala: se muestran recién al cruzar el umbral, nunca en
          el hero (en la captura anterior los placeholders saturaban la portada).
@@ -7079,12 +7148,26 @@
         figureSystem.group.visible = figureReveal > 0.01;
         figureSystem.group.scale.setScalar(0.86 + 0.14 * figureReveal);
         figureSystem.group.position.y = (1 - figureReveal) * 0.5;
+        /* Sigue la iluminación de las figuras (placeholder no enciende nada):
+           la estatua se enciende como pieza de museo al cruzar y el relleno
+           frío por la izquierda le da volumen a la piedra. */
+        let statueReady = false;
         figureSystem.figures.forEach((record) => {
           if (record.placeholder) {
             record.placeholder.rotation.y = time * 0.18 * figureReveal;
             record.placeholder.position.y = Math.sin(time * 0.6 + record.def.x) * 0.04 * figureReveal;
           }
+          if (record.model) statueReady = true;
         });
+        const statueT = statueReady ? figureReveal : 0;
+        figureAccent.intensity = statueT * 210;
+        figureAccent.position.x = figureSystem.group.position.x;
+        figureAccentTarget.position.set(
+          figureSystem.group.position.x,
+          0.6,
+          figureSystem.group.position.z
+        );
+        figureFill.intensity = statueT * 7;
       }
 
       if (renderer) renderer.render(scene, camera);

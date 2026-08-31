@@ -39,11 +39,19 @@ un **placeholder** (icosaedro + halo) y lo marca como "por modelar" en el
 gabinete inferior. Así puedes dejar la escena andando y terminar las figuras
 de a poco.
 
+**Figuras ya incluidas:**
+
+- ✅ **`figures/balanza.glb`** — La Justicia ciega (Lady Justice con la balanza),
+  el símbolo del equilibrio. Origen: `Meshy_AI_Blind_Justice_Statue_0831090221_generate.glb`.
+  Se normalizó a la convención del proyecto: **Draco**, **38.5 k triángulos**,
+  **177 KB** (<300 KB), **acabado PIEDRA mate** (limestone, metallic 0, rough 0.82,
+  color `#c7b9a4`), normales recalculadas y **base apoyada en `y=0`**.
+  `available: true` en `js/figures.js` con `finish` propio en el def.
+
 ---
 
 ### TODO — TU TAREA (figuras Blender)
-1. Modela primero **la balanza** (es la más narrativa).
-2. Exporta `figures/balanza.glb` con Draco y <300 KB.
-3. Súbelo a este repo. El placeholder se reemplaza solo al recargar.
-4. Repite con `inflacion.glb` y `brote.glb`.
-5. Cuando tengas las demás, edita `js/figures.js` para ajustar posición/escala.
+1. ✅ **Balanza** ya está (ver arriba).
+2. Exporta `figures/inflacion.glb` y `figures/brote.glb` con Draco y <300 KB.
+3. Repite con `acta.glb`, `corpus.glb` y `campana.glb`.
+4. Cuando tengas las demás, edita `js/figures.js` para ajustar posición/escala.

@@ -19,10 +19,19 @@ export const FIGURE_DEFS = [
     label: 'Balanza',
     subtitle: 'Equilibrio hawkish / dovish',
     glb: 'figures/balanza.glb',
-    available: false,
-    x: 0, y: 0, z: -4.6,
+    available: true,
+    /* Centro y al FONDO de la La Sala (pieza central, tipo museo).
+       La cámara entra mirando a z=-2.0; a z=-4.8 queda detrás de la nube
+       de partículas (que se despeja al cruzar) y la luz de acento la
+       ilumina desde el frente. El y se eleva para que la cabeza y la
+       balanza queden en la franja superior y el copy lea sobre la base. */
+    x: 0, y: 0.18, z: -4.8,
     scale: 1.1,
     color: 0xffd76a,
+    /* Acabado PIEDRA mate (limestone): la figura no compite con la moneda
+       dorada del hero. `applyModel` respeta estos valores en vez de forzar
+       el metal por defecto (ver abajo en model.traverse). */
+    finish: { metalness: 0.0, roughness: 0.82, color: 0xc7b9a4 },
   },
   {
     id: 'inflacion',
@@ -161,10 +170,18 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
         if (!obj.isMesh || !obj.material) return;
         const mats = (Array.isArray(obj.material) ? obj.material : [obj.material]).filter(Boolean);
         mats.forEach((m) => {
-          if ('metalness' in m) m.metalness = 0.82;
-          if ('roughness' in m) m.roughness = 0.24;
+          /* Si la figura define `finish`, se respeta tal cual (p. ej. la
+             balanza en piedra mate). Si no, se mantiene el metal por defecto
+             de la familia aplicado a todas las figuras. */
+          const finish = def.finish;
+          const metalness = finish?.metalness ?? 0.82;
+          const roughness = finish?.roughness ?? 0.24;
+          if ('metalness' in m) m.metalness = metalness;
+          if ('roughness' in m) m.roughness = roughness;
           m.color = m.color || new THREE.Color();
-          if (obj.name.toLowerCase().includes('gold') || obj.name.toLowerCase().includes('oro')) {
+          if (finish?.color != null) {
+            m.color.set(finish.color);
+          } else if (obj.name.toLowerCase().includes('gold') || obj.name.toLowerCase().includes('oro')) {
             m.color.set(0xffd76a);
           } else if (obj.name.toLowerCase().includes('blue') || obj.name.toLowerCase().includes('azul')) {
             m.color.set(0x8ab4f8);
