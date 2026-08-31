@@ -75,7 +75,7 @@ El tema es **política monetaria**, no un compositor. Meter música de Pendereck
 - [x] **Gabinete de figuras** (`#figureCabinet`): lista las 6 figuras planeadas y su estado `buscando / por modelar / listo`.
 - [x] **Sistema de figuras con placeholder** (`js/figures.js`): si el `.glb` no existe, dibuja un icosaedro + halo; si existe, lo carga y normaliza.
 - [x] **Nube de partículas nunca se apaga**: mínimo de atmósfera en todos los capítulos (antes caía a casi cero en algunos stages).
-- [x] **Audio interactivo** (Web Audio): tono por score al abrir evidencia (hawkish grave / dovish agudo), botón de sonido persistente (`localStorage`).
+- [ ] **Audio interactivo** — DESACTIVADO POR AHORA (decisión del autor). El diseño sigue documentado aquí por si se retoma.
 - [x] **Contador de descubrimiento** (`Evidencia n/100`) con `localStorage`.
 - [x] **Recorrido guiado 5 min** (`#guidedTour`): avanza por las secciones clave.
 
@@ -132,7 +132,7 @@ En 2–3 meses (trabajando a ratos) esto es **realista**:
 
 - Un solo mundo: moneda → puerta → sala → datos, con la cámara siempre en movimiento.
 - 4–6 figuras Blender coherentes, cada una como "nodo de evidencia".
-- Audio interactivo que sonifica la orientación hawkish/dovish.
+- (Opcional, desactivado por ahora) Audio interactivo que sonifique la orientación hawkish/dovish.
 - Gráficos D3 grandes, tipografía grande, menos texto.
 - Contador de descubrimiento + recorrido guiado.
 - Carga optimizada y accesibilidad WCAG.

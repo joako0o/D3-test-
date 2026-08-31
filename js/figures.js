@@ -106,11 +106,11 @@ export function initFigureSystem(scene, { onReady = null } = {}) {
   });
 
   function makePlaceholder(def) {
-    const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 0), placeholderMat);
+    const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.20, 0), placeholderMat);
     mesh.material = placeholderMat.clone();
     mesh.userData = { ...def, pending: true };
-    const wire = new THREE.Mesh(new THREE.IcosahedronGeometry(0.44, 1), placeholderWire);
-    const halo = new THREE.Mesh(new THREE.RingGeometry(0.52, 0.62, 32), haloMat.clone());
+    const wire = new THREE.Mesh(new THREE.IcosahedronGeometry(0.27, 1), placeholderWire);
+    const halo = new THREE.Mesh(new THREE.RingGeometry(0.31, 0.38, 32), haloMat.clone());
     halo.rotation.x = -Math.PI / 2;
     mesh.add(wire);
     mesh.add(halo);

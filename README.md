@@ -66,7 +66,7 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
 - **Gabinete de figuras** (`#figureCabinet`): lista las figuras 3D y su estado.
 - **Sistema de figuras** (`js/figures.js`): intenta cargar cada `figures/*.glb`; si no existe aún, dibuja un placeholder.
 - **Nube de partículas continua**: ya no se apaga entre capítulos.
-- **Audio interactivo**: sonido de evidencia (hawkish = grave, dovish = agudo) + botón persistente.
+- **Audio**: desactivado por decisión del autor (no se pondrá música por ahora). El mecanismo queda documentado en `PLAN_NIVEL_PREMIUM.md` por si se retoma.
 - **Descubrimiento**: cada cita abierta suma `Evidencia n/100` (localStorage).
 
 ### Tu lista de tareas (las que dependen de ti)
@@ -74,5 +74,4 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
 1. **Modelar figuras Blender** → `figures/README.md` (empezar con `balanza.glb`).
 2. **Self-host fuentes** → `fonts/README.md` (Playfair + Inter).
 3. **Ajustar `js/figures.js`** si cambian posiciones/escalas de las figuras.
-4. **Definir moodboard** / decidir si el sonido interactivo se queda tal cual o
-   necesita samples propios (ver `PLAN_NIVEL_PREMIUM.md`).
+4. **Definir moodboard** (el audio quedó desactivado; ver `PLAN_NIVEL_PREMIUM.md`).
