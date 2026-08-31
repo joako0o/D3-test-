@@ -4361,7 +4361,7 @@
       /* Still de referencia: pórtico de piedra, vano oscuro, moneda = única joya.
          Las hojas doradas del GLB se apagan en el hero (el vano es noche) y
          vuelven en el acto 2, cuando la puerta de la reunión se cierra. */
-      CONFIG.door.widthVsCoin = 6.15;
+      CONFIG.door.widthVsCoin = 4.05;
       CONFIG.door.fogDensity = 0.026;
       CONFIG.door.doorDepthSquash = 0.72;
       CONFIG.door.maxDepthWorld = 4.8;
@@ -4580,11 +4580,11 @@
       /* La moneda conserva una escala visual proporcional al viewport, pero no
          puede crecer hasta invadir el bloque editorial del hero. */
       const minTargetPx = Math.min(w, h) * (HERO_DOOR_LOCKUP
-        ? (isMobile ? 0.22 : 0.20)
+        ? (isMobile ? 0.40 : 0.38)
         : (isMobile ? 0.46 : 0.40));
       const baseTargetPx = Math.min(
-        Math.max(fontPx * (HERO_DOOR_LOCKUP ? 5.4 : 9), minTargetPx),
-        Math.min(w * (HERO_DOOR_LOCKUP ? 0.22 : 0.5), HERO_DOOR_LOCKUP ? 240 : 680)
+        Math.max(fontPx * (HERO_DOOR_LOCKUP ? 12 : 9), minTargetPx),
+        Math.min(w * (HERO_DOOR_LOCKUP ? 0.38 : 0.5), HERO_DOOR_LOCKUP ? 520 : 680)
       );
 
       const titleTop = getHeroTitleTop();
@@ -4595,7 +4595,8 @@
         if (available > 0) {
           /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
              evita que el diámetro de la moneda se coma el copy del título. */
-          return Math.min(baseTargetPx, available * (HERO_DOOR_LOCKUP ? 0.28 : 0.82));
+          if (HERO_DOOR_LOCKUP) return baseTargetPx;
+          return Math.min(baseTargetPx, available * 0.82);
         }
         /* El título ya sube muy arriba: no hay cota positiva. En vez de dejar
            la moneda en su tamaño base (que choca con el texto), se reduce a un
@@ -4613,7 +4614,7 @@
       return THREE.MathUtils.clamp(
         getResponsiveCoinTargetPx() / (CONFIG.coin.scale * worldPxPerUnit),
         0.25,
-        1.8
+        HERO_DOOR_LOCKUP ? 3.4 : 1.8
       );
     }
 
