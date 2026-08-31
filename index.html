@@ -4938,11 +4938,11 @@
     const doorLeafColorVoid = new THREE.Color('#07090f');
     const doorLeafColorGold = new THREE.Color('#ffd76a');
     const doorFrameColorHero = new THREE.Color('#6e7d92');
-    const doorFrameColorMeet = new THREE.Color('#d7b56a');
+    const doorFrameColorMeet = new THREE.Color('#3a4048');
     const doorSpotKeyHero = new THREE.Color(0xd4e0f2);
-    const doorSpotKeyMeet = new THREE.Color(0xffe6b8);
+    const doorSpotKeyMeet = new THREE.Color(0xe8eef6);
     const doorSpotRimHero = new THREE.Color(0x6e819c);
-    const doorSpotRimMeet = new THREE.Color(0xc4a35a);
+    const doorSpotRimMeet = new THREE.Color(0x8a93a3);
 
     const doorLoader = new GLTFLoader(manager);
     doorLoader.setDRACOLoader(dracoLoader);
@@ -6728,30 +6728,29 @@
           for (let i = 0; i < doorLeafMeshes.length; i++) {
             doorLeafMeshes[i].visible = leafT > 0.12;
           }
-          /* El pórtico también cambia: de piedra fría de portada a bronce
-             dorado de La Reunión (si no, la puerta “sigue” en stage 1). */
+          /* Muros: de piedra de portada a obsidiana gris (el oro es de las hojas). */
           for (let i = 0; i < doorFrameMats.length; i++) {
             const m = doorFrameMats[i];
             m.color.copy(doorFrameColorHero).lerp(doorFrameColorMeet, leafT);
-            m.metalness = THREE.MathUtils.lerp(0.08, 0.82, leafT);
-            m.roughness = THREE.MathUtils.lerp(0.88, 0.34, leafT);
-            m.envMapIntensity = THREE.MathUtils.lerp(0.28, 1.2, leafT);
-            if (m.bumpScale != null) m.bumpScale = THREE.MathUtils.lerp(0.045, 0.018, leafT);
+            m.metalness = THREE.MathUtils.lerp(0.08, 0.42, leafT);
+            m.roughness = THREE.MathUtils.lerp(0.88, 0.38, leafT);
+            m.envMapIntensity = THREE.MathUtils.lerp(0.28, 0.72, leafT);
+            if (m.bumpScale != null) m.bumpScale = THREE.MathUtils.lerp(0.045, 0.028, leafT);
             if (m.emissive) {
-              m.emissive.setRGB(0.18 * leafT, 0.11 * leafT, 0.03 * leafT);
-              m.emissiveIntensity = 0.28 * leafT;
+              m.emissive.setRGB(0, 0, 0);
+              m.emissiveIntensity = 0;
             }
           }
           if (doorSpots[0]) {
             doorSpots[0].color.copy(doorSpotKeyHero).lerp(doorSpotKeyMeet, leafT);
-            doorSpots[0].intensity = THREE.MathUtils.lerp(12, 26, leafT);
+            doorSpots[0].intensity = THREE.MathUtils.lerp(12, 18, leafT);
           }
           if (doorSpots[1]) {
             doorSpots[1].color.copy(doorSpotRimHero).lerp(doorSpotRimMeet, leafT);
-            doorSpots[1].intensity = THREE.MathUtils.lerp(6, 16, leafT);
+            doorSpots[1].intensity = THREE.MathUtils.lerp(6, 10, leafT);
           }
           if (doorSpots[2]) {
-            doorSpots[2].intensity = THREE.MathUtils.lerp(3.2, 10, leafT);
+            doorSpots[2].intensity = THREE.MathUtils.lerp(3.2, 8, leafT);
           }
         }
 
