@@ -217,15 +217,14 @@
     .coin-halo-wrap.hidden-stage { opacity: 0 !important; }
 
     .coin-halo {
-      width: min(580px, 90vmin);
-      height: min(580px, 90vmin);
+      width: min(240px, 28vmin);
+      height: min(240px, 28vmin);
       transform: translate(-50%, -50%);
       background:
         radial-gradient(circle,
-          rgba(255,215,106,0.18) 0%,
-          rgba(255,215,106,0.06) 35%,
-          rgba(85,110,180,0.03) 60%,
-          transparent 72%);
+          rgba(255,215,106,0.42) 0%,
+          rgba(255,215,106,0.12) 32%,
+          transparent 68%);
       filter: blur(8px);
       animation: haloPulse 8s ease-in-out infinite;
     }
@@ -4362,7 +4361,7 @@
       /* Still de referencia: pórtico de piedra, vano oscuro, moneda = única joya.
          Las hojas doradas del GLB se apagan en el hero (el vano es noche) y
          vuelven en el acto 2, cuando la puerta de la reunión se cierra. */
-      CONFIG.door.widthVsCoin = 3.2;
+      CONFIG.door.widthVsCoin = 4.05;
       CONFIG.door.fogDensity = 0.026;
       CONFIG.door.doorDepthSquash = 0.78;
       CONFIG.camera.fov = 32;
@@ -4377,7 +4376,6 @@
     const canvas = document.getElementById('canvas');
     const loadEl = document.getElementById('load');
     const haloWrap = document.getElementById('haloWrap');
-    if (HERO_DOOR_LOCKUP && haloWrap) haloWrap.classList.add('hidden-stage');
     const objectReflection = document.getElementById('objectReflection');
     const scrollHint = document.getElementById('scrollHint');
     const heroEl = document.getElementById('hero');
@@ -4581,11 +4579,11 @@
       /* La moneda conserva una escala visual proporcional al viewport, pero no
          puede crecer hasta invadir el bloque editorial del hero. */
       const minTargetPx = Math.min(w, h) * (HERO_DOOR_LOCKUP
-        ? (isMobile ? 0.28 : 0.24)
+        ? (isMobile ? 0.18 : 0.155)
         : (isMobile ? 0.46 : 0.40));
       const baseTargetPx = Math.min(
-        Math.max(fontPx * (HERO_DOOR_LOCKUP ? 6.2 : 9), minTargetPx),
-        Math.min(w * (HERO_DOOR_LOCKUP ? 0.28 : 0.5), HERO_DOOR_LOCKUP ? 320 : 680)
+        Math.max(fontPx * (HERO_DOOR_LOCKUP ? 4.6 : 9), minTargetPx),
+        Math.min(w * (HERO_DOOR_LOCKUP ? 0.18 : 0.5), HERO_DOOR_LOCKUP ? 210 : 680)
       );
 
       const titleTop = getHeroTitleTop();
@@ -4596,7 +4594,7 @@
         if (available > 0) {
           /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
              evita que el diámetro de la moneda se coma el copy del título. */
-          return Math.min(baseTargetPx, available * (HERO_DOOR_LOCKUP ? 0.36 : 0.82));
+          return Math.min(baseTargetPx, available * (HERO_DOOR_LOCKUP ? 0.28 : 0.82));
         }
         /* El título ya sube muy arriba: no hay cota positiva. En vez de dejar
            la moneda en su tamaño base (que choca con el texto), se reduce a un
@@ -4901,6 +4899,7 @@
     const doorMeanderMap = makeMeanderMap();
     doorMeanderMap.repeat.set(6, 8);
     const doorLeafMats = [];
+    const doorLeafMeshes = [];
     const doorLeafColorVoid = new THREE.Color('#07090f');
     const doorLeafColorGold = new THREE.Color('#ffd76a');
     let doorDust = null;
@@ -4955,6 +4954,10 @@
         const name = (object.name || '').toLowerCase();
         // Toroide.001 son las hojas de la puerta; Cubo es el marco/pórtico exterior
         const isDoorLeaf = name.includes('toroide');
+        if (isDoorLeaf) {
+          doorLeafMeshes.push(object);
+          if (HERO_DOOR_LOCKUP) object.visible = false;
+        }
         [object.material].flat().forEach((m) => {
           if (!m || !('metalness' in m)) return;
           m.side = THREE.FrontSide;
@@ -6606,12 +6609,16 @@
 
         coinFade = THREE.MathUtils.clamp(1 - (scatterProgress / 0.45), 0, 1);
         if (objectReflection) {
-          const reflectionDistance = Math.max(20, coinTargetPx * 0.48);
-          objectReflection.style.transform = `translate3d(${coinScreenX}px, ${coinScreenY + reflectionDistance}px, 0) scale(${0.82 + coinFade * 0.18})`;
-          objectReflection.style.opacity = (coinFade * 0.46).toFixed(3);
+          if (HERO_DOOR_LOCKUP) {
+            objectReflection.style.opacity = '0';
+          } else {
+            const reflectionDistance = Math.max(20, coinTargetPx * 0.48);
+            objectReflection.style.transform = `translate3d(${coinScreenX}px, ${coinScreenY + reflectionDistance}px, 0) scale(${0.82 + coinFade * 0.18})`;
+            objectReflection.style.opacity = (coinFade * 0.46).toFixed(3);
+          }
         }
         coin.visible = (currentStage === 1) && (coinFade > 0.01);
-        if (HERO_DOOR_LOCKUP) coin.position.z = 0.28;
+        if (HERO_DOOR_LOCKUP) coin.position.z = 0.55;
         for (let i = 0; i < coinMats.length; i++) {
           coinMats[i].transparent = true;
           coinMats[i].opacity = coinFade;
@@ -6668,6 +6675,9 @@
             m.metalness = THREE.MathUtils.lerp(0.12, 1.0, leafT);
             m.roughness = THREE.MathUtils.lerp(0.92, 0.22, leafT);
             m.envMapIntensity = THREE.MathUtils.lerp(0.12, 1.3, leafT);
+          }
+          for (let i = 0; i < doorLeafMeshes.length; i++) {
+            doorLeafMeshes[i].visible = leafT > 0.12;
           }
           if (doorDust) {
             doorDust.rotation.y = time * 0.045;
@@ -8455,4 +8465,3 @@
 
 </body>
 </html>
->
