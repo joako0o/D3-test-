@@ -208,6 +208,41 @@
       color: var(--color-gold);
     }
 
+    #roomTitle {
+      font-family: var(--font-body) !important;
+      font-size: clamp(16px, 1.9vw, 22px) !important;
+      font-weight: 500 !important;
+      letter-spacing: 0.34em !important;
+      text-transform: uppercase;
+      color: var(--color-gold) !important;
+      text-shadow: 0 0 28px rgba(255, 215, 106, 0.22), 0 2px 14px rgba(0, 0, 0, 0.75);
+      margin-bottom: 1.4rem !important;
+    }
+    #roomLead {
+      font-family: var(--font-display) !important;
+      font-size: clamp(20px, 2.45vw, 30px) !important;
+      font-weight: 500 !important;
+      line-height: 1.42 !important;
+      letter-spacing: -0.012em;
+      max-width: min(760px, 90vw) !important;
+      text-wrap: balance;
+    }
+    #roomLead span {
+      font-style: italic;
+      color: var(--color-gold);
+    }
+    #roomSub {
+      font-family: var(--font-display) !important;
+      font-size: clamp(16px, 1.7vw, 20px) !important;
+      line-height: 1.5 !important;
+      max-width: min(640px, 86vw) !important;
+      color: var(--color-text-secondary) !important;
+    }
+    #roomHint {
+      font-size: clamp(13px, 1.25vw, 15px) !important;
+      letter-spacing: 0.04em !important;
+    }
+
     .scroll-hint {
       position: absolute;
       bottom: 24px; left: 50%;
@@ -3759,7 +3794,7 @@
       </h2>
       <p id="roomLead" data-room style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 640px; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin: 0 20px; opacity: 0;">
         Dentro de la sala se ve m&aacute;s que solo una decisi&oacute;n:<br>
-        el contenido de las actas puede tener se&ntilde;ales m&aacute;s all&aacute; de lo evidente.
+        el contenido de las actas puede tener <span>se&ntilde;ales</span> m&aacute;s all&aacute; de lo evidente.
       </p>
       <p id="roomSub" data-room style="font-size: var(--fs-small); color: var(--color-text-secondary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 560px; text-shadow: 0 2px 10px rgba(0,0,0,0.9); margin: 0.9rem 20px 0; opacity: 0;">
         Cada part&iacute;cula de luz que ves es un fragmento de lo que se dijo en una de estas reuniones.
