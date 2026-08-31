@@ -55,6 +55,10 @@ export const FIGURE_DEFS = [
        alto del pedestal no queda escrito a mano en dos sitios. */
     x: 0, y: 0, z: -4.8,
     standsOn: 'soporte',
+    /* La balanza sale hacia un lado y la espada hacia el otro: centrada por
+       bounding box, la peana quedaba corrida sobre el pedestal. Se centra por
+       la huella. */
+    centerOn: 'base',
     scale: 1.15,
     color: 0xffd76a,
     /* Acabado PIEDRA mate (limestone): la figura no compite con la moneda
@@ -149,6 +153,45 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
     side: THREE.DoubleSide,
   });
 
+  /**
+   * Centro de la HUELLA (no de la silueta).
+   *
+   * `applyModel` centraba por bounding box, y eso funciona con objetos
+   * simétricos. La Justicia no lo es: extiende la balanza hacia un lado y la
+   * espada hacia el otro, así que el centro de la caja NO coincide con el de
+   * la peana del modelo — sobre el pedestal la figura quedaba corrida ~16% del
+   * radio (reportado a ojo, confirmado midiendo: +0.055 en x, −0.053 en z).
+   *
+   * Se mide la nube de vértices del `slab` inferior del modelo (su base) y se
+   * devuelve el punto medio de los percentiles 5–95 en x/z: es robusto a la
+   * punta de la espada, que también toca el suelo pero es un puñado de
+   * vértices, y a cualquier vértice suelto.
+   */
+  function footprintCenter(model, slab = 0.06) {
+    model.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(model);
+    const cut = box.min.y + (box.max.y - box.min.y) * slab;
+    const xs = [];
+    const zs = [];
+    const v = new THREE.Vector3();
+    model.traverse((obj) => {
+      const pos = obj.isMesh ? obj.geometry?.attributes?.position : null;
+      if (!pos) return;
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(obj.matrixWorld);
+        if (v.y <= cut) { xs.push(v.x); zs.push(v.z); }
+      }
+    });
+    if (xs.length < 8) return null;
+    const midRange = (values) => {
+      values.sort((a, b) => a - b);
+      const lo = values[Math.floor(values.length * 0.05)];
+      const hi = values[Math.min(values.length - 1, Math.floor(values.length * 0.95))];
+      return (lo + hi) / 2;
+    };
+    return { x: midRange(xs), z: midRange(zs) };
+  }
+
   function makePlaceholder(def) {
     const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.20, 0), placeholderMat);
     mesh.material = placeholderMat.clone();
@@ -195,8 +238,20 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
       if (def.stretchY) model.scale.y *= def.stretchY;
       box.setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
-      model.position.x -= center.x;
-      model.position.z -= center.z;
+      /* `centerOn: 'base'` centra por la HUELLA en vez de por la caja: es lo
+         que hay que usar cuando el objeto tiene brazos/atributos que sobresalen
+         de un lado (ver `footprintCenter`). */
+      let offsetX = center.x;
+      let offsetZ = center.z;
+      if (def.centerOn === 'base') {
+        const footprint = footprintCenter(model, def.footprintSlab ?? 0.06);
+        if (footprint) {
+          offsetX = footprint.x;
+          offsetZ = footprint.z;
+        }
+      }
+      model.position.x -= offsetX;
+      model.position.z -= offsetZ;
       model.position.y -= box.min.y;
       /* Alto REAL ya escalado: lo usa `restack()` para apoyar una figura
          sobre otra (la estatua sobre el pedestal) sin números mágicos. */
