@@ -4368,6 +4368,11 @@
       CONFIG.camera.fov = 32;
       CONFIG.camera.y = 1.55;
       CONFIG.camera.z = 7.7;
+      /* Encuadre de La Reunión y PRIMER frame del cruce del umbral.
+         La 1→2 aterriza aquí; el dolly 2→3 parte de aquí (mismo tamaño
+         de puerta, sin salto a CONFIG.camera.z). */
+      CONFIG.door.approachCamY = 0.62;
+      CONFIG.door.approachCamZ = 5.15;
       CONFIG.exposure = 0.94;
       CONFIG.door.spots.key = { color: 0xd4e0f2, intensity: 12, angle: 0.72, penumbra: 0.62, decay: 1.35, distance: 0, x: -3.8, y: 3.5, z: 4.4, tx: 0, ty: 0.2, tz: 0 };
       CONFIG.door.spots.rim = { color: 0x6e819c, intensity: 6, angle: 0.8, penumbra: 0.75, decay: 1.35, distance: 0, x: 3.5, y: 1.6, z: 2.0, tx: 0, ty: 0.1, tz: -0.35 };
@@ -5507,6 +5512,11 @@
                     punto bajo y detrás de la puerta). */
     const _lookBase = new THREE.Vector3(0, camBaseY, 0);
     const _doorLook = new THREE.Vector3();
+    /* Origen congelado del dolly 2→3: el encuadre real al arrancar el
+       cruce (fin de 1→2 / hold de La Reunión), no CONFIG.camera.z. */
+    const _doorwayFromPos = new THREE.Vector3();
+    const _doorwayFromLook = new THREE.Vector3();
+    let _doorwayFromArmed = false;
 
     /* ═══════════════════════════════════════════════════════════
        COREOGRAFÍA DE CÁMARA — plano-secuencia sobre el scroll.
@@ -5546,8 +5556,10 @@
         CONFIG.camera.y = y + 0.38;
         cameraChoreographyStops[0].pos = [0, CONFIG.camera.y, CONFIG.camera.z];
         cameraChoreographyStops[0].look = [0, y, 0];
-        cameraChoreographyStops[1].pos = [0, 0.62, 5.15];
-        cameraChoreographyStops[1].look = [0, 0.62, 0.00];
+        const ay = CONFIG.door.approachCamY ?? 0.62;
+        const az = CONFIG.door.approachCamZ ?? 5.15;
+        cameraChoreographyStops[1].pos = [0, ay, az];
+        cameraChoreographyStops[1].look = [0, ay, 0.00];
       }
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
       const stops = [];
@@ -5566,7 +5578,31 @@
         } else {
           p = n > 1 ? i / (n - 1) : 0;
         }
-        stops.push({ p, pos: def.pos, look: def.look });
+        /* Lockup: el encuadre de La Reunión se alcanza al TERMINAR la 1→2
+           (scatter=1, bottom del hero = top del viewport), no en el centro
+           de #stageObjective — si no, el aterrizaje 1→2 y el primer frame
+           del cruce tienen tamaños distintos. */
+        if (HERO_DOOR_LOCKUP && def.id === 'stageObjective') {
+          const hero = document.getElementById('hero');
+          const heroH = hero ? hero.offsetHeight : window.innerHeight;
+          p = THREE.MathUtils.clamp(heroH / Math.max(docHeight, 1e-4), 0, 1);
+        }
+        stops.push({ id: def.id, p, pos: def.pos, look: def.look });
+      }
+      if (HERO_DOOR_LOCKUP && docHeight > 0) {
+        const obj = stops.find((s) => s.id === 'stageObjective');
+        const room = document.getElementById('stageRoom');
+        if (obj && room) {
+          const enterY = (room.getBoundingClientRect().top + window.scrollY) - window.innerHeight * 0.85;
+          const pHold = THREE.MathUtils.clamp(enterY / docHeight, 0, 1);
+          const idx = stops.indexOf(obj);
+          stops.splice(idx + 1, 0, {
+            id: 'doorwayHold',
+            p: Math.max(pHold, obj.p + 0.001),
+            pos: obj.pos,
+            look: obj.look,
+          });
+        }
       }
       for (let i = 1; i < stops.length; i++) {
         if (stops[i].p < stops[i - 1].p) stops[i].p = stops[i - 1].p + 0.001;
@@ -6849,19 +6885,41 @@
       rim.intensity = L.rim.intensity * dim;
       front.intensity = L.front.intensity * dim;
       ambient.intensity = L.ambient.intensity * dim;
-      const baseCamY = CONFIG.camera.y;
-      const lowCamY = baseCamY - 0.15;
-      const currentCamY = THREE.MathUtils.lerp(baseCamY, lowCamY, camBlend);
-      const baseCamZ = CONFIG.camera.z + camBlend * 0.3;
+      /* Encuadre vivo (lockup → La Reunión). El cruce 2→3 congela ESTE
+         pose en el primer frame para que el tamaño de la puerta no salte
+         a CONFIG.camera.z (7.7) al arrancar el dolly. */
+      const choreo = cameraChoreography(storyProgress);
+      const lockupCamMix = HERO_DOOR_LOCKUP
+        ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
+        : 0;
+      if (lockupCamMix > 0) {
+        const approachY = CONFIG.door.approachCamY ?? 0.62;
+        const approachZ = CONFIG.door.approachCamZ ?? 5.15;
+        choreo.pos.set(
+          0,
+          THREE.MathUtils.lerp(approachY, CONFIG.camera.y, lockupCamMix),
+          THREE.MathUtils.lerp(approachZ, CONFIG.camera.z, lockupCamMix)
+        );
+        choreo.look.set(
+          0,
+          THREE.MathUtils.lerp(approachY, CONFIG.coin.baseY, lockupCamMix),
+          0
+        );
+      }
 
       /* La Sala (b1): dolly a través del umbral + luz cálida del interior + velo de fog.
          En modo 'classic' crossT queda en 0 → rama clásica intacta. */
       if (DOOR_MODE === 'doorway' && crossEff > 0.001) {
+        if (!_doorwayFromArmed) {
+          _doorwayFromPos.copy(choreo.pos);
+          _doorwayFromLook.copy(choreo.look);
+          _doorwayFromArmed = true;
+        }
         const crossEase = THREE.MathUtils.smoothstep(crossEff, 0, 1);
         camera.position.set(
-          CONFIG.camera.x,
-          THREE.MathUtils.lerp(currentCamY, CONFIG.door.roomCamY ?? 0.62, crossEase),
-          THREE.MathUtils.lerp(baseCamZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
+          THREE.MathUtils.lerp(_doorwayFromPos.x, CONFIG.camera.x, crossEase),
+          THREE.MathUtils.lerp(_doorwayFromPos.y, CONFIG.door.roomCamY ?? 0.62, crossEase),
+          THREE.MathUtils.lerp(_doorwayFromPos.z, CONFIG.door.roomCamZ ?? -0.5, crossEase)
         );
         /* Encuadre del acercamiento (tres fases encadenadas por crossT):
              1) mira neutra → centro de la puerta  [aimDoor: crossT 0 → 0.45]
@@ -6874,6 +6932,7 @@
         const [ar0, ar1] = CONFIG.door.aimRoomT ?? [0.55, 0.95];
         const aimDoor = THREE.MathUtils.smoothstep((crossEff - ad0) / Math.max(ad1 - ad0, 1e-3), 0, 1);
         const aimRoom = THREE.MathUtils.smoothstep((crossEff - ar0) / Math.max(ar1 - ar0, 1e-3), 0, 1);
+        _lookBase.copy(_doorwayFromLook);
         _doorLook.set(
           doorGroup.position.x,
           doorGroup.position.y + (doorBottomOffset + doorTopOffset) * 0.5 * doorModelGroup.scale.y * doorGroup.scale.x,
@@ -6885,7 +6944,7 @@
         /* Coreografía: la cámara viaja por los capítulos en vez de quedarse
            clavada. La rama del dolly (crossEff>0) sigue mandando durante el
            cruce; aquí se aplica el plano-secuencia del resto de la pieza. */
-        const choreo = cameraChoreography(storyProgress);
+        _doorwayFromArmed = false;
         camera.position.copy(choreo.pos);
         camera.lookAt(choreo.look);
       }
