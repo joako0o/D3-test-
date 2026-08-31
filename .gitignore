@@ -1,13 +1,8 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # AI tool configuration
 .opencode/
-
-# Internal notes (not part of the project)
-APUNTES_TECNICOS.md
-APUNTES_AI_WEBSITES.md
 
 # OS files
 .DS_Store
