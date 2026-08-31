@@ -6631,8 +6631,8 @@
         coin.rotation.y = tElapsed * C.swaySpeedY * introEase * motionScale
           + smoothMouseX * (HERO_DOOR_LOCKUP ? 0.08 : 0.22) * motionScale
           + dragRotY;
-        coin.rotation.x = (HERO_DOOR_LOCKUP ? 0.02 : C.tiltBase)
-          + (HERO_DOOR_LOCKUP ? 0 : C.tiltOscillation * Math.sin(tElapsed * C.tiltSpeed * motionScale))
+        coin.rotation.x = (HERO_DOOR_LOCKUP ? -0.11 : C.tiltBase)
+          + (HERO_DOOR_LOCKUP ? 0.018 : C.tiltOscillation) * Math.sin(tElapsed * C.tiltSpeed * motionScale)
           + smoothMouseY * -0.12 * motionScale + dragRotX;
         coin.position.y = C.baseY + C.floatAmount * Math.sin(tElapsed * C.floatSpeed * motionScale) * motionScale;
         mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
