@@ -78,6 +78,7 @@ El tema es **política monetaria**, no un compositor. Meter música de Pendereck
 - [ ] **Audio interactivo** — DESACTIVADO POR AHORA (decisión del autor). El diseño sigue documentado aquí por si se retoma.
 - [x] **Contador de descubrimiento** (`Evidencia n/100`) con `localStorage`.
 - [x] **Recorrido guiado 5 min** (`#guidedTour`): avanza por las secciones clave.
+- [x] **Coreografía de cámara** (`cameraChoreography` + `cameraStops`): después del cruce puerta→sala, la cámara viaja con deriva suave por voces/actas/timeline/etc. El cruce sigue gobernado por el dolly de `#stageRoom` para no desalinear las partículas. Los keyframes de los ejes quedan en la posición base a propósito.
 
 ### Lo que sigue (fases 2–6)
 

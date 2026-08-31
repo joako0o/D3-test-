@@ -5274,6 +5274,7 @@
     };
 
     let scatterProgress = 0;
+    let storyProgress = 0;   // 0→1 a lo largo de todo el documento (para la coreografía)
     let coinFade = 1;
     let doorFade = 0;
     let doorTarget = 0;
@@ -5336,6 +5337,64 @@
                     punto bajo y detrás de la puerta). */
     const _lookBase = new THREE.Vector3(0, camBaseY, 0);
     const _doorLook = new THREE.Vector3();
+
+    /* ═══════════════════════════════════════════════════════════
+       COREOGRAFÍA DE CÁMARA — plano-secuencia sobre el scroll.
+       Después del cruce puerta→sala (que mantiene su dolly propio),
+       la cámara ya no se queda clavada en el punto base: viaja con
+       deriva suave por cada capítulo. El DOM sigue por encima, así el
+       movimiento se siente como "el mundo acompaña", no como un
+       desplazamiento brusco.
+       Los desplazamientos son deliberadamente pequeños en #stageAxes
+       para no desalinear la proyección de las partículas con el SVG.
+    ═══════════════════════════════════════════════════════════ */
+    const cameraStops = [
+      { p: 0.02, pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // hero (cámara base)
+      { p: 0.12, pos: [0.00, 0.60, 5.10], look: [0.00, 0.60, 0.00] },   // acercamiento puerta
+      /* El cruce puerta→sala NO se coreografía acá: lo gobierna el dolly de
+         #stageRoom (crossEff). Desde p≈0.42 en adelante la cámara viaja por
+         los capítulos. */
+      { p: 0.42, pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // ejes (base, para alinear SVG)
+      { p: 0.52, pos: [1.10, 0.74, 5.20], look: [0.00, 0.68, 0.00] },   // voces
+      { p: 0.62, pos: [-1.10, 0.74, 5.20], look: [0.00, 0.68, 0.00] },  // actas
+      { p: 0.72, pos: [0.00, 0.68, 5.50], look: [0.00, 0.70, 0.00] },   // contadores
+      { p: 0.80, pos: [1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },   // pipeline
+      { p: 0.88, pos: [-1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },  // timeline
+      { p: 0.94, pos: [0.00, 0.72, 5.40], look: [0.00, 0.70, 0.00] },   // quotes
+      { p: 1.00, pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // cierre (base)
+    ];
+    const _camPos = new THREE.Vector3();
+    const _camLook = new THREE.Vector3();
+    function cameraChoreography(progress) {
+      if (reduceMotion) {
+        _camPos.set(CONFIG.camera.x, camBaseY, CONFIG.camera.z);
+        _camLook.set(0, camBaseY, 0);
+        return { pos: _camPos, look: _camLook };
+      }
+      const p = THREE.MathUtils.clamp(progress, 0, 1);
+      let a = cameraStops[0];
+      let b = cameraStops[cameraStops.length - 1];
+      for (let i = 0; i < cameraStops.length - 1; i++) {
+        if (p >= cameraStops[i].p && p <= cameraStops[i + 1].p) {
+          a = cameraStops[i];
+          b = cameraStops[i + 1];
+          break;
+        }
+      }
+      const span = Math.max(b.p - a.p, 1e-4);
+      const t = THREE.MathUtils.smoothstep((p - a.p) / span, 0, 1);
+      _camPos.set(
+        THREE.MathUtils.lerp(a.pos[0], b.pos[0], t),
+        THREE.MathUtils.lerp(a.pos[1], b.pos[1], t),
+        THREE.MathUtils.lerp(a.pos[2], b.pos[2], t)
+      );
+      _camLook.set(
+        THREE.MathUtils.lerp(a.look[0], b.look[0], t),
+        THREE.MathUtils.lerp(a.look[1], b.look[1], t),
+        THREE.MathUtils.lerp(a.look[2], b.look[2], t)
+      );
+      return { pos: _camPos, look: _camLook };
+    }
     /* Vector reutilizado para apuntar los spotlights de la puerta (antes se
        alocaba uno nuevo en CADA frame → ~60 objetos/seg de basura para el GC). */
     const _spotTarget = new THREE.Vector3();
@@ -6562,8 +6621,12 @@
         _roomLook.copy(_lookBase).lerp(_doorLook, aimDoor).lerp(_roomLookTarget, aimRoom);
         camera.lookAt(_roomLook);
       } else {
-        camera.position.set(CONFIG.camera.x, currentCamY, baseCamZ);
-        camera.lookAt(0, camBaseY, 0);
+        /* Coreografía: la cámara viaja por los capítulos en vez de quedarse
+           clavada. La rama del dolly (crossEff>0) sigue mandando durante el
+           cruce; aquí se aplica el plano-secuencia del resto de la pieza. */
+        const choreo = cameraChoreography(storyProgress);
+        camera.position.copy(choreo.pos);
+        camera.lookAt(choreo.look);
       }
 
       /* La Sala (b1): la luz del interior sube con el cruce y se mantiene en la sala */
@@ -7095,6 +7158,7 @@
       const vp = getViewportSize();
       const docHeight = document.documentElement.scrollHeight - vp.height;
       const p = docHeight > 0 ? scrollTop / docHeight : 0;
+      storyProgress = p;
 
       // Debug scrubber
       tsProgress.textContent = Math.round(p * 100) + '%';
