@@ -5543,7 +5543,7 @@
     function rebuildCameraChoreography() {
       if (HERO_DOOR_LOCKUP) {
         const y = CONFIG.coin.baseY;
-        CONFIG.camera.y = y + 0.22;
+        CONFIG.camera.y = y + 0.38;
         cameraChoreographyStops[0].pos = [0, CONFIG.camera.y, CONFIG.camera.z];
         cameraChoreographyStops[0].look = [0, y, 0];
         cameraChoreographyStops[1].pos = [0, 0.62, 5.15];
@@ -6666,7 +6666,7 @@
         const lockupMix = HERO_DOOR_LOCKUP
           ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
           : 0;
-        doorGroup.rotation.x = -0.20 * lockupMix + smoothMouseY * -0.03 * doorEase;
+        doorGroup.rotation.x = -0.12 * lockupMix + smoothMouseY * -0.03 * doorEase;
         doorGroup.position.y = THREE.MathUtils.lerp(plantedY, CONFIG.coin.baseY, lockupMix) + smoothMouseY * -0.06 * doorEase;
         for (let i = 0; i < doorMats.length; i++) {
           doorMats[i].transparent = true;
