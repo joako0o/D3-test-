@@ -58,21 +58,20 @@
       --ambient-alpha: 0.16;
       --ambient-size: 35%;
 
-      /* ── Typography Tokens ── */
+      /* ── Typography Tokens ──
+         Fluido tipo Utopia (https://utopia.fyi): clamp(MIN rem, rem + vw, MAX rem).
+         El rem respeta zoom/accesibilidad; el vw escala entre ~360 y ~1440px.
+         No hace falta librería: es CSS nativo. */
       --font-display: 'Playfair Display', Georgia, serif;
       --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      /* Escala tipográfica compartida. Los máximos estaban capados demasiado
-         bajo para monitores grandes (17px de cuerpo, 13px de texto auxiliar),
-         por eso los stages posteriores se veían pequeños. Se suben los topes y
-         los coeficientes vw; los mínimos (móvil) respetan legibilidad:
-         cuerpo ≥16px y micro ≥12px (recomendación WCAG / clamp()).
-         Ver best practices: min 16px cuerpo, máximo ≤2.5× mínimo. */
-      --fs-hero: clamp(16px, 2.1vw, 34px);
-      --fs-h2: clamp(22px, 3.2vw, 52px);
-      --fs-h3: clamp(16px, 1.8vw, 24px);
-      --fs-body: clamp(16px, 1.9vw, 19px);
-      --fs-small: clamp(13px, 1.3vw, 16px);
-      --fs-micro: clamp(12px, 0.95vw, 13px);
+      --fs-micro: clamp(0.75rem, 0.73rem + 0.12vw, 0.8125rem);
+      --fs-small: clamp(0.8125rem, 0.76rem + 0.22vw, 1rem);
+      --fs-body: clamp(1rem, 0.94rem + 0.28vw, 1.1875rem);
+      --fs-h3: clamp(1rem, 0.88rem + 0.5vw, 1.5rem);
+      --fs-kicker: clamp(0.9375rem, 0.82rem + 0.45vw, 1.375rem);
+      --fs-display: clamp(1.25rem, 0.85rem + 1.35vw, 1.875rem);
+      --fs-hero: clamp(1.125rem, 0.72rem + 1.35vw, 2.125rem);
+      --fs-h2: clamp(1.375rem, 0.85rem + 1.85vw, 3.25rem);
       --lh-tight: 1.25;
       --lh-normal: 1.6;
       --lh-relaxed: 1.8;
@@ -187,20 +186,20 @@
 
     #stageObjectiveTitle {
       font-family: var(--font-body) !important;
-      font-size: clamp(16px, 1.9vw, 22px) !important;
+      font-size: var(--fs-kicker) !important;
       font-weight: 500 !important;
-      letter-spacing: 0.34em !important;
+      letter-spacing: clamp(0.18em, 0.1em + 0.4vw, 0.34em) !important;
       text-transform: uppercase;
       color: var(--color-gold) !important;
       text-shadow: 0 0 28px rgba(255, 215, 106, 0.22), 0 2px 14px rgba(0, 0, 0, 0.75);
     }
     #stageObjectiveParagraph {
       font-family: var(--font-display) !important;
-      font-size: clamp(20px, 2.45vw, 30px) !important;
+      font-size: var(--fs-display) !important;
       font-weight: 500 !important;
       line-height: 1.42 !important;
       letter-spacing: -0.012em;
-      max-width: min(760px, 90vw) !important;
+      max-width: min(47rem, 90vw) !important;
       text-wrap: balance;
     }
     #stageObjectiveParagraph span {
@@ -210,9 +209,9 @@
 
     #roomTitle {
       font-family: var(--font-body) !important;
-      font-size: clamp(16px, 1.9vw, 22px) !important;
+      font-size: var(--fs-kicker) !important;
       font-weight: 500 !important;
-      letter-spacing: 0.34em !important;
+      letter-spacing: clamp(0.18em, 0.1em + 0.4vw, 0.34em) !important;
       text-transform: uppercase;
       color: var(--color-gold) !important;
       text-shadow: 0 0 28px rgba(255, 215, 106, 0.22), 0 2px 14px rgba(0, 0, 0, 0.75);
@@ -220,11 +219,11 @@
     }
     #roomLead {
       font-family: var(--font-display) !important;
-      font-size: clamp(20px, 2.45vw, 30px) !important;
+      font-size: var(--fs-display) !important;
       font-weight: 500 !important;
       line-height: 1.42 !important;
       letter-spacing: -0.012em;
-      max-width: min(760px, 90vw) !important;
+      max-width: min(47rem, 90vw) !important;
       text-wrap: balance;
     }
     #roomLead span {
@@ -233,13 +232,13 @@
     }
     #roomSub {
       font-family: var(--font-display) !important;
-      font-size: clamp(16px, 1.7vw, 20px) !important;
+      font-size: var(--fs-body) !important;
       line-height: 1.5 !important;
-      max-width: min(640px, 86vw) !important;
+      max-width: min(40rem, 86vw) !important;
       color: var(--color-text-secondary) !important;
     }
     #roomHint {
-      font-size: clamp(13px, 1.25vw, 15px) !important;
+      font-size: var(--fs-small) !important;
       letter-spacing: 0.04em !important;
     }
 
@@ -2918,9 +2917,17 @@
     @media (max-width: 430px) {
       .top { padding: 12px 12px 8px; }
       .brand { font-size: var(--fs-micro); letter-spacing: 3px; }
-      .hero-title h1 { font-size: clamp(18px, 5vw, 28px); }
+      .hero-title h1 { font-size: clamp(1.125rem, 5vw, 1.75rem); }
       .quote-card { padding: 20px; }
-      .counter-number { font-size: clamp(32px, 8vw, 56px); }
+      .counter-number { font-size: clamp(2rem, 8vw, 3.5rem); }
+    }
+
+    @media (max-height: 640px) {
+      :root {
+        --fs-display: clamp(1.125rem, 3.2vh, 1.5rem);
+        --fs-kicker: clamp(0.875rem, 2.4vh, 1.125rem);
+      }
+      .hero-title { padding-bottom: clamp(2.5rem, 8vh, 4.5rem); }
     }
 
     /* ─── Reduced Motion ─── */
@@ -4286,7 +4293,9 @@
       }
     })();
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isMobile = window.matchMedia && (window.matchMedia('(max-width: 767px)').matches || window.matchMedia('(pointer: coarse)').matches);
+    function isCompactWidth() {
+      return getViewportSize().width <= 767;
+    }
     const animMul = reduceMotion ? 0 : 1;
 
     /* ────────────────────────────────
@@ -4392,9 +4401,9 @@
         ══════════════════════════════════════════════════════════════════════ */
         bottomOffset: '9vh',       // Distancia desde abajo (SUBIR: '10vh', '14vh' | BAJAR: '4vh', '2vh')
         horizontalOffset: '0px',   // Horizontal (DERECHA: '30px' | IZQUIERDA: '-30px' | '0px' = centrado)
-        maxWidth: '760px',         // Ancho del párrafo (Más ancho: '750px' | Más angosto: '550px')
-        titleSize: 'clamp(16px, 1.9vw, 22px)',
-        textSize: 'clamp(20px, 2.45vw, 30px)',
+        maxWidth: 'min(47rem, 90vw)',         // Ancho del párrafo (Más ancho: '750px' | Más angosto: '550px')
+        titleSize: 'var(--fs-kicker)',
+        textSize: 'var(--fs-display)',
         gap: '1.4rem',             // Espacio entre título y párrafo
       },
       interaction: {
@@ -4642,9 +4651,10 @@
       const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 34);
       /* La moneda conserva una escala visual proporcional al viewport, pero no
          puede crecer hasta invadir el bloque editorial del hero. */
+      const compact = isCompactWidth();
       const minTargetPx = Math.min(w, h) * (HERO_DOOR_LOCKUP
-        ? (isMobile ? 0.40 : 0.38)
-        : (isMobile ? 0.46 : 0.40));
+        ? (compact ? 0.40 : 0.38)
+        : (compact ? 0.46 : 0.40));
       const baseTargetPx = Math.min(
         Math.max(fontPx * (HERO_DOOR_LOCKUP ? 12 : 9), minTargetPx),
         Math.min(w * (HERO_DOOR_LOCKUP ? 0.38 : 0.5), HERO_DOOR_LOCKUP ? 520 : 680)
@@ -4658,7 +4668,10 @@
         if (available > 0) {
           /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
              evita que el diámetro de la moneda se coma el copy del título. */
-          if (HERO_DOOR_LOCKUP) return baseTargetPx;
+          if (HERO_DOOR_LOCKUP) {
+            if (h <= 700) return Math.min(baseTargetPx, Math.max(minTargetPx * 0.7, available * 0.86));
+            return baseTargetPx;
+          }
           return Math.min(baseTargetPx, available * 0.82);
         }
         /* El título ya sube muy arriba: no hay cota positiva. En vez de dejar
