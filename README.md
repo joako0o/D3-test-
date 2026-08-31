@@ -60,18 +60,21 @@ ISC
 ## Nivel premium (en progreso)
 
 Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
-"de oficio" en un solo mundo visual:
+"de oficio" en un solo mundo visual. Estado real verificado en la revisión
+2026-08-30:
 
-- **HUD "La Sala de Deliberaciones"** (`#chapterHud`): da contexto y un recorrido guiado.
-- **Gabinete de figuras** (`#figureCabinet`): lista las figuras 3D y su estado.
-- **Sistema de figuras** (`js/figures.js`): intenta cargar cada `figures/*.glb`; si no existe aún, dibuja un placeholder.
-- **Nube de partículas continua**: ya no se apaga entre capítulos.
+- **Gabinete de figuras** (`#figureCabinet`): lista las figuras 3D y su estado. ✅ en el sitio.
+- **Sistema de figuras** (`js/figures.js`): intenta cargar cada `figures/*.glb`; si no existe aún, dibuja un placeholder. ✅ en el sitio.
+- **Nube de partículas continua**: ya no se apaga entre capítulos. ✅ en el sitio.
+- **Coreografía de cámara** (`cameraChoreography` + `cameraStops`): deriva suave entre etapas después del cruce puerta → sala. ✅ en el sitio.
+- **Fuentes self-hosted** (`fonts/*.woff2` + `@font-face`): ✅ completado el 2026-08-30 (ver `fonts/README.md`).
+- **HUD "La Sala de Deliberaciones"** (`#chapterHud`): pendiente (no implementado).
+- **Descubrimiento** (`Evidencia n/100` en localStorage): pendiente (no implementado).
+- **Recorrido guiado** (`#guidedTour`): pendiente (no implementado).
 - **Audio**: desactivado por decisión del autor (no se pondrá música por ahora). El mecanismo queda documentado en `PLAN_NIVEL_PREMIUM.md` por si se retoma.
-- **Descubrimiento**: cada cita abierta suma `Evidencia n/100` (localStorage).
 
 ### Tu lista de tareas (las que dependen de ti)
 
 1. **Modelar figuras Blender** → `figures/README.md` (empezar con `balanza.glb`).
-2. **Self-host fuentes** → `fonts/README.md` (Playfair + Inter).
-3. **Ajustar `js/figures.js`** si cambian posiciones/escalas de las figuras.
-4. **Definir moodboard** (el audio quedó desactivado; ver `PLAN_NIVEL_PREMIUM.md`).
+2. **Ajustar `js/figures.js`** si cambian posiciones/escalas de las figuras.
+3. **Definir moodboard** (el audio quedó desactivado; ver `PLAN_NIVEL_PREMIUM.md`).

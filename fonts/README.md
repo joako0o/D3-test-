@@ -1,31 +1,40 @@
 # `fonts/` — Fuentes self-hosted
 
-El proyecto usa **Playfair Display** (títulos) e **Inter** (texto), servidas hoy
-desde Google Fonts. Para que sea 100% offline y para que el render no
-"salte" entre local y GitHub Pages, conviene tenerlas en este repo.
+Las fuentes **Playfair Display** (títulos) e **Inter** (texto) están alojadas
+en este repo como `.woff2` (subconjunto *latin*, el que cubre el texto del
+sitio). `index.html` las carga con `@font-face`, sin depender de Google Fonts.
 
-## Cómo hacerlo (tú)
+## Estado
 
-1. Descarga los archivos `.woff2` de Playfair Display (400/500/600/700/italic)
-   e Inter (300/400/500/600). Puedes usar google-webfonts-helper.
-2. Ponlos en esta carpeta con nombres así:
+- ✅ **Completado** (2026-08-30): los 9 archivos se descargaron del paquete
+  `@fontsource/*` (npm) y se registraron en `index.html`.
+- El bloque `@font-face` está al principio de `index.html`, antes del CSS
+  principal, para evitar FOUT/CLS en el primer frame.
 
-   - `fonts/playfair-display-400.woff2`, `500`, `600`, `700`, `400-italic`
-   - `fonts/inter-300.woff2`, `400`, `500`, `600`
+## Archivos
 
-3. En `index.html`, reemplaza el bloque `<link>` de Google Fonts por:
+| Archivo | Peso | Uso |
+|---|---|---|
+| `playfair-display-400.woff2` | 22 KB | títulos regular |
+| `playfair-display-500.woff2` | 23 KB | títulos medium |
+| `playfair-display-600.woff2` | 23 KB | títulos semibold |
+| `playfair-display-700.woff2` | 23 KB | títulos bold |
+| `playfair-display-400-italic.woff2` | 22 KB | itálicas (citas) |
+| `inter-300.woff2` | 24 KB | texto light |
+| `inter-400.woff2` | 24 KB | texto regular |
+| `inter-500.woff2` | 24 KB | texto medium |
+| `inter-600.woff2` | 24 KB | texto semibold |
 
-   ```html
-   <style>
-     @font-face { font-family:'Playfair Display'; font-weight:400; font-style:normal; src:url('fonts/playfair-display-400.woff2') format('woff2'); }
-     /* ... resto de pesos ... */
-     @font-face { font-family:'Inter'; font-weight:300; src:url('fonts/inter-300.woff2') format('woff2'); }
-     /* ... resto de pesos ... */
-   </style>
-   ```
+Total ≈ **224 KB** (una sola descarga de las anteriores, y sin round-trips
+a `fonts.googleapis.com`).
 
-4. El resto del CSS ya usa `var(--font-display)` y `var(--font-body)`, así que
-   no hay que tocar nada más.
+## Si necesitas actualizar o añadir pesos
 
-> Mientras no subas las fuentes, el proyecto seguirá funcionando con el
-> fallback (`Georgia` / sistema). Esto NO es un bug: es un paso de pulido.
+1. `npm install @fontsource/playfair-display @fontsource/inter`
+   (o el paquete de la familia que toque).
+2. Copia el `.woff2` de `node_modules/@fontsource/<familia>/files/`
+   a esta carpeta con el nombre `familia-peso(-italic).woff2`.
+3. Añade la línea `@font-face` correspondiente en `index.html`.
+
+> Si prefieres solo el alfabeto del sitio (es-latino + signos), puedes usar
+> el subset `latin` de fontsource; es el que está en el repo ahora.

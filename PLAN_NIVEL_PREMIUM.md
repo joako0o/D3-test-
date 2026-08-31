@@ -68,16 +68,16 @@ El tema es **política monetaria**, no un compositor. Meter música de Pendereck
 - [x] Gráfica responsive (redibujo en resize).
 - [x] Tipos de gráfico legibles (13–16px).
 - [x] `og:image` + twitter card (imagen generada en `og-image.jpg`).
-- [ ] 🫵 Self-host fonts (Playfair/Inter a `fonts/` y `@font-face` en `index.html`).
+- [x] Self-host fonts (Playfair/Inter en `fonts/` con `@font-face` en `index.html`; ver `fonts/README.md`).
 
 ### Fase 1.5 — Ya implementado (Núcleo "una sola sala")
-- [x] **HUD de La Sala de Deliberaciones** (`#chapterHud`): "La Sala de Deliberaciones · 16 años · un mismo espacio".
+- [ ] **HUD de La Sala de Deliberaciones** (`#chapterHud`): "La Sala de Deliberaciones · 16 años · un mismo espacio". — ⚠️ *Corregido en revisión 2026-08-30: NO existe en el código. Estaba marcado como hecho por error.*
 - [x] **Gabinete de figuras** (`#figureCabinet`): lista las 6 figuras planeadas y su estado `buscando / por modelar / listo`.
 - [x] **Sistema de figuras con placeholder** (`js/figures.js`): si el `.glb` no existe, dibuja un icosaedro + halo; si existe, lo carga y normaliza.
 - [x] **Nube de partículas nunca se apaga**: mínimo de atmósfera en todos los capítulos (antes caía a casi cero en algunos stages).
 - [ ] **Audio interactivo** — DESACTIVADO POR AHORA (decisión del autor). El diseño sigue documentado aquí por si se retoma.
-- [x] **Contador de descubrimiento** (`Evidencia n/100`) con `localStorage`.
-- [x] **Recorrido guiado 5 min** (`#guidedTour`): avanza por las secciones clave.
+- [ ] **Contador de descubrimiento** (`Evidencia n/100`) con `localStorage`. — ⚠️ *Corregido en revisión 2026-08-30: NO existe en el código. Estaba marcado como hecho por error.*
+- [ ] **Recorrido guiado 5 min** (`#guidedTour`): avanza por las secciones clave. — ⚠️ *Corregido en revisión 2026-08-30: NO existe en el código. Estaba marcado como hecho por error.*
 - [x] **Coreografía de cámara** (`cameraChoreography` + `cameraStops`): después del cruce puerta→sala, la cámara viaja con deriva suave por voces/actas/timeline/etc. El cruce sigue gobernado por el dolly de `#stageRoom` para no desalinear las partículas. Los keyframes de los ejes quedan en la posición base a propósito.
 
 ### Lo que sigue (fases 2–6)
