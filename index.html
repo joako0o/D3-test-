@@ -2948,6 +2948,21 @@
     #quotePanel .score-val { font-size: var(--fs-micro); font-variant-numeric: tabular-nums; color: var(--color-text-primary); min-width: 30px; text-align: right; }
     #quotePanel .score-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-faint); }
     #quotePanel .year { margin-top: 10px; font-size: var(--fs-micro); letter-spacing: 1px; text-transform: uppercase; opacity: 0.45; }
+    #quotePanel .source-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      color: var(--color-gold);
+      font-size: var(--fs-micro);
+      letter-spacing: 0.5px;
+      text-decoration: none;
+      opacity: 0.78;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    #quotePanel .source-link::before { content: '↗'; font-size: 12px; }
+    #quotePanel .source-link:hover,
+    #quotePanel .source-link:focus-visible { opacity: 1; transform: translateX(2px); }
     #quotePanel .close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--color-text-primary); font-size: var(--fs-body); cursor: pointer; opacity: 0.55; transition: opacity 0.2s, transform 0.2s; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
     #quotePanel .close:hover { opacity: 1; background: rgba(255,255,255,0.08); }
     #quotePanel .close:active { transform: scale(0.95); }
@@ -3592,6 +3607,7 @@
       <span class="score-label">puntuaci&oacute;n</span>
     </div>
     <div class="year" id="qpYear"></div>
+    <a class="source-link" id="qpSource" href="#stageActs">Volver al acta y al contexto</a>
   </div>
 
   <!-- Perfil temático de una voz: se abre como ficha de exploración, sin
@@ -5078,6 +5094,19 @@
       tag.className = 'tag ' + (q.label || 'neutral');
       document.getElementById('qpWhen').textContent = q.formatted_date || q.date || 'Fecha no especificada';
       document.getElementById('qpText').textContent = '\u201C' + (q.text || 'Sin texto disponible') + '\u201D';
+      const sourceLink = document.getElementById('qpSource');
+      if (sourceLink) {
+        const sourceDate = q.formatted_date || q.date || q.year || 'fecha no especificada';
+        sourceLink.textContent = q.source ? `Fuente: ${q.source}` : `Fuente: acta de reunión · ${sourceDate}`;
+        sourceLink.href = q.source_url || '#stageActs';
+        if (q.source_url) {
+          sourceLink.target = '_blank';
+          sourceLink.rel = 'noreferrer';
+        } else {
+          sourceLink.removeAttribute('target');
+          sourceLink.removeAttribute('rel');
+        }
+      }
       document.getElementById('qpYear').textContent = q.year ? 'Año ' + q.year : 'Año no especificado';
       /* Puntuación hawk/dov del clasificador. En maqueta: valor de referencia 0–1
          determinístico (ver js/quotes.js); el dato real la reemplaza al llegar. */
