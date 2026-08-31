@@ -153,7 +153,11 @@ body::after {
   text-shadow:
     0 0 8px rgba(255, 215, 106, 0.06),
     0 0 20px rgba(255, 215, 106, 0.03);
-  max-width: 900px;
+  /* OJO: no pongas aquí el max-width del titular. Este archivo se carga
+     antes que 24-layout-fluid.css, que define
+     `max-width: min(1180px, calc(100vw - 48px))` y lo pisa siempre.
+     Había un `max-width: 900px` en esta línea que llevaba tiempo sin
+     aplicarse (medido en el navegador: el h1 ocupa el 88% del ancho). */
   margin: 0 auto;
 }
 .hero-title p { 

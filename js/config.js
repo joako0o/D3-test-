@@ -13,6 +13,42 @@
    la moneda, y el scroll del acto 2 hace dolly hacia el umbral. */
 export const HERO_DOOR_LOCKUP = true;
 
+/* ── Encuadre de la portada ───────────────────────────────────────────
+ * Los tres números que gobiernan la composición del hero. Estaban
+ * enterrados como literales dentro de getResponsiveCoinTargetPx() y
+ * getResponsiveCoinBaseY(), en js/main.js.
+ *
+ * Se pueden probar EN CALIENTE sin tocar el archivo, añadiendo parámetros
+ * a la URL; los valores de aquí son los de fábrica:
+ *     ?coinSize=0.34&coinY=0.26&coinTop=0.11
+ */
+const heroParam = (key, fallback) => {
+  const v = parseFloat(new URLSearchParams(location.search).get(key));
+  return Number.isFinite(v) ? v : fallback;
+};
+export const HERO = {
+  /* Diámetro de la moneda como fracción del ALTO del viewport. Es una
+     decisión de composición, no un resto: antes el diámetro salía de
+     restar lo que ocupaban el título y los márgenes, así que cambiaba
+     de tamaño según cómo envolviera el titular. */
+  coinSizeRatio: heroParam('coinSize', 0.38),
+  /* Tope por ANCHO, para que en móvil (alto >> ancho) no se desborde. */
+  coinWidthRatio: heroParam('coinWide', 0.40),
+  /* Centro vertical deseado, como fracción del alto. */
+  centerYRatio: heroParam('coinY', 0.31),
+  /* Franja intocable de arriba (la barra de marca). Fracción del alto,
+     acotada después entre 64 y 108 px. */
+  safeTopRatio: heroParam('coinTop', 0.13),
+  /* Cuánto SUBE la moneda respecto al centro del encuadre, como fracción
+     del alto del viewport. 0 = centrada (comportamiento anterior).
+     En la portada la cámara mira exactamente al centro de la moneda, así
+     que la moneda caía siempre en el centro exacto de la pantalla y no
+     había forma de moverla: mover CONFIG.coin.baseY desplazaba la cámara
+     con ella. Esto baja la MIRA unos grados, que es lo que de verdad
+     sube la moneda en pantalla y deja aire para el título. */
+  coinLiftRatio: heroParam('coinLift', 0.08),
+};
+
 /* ────────────────────────────────
    Three.js — Coin & Setup
 ──────────────────────────────── */
