@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile</title>
+  <title>En la sala donde ocurre la política monetaria · Banco Central de Chile</title>
 
   <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
   <meta name="theme-color" content="#0a0e1a" />
   <link rel="canonical" href="https://joako0o.github.io/D3-test-/" />
-  <meta property="og:title" content="In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile" />
+  <meta property="og:title" content="En la sala donde ocurre la política monetaria · Banco Central de Chile" />
   <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="es_CL" />
@@ -152,6 +152,15 @@
     }
     .brand { font-size: var(--fs-small); letter-spacing: 4px; text-transform: uppercase; opacity: 0.7; }
     .brand strong { color: var(--color-gold); font-weight: 600; }
+    .top-meta { display: flex; align-items: center; gap: clamp(12px, 2vw, 24px); }
+    .prototype-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 10px; border: 1px solid rgba(255, 215, 106, 0.28);
+      border-radius: 999px; background: rgba(10, 14, 26, 0.58);
+      color: var(--color-gold); font-size: var(--fs-micro);
+      letter-spacing: 1.2px; text-transform: uppercase; white-space: nowrap;
+    }
+    .prototype-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--color-gold); box-shadow: 0 0 10px rgba(255, 215, 106, 0.8); }
     .hero-title {
       margin-top: auto; padding-bottom: 11vh; text-align: center;
       position: relative;
@@ -2932,6 +2941,8 @@
       .stage-timeline .timeline-pin-wrapper { padding: 60px 2%; }
       .stage-hook .line { padding: 0 20px; }
       .top { flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+      .top-meta { flex-direction: column; gap: 8px; }
+      .prototype-badge { font-size: 9px; letter-spacing: 1px; }
       /* Quote panel: full width en móvil con frosted glass y animación elástica */
       #quotePanel {
         right: 12px;
@@ -3833,8 +3844,8 @@
     <span>Cargando moneda&hellip;</span>
   </div>
 
-  <div id="quotePanel" role="dialog" aria-modal="false" aria-labelledby="qpWho" aria-live="polite">
-    <button class="close" id="quotePanelClose" aria-label="Cerrar panel de cita">&#10005;</button>
+  <div id="quotePanel" role="dialog" aria-modal="false" aria-labelledby="qpWho" aria-live="polite" aria-hidden="true" hidden>
+    <button class="close" id="quotePanelClose" type="button" aria-label="Cerrar panel de cita">&#10005;</button>
     <div class="head">
       <span class="who" id="qpWho"></span>
       <span class="tag" id="qpTag"></span>
@@ -3844,10 +3855,10 @@
     <div class="score" id="qpScore" style="display:none">
       <div class="score-bar"><i id="qpScoreBar"></i></div>
       <span class="score-val" id="qpScoreVal">&mdash;</span>
-      <span class="score-label">puntuaci&oacute;n</span>
+      <span class="score-label">score de maqueta</span>
     </div>
     <div class="year" id="qpYear"></div>
-    <a class="source-link" id="qpSource" href="#stageActs">Volver al acta y al contexto</a>
+    <a class="source-link" id="qpSource" href="#stageActs">Ver contexto del fragmento</a>
   </div>
 
   <!-- Perfil temático de una voz: se abre como ficha de exploración, sin
@@ -3888,11 +3899,14 @@
   <div class="hero" id="hero">
     <div class="top">
       <div class="brand"><strong>2000&#8211;2015</strong></div>
-      <div class="brand" style="opacity:0.55">Política Monetaria</div>
+      <div class="top-meta">
+        <div class="brand" style="opacity:0.55">Política Monetaria</div>
+        <div class="prototype-badge" role="status"><span aria-hidden="true"></span>Prototipo · datos de prueba</div>
+      </div>
     </div>
     <div class="hero-title">
-      <h1>In the room where monetary policy happens:<br>Learning from Sixteen Years of Central Bank Deliberation in Chile</h1>
-      <p>Reuniones de política monetaria en Chile &middot; 2000&ndash;2015</p>
+      <h1>En la sala donde ocurre<br>la política monetaria</h1>
+      <p>Dieciséis años de deliberación del Banco Central de Chile &middot; 2000&ndash;2015</p>
     </div>
     <div class="scroll-hint" id="scrollHint">
       <span>Scroll</span>
@@ -5554,7 +5568,7 @@
       const sourceLink = document.getElementById('qpSource');
       if (sourceLink) {
         const sourceDate = q.formatted_date || q.date || q.year || 'fecha no especificada';
-        sourceLink.textContent = q.source ? `Fuente: ${q.source}` : `Fuente: acta de reunión · ${sourceDate}`;
+        sourceLink.textContent = q.source ? `Fuente: ${q.source}` : `Contexto de maqueta · ${sourceDate}`;
         sourceLink.href = q.source_url || '#stageActs';
         if (q.source_url) {
           sourceLink.target = '_blank';
@@ -5578,8 +5592,14 @@
           document.getElementById('qpScoreVal').textContent = sc.toFixed(2);
         }
       }
-      document.getElementById('quotePanel').classList.add('visible');
+      const quotePanel = document.getElementById('quotePanel');
+      quotePanel.hidden = false;
+      quotePanel.setAttribute('aria-hidden', 'false');
+      quotePanel.classList.add('visible');
       positionQuotePanel(anchor);
+      if (lastFocusedCard && document.activeElement === lastFocusedCard) {
+        document.getElementById('quotePanelClose').focus({ preventScroll: true });
+      }
     }
 
     let hoveredPoint = false;
@@ -7266,8 +7286,14 @@
 
     const quotePanelEl = document.getElementById('quotePanel');
     let lastFocusedCard = null;
+    let quotePanelHideTimer = null;
     const closeQuotePanel = () => {
       quotePanelEl.classList.remove('visible');
+      quotePanelEl.setAttribute('aria-hidden', 'true');
+      clearTimeout(quotePanelHideTimer);
+      quotePanelHideTimer = setTimeout(() => {
+        if (!quotePanelEl.classList.contains('visible')) quotePanelEl.hidden = true;
+      }, 360);
       pinnedIndex = -1;
       hoverIndex = -1;
       activeParticleFocus = -1;
