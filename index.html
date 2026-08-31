@@ -4368,11 +4368,11 @@
       CONFIG.camera.fov = 32;
       CONFIG.camera.y = 1.55;
       CONFIG.camera.z = 7.7;
-      /* Encuadre de La Reunión y PRIMER frame del cruce del umbral.
-         La 1→2 aterriza aquí; el dolly 2→3 parte de aquí (mismo tamaño
-         de puerta, sin salto a CONFIG.camera.z). */
+      /* Encuadre de La Reunión y PRIMER frame del cruce: misma distancia
+         que el lockup (sin acercar). La 1→2 aterriza aquí; el 2→3 parte
+         de aquí. Achicar la puerta de stage 2, no agrandarla. */
       CONFIG.door.approachCamY = 0.62;
-      CONFIG.door.approachCamZ = 5.15;
+      CONFIG.door.approachCamZ = CONFIG.camera.z;
       CONFIG.exposure = 0.94;
       CONFIG.door.spots.key = { color: 0xd4e0f2, intensity: 12, angle: 0.72, penumbra: 0.62, decay: 1.35, distance: 0, x: -3.8, y: 3.5, z: 4.4, tx: 0, ty: 0.2, tz: 0 };
       CONFIG.door.spots.rim = { color: 0x6e819c, intensity: 6, angle: 0.8, penumbra: 0.75, decay: 1.35, distance: 0, x: 3.5, y: 1.6, z: 2.0, tx: 0, ty: 0.1, tz: -0.35 };
@@ -5557,7 +5557,7 @@
         cameraChoreographyStops[0].pos = [0, CONFIG.camera.y, CONFIG.camera.z];
         cameraChoreographyStops[0].look = [0, y, 0];
         const ay = CONFIG.door.approachCamY ?? 0.62;
-        const az = CONFIG.door.approachCamZ ?? 5.15;
+        const az = CONFIG.door.approachCamZ ?? CONFIG.camera.z;
         cameraChoreographyStops[1].pos = [0, ay, az];
         cameraChoreographyStops[1].look = [0, ay, 0.00];
       }
@@ -6885,16 +6885,16 @@
       rim.intensity = L.rim.intensity * dim;
       front.intensity = L.front.intensity * dim;
       ambient.intensity = L.ambient.intensity * dim;
-      /* Encuadre vivo (lockup → La Reunión). El cruce 2→3 congela ESTE
-         pose en el primer frame para que el tamaño de la puerta no salte
-         a CONFIG.camera.z (7.7) al arrancar el dolly. */
+      /* Encuadre vivo (lockup → La Reunión a la misma distancia).
+         El cruce 2→3 congela ESTE pose: la puerta no cambia de tamaño
+         al arrancar el dolly, solo al cruzar el umbral. */
       const choreo = cameraChoreography(storyProgress);
       const lockupCamMix = HERO_DOOR_LOCKUP
         ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
         : 0;
       if (lockupCamMix > 0) {
         const approachY = CONFIG.door.approachCamY ?? 0.62;
-        const approachZ = CONFIG.door.approachCamZ ?? 5.15;
+        const approachZ = CONFIG.door.approachCamZ ?? CONFIG.camera.z;
         choreo.pos.set(
           0,
           THREE.MathUtils.lerp(approachY, CONFIG.camera.y, lockupCamMix),
