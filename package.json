@@ -1,7 +1,7 @@
 {
   "name": "central-bank-scrollytelling",
   "version": "1.0.0",
-  "description": "Exploración interactiva de 15 años de reuniones de política monetaria en Chile. Scrollytelling con Three.js, GSAP ScrollTrigger y D3.js.",
+  "description": "Exploración interactiva de 16 años de reuniones de política monetaria en Chile (2000-2015). Scrollytelling con Three.js, GSAP ScrollTrigger y D3.js.",
   "scripts": {
     "start": "python -m http.server 8000",
     "dev": "python -m http.server 8000"

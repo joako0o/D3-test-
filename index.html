@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>In the room where monetary policy happens: Learning from Two Decades of Central Bank Deliberation in Chile</title>
+  <title>In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile</title>
 
   <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
   <meta name="theme-color" content="#0a0e1a" />
-  <meta property="og:title" content="In the room where monetary policy happens: Learning from Two Decades of Central Bank Deliberation in Chile" />
+  <meta property="og:title" content="In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile" />
   <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="og-image.jpg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -52,9 +55,9 @@
          los coeficientes vw; los mínimos (móvil) respetan legibilidad:
          cuerpo ≥16px y micro ≥12px (recomendación WCAG / clamp()).
          Ver best practices: min 16px cuerpo, máximo ≤2.5× mínimo. */
-      --fs-hero: clamp(18px, 2.6vw, 34px);
-      --fs-h2: clamp(22px, 3.2vw, 40px);
-      --fs-h3: clamp(16px, 1.8vw, 22px);
+      --fs-hero: clamp(18px, 2.6vw, 46px);
+      --fs-h2: clamp(22px, 3.2vw, 52px);
+      --fs-h3: clamp(16px, 1.8vw, 24px);
       --fs-body: clamp(16px, 1.9vw, 19px);
       --fs-small: clamp(13px, 1.3vw, 16px);
       --fs-micro: clamp(12px, 0.95vw, 13px);
@@ -891,7 +894,7 @@
     .stage-word-evolution {
       position: relative;
       z-index: 30;
-      height: 230vh;
+      height: 200vh;
     }
     .word-evolution-pin-wrapper {
       position: sticky;
@@ -990,8 +993,8 @@
     .legend-dot.dovish { color: var(--color-dovish); background: var(--color-dovish); }
     .word-evolution-chart-wrap {
       width: 100%;
-      height: clamp(270px, 39vh, 410px);
-      overflow: hidden;
+      height: clamp(300px, 42vh, 440px);
+      overflow: visible; /* las etiquetas del borde derecho no se cortan */
       border-top: 1px solid rgba(255,255,255,0.08);
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
@@ -1007,11 +1010,11 @@
     }
     #wordEvolutionSvg .word-axis-label {
       fill: var(--color-text-faint);
-      font: 11px var(--font-body);
+      font: 13px var(--font-body);
       font-variant-numeric: tabular-nums;
     }
     #wordEvolutionSvg .word-lane-label {
-      font: 600 10px var(--font-body);
+      font: 600 12px var(--font-body);
       letter-spacing: 2px;
       text-transform: uppercase;
     }
@@ -1035,7 +1038,7 @@
     #wordEvolutionSvg .word-point.hawkish { fill: var(--color-gold); }
     #wordEvolutionSvg .word-point.dovish { fill: var(--color-dovish); }
     #wordEvolutionSvg .word-end-label {
-      font: 600 12px var(--font-display);
+      font: 600 14px var(--font-display);
     }
     #wordEvolutionSvg .word-end-label.hawkish { fill: var(--color-gold); }
     #wordEvolutionSvg .word-end-label.dovish { fill: var(--color-dovish); }
@@ -1076,7 +1079,7 @@
     .stage-acts {
       position: relative;
       z-index: 30;
-      height: 280vh;
+      height: 200vh;
     }
     .acts-pin-wrapper {
       position: sticky;
@@ -1634,7 +1637,7 @@
     }
 
     @media (max-width: 768px) {
-      .stage-acts { height: 310vh; }
+      .stage-acts { height: 230vh; }
       .acts-pin-wrapper {
         padding: max(22px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
       }
@@ -1675,7 +1678,7 @@
     }
 
     @media (max-width: 430px) and (max-height: 620px) {
-      .stage-acts { height: 330vh; }
+      .stage-acts { height: 250vh; }
       .pipe-header { top: 14px; }
       .pipe-header h2 { font-size: 24px; }
       .pipe-panel h3 { font-size: 20px; line-height: 1.12; margin-bottom: 8px; }
@@ -1755,7 +1758,7 @@
     }
 
     @media (min-width: 600px) and (max-width: 900px) and (max-height: 620px) {
-      .stage-acts { height: 300vh; }
+      .stage-acts { height: 220vh; }
       .acts-pin-wrapper { padding: 10px 18px; }
       .acts-shell { gap: 8px; }
       .acts-intro { display: none; }
@@ -1786,7 +1789,7 @@
     .stage-voices {
       position: relative;
       z-index: 30;
-      height: 240vh;
+      height: 190vh;
     }
     .voices-pin-wrapper {
       position: sticky;
@@ -2351,7 +2354,7 @@
     .voice-detail-empty[hidden] { display: none; }
 
     @media (max-width: 768px) {
-      .stage-word-evolution { height: 270vh; }
+      .stage-word-evolution { height: 220vh; }
       .word-evolution-pin-wrapper {
         padding: max(22px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
       }
@@ -2363,14 +2366,14 @@
       .word-evolution-board-head { align-items: flex-start; margin-bottom: 5px; }
       .word-evolution-label { font-size: 11px; letter-spacing: 1.2px; }
       .word-evolution-legend { gap: 10px; font-size: 10px; }
-      .word-evolution-chart-wrap { height: clamp(230px, 36vh, 310px); }
-      #wordEvolutionSvg .word-axis-label { font-size: 10px; }
-      #wordEvolutionSvg .word-end-label { font-size: 11px; }
+      .word-evolution-chart-wrap { height: clamp(260px, 37vh, 340px); }
+      #wordEvolutionSvg .word-axis-label { font-size: 12px; }
+      #wordEvolutionSvg .word-end-label { font-size: 14px; }
       .word-evolution-readout { gap: 9px; margin-top: 9px; }
       .word-evolution-year { font-size: 28px; }
       .word-evolution-readout-text { font-size: 12px; }
       .word-evolution-note { font-size: 10px; }
-      .stage-voices { height: 280vh; }
+      .stage-voices { height: 220vh; }
       .voice-detail-actions {
         grid-column: 1 / -1;
         flex-direction: row;
@@ -2452,13 +2455,13 @@
     }
 
     @media (max-width: 430px) and (max-height: 620px) {
-      .stage-word-evolution { height: 290vh; }
+      .stage-word-evolution { height: 230vh; }
       .word-evolution-pin-wrapper { padding-top: 18px; padding-bottom: 14px; }
       .word-evolution-title { font-size: 25px; }
       .word-evolution-lead { font-size: 12px; line-height: 1.3; }
       .word-evolution-board { padding: 11px; }
       .word-evolution-legend { gap: 7px; font-size: 9px; }
-      .word-evolution-chart-wrap { height: 190px; }
+      .word-evolution-chart-wrap { height: 220px; }
       .word-evolution-readout { margin-top: 6px; }
       .word-evolution-year { font-size: 24px; }
       .word-evolution-readout-text { font-size: 10px; }
@@ -2488,16 +2491,16 @@
     }
 
     @media (min-width: 600px) and (max-width: 900px) and (max-height: 620px) {
-      .stage-word-evolution { height: 280vh; }
+      .stage-word-evolution { height: 220vh; }
       .word-evolution-pin-wrapper { padding: 22px 18px 18px; }
       .word-evolution-shell { gap: 10px; }
       .word-evolution-title { margin-top: 5px; font-size: clamp(24px, 4vw, 34px); }
       .word-evolution-lead { margin-top: 6px; font-size: 14px; line-height: 1.3; }
       .word-evolution-board { padding: 12px 14px; }
-      .word-evolution-chart-wrap { height: 210px; }
+      .word-evolution-chart-wrap { height: 240px; }
       .word-evolution-readout { margin-top: 5px; }
       .word-evolution-note { display: none; }
-      .stage-voices { height: 300vh; }
+      .stage-voices { height: 230vh; }
       .voice-profile-dialog { max-height: calc(100svh - 24px); padding: 18px 22px; }
       .voice-profile-grid { grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr); gap: 20px; margin-top: 12px; padding-top: 12px; }
       .voice-radar-wrap { max-height: none; }
@@ -3087,14 +3090,17 @@
 
     .hero-title {
       width: 100%;
-      padding: 0 clamp(16px, 4vw, 64px) clamp(72px, 14vh, 150px);
+      padding: 0 clamp(20px, 6vw, 96px) clamp(72px, 14vh, 150px);
       z-index: 1;
     }
 
     .hero-title h1 {
       width: min(100%, 1180px);
-      max-width: 1180px;
+      max-width: min(1180px, calc(100vw - 48px));
+      margin-left: auto;
+      margin-right: auto;
       text-wrap: balance;
+      overflow-wrap: break-word;
     }
 
     .hero-title p {
@@ -3140,8 +3146,8 @@
        en monitores de 1.5K y 1.6K. */
     @media (min-width: 1100px) and (min-height: 621px) {
       .hero-title h1 {
-        width: min(100%, 1800px);
-        max-width: min(1800px, calc(100vw - 80px));
+        width: min(100%, 1600px);
+        max-width: min(1600px, calc(100vw - 120px));
       }
     }
 
@@ -3150,8 +3156,8 @@
        perder un ancho de lectura controlado. */
     @media (min-width: 1800px) and (min-height: 621px) {
       .hero-title h1 {
-        font-size: clamp(34px, 2.05vw, 46px);
-        line-height: 1.15;
+        font-size: clamp(42px, 2.4vw, 58px);
+        line-height: 1.12;
       }
 
       .hero-title p {
@@ -3567,6 +3573,35 @@
       .room-particle-key { transition: none !important; }
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       NIVEL PREMIUM — gabinete de figuras (HUD de esquina eliminado)
+    ═══════════════════════════════════════════════════════════ */
+    #figureCabinet {
+      position: fixed; left: 16px; bottom: 16px; z-index: 80;
+      width: min(260px, calc(100vw - 32px));
+      padding: 12px 14px;
+      background: rgba(10, 14, 26, 0.5);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      pointer-events: auto; color: var(--color-text-muted);
+    }
+    .figure-cabinet-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--color-text-faint); margin-bottom: 8px; }
+    .figure-row { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; font-size: 11px; }
+    .figure-row-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.25); }
+    .figure-row.is-ready .figure-row-dot { background: var(--color-gold); box-shadow: 0 0 8px var(--color-gold); }
+    .figure-row.is-pending .figure-row-dot { background: var(--color-dovish); }
+    .figure-row-status { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+    .figure-row.is-ready .figure-row-status { color: var(--color-gold); }
+    .figure-row.is-pending .figure-row-status { color: var(--color-dovish); }
+
+    @media (max-width: 768px) {
+      #figureCabinet { display: none; }
+    }
+    @media (max-height: 700px) {
+      #figureCabinet { display: none; }
+    }
+
   </style>
 </head>
 <body>
@@ -3587,6 +3622,11 @@
     </div>
     <div id="tsSection" style="font-family: monospace; font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 8px; text-align: center; max-width: 80px; line-height: 1.3; min-height: 20px;">hero</div>
   </div>
+
+  <!-- ═══ Gabinete de figuras (por modelar / listas) ═══ -->
+  <aside id="figureCabinet" aria-label="Estado de las figuras 3D">
+    <div class="figure-cabinet-title">Figuras de la sala · Blender</div>
+  </aside>
 
   <div id="load">
     <div class="spinner"></div>
@@ -3651,7 +3691,7 @@
       <div class="brand" style="opacity:0.55">Política Monetaria</div>
     </div>
     <div class="hero-title">
-      <h1>In the room where monetary policy happens:<br>Learning from Two Decades of Central Bank Deliberation in Chile</h1>
+      <h1>In the room where monetary policy happens:<br>Learning from Sixteen Years of Central Bank Deliberation in Chile</h1>
       <p>Reuniones de política monetaria en Chile &middot; 2000&ndash;2015</p>
     </div>
     <div class="scroll-hint" id="scrollHint">
@@ -3754,7 +3794,7 @@
   </section>
 
   <!-- ═══════ STAGE 4 — Alfabetización Visual (#stageAxes) ═══════ -->
-  <section id="stageAxes" style="position: relative; width: 100%; height: 200vh; pointer-events: none;">
+  <section id="stageAxes" style="position: relative; width: 100%; height: 150vh; pointer-events: none;">
     <div class="sticky-container" style="position: sticky; top: 0; left: 0; width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 15vh; z-index: 10;">
       <div class="axes-reading-key" aria-label="C&oacute;mo leer el mapa de intervenciones">
         <span class="axes-reading-kicker">Mapa de intervenciones</span>
@@ -4134,6 +4174,7 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { initFigureSystem } from './js/figures.js';
 
     /* Los timelines de la escena se crean durante la inicialización de los
        gráficos. Registrar los plugins antes de construir cualquiera de ellos
@@ -4395,6 +4436,13 @@
     const mouseLight = new THREE.PointLight(0xfff1c8, 0.4, 8);
     scene.add(mouseLight);
 
+    /* ═══════════════════════════════════════════════════════════
+       FIGURAS DE LA SALA — tu trabajo en Blender, con placeholders.
+       Si un .glb de figures/ todavía no existe, se dibuja un
+       icosaedro + halo y se marca "por modelar" en el gabinete.
+    ═══════════════════════════════════════════════════════════ */
+    let figureSystem = initFigureSystem(scene);
+
     /* ────────────────────────────────
        Door light rig — spotlights dedicados (no reutiliza los de la moneda)
     ──────────────────────────────── */
@@ -4506,10 +4554,16 @@
       const safeTop = Math.max(64, Math.min(108, h * 0.13));
       const gap = Math.max(18, Math.min(32, Math.min(w, h) * 0.035));
       const available = titleTop - safeTop - gap;
-      if (Number.isFinite(titleTop) && titleTop > 0 && available > 0) {
-        /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
-           evita que el diámetro de la moneda se coma el copy del título. */
-        return Math.min(baseTargetPx, available * 0.82);
+      if (Number.isFinite(titleTop) && titleTop > 0) {
+        if (available > 0) {
+          /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
+             evita que el diámetro de la moneda se coma el copy del título. */
+          return Math.min(baseTargetPx, available * 0.82);
+        }
+        /* El título ya sube muy arriba: no hay cota positiva. En vez de dejar
+           la moneda en su tamaño base (que choca con el texto), se reduce a un
+           mínimo seguro y se le da aire extra. */
+        return Math.min(baseTargetPx, minTargetPx * 0.62);
       }
       return baseTargetPx;
     }
@@ -4542,7 +4596,9 @@
       let centerY = h * 0.41;
 
       if (Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
-        centerY = Math.min(centerY, titleTop - gap - targetPx / 2);
+        /* Deja un colchón extra para que la moneda nunca toque el título,
+           incluso cuando el título ocupa gran parte del viewport. */
+        centerY = Math.min(centerY, titleTop - gap - targetPx / 2 - targetPx * 0.06);
       }
 
       const minCenter = Math.min(h / 2, safeTop + targetPx / 2);
@@ -5099,6 +5155,13 @@
       if (mark) mark.classList.add('is-focus');
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       AUDIO / MÚSICA: DESACTIVADO POR DECISIÓN DEL AUTOR (por ahora).
+       Se quita el motor de tonos y el botón de sonido. Si más adelante se
+       quiere retomar, la carpeta `js/audio/` y `PLAN_NIVEL_PREMIUM.md`
+       documentan cómo hacerlo sin música clásica.
+    ═══════════════════════════════════════════════════════════ */
+
     function openQuote(i, anchor) {
       const q = quotes[i];
       if (!q) return;
@@ -5211,6 +5274,7 @@
     };
 
     let scatterProgress = 0;
+    let storyProgress = 0;   // 0→1 a lo largo de todo el documento (para la coreografía)
     let coinFade = 1;
     let doorFade = 0;
     let doorTarget = 0;
@@ -5273,6 +5337,102 @@
                     punto bajo y detrás de la puerta). */
     const _lookBase = new THREE.Vector3(0, camBaseY, 0);
     const _doorLook = new THREE.Vector3();
+
+    /* ═══════════════════════════════════════════════════════════
+       COREOGRAFÍA DE CÁMARA — plano-secuencia sobre el scroll.
+       Después del cruce puerta→sala (que mantiene su dolly propio),
+       la cámara ya no se queda clavada en el punto base: viaja con
+       deriva suave por cada capítulo. El DOM sigue por encima, así el
+       movimiento se siente como "el mundo acompaña", no como un
+       desplazamiento brusco.
+       Los desplazamientos son deliberadamente pequeños en #stageAxes
+       para no desalinear la proyección de las partículas con el SVG.
+    ═══════════════════════════════════════════════════════════ */
+    /* Los stops ya no usan proporciones arbitrarias del progreso total: se
+       anclan a los CENTROS reales de cada sección en el DOM. Así la cámara
+       llega al capítulo cuando de verdad está en pantalla, y la coreografía
+       se mantiene alineada al cambiar las alturas o el breakpoint. */
+    const cameraChoreographyStops = [
+      { id: 'hero',               pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // base
+      { id: 'stageObjective',     pos: [0.00, 0.60, 5.10], look: [0.00, 0.60, 0.00] },   // acercamiento puerta
+      /* #stageRoom se omite a propósito: el cruce puerta→sala lo gobierna el
+         dolly propio (crossEff), así no lo pisamos con una deriva extra. */
+      { id: 'stageHook',          pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },
+      { id: 'stageAxes',          pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // base, para alinear el SVG
+      { id: 'stageWordEvolution', pos: [1.30, 0.74, 5.10], look: [0.00, 0.68, 0.00] },
+      { id: 'stageVoices',        pos: [1.10, 0.74, 5.20], look: [0.00, 0.68, 0.00] },
+      { id: 'stageActs',          pos: [-1.10, 0.74, 5.20], look: [0.00, 0.68, 0.00] },
+      { id: 'stageCounters',      pos: [0.00, 0.68, 5.50], look: [0.00, 0.70, 0.00] },
+      { id: 'stagePipeline',      pos: [1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
+      { id: 'stageTimeline',      pos: [-1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
+      { id: 'stageQuotes',        pos: [0.00, 0.72, 5.40], look: [0.00, 0.70, 0.00] },
+      { id: 'stageClosing',       pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // base
+    ];
+
+    let cameraStops = [];
+    function rebuildCameraChoreography() {
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const stops = [];
+      const n = cameraChoreographyStops.length;
+      for (let i = 0; i < n; i++) {
+        const def = cameraChoreographyStops[i];
+        const el = document.getElementById(def.id);
+        let p;
+        if (el && docHeight > 0) {
+          const r = el.getBoundingClientRect();
+          const center = (r.top + window.scrollY) + r.height / 2;
+          /* Fracción del documento recorrida cuando la sección queda centrada
+             en el viewport (miniaturas/overlays pueden desviar un centro, por
+             eso después se fuerza monotonía). */
+          p = THREE.MathUtils.clamp((center - window.innerHeight * 0.5) / docHeight, 0, 1);
+        } else {
+          p = n > 1 ? i / (n - 1) : 0;
+        }
+        stops.push({ p, pos: def.pos, look: def.look });
+      }
+      for (let i = 1; i < stops.length; i++) {
+        if (stops[i].p < stops[i - 1].p) stops[i].p = stops[i - 1].p + 0.001;
+      }
+      cameraStops = stops;
+    }
+
+    const _camPos = new THREE.Vector3();
+    const _camLook = new THREE.Vector3();
+    function cameraChoreography(progress) {
+      if (reduceMotion) {
+        _camPos.set(CONFIG.camera.x, camBaseY, CONFIG.camera.z);
+        _camLook.set(0, camBaseY, 0);
+        return { pos: _camPos, look: _camLook };
+      }
+      const p = THREE.MathUtils.clamp(progress, 0, 1);
+      if (!cameraStops.length) {
+        _camPos.set(CONFIG.camera.x, camBaseY, CONFIG.camera.z);
+        _camLook.set(0, camBaseY, 0);
+        return { pos: _camPos, look: _camLook };
+      }
+      let a = cameraStops[0];
+      let b = cameraStops[cameraStops.length - 1];
+      for (let i = 0; i < cameraStops.length - 1; i++) {
+        if (p >= cameraStops[i].p && p <= cameraStops[i + 1].p) {
+          a = cameraStops[i];
+          b = cameraStops[i + 1];
+          break;
+        }
+      }
+      const span = Math.max(b.p - a.p, 1e-4);
+      const t = THREE.MathUtils.smoothstep((p - a.p) / span, 0, 1);
+      _camPos.set(
+        THREE.MathUtils.lerp(a.pos[0], b.pos[0], t),
+        THREE.MathUtils.lerp(a.pos[1], b.pos[1], t),
+        THREE.MathUtils.lerp(a.pos[2], b.pos[2], t)
+      );
+      _camLook.set(
+        THREE.MathUtils.lerp(a.look[0], b.look[0], t),
+        THREE.MathUtils.lerp(a.look[1], b.look[1], t),
+        THREE.MathUtils.lerp(a.look[2], b.look[2], t)
+      );
+      return { pos: _camPos, look: _camLook };
+    }
     /* Vector reutilizado para apuntar los spotlights de la puerta (antes se
        alocaba uno nuevo en CADA frame → ~60 objetos/seg de basura para el GC). */
     const _spotTarget = new THREE.Vector3();
@@ -5970,6 +6130,15 @@
        taxonomía de palabras se mantiene deliberadamente legible para que el
        lector pueda seguir la evidencia hasta el acta.
     ──────────────────────────────── */
+    /* Rebuild-safe: al redimensionar la ventana (o cargar fuentes) la gráfica
+       de evolución se vuelve a dibujar. Antes tomaba el tamaño UNA sola vez y
+       usaba preserveAspectRatio:none, así que al cambiar el viewport el texto
+       y el trazo se estiraban (problema típico entre local y GitHub Pages). */
+    let wordEvolutionDisposers = [];
+    function disposeWordEvolution() {
+      wordEvolutionDisposers.forEach((dispose) => { try { dispose(); } catch (e) { /* noop */ } });
+      wordEvolutionDisposers.length = 0;
+    }
     function initWordEvolution() {
       const svg = document.getElementById('wordEvolutionSvg');
       const intro = document.querySelector('.word-evolution-intro');
@@ -5977,6 +6146,11 @@
       const yearEl = document.getElementById('wordEvolutionYear');
       const readoutEl = document.getElementById('wordEvolutionReadout');
       if (!svg || !intro || !board || !yearEl || !readoutEl || !quotes.length || !window.d3) return;
+
+      /* Limpiar el dibujo/animaciones previos antes de reconstruir. */
+      disposeWordEvolution();
+      d3.select(svg).selectAll('*').remove();
+      svg.removeAttribute('viewBox');
 
       const years = d3.range(2000, 2016);
       const labels = ['hawkish', 'dovish'];
@@ -6059,7 +6233,10 @@
       const x = d3.scaleLinear().domain([2000, 2015]).range([margin.left, W - margin.right]);
       const svgEl = d3.select(svg)
         .attr('viewBox', `0 0 ${W} ${H}`)
-        .attr('preserveAspectRatio', 'none');
+        /* Si el ratio del contenedor cambia entre el init y el redibujo, 'meet'
+           escala el contenido sin estirar el texto ni el trazo. Con 'none' la
+           etiquetas se deformaban al cambiar de viewport (local vs GitHub). */
+        .attr('preserveAspectRatio', 'xMidYMid meet');
       const chartGroup = svgEl.append('g').attr('class', 'word-chart-group');
       const cursor = svgEl.append('line')
         .attr('class', 'word-cursor')
@@ -6163,14 +6340,20 @@
       };
 
       updateYear(2000, 0);
-      svg.addEventListener('pointermove', (event) => {
+      const onPointerMove = (event) => {
         const rect = svg.getBoundingClientRect();
         const localX = ((event.clientX - rect.left) / rect.width) * W;
         updateYear(x.invert(localX), 1);
+      };
+      const onPointerLeave = () => updateYear(2000 + 15 * 0.5, 1);
+      svg.addEventListener('pointermove', onPointerMove);
+      chartWrap?.addEventListener('pointerleave', onPointerLeave);
+      wordEvolutionDisposers.push(() => {
+        svg.removeEventListener('pointermove', onPointerMove);
+        chartWrap?.removeEventListener('pointerleave', onPointerLeave);
       });
-      chartWrap?.addEventListener('pointerleave', () => updateYear(2000 + 15 * 0.5, 1));
 
-      gsap.timeline({
+      const introBoardTl = gsap.timeline({
         scrollTrigger: {
           trigger: '#stageWordEvolution',
           start: 'top 85%',
@@ -6181,8 +6364,12 @@
         .fromTo(intro, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.04)
         .fromTo(board, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.15, ease: 'none' }, 0.16)
         .to(intro, { opacity: 0, y: -14, duration: 0.08, ease: 'none' }, 0.90);
+      wordEvolutionDisposers.push(() => {
+        try { introBoardTl.scrollTrigger?.kill(); } catch (e) { /* noop */ }
+        try { introBoardTl.kill(); } catch (e) { /* noop */ }
+      });
 
-      ScrollTrigger.create({
+      const wordEvolutionST = ScrollTrigger.create({
         trigger: '#stageWordEvolution',
         start: 'top 85%',
         end: 'bottom bottom',
@@ -6192,6 +6379,7 @@
           updateYear(2000 + self.progress * 15, reveal);
         },
       });
+      wordEvolutionDisposers.push(() => wordEvolutionST.kill());
     }
 
     function animate() {
@@ -6218,7 +6406,12 @@
         const introT = Math.min(tElapsed / (reduceMotion ? 1.2 : 1.8), 1);
         const introEase = 1 - Math.pow(1 - introT, 3);
         const motionScale = reduceMotion ? 0.12 : 1;
-        coin.rotation.y = tElapsed * C.swaySpeedY * introEase * motionScale + smoothMouseX * 0.22 * motionScale + dragRotY;
+        /* Giro por oscilación, no rotación 360°: con swaySpeedY como frecuencia,
+           la moneda se balancea frente a la cámara y nunca queda "de canto"
+           (antes acumulaba ángulo y a veces se veía de perfil). */
+        coin.rotation.y = Math.sin(tElapsed * C.swaySpeedY) * 0.42 * introEase * motionScale
+          + smoothMouseX * 0.22 * motionScale
+          + dragRotY;
         coin.rotation.x = C.tiltBase + C.tiltOscillation * Math.sin(tElapsed * C.tiltSpeed * motionScale) + smoothMouseY * -0.12 * motionScale + dragRotX;
         coin.position.y = C.baseY + C.floatAmount * Math.sin(tElapsed * C.floatSpeed * motionScale) * motionScale;
         mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
@@ -6466,8 +6659,12 @@
         _roomLook.copy(_lookBase).lerp(_doorLook, aimDoor).lerp(_roomLookTarget, aimRoom);
         camera.lookAt(_roomLook);
       } else {
-        camera.position.set(CONFIG.camera.x, currentCamY, baseCamZ);
-        camera.lookAt(0, camBaseY, 0);
+        /* Coreografía: la cámara viaja por los capítulos en vez de quedarse
+           clavada. La rama del dolly (crossEff>0) sigue mandando durante el
+           cruce; aquí se aplica el plano-secuencia del resto de la pieza. */
+        const choreo = cameraChoreography(storyProgress);
+        camera.position.copy(choreo.pos);
+        camera.lookAt(choreo.look);
       }
 
       /* La Sala (b1): la luz del interior sube con el cruce y se mantiene en la sala */
@@ -6518,11 +6715,30 @@
         particleStoryMix.timeline * 0.78,
         particleStoryMix.quotes * 0.70
       );
-      /* El dato contextual se atenúa, pero no cae por debajo de un umbral
-         visible: un alfa global demasiado bajo vuelve cualquier color oscuro
-         indistinguible del fondo en las escenas posteriores. */
-      const stageAlpha = Math.max(0.56, 1 - 0.72 * stageDensity);
-      pMat.opacity = (0.82 - 0.42 * scatterProgress) * (1 - 0.5 * veilShape) * stageAlpha;
+      /* El dato contextual se atenúa, pero nunca se apaga: la Sala es UN solo
+         mundo visual, así que la nube permanece como atmósfera de fondo en
+         todos los capítulos (solo cede protagonismo al dato activo). */
+      const stageAlpha = Math.max(0.36, 1 - 0.60 * stageDensity);
+      const ambientMin = Math.max(0.42, 0.82 - 0.30 * scatterProgress);
+      pMat.opacity = ambientMin * (1 - 0.5 * veilShape) * stageAlpha;
+
+      /* Figuras de la sala: se muestran recién al cruzar el umbral, nunca en
+         el hero (en la captura anterior los placeholders saturaban la portada).
+         Al rampar reveal entran suavemente y el script los sigue animando. */
+      const figureReveal = DOOR_MODE === 'doorway'
+        ? THREE.MathUtils.smoothstep((roomSwarmT - 0.08) / 0.55, 0, 1)
+        : (currentStage !== 1 ? 1 : 0);
+      if (figureSystem) {
+        figureSystem.group.visible = figureReveal > 0.01;
+        figureSystem.group.scale.setScalar(0.86 + 0.14 * figureReveal);
+        figureSystem.group.position.y = (1 - figureReveal) * 0.5;
+        figureSystem.figures.forEach((record) => {
+          if (record.placeholder) {
+            record.placeholder.rotation.y = time * 0.18 * figureReveal;
+            record.placeholder.position.y = Math.sin(time * 0.6 + record.def.x) * 0.04 * figureReveal;
+          }
+        });
+      }
 
       if (renderer) renderer.render(scene, camera);
     }
@@ -6865,7 +7081,9 @@
       d3ResizeT = setTimeout(() => {
         initD3Axes();
         buildParticleStoryTargets();
+        initWordEvolution();
         if (activeParticleFocus >= 0) syncAxesMarkFocus(activeParticleFocus);
+        rebuildCameraChoreography();
       }, 150);
     }
     window.addEventListener('resize', onViewportResizeDebounced);
@@ -6979,6 +7197,7 @@
       const vp = getViewportSize();
       const docHeight = document.documentElement.scrollHeight - vp.height;
       const p = docHeight > 0 ? scrollTop / docHeight : 0;
+      storyProgress = p;
 
       // Debug scrubber
       tsProgress.textContent = Math.round(p * 100) + '%';
@@ -7037,7 +7256,7 @@
       scrollTrigger: {
         trigger: '.hero',
         start: 'top top',
-        end: '40% top',
+        end: '55% top',
         scrub: true,
       },
     });
@@ -7649,12 +7868,12 @@
                 .call(d3.axisBottom(x)
           .ticks(d3.timeYear.every(shortViewport && width < 520 ? 4 : 2))
           .tickFormat(d3.timeFormat('%Y')))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(12px, 1.05vw, 13px)');
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(14px, 1.25vw, 16px)');
       g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');
 
       g.append('g')
         .call(d3.axisLeft(y).ticks(5).tickFormat(d => d > 0 ? `+${d}` : d))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(12px, 1.05vw, 13px)');
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(14px, 1.25vw, 16px)');
       g.selectAll('.domain').style('stroke', 'none');
       g.selectAll('.tick line').style('stroke', 'rgba(255,255,255,0.06)');
 
@@ -7746,7 +7965,7 @@
         .attr('x', d => x(d.date))
         .attr('y', -8)
         .attr('text-anchor', 'middle')
-        .style('font-size', 'clamp(12px, 1.05vw, 13px)')
+        .style('font-size', 'clamp(14px, 1.25vw, 16px)')
         .style('fill', '#ffd76a')
         .style('opacity', 0.7)
         .text(d => d.label);
@@ -7772,7 +7991,7 @@
     ScrollTrigger.create({
       trigger: '#stageTimeline',
       start: 'top top',
-      end: '+=150%',
+      end: '+=120%',
       pin: '.timeline-pin-wrapper',
       scrub: 1,
       onUpdate: (self) => {
@@ -8002,22 +8221,20 @@
        prematuras o tardías como la superposición en el hero).
     ──────────────────────────────── */
     const refreshST = () => ScrollTrigger.refresh();
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        syncViewportAndObjects();
-        refreshST();
-      });
-    }
-    window.addEventListener('load', () => {
+    const refreshLayout = () => {
       syncViewportAndObjects();
+      rebuildCameraChoreography();
       refreshST();
-    });
+    };
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => refreshLayout());
+    }
+    window.addEventListener('load', () => refreshLayout());
     manager.onLoad = (() => {
       const original = manager.onLoad;
       return () => {
         original();
-        syncViewportAndObjects();
-        refreshST();
+        refreshLayout();
       };
     })();
   </script>
