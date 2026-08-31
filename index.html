@@ -4669,8 +4669,15 @@
           /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
              evita que el diámetro de la moneda se coma el copy del título. */
           if (HERO_DOOR_LOCKUP) {
-            if (h <= 700) return Math.min(baseTargetPx, Math.max(minTargetPx * 0.7, available * 0.86));
-            return baseTargetPx;
+            /* Cota por espacio disponible SIEMPRE (antes solo si h <= 700):
+               al cruzar ese umbral la moneda volvía a su tamaño base y podía
+               volver a pisar el título justo encima de 700px o en paisaje.
+               available*0.86 + el piso minTargetPx*0.7 conservan el tamaño
+               visual; el Math.min(fit, available) es la cota dura: la moneda
+               nunca puede ser más grande que el hueco entre la zona segura y
+               el título, por muy estrecho que sea el viewport. */
+            const fit = Math.min(baseTargetPx, Math.max(minTargetPx * 0.7, available * 0.86));
+            return Math.min(fit, available);
           }
           return Math.min(baseTargetPx, available * 0.82);
         }
@@ -4706,10 +4713,12 @@
       const titleTop = getHeroTitleTop();
       /* La posición base conserva el lenguaje visual del hero (la moneda en
          la franja superior-media), pero nunca permite que su borde inferior
-         entre en el título. */
+         entre en el título. La cota se aplica en TODAS las ramas (también en
+         el lockup): antes quedaba solo fuera del lockup, así que en el hero
+         con vano la moneda podía llegar a tocar el copy. */
       let centerY = h * (HERO_DOOR_LOCKUP ? 0.31 : 0.41);
 
-      if (!HERO_DOOR_LOCKUP && Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
+      if (Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
         /* Deja un colchón extra para que la moneda nunca toque el título,
            incluso cuando el título ocupa gran parte del viewport. */
         centerY = Math.min(centerY, titleTop - gap - targetPx / 2 - targetPx * 0.06);
