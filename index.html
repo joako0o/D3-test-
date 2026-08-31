@@ -297,7 +297,6 @@
       #roomTitle { margin-bottom: 0.6rem !important; }
       #roomSub { margin-top: 0.5rem !important; }
       #roomHint { margin-top: 0.75rem !important; }
-      .room-particle-key { margin-top: 12px; }
     }
     /* Móvil: el retablo ocupa menos alto útil, así que el copy se compacta y
        la base de sombra sube un poco para que el texto no compita con la
@@ -3631,46 +3630,6 @@
       opacity: 0.7;
     }
 
-    .room-particle-key {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 8px 15px;
-      max-width: min(760px, 90vw);
-      margin-top: 18px;
-      color: var(--color-text-faint);
-      font-size: var(--fs-micro);
-      letter-spacing: 0.45px;
-      line-height: 1.35;
-      opacity: 0;
-    }
-    .room-particle-key > span {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-    }
-    .room-key-dot {
-      width: 7px;
-      height: 7px;
-      display: inline-block;
-      border-radius: 50%;
-      box-shadow: 0 0 10px currentColor;
-    }
-    .room-key-dot.hawkish { color: var(--color-gold); background: var(--color-gold); }
-    .room-key-dot.dovish { color: var(--color-dovish); background: var(--color-dovish); }
-    .room-key-dot.neutral { color: #cfd6e4; background: #cfd6e4; }
-    .room-particle-key strong {
-      color: var(--color-text-secondary);
-      font-variant-numeric: tabular-nums;
-      font-weight: 600;
-    }
-    .room-key-trace {
-      color: var(--color-gold);
-      opacity: 0.78;
-    }
-
     /* Las citas se comportan como piezas de evidencia, no como tarjetas
        genéricas: un corte vertical y un reflejo difuso sugieren el artefacto
        sin introducir otra capa WebGL. */
@@ -3724,19 +3683,12 @@
     .axes-data-mark.is-focus .axes-data-halo { opacity: 0.62; }
 
     @media (max-width: 600px) {
-      .room-particle-key {
-        gap: 6px 10px;
-        margin-top: 13px;
-        font-size: 10px;
-      }
-      .room-key-trace { flex-basis: 100%; justify-content: center; }
       .object-reflection { width: 180px; height: 42px; filter: blur(8px); }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .object-reflection { display: none; }
       .quote-card::after { display: none; }
-      .room-particle-key { transition: none !important; }
     }
 
     /* ═══════════════════════════════════════════════════════════
@@ -3973,12 +3925,6 @@
       <p id="roomHint" data-room-hint style="font-size: var(--fs-small); color: var(--color-text-muted); font-family: var(--font-body); text-align: center; margin-top: 1.6rem; letter-spacing: 0.3px; opacity: 0;">
         Pasa el cursor sobre una voz para leer lo que dijo &middot; haz click para fijarla
       </p>
-      <div class="room-particle-key" id="roomParticleKey" aria-label="Código de lectura de la nube de intervenciones">
-        <span><i class="room-key-dot hawkish" aria-hidden="true"></i><strong id="roomHawkishCount">—</strong> hawkish</span>
-        <span><i class="room-key-dot dovish" aria-hidden="true"></i><strong id="roomDovishCount">—</strong> dovish</span>
-        <span><i class="room-key-dot neutral" aria-hidden="true"></i><strong id="roomNeutralCount">—</strong> neutral</span>
-        <span class="room-key-trace">cada punto ↗ fragmento atribuido</span>
-      </div>
     </div>
   </section>
 
@@ -5460,15 +5406,14 @@
 
     const totalQuotes = quotes.length;
     const uniqueParticipants = new Set(quotes.map(q => q.participant)).size;
+    /* Reparto por tono. La leyenda de La Sala (35 hawkish / 35 dovish / …) se
+       quitó para dejar la sección más limpia; el reparto se conserva porque lo
+       usan otras lecturas del proyecto. */
     const particleToneCounts = quotes.reduce((counts, q) => {
       const tone = ['hawkish', 'dovish', 'neutral'].includes(q?.label) ? q.label : 'neutral';
       counts[tone] += 1;
       return counts;
     }, { hawkish: 0, dovish: 0, neutral: 0 });
-    ['hawkish', 'dovish', 'neutral'].forEach((tone) => {
-      const countEl = document.getElementById(`room${tone.charAt(0).toUpperCase()}${tone.slice(1)}Count`);
-      if (countEl) countEl.textContent = particleToneCounts[tone];
-    });
     const counterItems = document.querySelectorAll('[data-counter]');
     if (counterItems.length >= 4) {
       counterItems[2].querySelector('.counter-number').dataset.target = totalQuotes.toString();
@@ -8291,12 +8236,11 @@
       const roomLead = document.getElementById('roomLead');
       const roomSub = document.getElementById('roomSub');
       const roomHint = document.getElementById('roomHint');
-      const roomParticleKey = document.getElementById('roomParticleKey');
       /* En pantallas táctiles no hay "cursor": el hint explica el tap directo. */
       if (roomHint && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
         roomHint.textContent = 'Toca una voz para leer lo que dijo · tócala de nuevo para fijarla';
       }
-      if (roomTitle && roomLead && roomSub && roomHint && roomParticleKey) {
+      if (roomTitle && roomLead && roomSub && roomHint) {
         gsap.timeline({
           scrollTrigger: {
             trigger: '#stageRoom',
@@ -8309,12 +8253,10 @@
           .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.30)
           .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.38)
           .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.46)
-          .fromTo(roomParticleKey, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.52)
           .to(roomTitle, { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.68)
           .to(roomLead,  { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.74)
           .to(roomSub,   { opacity: 0, y: -12, duration: 0.05, ease: 'none' }, 0.80)
-          .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.94)
-          .to(roomParticleKey, { opacity: 0, y: -8, duration: 0.04, ease: 'none' }, 0.96);
+          .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.94);
       }
     }
 

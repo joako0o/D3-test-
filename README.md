@@ -75,6 +75,10 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
   sección, con el **copy movido a la franja inferior** y un scrim que sube
   desde el borde de abajo (antes el scrim oscurecía el centro y el texto caía
   sobre la estatua). Encuadre: `CONFIG.door.roomLook.y = 0.55`.
+  Ajuste 3: se quitó la leyenda inferior (`35 hawkish · 35 dovish · 29 neutral ·
+  cada punto ↗ fragmento atribuido`) por pedido del autor: la sección respira
+  más y el hint de interacción basta como pie. El reparto por tono se sigue
+  calculando (lo usan las órbitas y otras lecturas).
   Ajuste 2 (tras ver la captura real): el pedestal se estiró en Y (`stretchY:
   1.6`) y se afinó de diámetro (0.70) porque plano y ancho se leía como una
   chapa oscura detrás del texto; la estatua bajó a 1.15 para que los pies
