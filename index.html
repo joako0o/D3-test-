@@ -6135,7 +6135,17 @@
           button.addEventListener('click', () => selectAct(act));
           list.appendChild(button);
           listItems.push({ button, act });
-         yearFilter.addEventListener('change', () => {
+        });
+      };
+
+      openEvidence.addEventListener('click', () => {
+        const quoteIndex = Number(openEvidence.dataset.quoteIndex);
+        if (!Number.isFinite(quoteIndex) || !quotes[quoteIndex]) return;
+        pinnedIndex = quoteIndex;
+        hoverIndex = -1;
+        openQuote(quoteIndex, { x: window.innerWidth * 0.62, y: window.innerHeight * 0.62 });
+      });
+      yearFilter.addEventListener('change', () => {
         renderList(yearFilter.value);
         const firstVisible = acts.find((act) => yearFilter.value === 'all' || String(act.year) === yearFilter.value);
         if (firstVisible) selectAct(firstVisible);
@@ -6422,13 +6432,6 @@
       /* crossT EFECTIVO: mientras dura la salida de la sala (exitT) la cámara
          deshace el cruce y toda la coreografía vinculada (mira, FOV, velo, luz
          cálida, tinte) vuelve suavemente al estado base. EXCEPCIÓN intencional:
-         la disolución de la puerta usa crossT CRUDO — si la puerta se
-         "materializara" de nuevo durante la retirada sería un glitch evidente. */
-      const crossEff = crossT * (1 - exitT);
-      particleStoryKeys.forEach((key) => {
-        particleStoryMix[key] = THREE.MathUtils.lerp(
-          particleStoryMix[key],
-          particleStoryTarget[key],cional:
          la disolución de la puerta usa crossT CRUDO — si la puerta se
          "materializara" de nuevo durante la retirada sería un glitch evidente. */
       const crossEff = crossT * (1 - exitT);
