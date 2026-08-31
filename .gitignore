@@ -10,3 +10,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Renders de referencia (no versionados)
+.preview/

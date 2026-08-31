@@ -33,6 +33,9 @@ python -m http.server 8000
 │   ├── controls/           ← OrbitControls
 │   ├── environments/       ← RoomEnvironment
 │   └── objects/            ← Reflector
+├── figures/
+│   ├── balanza.glb         ← Estatua de La Justicia (Draco, 177 KB)
+│   └── soporte.glb         ← Pedestal de la estatua (Draco, 28 KB)
 ├── monedav5-draco.glb      ← Modelo 3D de moneda (Draco + texturas WebP, 434 KB)
 ├── puerta-draco.glb        ← Modelo 3D de puerta (Draco + texturas WebP, 76 KB)
 └── servidor.bat            ← Script para servidor local en Windows
@@ -66,6 +69,22 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
 - **Gabinete de figuras** (`#figureCabinet`): lista las figuras 3D y su estado. ✅ en el sitio.
 - **Sistema de figuras** (`js/figures.js`): intenta cargar cada `figures/*.glb`; si no existe aún, dibuja un placeholder. ✅ en el sitio.
 - **Balanza** (`figures/balanza.glb`): La Justicia ciega (Lady Justice), símbolo del equilibrio hawkish/dovish. ✅ lista (177 KB, Draco, acabado piedra mate). Ver `figures/README.md`.
+- **Retablo de La Sala (2026-08-31)**: la estatua dejó de flotar. Ahora hay
+  **pedestal** (`figures/soporte.glb`, 28 KB) + **estatua encima**
+  (`standsOn: 'soporte'`, el alto se mide solo) como pieza principal de la
+  sección, con el **copy movido a la franja inferior** y un scrim que sube
+  desde el borde de abajo (antes el scrim oscurecía el centro y el texto caía
+  sobre la estatua). Encuadre: `CONFIG.door.roomLook.y = 0.55`.
+- **Órbitas con estela** (`CONFIG.room.orbit`): 12 fragmentos REALES del corpus
+  (4 por tono: oro hawkish, azul dovish, plata neutral) giran sobre el eje de
+  la figura en planos inclinados y dejan una cola de ~4 s que se apaga hacia
+  atrás. Un solo `THREE.Points` con shader propio (tamaño y opacidad por
+  vértice, blending aditivo) y posición **analítica** —la estela se calcula
+  muestreando el pasado, no guardando historial, así mide siempre el mismo
+  arco a cualquier FPS—. Con `depthTest`, cuando un fragmento pasa por detrás
+  de la estatua desaparece: eso es lo que vende el giro. Se pueden pasar con el
+  cursor igual que la nube (abren su cita) y la activa se resalta.
+  `prefers-reduced-motion` congela el sistema (las estelas quedan como arcos).
 - **Nube de partículas continua**: ya no se apaga entre capítulos. ✅ en el sitio.
 - **Coreografía de cámara** (`cameraChoreography` + `cameraStops`): deriva suave entre etapas después del cruce puerta → sala. ✅ en el sitio.
 - **Compresión de GLBs (2026-08-31):** moneda 4.38 MB → **434 KB** y puerta 824 KB → **76 KB**

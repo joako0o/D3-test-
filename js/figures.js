@@ -15,6 +15,26 @@ import { DRACOLoader } from './loaders/DRACOLoader.js';
 
 export const FIGURE_DEFS = [
   {
+    /* SOPORTE (pedestal escalonado) — la peana sobre la que se apoya la
+       estatua. Es la pieza que ancla la composición de La Sala: sin base, la
+       figura "flotaba" sobre el navy y el bloque de texto quedaba encima.
+       Origen: `Soporte.glb` (Meshy, 1.04 MB) → `figures/soporte.glb`
+       (28 KB, Draco, 6.9 k triángulos, normales con crease 38°). */
+    id: 'soporte',
+    label: 'Pedestal',
+    subtitle: 'Base de la pieza central',
+    glb: 'figures/soporte.glb',
+    available: true,
+    x: 0, y: 0, z: -4.8,
+    /* `scale` normaliza por la dimensión mayor: aquí es el DIÁMETRO.
+       0.82 de diámetro → 0.186 de alto (el GLB es un disco escalonado). */
+    scale: 0.82,
+    color: 0x9aa6bd,
+    /* Piedra oscura azulada: contrasta con la caliza de la estatua sin
+       competir con el oro del hero. */
+    finish: { metalness: 0.04, roughness: 0.78, color: 0x333a4b },
+  },
+  {
     id: 'balanza',
     label: 'Balanza',
     subtitle: 'Equilibrio hawkish / dovish',
@@ -23,9 +43,12 @@ export const FIGURE_DEFS = [
     /* Centro y al FONDO de la La Sala (pieza central, tipo museo).
        La cámara entra mirando a z=-2.0; a z=-4.8 queda detrás de la nube
        de partículas (que se despeja al cruzar) y la luz de acento la
-       ilumina desde el frente. El y se eleva para que la cabeza y la
-       balanza queden en la franja superior y el copy lea sobre la base. */
-    x: 0, y: 0.02, z: -4.6,
+       ilumina desde el frente.
+       `standsOn: 'soporte'` → el sistema la apoya sobre la cara superior del
+       pedestal en cuanto ambos GLB terminan de cargar (ver `restack`), así el
+       alto del pedestal no queda escrito a mano en dos sitios. */
+    x: 0, y: 0, z: -4.8,
+    standsOn: 'soporte',
     scale: 1.22,
     color: 0xffd76a,
     /* Acabado PIEDRA mate (limestone): la figura no compite con la moneda
@@ -166,6 +189,10 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
       model.position.x -= center.x;
       model.position.z -= center.z;
       model.position.y -= box.min.y;
+      /* Alto REAL ya escalado: lo usa `restack()` para apoyar una figura
+         sobre otra (la estatua sobre el pedestal) sin números mágicos. */
+      box.setFromObject(model);
+      record.height = box.max.y - box.min.y;
       model.traverse((obj) => {
         if (!obj.isMesh || !obj.material) return;
         const mats = (Array.isArray(obj.material) ? obj.material : [obj.material]).filter(Boolean);
@@ -193,6 +220,7 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
       root.add(model);
       record.model = model;
       record.status = 'loaded';
+      restack();
       markCabinet(def, 'ready');
       onReady?.(record);
     };
@@ -218,6 +246,19 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
       showPlaceholder();
     }
   });
+
+  /* Apila figuras: `standsOn: 'otraFigura'` apoya el modelo sobre la cara
+     superior de esa figura. Se llama cada vez que un GLB termina de cargar,
+     así el orden de descarga no importa (si el pedestal llega después, la
+     estatua se recoloca sola). */
+  function restack() {
+    figures.forEach((record) => {
+      const base = record.def.standsOn ? figures.get(record.def.standsOn) : null;
+      if (!base) return;
+      const baseHeight = base.height ?? 0;
+      record.root.position.y = (record.def.y ?? 0) + (base.def.y ?? 0) + baseHeight;
+    });
+  }
 
   function markCabinet(def, status) {
     const cabinet = findCabinet();
@@ -248,5 +289,5 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
     }
   }
 
-  return { group, figures, defs: FIGURE_DEFS };
+  return { group, figures, defs: FIGURE_DEFS, restack };
 }
