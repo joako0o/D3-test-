@@ -242,6 +242,41 @@
       letter-spacing: 0.04em !important;
     }
 
+    /* Scrim premium detrás del texto de La Sala: la estatua central seguirá
+       siendo la pieza de museo, pero el copy gana contraste. El elipsoide
+       central oscurece la estatua JUSTO detrás del bloque de texto (título +
+       párrafos) y deja nítida la cabeza y la balanza de arriba; el gradiente
+       inferior asienta la base y da profundidad. Todo queda por encima del
+       canvas 3D (z-index 30 del container), así que sí atenúa la estatua. */
+    #stageRoomContainer {
+      position: relative;
+    }
+    #stageRoomContainer::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(
+          ellipse 56% 42% at 50% 47%,
+          rgba(4, 7, 15, 0.84) 0%,
+          rgba(4, 7, 15, 0.56) 46%,
+          rgba(4, 7, 15, 0.00) 78%
+        ),
+        linear-gradient(
+          to bottom,
+          rgba(4, 7, 15, 0.00) 0%,
+          rgba(4, 7, 15, 0.00) 20%,
+          rgba(4, 7, 15, 0.18) 58%,
+          rgba(4, 7, 15, 0.52) 100%
+        );
+      pointer-events: none;
+      z-index: 0;
+    }
+    #stageRoomContainer > * {
+      position: relative;
+      z-index: 1;
+    }
+
     .scroll-hint {
       position: absolute;
       bottom: 24px; left: 50%;
@@ -7125,7 +7160,7 @@
           if (record.model) statueReady = true;
         });
         const statueT = statueReady ? figureReveal : 0;
-        figureAccent.intensity = statueT * 280;
+        figureAccent.intensity = statueT * 210;
         figureAccent.position.x = figureSystem.group.position.x;
         figureAccentTarget.position.set(
           figureSystem.group.position.x,

@@ -23,8 +23,9 @@ export const FIGURE_DEFS = [
     /* Centro y al FONDO de la La Sala (pieza central, tipo museo).
        La cámara entra mirando a z=-2.0; a z=-4.8 queda detrás de la nube
        de partículas (que se despeja al cruzar) y la luz de acento la
-       ilumina desde el frente. */
-    x: 0, y: 0, z: -4.8,
+       ilumina desde el frente. El y se eleva para que la cabeza y la
+       balanza queden en la franja superior y el copy lea sobre la base. */
+    x: 0, y: 0.18, z: -4.8,
     scale: 1.1,
     color: 0xffd76a,
     /* Acabado PIEDRA mate (limestone): la figura no compite con la moneda
