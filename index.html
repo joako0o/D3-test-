@@ -4909,7 +4909,6 @@
     const doorLeafMeshes = [];
     const doorLeafColorVoid = new THREE.Color('#07090f');
     const doorLeafColorGold = new THREE.Color('#ffd76a');
-    let doorDust = null;
 
     const doorLoader = new GLTFLoader(manager);
     doorLoader.setDRACOLoader(dracoLoader);
@@ -5019,37 +5018,8 @@
         voidPlane.position.set(0, 0.02, -0.22);
         doorModelGroup.add(voidPlane);
         doorMats.push(voidMat);
-        const dustN = 420;
-        const dustPos = new Float32Array(dustN * 3);
-        const dustCol = new Float32Array(dustN * 3);
-        const gold = new THREE.Color(0xffd76a);
-        for (let i = 0; i < dustN; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const r = 0.25 + Math.random() * 1.35;
-          dustPos[i * 3] = Math.cos(a) * r * 0.78;
-          dustPos[i * 3 + 1] = (Math.random() - 0.42) * 2.2;
-          dustPos[i * 3 + 2] = (Math.random() - 0.35) * 1.15;
-          const k = 0.45 + Math.random() * 0.55;
-          dustCol[i * 3] = gold.r * k;
-          dustCol[i * 3 + 1] = gold.g * k;
-          dustCol[i * 3 + 2] = gold.b * k;
-        }
-        const dustGeo = new THREE.BufferGeometry();
-        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-        dustGeo.setAttribute('color', new THREE.BufferAttribute(dustCol, 3));
-        doorDust = new THREE.Points(
-          dustGeo,
-          new THREE.PointsMaterial({
-            size: 0.028,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.8,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending,
-          })
-        );
-        doorDust.name = 'doorDust';
-        doorModelGroup.add(doorDust);
+        /* Sin polvo dorado en el vano: en el still de portada era ruido
+           extra sobre la moneda y la piedra. */
       }
     }, undefined, (err) => {
       console.error('Error cargando GLB:', err);
@@ -6682,7 +6652,13 @@
            "teniendo" la puerta y se encendían niebla y sombra sobre la nada. */
         doorGroup.visible = doorVisOpacity > 0.001 && !!doorModel;
         const doorEase = doorFade * doorFade * (3 - 2 * doorFade);
-        doorGroup.rotation.y = smoothMouseX * 0.05 * doorEase;
+        const lockupMix = HERO_DOOR_LOCKUP
+          ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
+          : 0;
+        /* Stage 1: la puerta no sigue el mouse (solo la moneda). El parallax
+           vuelve cuando el lockup se suelta hacia La Reunión. */
+        const doorMouse = HERO_DOOR_LOCKUP ? (1 - lockupMix) : 1;
+        doorGroup.rotation.y = smoothMouseX * 0.05 * doorEase * doorMouse;
         doorGroup.position.x = CONFIG.door.baseX;
         doorGroup.position.z = CONFIG.door.baseZ ?? 0;
         const heroMul = HERO_DOOR_LOCKUP
@@ -6699,11 +6675,8 @@
            puerta subiera o bajara sola y se despegara de su propia sombra. */
         const doorBottomWorld = doorModel ? doorBottomOffset * doorModelGroup.scale.y * doorGroup.scale.x : 0;
         const plantedY = (CONFIG.door.groundY ?? 0) - doorBottomWorld;
-        const lockupMix = HERO_DOOR_LOCKUP
-          ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
-          : 0;
-        doorGroup.rotation.x = -0.12 * lockupMix + smoothMouseY * -0.03 * doorEase;
-        doorGroup.position.y = THREE.MathUtils.lerp(plantedY, CONFIG.coin.baseY, lockupMix) + smoothMouseY * -0.06 * doorEase;
+        doorGroup.rotation.x = -0.12 * lockupMix + smoothMouseY * -0.03 * doorEase * doorMouse;
+        doorGroup.position.y = THREE.MathUtils.lerp(plantedY, CONFIG.coin.baseY, lockupMix) + smoothMouseY * -0.06 * doorEase * doorMouse;
         for (let i = 0; i < doorMats.length; i++) {
           doorMats[i].transparent = true;
           doorMats[i].opacity = doorVisOpacity;
@@ -6719,10 +6692,6 @@
           }
           for (let i = 0; i < doorLeafMeshes.length; i++) {
             doorLeafMeshes[i].visible = leafT > 0.12;
-          }
-          if (doorDust) {
-            doorDust.rotation.y = time * 0.045;
-            doorDust.material.opacity = 0.82 * (1 - leafT * 0.7) * doorVisOpacity;
           }
         }
 
