@@ -19,6 +19,7 @@ export const FIGURE_DEFS = [
     label: 'Balanza',
     subtitle: 'Equilibrio hawkish / dovish',
     glb: 'figures/balanza.glb',
+    available: false,
     x: 0, y: 0, z: -4.6,
     scale: 1.1,
     color: 0xffd76a,
@@ -28,6 +29,7 @@ export const FIGURE_DEFS = [
     label: 'Vela de precios',
     subtitle: 'Presión inflacionaria',
     glb: 'figures/inflacion.glb',
+    available: false,
     x: -4.8, y: 0, z: -3.2,
     scale: 1.0,
     color: 0xff8a5c,
@@ -37,6 +39,7 @@ export const FIGURE_DEFS = [
     label: 'Brote',
     subtitle: 'Crecimiento y holgura',
     glb: 'figures/brote.glb',
+    available: false,
     x: 4.8, y: 0, z: -3.2,
     scale: 1.0,
     color: 0x8ab4f8,
@@ -46,6 +49,7 @@ export const FIGURE_DEFS = [
     label: 'Acta',
     subtitle: 'Fuente trazable',
     glb: 'figures/acta.glb',
+    available: false,
     x: 0, y: 0, z: -6.4,
     scale: 0.9,
     color: 0xcfd6e4,
@@ -55,6 +59,7 @@ export const FIGURE_DEFS = [
     label: 'Corpus',
     subtitle: '182 reuniones de referencia',
     glb: 'figures/corpus.glb',
+    available: false,
     x: -4.6, y: 0, z: -5.6,
     scale: 0.8,
     color: 0xcfd6e4,
@@ -64,6 +69,7 @@ export const FIGURE_DEFS = [
     label: 'Campana',
     subtitle: 'Inicio y cierre de sesión',
     glb: 'figures/campana.glb',
+    available: false,
     x: 4.6, y: 0, z: -5.6,
     scale: 0.8,
     color: 0xffd76a,
@@ -74,7 +80,7 @@ export const FIGURE_DEFS = [
  * Crea todos los grupos de figuras y devuelve un objeto para actualizarlas.
  * Se invoca con `scene` ya construida.
  */
-export function initFigureSystem(scene, { onReady = null } = {}) {
+export function initFigureSystem(scene, { onReady = null, debug = false } = {}) {
   const figures = new Map();
   const group = new THREE.Group();
   group.name = 'dioramas';
@@ -122,6 +128,8 @@ export function initFigureSystem(scene, { onReady = null } = {}) {
   }
 
   FIGURE_DEFS.forEach((def) => {
+    if (!debug && !def.available) return;
+
     const root = new THREE.Group();
     root.name = `figure--${def.id}`;
     root.position.set(def.x, def.y, def.z);
@@ -181,15 +189,17 @@ export function initFigureSystem(scene, { onReady = null } = {}) {
       onReady?.(record);
     };
 
-    fetch(def.glb, { method: 'HEAD' })
-      .then((r) => {
-        if (!r.ok) throw new Error('missing');
-        return loader.loadAsync(def.glb);
-      })
-      .then(applyModel)
-      .catch(() => showPlaceholder());
-
-    markCabinet(def, 'searching');
+    /* No hacer HEAD a GLBs ausentes: cada 404 ensucia consola y red.
+       Solo se carga si `available: true`. Los placeholders y el gabinete
+       quedan reservados al modo ?debug. */
+    if (def.available) {
+      if (debug) markCabinet(def, 'searching');
+      loader.loadAsync(def.glb).then(applyModel).catch(() => {
+        if (debug) showPlaceholder();
+      });
+    } else if (debug) {
+      showPlaceholder();
+    }
   });
 
   function markCabinet(def, status) {

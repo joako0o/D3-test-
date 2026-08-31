@@ -146,7 +146,7 @@ window.QUOTES = [
   {
     "text": "En consecuencia, el Presidente señor José De Gregorio señala que existe consenso por aumentar la tasa de política monetaria en 50pb, hasta 4,0% anual....",
     "participant": "José De Gregorio",
-    "year": 2011,
+    "year": 2010,
     "label": "hawkish",
     "score": 0.91,
     "date": "2010-12-16",
@@ -173,7 +173,7 @@ window.QUOTES = [
   {
     "text": "Por lo anterior, el Presidente señor José De Gregorio expresa que su voto es por subir la TPM en 50 puntos base, para llevarla a 5%....",
     "participant": "José De Gregorio",
-    "year": 2011,
+    "year": 2010,
     "label": "hawkish",
     "score": 0.91,
     "date": "2010-12-16",
@@ -353,7 +353,7 @@ window.QUOTES = [
   {
     "text": "En consecuencia, el Presidente señor Rodrigo Vergara deja constancia que se acuerda por unanimidad de los señores Consejeros reducir la tasa de política monetaria en 25 puntos base, a 3,5% anual....",
     "participant": "Rodrigo Vergara",
-    "year": 2014,
+    "year": 2012,
     "label": "dovish",
     "score": 0.78,
     "date": "2012-02-14",
@@ -623,7 +623,7 @@ window.QUOTES = [
   {
     "text": "El Vicepresidente señor Enrique Marshall manifiesta que en este contexto, la opción que surge con bastante claridad es la de bajar la TPM en 25 puntos base....",
     "participant": "Enrique Marshall",
-    "year": 2014,
+    "year": 2015,
     "label": "dovish",
     "score": 0.64,
     "date": "2015-04-16",
@@ -641,7 +641,7 @@ window.QUOTES = [
   {
     "text": "El Consejero señor Sebastián Claro inicia su intervención destacando los siguientes aspectos que se han acumulado desde la Reunión anterior....",
     "participant": "Sebastián Claro",
-    "year": 2014,
+    "year": 2013,
     "label": "neutral",
     "score": 0.61,
     "date": "2013-04-11",
@@ -659,7 +659,7 @@ window.QUOTES = [
   {
     "text": "El Presidente señor Rodrigo Vergara agradece la presentación del Consejero señor Pablo García y, a continuación, concede la palabra al Consejero señor Joaquín Vial. El Consejero señor Joaquín Vial inicia su intervención agradeciendo el análisis completo y actualizado de los perso...",
     "participant": "Rodrigo Vergara",
-    "year": 2014,
+    "year": 2011,
     "label": "neutral",
     "score": 0.70,
     "date": "2011-12-13",
@@ -695,7 +695,7 @@ window.QUOTES = [
   {
     "text": "A continuación, el Presidente señor Rodrigo Vergara ofrece la palabra al Gerente de Análisis Internacional señor Sergio Lehmann para efectos de que presente el escenario externo. El señor Sergio Lehmann inicia su intervención refiriéndose a las principales noticias de índole polí...",
     "participant": "Rodrigo Vergara",
-    "year": 2014,
+    "year": 2015,
     "label": "neutral",
     "score": 0.70,
     "date": "2015-07-14",
@@ -765,15 +765,6 @@ window.QUOTES = [
     "formatted_date": "12 de Marzo, 2009"
   },
   {
-    "text": "Sobre esta materia, informó que la inversión original se constituyó en el capital de la subsidiaria local denominada Posteriormente, durante el año 1980 y según consta de declaración notarial emitida en Suiza, la sociedad extranjera aportante cambió de nombre denominándose ahora ...",
-    "participant": "Eduardo García",
-    "year": 1985,
-    "label": "neutral",
-    "score": 0.57,
-    "date": "1985-04-03",
-    "formatted_date": "3 de Abril, 1985"
-  },
-  {
     "text": "A juicio del señor Rodrigo Vergara, las circunstancias indican que lo razonable es seguir en esta ocasión con el proceso de normalización de la política monetaria. Afirma que la actual política monetaria sigue siendo fuertemente expansiva y que un aumento, en esta oportunidad, in...",
     "participant": "Rodrigo Vergara",
     "year": 2010,
@@ -785,7 +776,7 @@ window.QUOTES = [
   {
     "text": "El Consejero señor Sebastián Claro plantea la conveniencia de realizar una evaluación algo más gruesa de la inflación y no sobredimensionar el último dato, que por cierto fue muy significativo....",
     "participant": "Sebastián Claro",
-    "year": 2014,
+    "year": 2015,
     "label": "neutral",
     "score": 0.61,
     "date": "2015-04-16",
@@ -830,7 +821,7 @@ window.QUOTES = [
   {
     "text": "El Presidente señor Rodrigo Vergara agradece los comentarios del Gerente de División Política Financiera señor Kevin Cowan y, a continuación, concede la palabra al Ministro de Hacienda señor Felipe Larrain. El señor Felipe Larrain inicia su exposición señalando que el escenario e...",
     "participant": "Rodrigo Vergara",
-    "year": 2013,
+    "year": 2015,
     "label": "neutral",
     "score": 0.70,
     "date": "2015-10-15",

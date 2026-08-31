@@ -7,12 +7,15 @@
 
   <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
   <meta name="theme-color" content="#0a0e1a" />
+  <link rel="canonical" href="https://joako0o.github.io/D3-test-/" />
   <meta property="og:title" content="In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile" />
   <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="og-image.jpg" />
+  <meta property="og:locale" content="es_CL" />
+  <meta property="og:url" content="https://joako0o.github.io/D3-test-/" />
+  <meta property="og:image" content="https://joako0o.github.io/D3-test-/og-image.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="og-image.jpg" />
+  <meta name="twitter:image" content="https://joako0o.github.io/D3-test-/og-image.jpg" />
 
   <!-- Fuentes self-hosted (fonts/*.woff2). Sin dependencia de Google Fonts:
        el render ya no cambia entre local, CI y producción, y funciona offline. -->
@@ -55,21 +58,20 @@
       --ambient-alpha: 0.16;
       --ambient-size: 35%;
 
-      /* ── Typography Tokens ── */
+      /* ── Typography Tokens ──
+         Fluido tipo Utopia (https://utopia.fyi): clamp(MIN rem, rem + vw, MAX rem).
+         El rem respeta zoom/accesibilidad; el vw escala entre ~360 y ~1440px.
+         No hace falta librería: es CSS nativo. */
       --font-display: 'Playfair Display', Georgia, serif;
       --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      /* Escala tipográfica compartida. Los máximos estaban capados demasiado
-         bajo para monitores grandes (17px de cuerpo, 13px de texto auxiliar),
-         por eso los stages posteriores se veían pequeños. Se suben los topes y
-         los coeficientes vw; los mínimos (móvil) respetan legibilidad:
-         cuerpo ≥16px y micro ≥12px (recomendación WCAG / clamp()).
-         Ver best practices: min 16px cuerpo, máximo ≤2.5× mínimo. */
-      --fs-hero: clamp(18px, 2.6vw, 46px);
-      --fs-h2: clamp(22px, 3.2vw, 52px);
-      --fs-h3: clamp(16px, 1.8vw, 24px);
-      --fs-body: clamp(16px, 1.9vw, 19px);
-      --fs-small: clamp(13px, 1.3vw, 16px);
-      --fs-micro: clamp(12px, 0.95vw, 13px);
+      --fs-micro: clamp(0.75rem, 0.73rem + 0.12vw, 0.8125rem);
+      --fs-small: clamp(0.8125rem, 0.76rem + 0.22vw, 1rem);
+      --fs-body: clamp(1rem, 0.94rem + 0.28vw, 1.1875rem);
+      --fs-h3: clamp(1rem, 0.88rem + 0.5vw, 1.5rem);
+      --fs-kicker: clamp(0.9375rem, 0.82rem + 0.45vw, 1.375rem);
+      --fs-display: clamp(1.25rem, 0.85rem + 1.35vw, 1.875rem);
+      --fs-hero: clamp(1.125rem, 0.72rem + 1.35vw, 2.125rem);
+      --fs-h2: clamp(1.375rem, 0.85rem + 1.85vw, 3.25rem);
       --lh-tight: 1.25;
       --lh-normal: 1.6;
       --lh-relaxed: 1.8;
@@ -151,15 +153,15 @@
     .brand { font-size: var(--fs-small); letter-spacing: 4px; text-transform: uppercase; opacity: 0.7; }
     .brand strong { color: var(--color-gold); font-weight: 600; }
     .hero-title {
-      margin-top: auto; padding-bottom: 14vh; text-align: center;
+      margin-top: auto; padding-bottom: 11vh; text-align: center;
       position: relative;
+      z-index: 2;
     }
     .hero-title::before {
       content: "";
       position: absolute;
-      inset: -40px -60px;
-      background: radial-gradient(ellipse at center, rgba(10,14,26,0.7) 0%, transparent 70%);
-      border-radius: 50%;
+      inset: -28px -12vw -36px -12vw;
+      background: linear-gradient(180deg, transparent 0%, rgba(8,12,22,0.55) 28%, rgba(8,12,22,0.88) 100%);
       pointer-events: none;
       z-index: -1;
     }
@@ -180,6 +182,64 @@
     .hero-title p { 
       margin-top: 16px; font-size: clamp(13px, 1.3vw, 17px); opacity: 0.5; 
       font-weight: 300; letter-spacing: 0.04em;
+    }
+
+    #stageObjectiveTitle {
+      font-family: var(--font-body) !important;
+      font-size: var(--fs-kicker) !important;
+      font-weight: 500 !important;
+      letter-spacing: clamp(0.18em, 0.1em + 0.4vw, 0.34em) !important;
+      text-transform: uppercase;
+      color: var(--color-gold) !important;
+      text-shadow: 0 0 28px rgba(255, 215, 106, 0.22), 0 2px 14px rgba(0, 0, 0, 0.75);
+    }
+    #stageObjectiveParagraph {
+      font-family: var(--font-display) !important;
+      font-size: var(--fs-display) !important;
+      font-weight: 500 !important;
+      line-height: 1.42 !important;
+      letter-spacing: -0.012em;
+      max-width: min(47rem, 90vw) !important;
+      text-wrap: balance;
+    }
+    #stageObjectiveParagraph span {
+      font-style: italic;
+      color: var(--color-gold);
+    }
+
+    #roomTitle {
+      font-family: var(--font-body) !important;
+      font-size: var(--fs-kicker) !important;
+      font-weight: 500 !important;
+      letter-spacing: clamp(0.18em, 0.1em + 0.4vw, 0.34em) !important;
+      text-transform: uppercase;
+      color: var(--color-gold) !important;
+      text-shadow: 0 0 28px rgba(255, 215, 106, 0.22), 0 2px 14px rgba(0, 0, 0, 0.75);
+      margin-bottom: 1.4rem !important;
+    }
+    #roomLead {
+      font-family: var(--font-display) !important;
+      font-size: var(--fs-display) !important;
+      font-weight: 500 !important;
+      line-height: 1.42 !important;
+      letter-spacing: -0.012em;
+      max-width: min(47rem, 90vw) !important;
+      text-wrap: balance;
+    }
+    #roomLead span {
+      font-style: italic;
+      color: var(--color-gold);
+    }
+    #roomSub {
+      font-family: var(--font-display) !important;
+      font-size: var(--fs-body) !important;
+      line-height: 1.5 !important;
+      max-width: min(40rem, 86vw) !important;
+      color: var(--color-text-secondary) !important;
+    }
+    #roomHint {
+      font-size: var(--fs-small) !important;
+      letter-spacing: 0.04em !important;
     }
 
     .scroll-hint {
@@ -214,15 +274,14 @@
     .coin-halo-wrap.hidden-stage { opacity: 0 !important; }
 
     .coin-halo {
-      width: min(580px, 90vmin);
-      height: min(580px, 90vmin);
+      width: min(240px, 28vmin);
+      height: min(240px, 28vmin);
       transform: translate(-50%, -50%);
       background:
         radial-gradient(circle,
-          rgba(255,215,106,0.18) 0%,
-          rgba(255,215,106,0.06) 35%,
-          rgba(85,110,180,0.03) 60%,
-          transparent 72%);
+          rgba(255,215,106,0.42) 0%,
+          rgba(255,215,106,0.12) 32%,
+          transparent 68%);
       filter: blur(8px);
       animation: haloPulse 8s ease-in-out infinite;
     }
@@ -435,7 +494,7 @@
     }
 
     /* ─── STAGE 4 — Mapa de intervenciones ─── */
-    /* La explicación funciona como una leyenda editorial del plano, no como
+    /* La explicación funciona como una leyenda editorial del planoo, no como
        un bloque de texto independiente: conserva la jerarquía tipográfica y
        el lenguaje de línea fina que ya usan los gráficos de la historia. */
     .axes-reading-key {
@@ -823,8 +882,8 @@
       background: var(--color-surface); padding: 18px;
     }
     .seed-dot { aspect-ratio: 1; border-radius: 2px; background: rgba(255,255,255,0.07); }
-    .seed-dot.h.lit { background: var(--color-gold); }
-    .seed-dot.d.lit { background: var(--color-dovish); }
+    .seed-dot.hawkish.lit { background: var(--color-gold); }
+    .seed-dot.dovish.lit { background: var(--color-dovish); }
     .seed-dot.neutral.lit { background: rgba(207,214,228,0.8); }
 
     /* Panel 04 — muestra analítica por año */
@@ -2858,9 +2917,17 @@
     @media (max-width: 430px) {
       .top { padding: 12px 12px 8px; }
       .brand { font-size: var(--fs-micro); letter-spacing: 3px; }
-      .hero-title h1 { font-size: clamp(18px, 5vw, 28px); }
+      .hero-title h1 { font-size: clamp(1.125rem, 5vw, 1.75rem); }
       .quote-card { padding: 20px; }
-      .counter-number { font-size: clamp(32px, 8vw, 56px); }
+      .counter-number { font-size: clamp(2rem, 8vw, 3.5rem); }
+    }
+
+    @media (max-height: 640px) {
+      :root {
+        --fs-display: clamp(1.125rem, 3.2vh, 1.5rem);
+        --fs-kicker: clamp(0.875rem, 2.4vh, 1.125rem);
+      }
+      .hero-title { padding-bottom: clamp(2.5rem, 8vh, 4.5rem); }
     }
 
     /* ─── Reduced Motion ─── */
@@ -3586,6 +3653,7 @@
        NIVEL PREMIUM — gabinete de figuras (HUD de esquina eliminado)
     ═══════════════════════════════════════════════════════════ */
     #figureCabinet {
+      display: none;
       position: fixed; left: 16px; bottom: 16px; z-index: 80;
       width: min(260px, calc(100vw - 32px));
       padding: 12px 14px;
@@ -3617,7 +3685,7 @@
   <a href="#mainContent" class="skip-link">Saltar al contenido principal</a>
 
   <!-- Progress bar -->
-  <div id="progressBar" style="position: fixed; top: 0; left: 0; width: 0%; height: 2px; background: linear-gradient(90deg, var(--color-gold), var(--color-dovish)); z-index: 9999; transition: width 0.1s ease-out;"></div>
+  <div id="progressBar" role="progressbar" aria-label="Progreso de lectura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="position: fixed; top: 0; left: 0; width: 0%; height: 2px; background: linear-gradient(90deg, var(--color-gold), var(--color-dovish)); z-index: 9999; transition: width 0.1s ease-out;"></div>
 
   <!-- Section indicator -->
   <div id="sectionIndicator" style="position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; font-family: var(--font-body); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--color-text-muted); opacity: 0; transition: opacity 0.3s; pointer-events: none;">hero</div>
@@ -3733,7 +3801,7 @@
       </h2>
       <p id="roomLead" data-room style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 640px; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin: 0 20px; opacity: 0;">
         Dentro de la sala se ve m&aacute;s que solo una decisi&oacute;n:<br>
-        el contenido de las actas puede tener se&ntilde;ales m&aacute;s all&aacute; de lo evidente.
+        el contenido de las actas puede tener <span>se&ntilde;ales</span> m&aacute;s all&aacute; de lo evidente.
       </p>
       <p id="roomSub" data-room style="font-size: var(--fs-small); color: var(--color-text-secondary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 560px; text-shadow: 0 2px 10px rgba(0,0,0,0.9); margin: 0.9rem 20px 0; opacity: 0;">
         Cada part&iacute;cula de luz que ves es un fragmento de lo que se dijo en una de estas reuniones.
@@ -3863,7 +3931,7 @@
         <div class="voice-explorer" id="voiceExplorer">
           <div class="voice-explorer-head">
             <span class="voice-explorer-label">Directorio de intervenciones</span>
-            <span class="voice-explorer-meta" id="voiceDirectoryMeta">Muestra visual · 18 voces · 100 fragmentos</span>
+            <span class="voice-explorer-meta" id="voiceDirectoryMeta">Muestra visual · 17 voces · 99 fragmentos</span>
           </div>
           <div class="voice-rail" id="voiceRail" role="list" aria-label="Participantes de la muestra"></div>
           <div class="voice-rail-hint">Desliza para recorrer las voces</div>
@@ -3999,16 +4067,16 @@
         </div>
         <div class="counter-item" data-counter>
           <div class="counter-kicker">Muestra visual</div>
-          <div class="counter-number" data-target="100" data-suffix="">0</div>
+          <div class="counter-number" data-target="99" data-suffix="">0</div>
           <div class="counter-label">fragmentos en la pieza</div>
         </div>
         <div class="counter-item" data-counter>
           <div class="counter-kicker">Muestra visual</div>
-          <div class="counter-number" data-target="18" data-suffix="">0</div>
+          <div class="counter-number" data-target="17" data-suffix="">0</div>
           <div class="counter-label">participantes representados</div>
         </div>
       </div>
-      <p class="counters-note">El corpus de referencia y la muestra interactiva no son la misma escala: esta pieza permite seguir 100 fragmentos de 18 participantes; no presenta las 182 reuniones completas.</p>
+      <p class="counters-note">El corpus de referencia y la muestra interactiva no son la misma escala: esta pieza permite seguir 99 fragmentos de 17 participantes; no presenta las 182 reuniones completas.</p>
     </div>
   </section>
 
@@ -4049,7 +4117,7 @@
             <div class="pipe-body">
               <div class="pipe-label">Muestra / criterio</div>
               <h3>Ejemplos que orientan la lectura</h3>
-              <p class="pipe-p">Los 100 registros visibles ya llevan una etiqueta observable: hawkish, dovish o neutral. La guía few-shot usa ejemplos para la consulta; no entrena un modelo general.</p>
+              <p class="pipe-p">Los 99 registros visibles ya llevan una etiqueta observable: hawkish, dovish o neutral. La guía few-shot usa ejemplos para la consulta; no entrena un modelo general.</p>
               <div class="seed-grid" id="seedGrid" aria-hidden="true"></div>
               <div class="word-meter" style="margin-top:14px">
                 <strong id="seedCount">0</strong>
@@ -4200,11 +4268,17 @@
        (panel de debug, scrubber lateral, indicador de sección).
     ──────────────────────────────── */
     const DEBUG_MODE = /[?&]debug\b/.test(location.search);
+    /* Portada: la puerta GLB (puerta-draco.glb) entra desde el hero, detrás de
+       la moneda, y el scroll del acto 2 hace dolly hacia el umbral. */
+    const HERO_DOOR_LOCKUP = true;
     if (!DEBUG_MODE) {
-      ['debugPanel', 'timelineScrubber'].forEach((id) => {
+      ['debugPanel', 'timelineScrubber', 'figureCabinet'].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
+    } else {
+      const cabinet = document.getElementById('figureCabinet');
+      if (cabinet) cabinet.style.display = 'block';
     }
 
     /* ────────────────────────────────
@@ -4219,7 +4293,9 @@
       }
     })();
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isMobile = window.matchMedia && (window.matchMedia('(max-width: 767px)').matches || window.matchMedia('(pointer: coarse)').matches);
+    function isCompactWidth() {
+      return getViewportSize().width <= 767;
+    }
     const animMul = reduceMotion ? 0 : 1;
 
     /* ────────────────────────────────
@@ -4259,7 +4335,7 @@
            diámetro de la moneda. MÁS GRANDE: 1.6, 1.8 | MÁS CHICA: 1.1, 1.25.
            Con 1.25 la puerta mide ~36% del alto del viewport en 16:9.
            1.1 dejaba las dos figuras más chicas que el tamaño de referencia. */
-        widthVsCoin: 1.25,
+        widthVsCoin: 2.75,
         /* Línea de suelo: el pie de los escalones se apoya acá (unidades de mundo).
            En 0.15 queda por encima del bloque de texto de La Reunión, incluso
            en ventanas bajas y anchas. SUBIR: valores mayores | BAJAR: menores. */
@@ -4323,12 +4399,12 @@
            AJUSTES FÁCILES DEL TEXTO (ACTO 2 - "LA REUNIÓN"):
            Cambia estos valores para mover y personalizar el texto:
         ══════════════════════════════════════════════════════════════════════ */
-        bottomOffset: '12vh',       // Distancia desde abajo (SUBIR: '10vh', '14vh' | BAJAR: '4vh', '2vh')
+        bottomOffset: '9vh',       // Distancia desde abajo (SUBIR: '10vh', '14vh' | BAJAR: '4vh', '2vh')
         horizontalOffset: '0px',   // Horizontal (DERECHA: '30px' | IZQUIERDA: '-30px' | '0px' = centrado)
-        maxWidth: '650px',         // Ancho del párrafo (Más ancho: '750px' | Más angosto: '550px')
-        titleSize: '0.90rem',      // Tamaño de "LA REUNIÓN"
-        textSize: '1.2rem',        // Tamaño del párrafo
-        gap: '0.8rem',             // Espacio entre título y párrafo
+        maxWidth: 'min(47rem, 90vw)',         // Ancho del párrafo (Más ancho: '750px' | Más angosto: '550px')
+        titleSize: 'var(--fs-kicker)',
+        textSize: 'var(--fs-display)',
+        gap: '1.4rem',             // Espacio entre título y párrafo
       },
       interaction: {
         /* ── Hover sobre partículas ──────────────────────────────────────────
@@ -4347,6 +4423,28 @@
         hoverDelayMs: 90,
       },
     };
+
+    if (HERO_DOOR_LOCKUP) {
+      /* Still de referencia: pórtico de piedra, vano oscuro, moneda = única joya.
+         Las hojas doradas del GLB se apagan en el hero (el vano es noche) y
+         vuelven en el acto 2, cuando la puerta de la reunión se cierra. */
+      CONFIG.door.widthVsCoin = 2.15;
+      CONFIG.door.fogDensity = 0.026;
+      CONFIG.door.doorDepthSquash = 0.72;
+      CONFIG.door.maxDepthWorld = 4.8;
+      CONFIG.camera.fov = 32;
+      CONFIG.camera.y = 1.55;
+      CONFIG.camera.z = 7.7;
+      /* Encuadre de La Reunión y PRIMER frame del cruce: misma distancia
+         que el lockup (sin acercar). La 1→2 aterriza aquí; el 2→3 parte
+         de aquí. Achicar la puerta de stage 2, no agrandarla. */
+      CONFIG.door.approachCamY = 0.62;
+      CONFIG.door.approachCamZ = CONFIG.camera.z;
+      CONFIG.exposure = 0.94;
+      CONFIG.door.spots.key = { color: 0xd4e0f2, intensity: 12, angle: 0.72, penumbra: 0.62, decay: 1.35, distance: 0, x: -3.8, y: 3.5, z: 4.4, tx: 0, ty: 0.2, tz: 0 };
+      CONFIG.door.spots.rim = { color: 0x6e819c, intensity: 6, angle: 0.8, penumbra: 0.75, decay: 1.35, distance: 0, x: 3.5, y: 1.6, z: 2.0, tx: 0, ty: 0.1, tz: -0.35 };
+      CONFIG.door.spots.under = { color: 0xffd76a, intensity: 3.2, angle: 0.7, penumbra: 0.85, decay: 1.6, distance: 0, x: 0, y: 0.5, z: 2.9, tx: 0, ty: 0.25, tz: 0 };
+    }
 
     const canvas = document.getElementById('canvas');
     const loadEl = document.getElementById('load');
@@ -4394,7 +4492,7 @@
     const initialVp = getViewportSize();
     const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, initialVp.width / initialVp.height, 0.1, 100);
     camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
-    camera.lookAt(0, 0.7, 0);
+    camera.lookAt(0, HERO_DOOR_LOCKUP ? 0.95 : 0.7, HERO_DOOR_LOCKUP ? -0.25 : 0);
 
     let renderer = null;
     if (supportsWebGL) {
@@ -4450,7 +4548,7 @@
        Si un .glb de figures/ todavía no existe, se dibuja un
        icosaedro + halo y se marca "por modelar" en el gabinete.
     ═══════════════════════════════════════════════════════════ */
-    let figureSystem = initFigureSystem(scene);
+    let figureSystem = initFigureSystem(scene, { debug: DEBUG_MODE });
 
     /* ────────────────────────────────
        Door light rig — spotlights dedicados (no reutiliza los de la moneda)
@@ -4553,10 +4651,13 @@
       const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 34);
       /* La moneda conserva una escala visual proporcional al viewport, pero no
          puede crecer hasta invadir el bloque editorial del hero. */
-      const minTargetPx = Math.min(w, h) * (isMobile ? 0.46 : 0.40);
+      const compact = isCompactWidth();
+      const minTargetPx = Math.min(w, h) * (HERO_DOOR_LOCKUP
+        ? (compact ? 0.40 : 0.38)
+        : (compact ? 0.46 : 0.40));
       const baseTargetPx = Math.min(
-        Math.max(fontPx * 9, minTargetPx),
-        Math.min(w * 0.5, 680)
+        Math.max(fontPx * (HERO_DOOR_LOCKUP ? 12 : 9), minTargetPx),
+        Math.min(w * (HERO_DOOR_LOCKUP ? 0.38 : 0.5), HERO_DOOR_LOCKUP ? 520 : 680)
       );
 
       const titleTop = getHeroTitleTop();
@@ -4567,6 +4668,10 @@
         if (available > 0) {
           /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
              evita que el diámetro de la moneda se coma el copy del título. */
+          if (HERO_DOOR_LOCKUP) {
+            if (h <= 700) return Math.min(baseTargetPx, Math.max(minTargetPx * 0.7, available * 0.86));
+            return baseTargetPx;
+          }
           return Math.min(baseTargetPx, available * 0.82);
         }
         /* El título ya sube muy arriba: no hay cota positiva. En vez de dejar
@@ -4585,7 +4690,7 @@
       return THREE.MathUtils.clamp(
         getResponsiveCoinTargetPx() / (CONFIG.coin.scale * worldPxPerUnit),
         0.25,
-        1.8
+        HERO_DOOR_LOCKUP ? 3.4 : 1.8
       );
     }
 
@@ -4602,9 +4707,9 @@
       /* La posición base conserva el lenguaje visual del hero (la moneda en
          la franja superior-media), pero nunca permite que su borde inferior
          entre en el título. */
-      let centerY = h * 0.41;
+      let centerY = h * (HERO_DOOR_LOCKUP ? 0.31 : 0.41);
 
-      if (Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
+      if (!HERO_DOOR_LOCKUP && Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
         /* Deja un colchón extra para que la moneda nunca toque el título,
            incluso cuando el título ocupa gran parte del viewport. */
         centerY = Math.min(centerY, titleTop - gap - targetPx / 2 - targetPx * 0.06);
@@ -4711,6 +4816,10 @@
           m.metalness = CONFIG.coin.metalness;
           m.roughness = CONFIG.coin.roughness;
           m.envMapIntensity = CONFIG.coin.envMapIntensity;
+          if (HERO_DOOR_LOCKUP) {
+            m.emissiveIntensity = 0.14;
+            m.envMapIntensity = 1.25;
+          }
           m.needsUpdate = true;
           coinMats.push(m);
         });
@@ -4800,13 +4909,88 @@
       if (title) {
         if (cfg.titleSize) title.style.fontSize = cfg.titleSize;
         if (cfg.gap) title.style.marginBottom = cfg.gap;
+        title.style.color = 'var(--color-gold)';
+        title.style.letterSpacing = '0.34em';
       }
       if (p) {
         if (cfg.textSize) p.style.fontSize = cfg.textSize;
         if (cfg.maxWidth) p.style.maxWidth = cfg.maxWidth;
+        p.style.lineHeight = '1.38';
+        p.style.fontWeight = '500';
       }
     }
     applyDoorTextStyle();
+
+    function makeDoorCanvasTexture(size, draw) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      draw(ctx, size);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.anisotropy = 8;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+      return tex;
+    }
+    function makeCarvedStoneMap() {
+      return makeDoorCanvasTexture(512, (ctx, s) => {
+        ctx.fillStyle = '#243044';
+        ctx.fillRect(0, 0, s, s);
+        for (let i = 0; i < 5200; i++) {
+          const a = 0.04 + Math.random() * 0.16;
+          ctx.fillStyle = Math.random() > 0.45
+            ? `rgba(210,224,240,${a})`
+            : `rgba(4,8,14,${a * 1.5})`;
+          ctx.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 4, 1 + Math.random() * 3);
+        }
+        ctx.globalAlpha = 0.22;
+        for (let y = 0; y < s; y += 28) {
+          ctx.fillStyle = y % 56 === 0 ? '#121820' : '#3a4c62';
+          ctx.fillRect(0, y, s, 2);
+        }
+        ctx.globalAlpha = 1;
+      });
+    }
+    function makeMeanderMap() {
+      return makeDoorCanvasTexture(256, (ctx, s) => {
+        ctx.fillStyle = '#1a222e';
+        ctx.fillRect(0, 0, s, s);
+        ctx.strokeStyle = '#c5b48a';
+        ctx.lineWidth = 9;
+        ctx.lineJoin = 'miter';
+        ctx.lineCap = 'square';
+        const cell = 64;
+        for (let y = 0; y < s; y += cell) {
+          for (let x = 0; x < s; x += cell) {
+            ctx.beginPath();
+            ctx.moveTo(x + 8, y + 18);
+            ctx.lineTo(x + 46, y + 18);
+            ctx.lineTo(x + 46, y + 50);
+            ctx.lineTo(x + 22, y + 50);
+            ctx.lineTo(x + 22, y + 34);
+            ctx.lineTo(x + 8, y + 34);
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+      });
+    }
+    const doorStoneMap = makeCarvedStoneMap();
+    doorStoneMap.repeat.set(2.4, 3.0);
+    const doorMeanderMap = makeMeanderMap();
+    doorMeanderMap.repeat.set(6, 8);
+    const doorLeafMats = [];
+    const doorLeafMeshes = [];
+    const doorFrameMats = [];
+    const doorLeafColorVoid = new THREE.Color('#07090f');
+    const doorLeafColorGold = new THREE.Color('#ffd76a');
+    const doorFrameColorHero = new THREE.Color('#6e7d92');
+    const doorFrameColorMeet = new THREE.Color('#3a4048');
+    const doorSpotKeyHero = new THREE.Color(0xd4e0f2);
+    const doorSpotKeyMeet = new THREE.Color(0xe8eef6);
+    const doorSpotRimHero = new THREE.Color(0x6e819c);
+    const doorSpotRimMeet = new THREE.Color(0x8a93a3);
 
     const doorLoader = new GLTFLoader(manager);
     doorLoader.setDRACOLoader(dracoLoader);
@@ -4858,20 +5042,46 @@
         const name = (object.name || '').toLowerCase();
         // Toroide.001 son las hojas de la puerta; Cubo es el marco/pórtico exterior
         const isDoorLeaf = name.includes('toroide');
+        if (isDoorLeaf) {
+          doorLeafMeshes.push(object);
+          if (HERO_DOOR_LOCKUP) object.visible = false;
+        }
         [object.material].flat().forEach((m) => {
           if (!m || !('metalness' in m)) return;
           m.side = THREE.FrontSide;
           if (isDoorLeaf) {
-            // Hoja de la puerta interior — Dorado metálico brillante
-            m.color.set('#ffd76a');
-            m.metalness = 1.0;
-            m.roughness = 0.22;
-            m.envMapIntensity = 1.3;
+            if (HERO_DOOR_LOCKUP) {
+              /* Vano del still: las hojas se apagan a noche. El oro vuelve en el acto 2. */
+              m.color.copy(doorLeafColorVoid);
+              m.metalness = 0.12;
+              m.roughness = 0.92;
+              m.envMapIntensity = 0.12;
+              if (!m.emissive) m.emissive = new THREE.Color();
+              m.emissive.set('#000000');
+              m.emissiveIntensity = 0;
+              doorLeafMats.push(m);
+            } else {
+              m.color.set('#ffd76a');
+              m.metalness = 1.0;
+              m.roughness = 0.22;
+              m.envMapIntensity = 1.3;
+              if (!m.emissive) m.emissive = new THREE.Color();
+              m.emissive.set('#3d2508');
+              m.emissiveIntensity = 0.05;
+            }
+          } else if (HERO_DOOR_LOCKUP) {
+            m.color.copy(doorFrameColorHero);
+            m.metalness = 0.08;
+            m.roughness = 0.88;
+            m.map = doorStoneMap;
+            m.bumpMap = doorStoneMap;
+            m.bumpScale = 0.045;
+            m.envMapIntensity = 0.28;
             if (!m.emissive) m.emissive = new THREE.Color();
-            m.emissive.set('#3d2508');
-            m.emissiveIntensity = 0.05;
+            m.emissive.set('#000000');
+            m.emissiveIntensity = 0;
+            doorFrameMats.push(m);
           } else {
-            // Pórtico exterior, dintel y escalones — Obsidiana / Negro azulado profundo mate
             m.color.set('#0d0f16');
             m.metalness = 0.15;
             m.roughness = 0.75;
@@ -4885,6 +5095,15 @@
         });
       });
       doorModelGroup.add(model);
+      if (HERO_DOOR_LOCKUP) {
+        const voidMat = new THREE.MeshBasicMaterial({ color: 0x05070c, side: THREE.DoubleSide });
+        const voidPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 2.05), voidMat);
+        voidPlane.position.set(0, 0.02, -0.22);
+        doorModelGroup.add(voidPlane);
+        doorMats.push(voidMat);
+        /* Sin polvo dorado en el vano: en el still de portada era ruido
+           extra sobre la moneda y la piedra. */
+      }
     }, undefined, (err) => {
       console.error('Error cargando GLB:', err);
       loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la puerta</span>';
@@ -5285,8 +5504,8 @@
     let scatterProgress = 0;
     let storyProgress = 0;   // 0→1 a lo largo de todo el documento (para la coreografía)
     let coinFade = 1;
-    let doorFade = 0;
-    let doorTarget = 0;
+    let doorFade = HERO_DOOR_LOCKUP ? 1 : 0;
+    let doorTarget = HERO_DOOR_LOCKUP ? 1 : 0;
 
     /* Máquina de estados visual: ScrollTrigger escribe los objetivos y el loop
        único de GSAP interpola. Así la nube puede volver atrás sin saltos y una
@@ -5362,8 +5581,8 @@
        llega al capítulo cuando de verdad está en pantalla, y la coreografía
        se mantiene alineada al cambiar las alturas o el breakpoint. */
     const cameraChoreographyStops = [
-      { id: 'hero',               pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // base
-      { id: 'stageObjective',     pos: [0.00, 0.60, 5.10], look: [0.00, 0.60, 0.00] },   // acercamiento puerta
+      { id: 'hero',               pos: [0.00, 0.72, 7.15], look: [0.00, 0.95, -0.25] },  // lockup: moneda en el vano
+      { id: 'stageObjective',     pos: [0.00, 0.70, 4.45], look: [0.00, 0.78, -0.55] },  // dolly hacia el umbral
       /* #stageRoom se omite a propósito: el cruce puerta→sala lo gobierna el
          dolly propio (crossEff), así no lo pisamos con una deriva extra. */
       { id: 'stageHook',          pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },
@@ -5380,6 +5599,16 @@
 
     let cameraStops = [];
     function rebuildCameraChoreography() {
+      if (HERO_DOOR_LOCKUP) {
+        const y = CONFIG.coin.baseY;
+        CONFIG.camera.y = y + 0.38;
+        cameraChoreographyStops[0].pos = [0, CONFIG.camera.y, CONFIG.camera.z];
+        cameraChoreographyStops[0].look = [0, y, 0];
+        const ay = CONFIG.door.approachCamY ?? 0.62;
+        const az = CONFIG.door.approachCamZ ?? CONFIG.camera.z;
+        cameraChoreographyStops[1].pos = [0, ay, az];
+        cameraChoreographyStops[1].look = [0, ay, 0.00];
+      }
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
       const stops = [];
       const n = cameraChoreographyStops.length;
@@ -5397,7 +5626,31 @@
         } else {
           p = n > 1 ? i / (n - 1) : 0;
         }
-        stops.push({ p, pos: def.pos, look: def.look });
+        /* Lockup: el encuadre de La Reunión se alcanza al TERMINAR la 1→2
+           (scatter=1, bottom del hero = top del viewport), no en el centro
+           de #stageObjective — si no, el aterrizaje 1→2 y el primer frame
+           del cruce tienen tamaños distintos. */
+        if (HERO_DOOR_LOCKUP && def.id === 'stageObjective') {
+          const hero = document.getElementById('hero');
+          const heroH = hero ? hero.offsetHeight : window.innerHeight;
+          p = THREE.MathUtils.clamp(heroH / Math.max(docHeight, 1e-4), 0, 1);
+        }
+        stops.push({ id: def.id, p, pos: def.pos, look: def.look });
+      }
+      if (HERO_DOOR_LOCKUP && docHeight > 0) {
+        const obj = stops.find((s) => s.id === 'stageObjective');
+        const room = document.getElementById('stageRoom');
+        if (obj && room) {
+          const enterY = (room.getBoundingClientRect().top + window.scrollY) - window.innerHeight * 0.85;
+          const pHold = THREE.MathUtils.clamp(enterY / docHeight, 0, 1);
+          const idx = stops.indexOf(obj);
+          stops.splice(idx + 1, 0, {
+            id: 'doorwayHold',
+            p: Math.max(pHold, obj.p + 0.001),
+            pos: obj.pos,
+            look: obj.look,
+          });
+        }
       }
       for (let i = 1; i < stops.length; i++) {
         if (stops[i].p < stops[i - 1].p) stops[i].p = stops[i - 1].p + 0.001;
@@ -6402,11 +6655,8 @@
 
     function animate() {
       const time = clock.getElapsedTime();
-      /* crossT EFECTIVO: mientras dura la salida de la sala (exitT) la cámara
-         deshace el cruce y toda la coreografía vinculada (mira, FOV, velo, luz
-         cálida, tinte) vuelve suavemente al estado base. EXCEPCIÓN intencional:
-         la disolución de la puerta usa crossT CRUDO — si la puerta se
-         "materializara" de nuevo durante la retirada sería un glitch evidente. */
+      /* crossT EFECTIVO: entrada y salida son la MISMA curva. Al volver
+         (crossT↓ o exitT↑) cámara, mira, FOV, velo y puerta deshacen el cruce. */
       const crossEff = crossT * (1 - exitT);
       particleStoryKeys.forEach((key) => {
         particleStoryMix[key] = THREE.MathUtils.lerp(
@@ -6424,13 +6674,14 @@
         const introT = Math.min(tElapsed / (reduceMotion ? 1.2 : 1.8), 1);
         const introEase = 1 - Math.pow(1 - introT, 3);
         const motionScale = reduceMotion ? 0.12 : 1;
-        /* Giro por oscilación, no rotación 360°: con swaySpeedY como frecuencia,
-           la moneda se balancea frente a la cámara y nunca queda "de canto"
-           (antes acumulaba ángulo y a veces se veía de perfil). */
-        coin.rotation.y = Math.sin(tElapsed * C.swaySpeedY) * 0.42 * introEase * motionScale
-          + smoothMouseX * 0.22 * motionScale
+        /* Giro sobre su eje Y (como al inicio): la moneda rota completa,
+           no un balanceo. swaySpeedY es rad/s (~0.45 → una vuelta cada ~14s). */
+        coin.rotation.y = tElapsed * C.swaySpeedY * introEase * motionScale
+          + smoothMouseX * (HERO_DOOR_LOCKUP ? 0.08 : 0.22) * motionScale
           + dragRotY;
-        coin.rotation.x = C.tiltBase + C.tiltOscillation * Math.sin(tElapsed * C.tiltSpeed * motionScale) + smoothMouseY * -0.12 * motionScale + dragRotX;
+        coin.rotation.x = (HERO_DOOR_LOCKUP ? -0.11 : C.tiltBase)
+          + (HERO_DOOR_LOCKUP ? 0.018 : C.tiltOscillation) * Math.sin(tElapsed * C.tiltSpeed * motionScale)
+          + smoothMouseY * -0.12 * motionScale + dragRotX;
         coin.position.y = C.baseY + C.floatAmount * Math.sin(tElapsed * C.floatSpeed * motionScale) * motionScale;
         mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
         coin.getWorldPosition(projectedPos);
@@ -6442,11 +6693,16 @@
 
         coinFade = THREE.MathUtils.clamp(1 - (scatterProgress / 0.45), 0, 1);
         if (objectReflection) {
-          const reflectionDistance = Math.max(20, coinTargetPx * 0.48);
-          objectReflection.style.transform = `translate3d(${coinScreenX}px, ${coinScreenY + reflectionDistance}px, 0) scale(${0.82 + coinFade * 0.18})`;
-          objectReflection.style.opacity = (coinFade * 0.46).toFixed(3);
+          if (HERO_DOOR_LOCKUP) {
+            objectReflection.style.opacity = '0';
+          } else {
+            const reflectionDistance = Math.max(20, coinTargetPx * 0.48);
+            objectReflection.style.transform = `translate3d(${coinScreenX}px, ${coinScreenY + reflectionDistance}px, 0) scale(${0.82 + coinFade * 0.18})`;
+            objectReflection.style.opacity = (coinFade * 0.46).toFixed(3);
+          }
         }
         coin.visible = (currentStage === 1) && (coinFade > 0.01);
+        if (HERO_DOOR_LOCKUP) coin.position.z = 0.55;
         for (let i = 0; i < coinMats.length; i++) {
           coinMats[i].transparent = true;
           coinMats[i].opacity = coinFade;
@@ -6460,6 +6716,9 @@
         if (doorTarget === 0 && doorFade < 0.03) doorFade = 0;
         /* La Sala (b1): la puerta se DISUELVE en la luz cálida al cruzar el umbral
            (en modo 'classic' dissolve=0 → comportamiento previo intacto). */
+        /* crossT CRUDO (no crossEff): al salir de la sala hacia El Método
+           la puerta NO debe reaparecer. Solo vuelve si el scroll deshace
+           el cruce (crossT↓, de vuelta a La Reunión). */
         const dissolve = DOOR_MODE === 'doorway'
           ? THREE.MathUtils.smoothstep((crossT - 0.15) / 0.55, 0, 1)
           : 0;
@@ -6469,26 +6728,77 @@
            "teniendo" la puerta y se encendían niebla y sombra sobre la nada. */
         doorGroup.visible = doorVisOpacity > 0.001 && !!doorModel;
         const doorEase = doorFade * doorFade * (3 - 2 * doorFade);
-        doorGroup.rotation.y = smoothMouseX * 0.05 * doorEase;
-        doorGroup.rotation.x = smoothMouseY * -0.03 * doorEase;
+        const lockupMix = HERO_DOOR_LOCKUP
+          ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
+          : 0;
+        /* Stage 1: la puerta no sigue el mouse (solo la moneda). El parallax
+           vuelve cuando el lockup se suelta hacia La Reunión. */
+        const doorMouse = HERO_DOOR_LOCKUP ? (1 - lockupMix) : 1;
+        doorGroup.rotation.y = smoothMouseX * 0.05 * doorEase * doorMouse;
         doorGroup.position.x = CONFIG.door.baseX;
         doorGroup.position.z = CONFIG.door.baseZ ?? 0;
-        doorGroup.scale.setScalar(0.94 + 0.06 * doorEase);
+        const heroMul = HERO_DOOR_LOCKUP
+          ? THREE.MathUtils.lerp(
+              1.25 / Math.max(CONFIG.door.widthVsCoin, 1e-3),
+              1,
+              1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
+            )
+          : 1;
+        doorGroup.scale.setScalar((0.94 + 0.06 * doorEase) * heroMul);
         /* La puerta se APOYA, no flota: el pivote (centro de las hojas) se pone
            donde haga falta para que la base de los escalones quede en groundY.
            Anclar el pivote (el `baseY` anterior) hacía que al cambiar el tamaño la
            puerta subiera o bajara sola y se despegara de su propia sombra. */
         const doorBottomWorld = doorModel ? doorBottomOffset * doorModelGroup.scale.y * doorGroup.scale.x : 0;
-        doorGroup.position.y = (CONFIG.door.groundY ?? 0) - doorBottomWorld + smoothMouseY * -0.06 * doorEase;
+        const plantedY = (CONFIG.door.groundY ?? 0) - doorBottomWorld;
+        doorGroup.rotation.x = -0.12 * lockupMix + smoothMouseY * -0.03 * doorEase * doorMouse;
+        doorGroup.position.y = THREE.MathUtils.lerp(plantedY, CONFIG.coin.baseY, lockupMix) + smoothMouseY * -0.06 * doorEase * doorMouse;
         for (let i = 0; i < doorMats.length; i++) {
           doorMats[i].transparent = true;
           doorMats[i].opacity = doorVisOpacity;
+        }
+        if (HERO_DOOR_LOCKUP && doorLeafMats.length) {
+          const leafT = THREE.MathUtils.smoothstep(scatterProgress, 0.28, 0.9);
+          for (let i = 0; i < doorLeafMats.length; i++) {
+            const m = doorLeafMats[i];
+            m.color.copy(doorLeafColorVoid).lerp(doorLeafColorGold, leafT);
+            m.metalness = THREE.MathUtils.lerp(0.12, 1.0, leafT);
+            m.roughness = THREE.MathUtils.lerp(0.92, 0.22, leafT);
+            m.envMapIntensity = THREE.MathUtils.lerp(0.12, 1.3, leafT);
+          }
+          for (let i = 0; i < doorLeafMeshes.length; i++) {
+            doorLeafMeshes[i].visible = leafT > 0.12;
+          }
+          /* Muros: de piedra de portada a obsidiana gris (el oro es de las hojas). */
+          for (let i = 0; i < doorFrameMats.length; i++) {
+            const m = doorFrameMats[i];
+            m.color.copy(doorFrameColorHero).lerp(doorFrameColorMeet, leafT);
+            m.metalness = THREE.MathUtils.lerp(0.08, 0.42, leafT);
+            m.roughness = THREE.MathUtils.lerp(0.88, 0.38, leafT);
+            m.envMapIntensity = THREE.MathUtils.lerp(0.28, 0.72, leafT);
+            if (m.bumpScale != null) m.bumpScale = THREE.MathUtils.lerp(0.045, 0.028, leafT);
+            if (m.emissive) {
+              m.emissive.setRGB(0, 0, 0);
+              m.emissiveIntensity = 0;
+            }
+          }
+          if (doorSpots[0]) {
+            doorSpots[0].color.copy(doorSpotKeyHero).lerp(doorSpotKeyMeet, leafT);
+            doorSpots[0].intensity = THREE.MathUtils.lerp(12, 18, leafT);
+          }
+          if (doorSpots[1]) {
+            doorSpots[1].color.copy(doorSpotRimHero).lerp(doorSpotRimMeet, leafT);
+            doorSpots[1].intensity = THREE.MathUtils.lerp(6, 10, leafT);
+          }
+          if (doorSpots[2]) {
+            doorSpots[2].intensity = THREE.MathUtils.lerp(3.2, 8, leafT);
+          }
         }
 
         /* rig de luces + fog solo mientras la puerta está presente */
         const doorActive = doorVisOpacity > 0.01 && !!doorModel;
         if (doorLightGroup) doorLightGroup.visible = doorActive;
-        doorFloor.visible = doorActive;
+        doorFloor.visible = doorActive && !(HERO_DOOR_LOCKUP && scatterProgress < 0.55);
         doorFloor.material.opacity = 0.8 * doorEase * (1 - dissolve);
         if (scene.fog) scene.fog.density = doorActive ? CONFIG.door.fogDensity * doorEase : 0;
         /* La sombra vive exactamente en la línea de suelo (doorBottomWorld ya se
@@ -6644,19 +6954,38 @@
       rim.intensity = L.rim.intensity * dim;
       front.intensity = L.front.intensity * dim;
       ambient.intensity = L.ambient.intensity * dim;
-      const baseCamY = CONFIG.camera.y;
-      const lowCamY = baseCamY - 0.15;
-      const currentCamY = THREE.MathUtils.lerp(baseCamY, lowCamY, camBlend);
-      const baseCamZ = CONFIG.camera.z + camBlend * 0.3;
+      /* Encuadre vivo (lockup → La Reunión a la misma distancia).
+         El cruce 2→3 congela ESTE pose: la puerta no cambia de tamaño
+         al arrancar el dolly, solo al cruzar el umbral. */
+      const choreo = cameraChoreography(storyProgress);
+      const lockupCamMix = HERO_DOOR_LOCKUP
+        ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
+        : 0;
+      if (lockupCamMix > 0) {
+        const approachY = CONFIG.door.approachCamY ?? 0.62;
+        const approachZ = CONFIG.door.approachCamZ ?? CONFIG.camera.z;
+        choreo.pos.set(
+          0,
+          THREE.MathUtils.lerp(approachY, CONFIG.camera.y, lockupCamMix),
+          THREE.MathUtils.lerp(approachZ, CONFIG.camera.z, lockupCamMix)
+        );
+        choreo.look.set(
+          0,
+          THREE.MathUtils.lerp(approachY, CONFIG.coin.baseY, lockupCamMix),
+          0
+        );
+      }
 
-      /* La Sala (b1): dolly a través del umbral + luz cálida del interior + velo de fog.
-         En modo 'classic' crossT queda en 0 → rama clásica intacta. */
+      /* La Sala (b1): dolly a través del umbral. Ida y vuelta usan el mismo
+         lerp desde el encuadre de La Reunión — volver ES la animación inversa. */
       if (DOOR_MODE === 'doorway' && crossEff > 0.001) {
+        const enterY = CONFIG.door.approachCamY ?? 0.62;
+        const enterZ = CONFIG.door.approachCamZ ?? CONFIG.camera.z;
         const crossEase = THREE.MathUtils.smoothstep(crossEff, 0, 1);
         camera.position.set(
-          CONFIG.camera.x,
-          THREE.MathUtils.lerp(currentCamY, CONFIG.door.roomCamY ?? 0.62, crossEase),
-          THREE.MathUtils.lerp(baseCamZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
+          THREE.MathUtils.lerp(0, CONFIG.camera.x, crossEase),
+          THREE.MathUtils.lerp(enterY, CONFIG.door.roomCamY ?? 0.62, crossEase),
+          THREE.MathUtils.lerp(enterZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
         );
         /* Encuadre del acercamiento (tres fases encadenadas por crossT):
              1) mira neutra → centro de la puerta  [aimDoor: crossT 0 → 0.45]
@@ -6669,6 +6998,7 @@
         const [ar0, ar1] = CONFIG.door.aimRoomT ?? [0.55, 0.95];
         const aimDoor = THREE.MathUtils.smoothstep((crossEff - ad0) / Math.max(ad1 - ad0, 1e-3), 0, 1);
         const aimRoom = THREE.MathUtils.smoothstep((crossEff - ar0) / Math.max(ar1 - ar0, 1e-3), 0, 1);
+        _lookBase.set(0, CONFIG.door.approachCamY ?? 0.62, 0);
         _doorLook.set(
           doorGroup.position.x,
           doorGroup.position.y + (doorBottomOffset + doorTopOffset) * 0.5 * doorModelGroup.scale.y * doorGroup.scale.x,
@@ -6680,7 +7010,6 @@
         /* Coreografía: la cámara viaja por los capítulos en vez de quedarse
            clavada. La rama del dolly (crossEff>0) sigue mandando durante el
            cruce; aquí se aplica el plano-secuencia del resto de la pieza. */
-        const choreo = cameraChoreography(storyProgress);
         camera.position.copy(choreo.pos);
         camera.lookAt(choreo.look);
       }
@@ -7224,6 +7553,7 @@
 
       // Progress bar
       progressBar.style.width = (p * 100) + '%';
+      progressBar.setAttribute('aria-valuenow', String(Math.round(p * 100)));
 
       // Section indicator
       let sec = 'hero';
@@ -7296,13 +7626,17 @@
            este trigger la gobierna el fade anticipado de la puerta (ver abajo).
            Antes el reset corría hasta p<0.98 y pisaba ese fade, dejando un
            "pasillo" de ~1/2 viewport SIN nada en pantalla entre actos. */
-        if (self.progress < 0.25) {
+        if (!HERO_DOOR_LOCKUP && self.progress < 0.25) {
           doorTarget = 0;
           doorFade = 0;
           if (doorGroup) doorGroup.visible = false;
         }
       },
       onLeaveBack: () => {
+        if (HERO_DOOR_LOCKUP) {
+          doorTarget = 1;
+          return;
+        }
         doorTarget = 0;
         doorFade = 0;
         if (doorGroup) doorGroup.visible = false;
@@ -7324,7 +7658,12 @@
         start: 'top 70%',
         end: 'top 15%',
         scrub: true,
-        onUpdate: (self) => { doorTarget = THREE.MathUtils.clamp(self.progress, 0, 1); },
+        onUpdate: (self) => {
+          /* Lockup: la puerta YA está en el hero. Si aquí bajamos doorTarget
+             al volver, se desvanece en vez de deshacer 1→2 (leafT / lockupMix). */
+          if (HERO_DOOR_LOCKUP) { doorTarget = 1; return; }
+          doorTarget = THREE.MathUtils.clamp(self.progress, 0, 1);
+        },
       });
     }
 
@@ -7390,6 +7729,21 @@
         end: 'bottom bottom',
         scrub: true,
         onUpdate: (self) => { exitT = self.progress; },
+      });
+      /* Capítulos posteriores a La Sala: la puerta no debe seguir en escena
+         (El Método, ejes, etc.). Al volver atrás, doorTarget=1 y crossT
+         gobierna de nuevo la disolución. */
+      ScrollTrigger.create({
+        trigger: '#stageHook',
+        start: 'top 85%',
+        end: 'top 20%',
+        scrub: true,
+        onUpdate: (self) => {
+          if (!HERO_DOOR_LOCKUP) return;
+          doorTarget = 1 - THREE.MathUtils.clamp(self.progress, 0, 1);
+        },
+        onLeave: () => { if (HERO_DOOR_LOCKUP) doorTarget = 0; },
+        onEnterBack: () => { if (HERO_DOOR_LOCKUP) doorTarget = 1; },
       });
 
       /* Presencia en la sala: habilita el hover→cita y limpia el panel al salir */
