@@ -6626,11 +6626,9 @@
         const introT = Math.min(tElapsed / (reduceMotion ? 1.2 : 1.8), 1);
         const introEase = 1 - Math.pow(1 - introT, 3);
         const motionScale = reduceMotion ? 0.12 : 1;
-        /* Giro por oscilación, no rotación 360°: con swaySpeedY como frecuencia,
-           la moneda se balancea frente a la cámara y nunca queda "de canto"
-           (antes acumulaba ángulo y a veces se veía de perfil). */
-        const swayAmp = HERO_DOOR_LOCKUP ? 0.10 : 0.42;
-        coin.rotation.y = Math.sin(tElapsed * C.swaySpeedY) * swayAmp * introEase * motionScale
+        /* Giro sobre su eje Y (como al inicio): la moneda rota completa,
+           no un balanceo. swaySpeedY es rad/s (~0.45 → una vuelta cada ~14s). */
+        coin.rotation.y = tElapsed * C.swaySpeedY * introEase * motionScale
           + smoothMouseX * (HERO_DOOR_LOCKUP ? 0.08 : 0.22) * motionScale
           + dragRotY;
         coin.rotation.x = (HERO_DOOR_LOCKUP ? 0.02 : C.tiltBase)
