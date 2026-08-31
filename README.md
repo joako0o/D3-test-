@@ -74,6 +74,13 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
   verificada por métricas (p95 del error angular 0°, PSNR ≥ 40 dB en píxeles
   visibles) y estructura intacta (mismos triángulos/bbox). El alfa no usado del
   color se aplanó con *bleed*: además mejora los mipmaps del borde de la moneda.
+- **Nueva puerta Meshy (`Puerta_nueva.glb` → `puerta-nueva-draco.glb`, 2026-08-31):**
+  20.2 MB → **650 KB** (−96.8%). Pipeline `@gltf-transform/cli` 4.4.2: `weld` +
+  `simplify` (341,532 → **44,392** triángulos, error p95 ≈ 1% del bbox) + texturas
+  2048 JPEG → **1024 WebP** (baseColor 108 KB / normal 33 KB / metalRough 49 KB,
+  q85/q90/q80) + Draco (posición 14, normal 10, uv 12). `validate`: 0 errores,
+  0 warnings; decode verificada con el SDK (36,768 vértices). Pendiente: adaptar
+  el loader de `index.html` (la malla se llama `mesh`, no `toroide`/`cubo`).
 - **Fuentes self-hosted** (`fonts/*.woff2` + `@font-face`): ✅ completado el 2026-08-30 (ver `fonts/README.md`).
 - **HUD "La Sala de Deliberaciones"** (`#chapterHud`): pendiente (no implementado).
 - **Descubrimiento** (`Evidencia n/100` en localStorage): pendiente (no implementado).

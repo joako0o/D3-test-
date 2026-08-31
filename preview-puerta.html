@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Previsualización — puerta-nueva-draco.glb</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0a0c11; font-family: Inter, system-ui, sans-serif; color: #cfd6e4; }
+  #app { position: fixed; inset: 0; }
+  #hud {
+    position: fixed; top: 12px; left: 12px; z-index: 10; pointer-events: none;
+    background: rgba(10,12,17,.78); border: 1px solid rgba(207,214,228,.16); border-radius: 10px;
+    padding: 10px 14px; font-size: 12.5px; line-height: 1.55; max-width: 340px; backdrop-filter: blur(6px);
+  }
+  #hud b { color: #ffd76a; font-weight: 600; }
+  #hud small { opacity: .65; }
+  #toggle {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 10;
+    background: rgba(10,12,17,.8); color: #cfd6e4; border: 1px solid rgba(207,214,228,.25);
+    border-radius: 999px; padding: 8px 16px; font-size: 12.5px; cursor: pointer; font-family: inherit;
+  }
+  #toggle:hover { border-color: #ffd76a; color: #ffd76a; }
+  #status { position: fixed; bottom: 16px; right: 16px; z-index: 10; font-size: 11.5px; opacity: .7; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud">
+  <b>puerta-nueva-draco.glb</b><br />
+  <small>650 KB · 44,392 triángulos · 3 texturas WebP 1024² · Draco<br />
+  Arrastra para orbitar · scroll para zoom · botón abajo = alambre</small>
+</div>
+<button id="toggle">Modo alambre</button>
+<div id="status">cargando…</div>
+
+<script type="module">
+import * as THREE from './js/three.module.js';
+import { OrbitControls } from './js/controls/OrbitControls.js';
+import { GLTFLoader } from './js/loaders/GLTFLoader.js';
+import { DRACOLoader } from './js/loaders/DRACOLoader.js';
+
+const app = document.getElementById('app');
+const status = document.getElementById('status');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+app.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0c11);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.01, 100);
+camera.position.set(2.4, 1.6, 3.6);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.1, 0);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 1.4;
+
+// Luz ambiente + 2 focos (tipo "familia" del proyecto)
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+const key = new THREE.DirectionalLight(0xfff2d0, 2.2);
+key.position.set(3, 4, 2.5);
+scene.add(key);
+const fill = new THREE.DirectionalLight(0x8ab4f8, 0.6);
+fill.position.set(-3, 1, -2);
+scene.add(fill);
+const rim = new THREE.DirectionalLight(0xffffff, 0.8);
+rim.position.set(0, 2, -4);
+scene.add(rim);
+
+// Suelo tenue de referencia
+const grid = new THREE.GridHelper(6, 12, 0x2a2f3a, 0x1c2028);
+grid.position.y = -0.95;
+scene.add(grid);
+
+let model = null;
+let wire = null;
+const draco = new DRACOLoader();
+draco.setDecoderPath('js/vendor/draco/');
+const loader = new GLTFLoader();
+loader.setDRACOLoader(draco);
+
+loader.load('puerta-nueva-draco.glb', (gltf) => {
+  model = gltf.scene;
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  // centrar y apoyar en y=0 para orbitar cómodo
+  model.position.sub(center).add(new THREE.Vector3(0, -box.min.y + center.y, 0));
+  scene.add(model);
+  status.textContent = 'OK · ' + size.x.toFixed(2) + ' × ' + size.y.toFixed(2) + ' × ' + size.z.toFixed(2);
+}, undefined, (e) => { status.textContent = 'Error: ' + e.message; });
+
+document.getElementById('toggle').addEventListener('click', () => {
+  if (!model) return;
+  if (wire) { model.remove(wire); wire = null; document.getElementById('toggle').textContent = 'Modo alambre'; return; }
+  wire = new THREE.Mesh(model.children[0].geometry.clone(), new THREE.MeshBasicMaterial({ color: 0xffd76a, wireframe: true, transparent: true, opacity: 0.35 }));
+  model.add(wire);
+  document.getElementById('toggle').textContent = 'Ver sólido';
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+</script>
+</body>
+</html>
