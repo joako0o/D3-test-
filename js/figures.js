@@ -25,8 +25,8 @@ export const FIGURE_DEFS = [
        de partículas (que se despeja al cruzar) y la luz de acento la
        ilumina desde el frente. El y se eleva para que la cabeza y la
        balanza queden en la franja superior y el copy lea sobre la base. */
-    x: 0, y: 0.18, z: -4.8,
-    scale: 1.1,
+    x: 0, y: 0.02, z: -4.6,
+    scale: 1.22,
     color: 0xffd76a,
     /* Acabado PIEDRA mate (limestone): la figura no compite con la moneda
        dorada del hero. `applyModel` respeta estos valores en vez de forzar
