@@ -6953,6 +6953,11 @@
     initWordEvolution();
     initActBrowser();
 
+    /* El gráfico de evolución necesita que ScrollTrigger y las curvas estén
+       registradas; se inicializa aquí, después de construir el canvas D3. */
+    initWordEvolution();
+    initActBrowser();
+
     const lenis = new Lenis({
       duration: reduceMotion ? 0 : 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
