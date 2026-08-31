@@ -1,0 +1,103 @@
+/* 18-stage-quotes.css
+   Stage 9: tarjetas de cita.
+   Extraido de index.html — ver css/README.md para el orden de carga. */
+
+/* ─── STAGE 9 — Quotes ─── */
+/* z-index sobre el canvas fijo (z:2): sin esto el canvas interceptaba
+   hover/click de las tarjetas y ninguna interacción de esta sección funcionaba */
+.stage-quotes {
+  position: relative; z-index: 30;
+  min-height: clamp(500px, 72vh, 760px);
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(64px, 9vh, 96px) 10%;
+}
+.quotes-shell {
+  width: min(980px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+.quotes-kicker {
+  color: var(--color-gold);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.quotes-title {
+  max-width: 760px;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: 500;
+  line-height: 1.15;
+}
+.quotes-lead {
+  max-width: 620px;
+  margin-bottom: 10px;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+}
+.quotes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  max-width: 900px;
+  width: 100%;
+}
+.quote-card {
+  padding: 32px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--color-surface-border);
+  opacity: 0;
+  transform: translateY(24px);
+  transition: border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.quote-card.hawkish {
+  border-color: rgba(255,215,106,0.15);
+  box-shadow: 0 0 40px rgba(255,215,106,0.03);
+}
+.quote-card.hawkish:hover {
+  border-color: rgba(255,215,106,0.4);
+  box-shadow: 0 8px 60px rgba(255,215,106,0.12);
+  transform: translateY(-3px);
+}
+.quote-card.dovish {
+  border-color: rgba(138,180,248,0.15);
+  box-shadow: 0 0 40px rgba(138,180,248,0.03);
+}
+.quote-card.dovish:hover {
+  border-color: rgba(138,180,248,0.4);
+  box-shadow: 0 8px 60px rgba(138,180,248,0.12);
+  transform: translateY(-3px);
+}
+.quote-tag {
+  font-size: var(--fs-micro); letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.quote-card.hawkish .quote-tag { color: var(--color-gold); }
+.quote-card.dovish .quote-tag { color: var(--color-dovish); }
+.quote-text {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 2vw, 23px);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.85;
+  margin-bottom: 20px;
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+}
+.quote-author {
+  font-size: var(--fs-small);
+  opacity: 0.62; /* AA, ver .scroll-hint */
+  margin-top: 12px;
+  font-weight: 500;
+}

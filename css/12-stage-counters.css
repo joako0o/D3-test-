@@ -1,0 +1,100 @@
+/* 12-stage-counters.css
+   Stage 6: contadores animados.
+   Extraido de index.html — ver css/README.md para el orden de carga. */
+
+/* ─── STAGE 6 — Counters ─── */
+.stage-counters {
+  position: relative; z-index: 4;
+  min-height: clamp(440px, 70vh, 720px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: clamp(56px, 8vh, 88px) 10%;
+}
+.counters-wrap {
+  width: 100%;
+  max-width: 980px;
+  display: flex; flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.counters-kicker {
+  color: var(--color-gold);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-align: center;
+  text-transform: uppercase;
+}
+.counters-note {
+  max-width: 720px;
+  margin: 2px auto 0;
+  color: var(--color-text-faint);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  text-align: center;
+}
+.counter-kicker {
+  min-height: 2.4em;
+  color: var(--color-text-faint);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+.counter-label small {
+  color: var(--color-text-faint);
+  font-size: 0.88em;
+  letter-spacing: 1px;
+}
+.chart-container {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 20px;
+  display: flex; flex-direction: column; align-items: center;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.stage-counters.active .chart-container {
+  opacity: 1;
+  transform: translateY(0);
+}
+.chart-axis-label {
+  font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; opacity: 0.62; /* AA, ver .scroll-hint */
+  text-align: center;
+}
+.chart-axes-svg {
+  overflow: visible;
+  margin-top: 8px;
+}
+.counters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 48px;
+  max-width: 900px;
+  width: 100%;
+  justify-items: center;
+}
+.counter-item {
+  text-align: center;
+  opacity: 0;
+  transform: translateY(24px);
+  width: 100%;
+}
+.counter-number {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 5.5vw, 76px);
+  font-weight: 700;
+  color: var(--color-gold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.counter-label {
+  margin-top: 10px;
+  font-size: var(--fs-small);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.62; /* AA, ver .scroll-hint */
+  font-weight: 500;
+}

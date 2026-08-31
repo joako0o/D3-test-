@@ -13,18 +13,25 @@ Exploración interactiva de 16 años de reuniones de política monetaria en Chil
 ## Cómo ejecutar
 
 ```bash
-# Con Python
-python -m http.server 8000
-
-# Abrir en el navegador
-# http://localhost:8000
+npm start            # servidor estático en http://localhost:8000
+npm run check        # arranca el sitio fuera del navegador y avisa si algo revienta
 ```
+
+`npm run check` necesita las dependencias de desarrollo una sola vez
+(`npm install`). No hay paso de build: lo que hay en el repo es lo que se
+publica.
 
 ## Estructura del proyecto
 
 ```
-├── index.html              ← Archivo principal (CSS + JS + Three.js inline)
+├── index.html              ← Solo HTML: 661 líneas de marcado y nada más
+├── css/                    ← Las hojas de estilo, una por sección (ver css/README.md)
 ├── js/
+│   ├── main.js             ← Punto de entrada: escena 3D + scrollytelling
+│   ├── config.js           ← TODOS los números de la escena (cámara, luces, órbitas…)
+│   ├── figures.js          ← Sistema de figuras 3D (carga, pedestales, placeholders)
+│   ├── topics.js           ← Taxonomía temática y normalización de texto (puro)
+│   ├── utils.js            ← Funciones puras compartidas
 │   ├── quotes.js           ← 99 citas de reuniones del Banco Central
 │   ├── three.module.js     ← Three.js core
 │   ├── vendor/             ← GSAP, D3, Lenis, SplitText
@@ -33,6 +40,8 @@ python -m http.server 8000
 │   ├── controls/           ← OrbitControls
 │   ├── environments/       ← RoomEnvironment
 │   └── objects/            ← Reflector
+├── tools/
+│   └── smoke-test.mjs      ← `npm run check`: arranca el sitio en jsdom
 ├── figures/
 │   ├── balanza.glb         ← Estatua de La Justicia (Draco, 177 KB)
 │   └── soporte.glb         ← Pedestal de la estatua (Draco, 28 KB)
@@ -40,6 +49,75 @@ python -m http.server 8000
 ├── puerta-draco.glb        ← Modelo 3D de puerta (Draco + texturas WebP, 76 KB)
 └── servidor.bat            ← Script para servidor local en Windows
 ```
+
+## Cómo se trabaja en este repo
+
+Esto está escrito porque el proyecto llegó a tener **9.077 líneas en un solo
+`index.html`** (3.769 de CSS + 4.713 de JS + 588 de HTML), con 62 `!important`
+y sin ninguna comprobación automática. Funcionaba, pero cada cambio era una
+apuesta. Las reglas de abajo existen para que no vuelva a pasar.
+
+### 1. Cada cosa en su archivo
+
+| Si vas a tocar… | El archivo es… |
+|---|---|
+| Un número de la escena 3D (cámara, luz, velocidad, tamaño) | `js/config.js` |
+| Cómo se ve algo | el `css/*.css` de esa sección |
+| El marcado de una sección | `index.html` |
+| Una figura 3D, su pedestal o su escala | `js/figures.js` |
+| Lógica de la escena o del scroll | `js/main.js` |
+
+**`index.html` es solo marcado.** Nada de `<style>`, nada de `<script>` con
+código dentro, nada de `style="..."` nuevo. Si te descubres añadiendo CSS o JS
+ahí, es la señal de que estás repitiendo el problema.
+
+**`js/config.js` antes que un número mágico.** Un valor que ajusta cómo se ve
+la escena va con nombre en CONFIG, no incrustado a 3.000 líneas de distancia.
+
+### 2. Ejecuta `npm run check` antes de dar algo por bueno
+
+Levanta el sitio entero en jsdom, importa `js/main.js` y falla si hay un error
+de sintaxis, un import roto, una variable que no existe, un `id` del DOM que
+desapareció o una excepción al arrancar. Tarda unos 15 segundos.
+
+Lo que **no** cubre: no hay WebGL (no valida shaders ni cómo se ve nada) ni
+`Worker` (los GLB con Draco no llegan a decodificarse — los dos mensajes
+`Worker is not defined` son esperados y no cuentan como error). No sustituye
+abrir la página; sustituye descubrir en producción que un `const` mal escrito
+dejó la pantalla en negro.
+
+### 3. Accesibilidad: lo que hay que mantener
+
+No es un extra, y ya está construido. Al añadir cosas:
+
+- **Todo lo interactivo tiene que funcionar con teclado.** Si algo solo
+  responde al ratón —sobre todo dentro del `<canvas>`— necesita un equivalente
+  real en el DOM. Hay dos patrones ya hechos para copiar: `#roomVoiceNav`
+  (botones para las voces en órbita) y `.axes-data-mark` con `tabindex="0"`
+  en el gráfico D3.
+- **Contraste mínimo 4,5:1** sobre `--color-bg`. Cuidado con apilar `opacity`
+  sobre un color ya tenue: `opacity: 0.62` es el suelo con
+  `--color-text-primary`.
+- **Si nace oculto para animarse, tiene que estar cubierto por
+  `css/noscript.css`.** El relato empieza en `opacity: 0` y lo enciende GSAP;
+  sin ese fallback, quien tenga el JS bloqueado ve una pantalla negra.
+- **Respeta `prefers-reduced-motion`**, en CSS y en JS (la constante
+  `reduceMotion` de `js/main.js`).
+- **Un panel que se oculta se oculta de verdad**: `hidden` o `display: none`,
+  no solo `opacity: 0`, o sus botones siguen siendo alcanzables con Tab.
+
+### 4. Lo que aún está pendiente de ordenar
+
+Honestidad sobre la deuda que queda:
+
+- `js/main.js` sigue teniendo 4.601 líneas. Las funciones grandes que quedan
+  (`animate()` 473, `initActBrowser()` 364, `initVoiceExplorer()` 298,
+  `initWordEvolution()` 242) son extraíbles a módulos, pero comparten estado
+  mutable con el bucle de render. Hacerlo bien pide poder abrir la página para
+  verificar, así que se dejó a medias a propósito en vez de a ciegas.
+- 62 `!important` heredados en el CSS.
+- Los `style="..."` inline que quedan en `index.html` son de la maqueta
+  original.
 
 ## Secciones del scrollytelling
 

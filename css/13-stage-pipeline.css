@@ -1,0 +1,181 @@
+/* 13-stage-pipeline.css
+   Stage 7: pipeline de scroll horizontal.
+   Extraido de index.html — ver css/README.md para el orden de carga. */
+
+/* ─── STAGE 7 — Pipeline (horizontal scroll) ─── */
+.stage-pipeline { position: relative; z-index: 4; padding: 0; }
+.pipeline-pin-wrapper {
+  height: 100vh; overflow: hidden; position: relative;
+}
+.pipe-header {
+  position: absolute; top: clamp(28px, 7vh, 72px); left: 0; right: 0;
+  text-align: center; pointer-events: none; z-index: 2;
+}
+.pipe-kicker {
+  font-size: var(--fs-micro); letter-spacing: 4px; text-transform: uppercase;
+  color: var(--color-text-muted); margin-bottom: 8px;
+}
+.pipe-header h2 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(26px, 3.3vw, 42px); line-height: 1.1; color: var(--color-text-primary);
+}
+.pipe-header h2 em { font-style: normal; color: var(--color-gold); }
+
+.pipe-viewport { position: absolute; inset: 0; display: flex; align-items: center; overflow: hidden; }
+.pipe-track {
+  display: flex; align-items: center; gap: clamp(56px, 9vw, 140px);
+  width: max-content;
+  padding-inline: max(6vw, calc(50vw - min(300px, 41vw)));
+  will-change: transform;
+}
+
+.pipe-panel { width: min(600px, 82vw); flex-shrink: 0; position: relative; }
+.pipe-panel--wide { width: min(760px, 92vw); }
+
+.pipe-index {
+  position: absolute; top: -0.62em; left: -0.14em; z-index: 0;
+  font-family: var(--font-display); font-weight: 700; line-height: 1;
+  font-size: clamp(88px, 11vw, 150px);
+  color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.08);
+  pointer-events: none; user-select: none;
+}
+.pipe-body { position: relative; z-index: 1; }
+.pipe-label {
+  font-size: var(--fs-micro); letter-spacing: 3px; text-transform: uppercase;
+  color: var(--color-gold); margin-bottom: 12px; font-weight: 600;
+}
+.pipe-panel h3 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(22px, 2.7vw, 34px); line-height: 1.2;
+  margin-bottom: 12px; color: var(--color-text-primary);
+}
+.pipe-panel .pipe-p {
+  font-size: var(--fs-small); line-height: 1.75; opacity: 0.65; max-width: 460px; margin-bottom: 20px;
+}
+.pipe-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+
+/* Panel 01 — acta */
+.doc-card {
+  border: 1px solid var(--color-surface-border); background: var(--color-surface);
+  border-radius: 10px; padding: 22px 26px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: var(--fs-small); line-height: 1.9; color: var(--color-text-secondary);
+}
+.doc-head {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-family: var(--font-body); font-size: var(--fs-micro);
+  letter-spacing: 2px; text-transform: uppercase; opacity: 0.62; margin-bottom: 14px; /* AA */
+}
+.doc-line { display: block; overflow: hidden; }
+.doc-line > span { display: inline-block; transform: translateY(110%); }
+.word-meter { display: flex; align-items: baseline; gap: 10px; margin-top: 18px; }
+.word-meter strong {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(28px, 3.4vw, 46px); color: var(--color-gold); font-variant-numeric: tabular-nums;
+}
+.word-meter span { font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; opacity: 0.5; }
+
+/* Panel 03 — clasificación guiada */
+.frag {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  font-family: Georgia, serif; font-style: italic;
+  font-size: clamp(17px, 2.1vw, 24px); line-height: 1.7; color: var(--color-text-primary);
+  border-left: 2px solid rgba(255,255,255,0.12); padding-left: 18px; margin-bottom: 22px;
+}
+.verdict-row { display: flex; align-items: center; gap: 20px; min-height: 54px; flex-wrap: wrap; }
+.verdict {
+  display: inline-flex; padding: 9px 18px; border-radius: 6px;
+  border: 1.5px solid var(--color-gold); color: var(--color-gold);
+  font-weight: 700; font-size: var(--fs-small); letter-spacing: 3px; text-transform: uppercase;
+  opacity: 0; will-change: transform, opacity;
+}
+.confidence { flex: 1; min-width: 140px; max-width: 220px; }
+.confidence .bar { height: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
+.confidence .bar i { display: block; height: 100%; width: 0; background: var(--color-gold); }
+.confidence .cap { font-size: var(--fs-micro); opacity: 0.5; margin-top: 6px; letter-spacing: 1px; }
+
+/* Panel 02 — muestra de referencia */
+.seed-grid {
+  display: grid; grid-template-columns: repeat(20, 1fr); gap: 4px;
+  border: 1px solid var(--color-surface-border); border-radius: 10px;
+  background: var(--color-surface); padding: 18px;
+}
+.seed-dot { aspect-ratio: 1; border-radius: 2px; background: rgba(255,255,255,0.07); }
+.seed-dot.hawkish.lit { background: var(--color-gold); }
+.seed-dot.dovish.lit { background: var(--color-dovish); }
+.seed-dot.neutral.lit { background: rgba(207,214,228,0.8); }
+
+/* Panel 04 — muestra analítica por año */
+.corpus-wrap {
+  border: 1px solid var(--color-surface-border); border-radius: 10px;
+  background: var(--color-surface); padding: 22px;
+}
+.corpus-field { position: relative; }
+.corpus-grid {
+  display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  align-items: end; gap: clamp(3px, 0.7vw, 8px); min-height: 132px;
+}
+.corpus-col {
+  display: flex; flex-direction: column-reverse; align-items: center; justify-content: flex-start;
+  gap: 3px; min-height: 122px; padding-top: 5px;
+}
+.corpus-dot {
+  width: min(12px, 100%); aspect-ratio: 1; border-radius: 50%;
+  background: rgba(255,255,255,0.09); transition: background 0.3s ease;
+}
+.corpus-col.lit > .h { background: var(--color-gold); }
+.corpus-col.lit > .d { background: var(--color-dovish); }
+.corpus-col.lit > .n { background: rgba(207,214,228,0.78); }
+.corpus-empty {
+  width: 7px; height: 7px; margin-top: auto; margin-bottom: 2px;
+  border: 1px dashed rgba(255,255,255,0.28); border-radius: 50%;
+  background: transparent;
+}
+.corpus-head {
+  position: absolute; top: -4px; bottom: -4px; width: 1px;
+  background: rgba(255,255,255,0.55); pointer-events: none; opacity: 0;
+}
+.corpus-year {
+  position: absolute; top: -22px; left: 0; transform: translateX(-50%);
+  font-size: var(--fs-micro); letter-spacing: 2px; white-space: nowrap;
+  color: var(--color-text-primary); font-variant-numeric: tabular-nums;
+}
+.corpus-axis {
+  display: flex; justify-content: space-between; margin-top: 12px;
+  font-size: var(--fs-micro); letter-spacing: 2px; opacity: 0.4; font-variant-numeric: tabular-nums;
+}
+.corpus-status { margin-top: 14px; font-size: var(--fs-small); color: var(--color-text-secondary); line-height: 1.5; }
+.corpus-status strong { color: var(--color-gold); font-variant-numeric: tabular-nums; }
+.corpus-status-note { color: var(--color-text-faint); font-size: 0.9em; }
+
+/* Rail de progreso */
+.pipe-rail {
+  position: absolute; bottom: clamp(20px, 5vh, 44px); left: 0; right: 0;
+  display: flex; align-items: center; justify-content: center; gap: 12px; z-index: 2;
+}
+.rail-node {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.16);
+  display: grid; place-items: center;
+  font-size: 10px; letter-spacing: 1px; color: var(--color-text-muted);
+  transition: border-color 0.4s ease, color 0.4s ease;
+}
+.rail-node.active { border-color: var(--color-gold); color: var(--color-gold); }
+.rail-seg { width: clamp(20px, 6vw, 72px); height: 1px; background: rgba(255,255,255,0.12); position: relative; }
+.rail-seg i { position: absolute; inset: 0; background: var(--color-gold); transform: scaleX(0); transform-origin: left center; }
+
+/* Data tags (shared) */
+.data-tag {
+  font-size: var(--fs-micro); padding: 3px 10px; border-radius: 999px;
+  letter-spacing: 1px; font-weight: 500;
+}
+.data-tag.neutral { background: rgba(255,255,255,0.06); color: var(--color-text-secondary); border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s ease; }
+.data-tag.hawkish { background: rgba(255,215,106,0.12); color: var(--color-gold); border: 1px solid rgba(255,215,106,0.2); transition: all 0.2s ease; }
+.data-tag.dovish { background: rgba(138,180,248,0.12); color: var(--color-dovish); border: 1px solid rgba(138,180,248,0.2); transition: all 0.2s ease; }
+.data-tag:hover { transform: translateY(-1px); }
+.data-tag.neutral:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
+.data-tag.hawkish:hover { background: rgba(255,215,106,0.18); border-color: rgba(255,215,106,0.35); }
+.data-tag.dovish:hover { background: rgba(138,180,248,0.18); border-color: rgba(138,180,248,0.35); }

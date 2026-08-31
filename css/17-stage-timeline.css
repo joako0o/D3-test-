@@ -1,0 +1,72 @@
+/* 17-stage-timeline.css
+   Stage 8: linea de tiempo.
+   Extraido de index.html — ver css/README.md para el orden de carga. */
+
+/* ─── STAGE 8 — Timeline ─── */
+.stage-timeline {
+  position: relative; z-index: 4;
+  padding: 0;
+}
+.timeline-pin-wrapper {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: center;
+  padding: var(--space-section) 5%;
+}
+.timeline-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: 700;
+  background: linear-gradient(120deg, var(--color-gold), var(--color-text-primary));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 48px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.timeline-note {
+  max-width: 760px;
+  margin: -30px auto 32px;
+  color: var(--color-text-faint);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  text-align: center;
+}
+.timeline-note strong {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+.timeline-note code {
+  color: var(--color-gold);
+  font-family: var(--font-body);
+  font-size: 0.92em;
+}
+.timeline-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  opacity: 0;
+}
+.timeline-container svg {
+  overflow: visible;
+}
+.timeline-event {
+  font-size: var(--fs-small);
+  fill: var(--color-gold);
+  opacity: 0;
+}
+.timeline-direction {
+  fill: var(--color-text-faint);
+  font: 600 9px var(--font-body);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+.timeline-absence line {
+  stroke: rgba(255,255,255,0.3);
+  stroke-dasharray: 2 3;
+}
+.timeline-absence text {
+  fill: var(--color-text-faint);
+  font: 500 9px var(--font-body);
+  letter-spacing: 0.6px;
+}

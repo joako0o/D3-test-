@@ -1,0 +1,193 @@
+/* 11-stage-map.css
+   Stage 4: mapa de intervenciones (SVG D3, ejes, marcas y lectura lateral).
+   Extraido de index.html — ver css/README.md para el orden de carga. */
+
+/* ─── STAGE 4 — Mapa de intervenciones ─── */
+/* La explicación funciona como una leyenda editorial del planoo, no como
+   un bloque de texto independiente: conserva la jerarquía tipográfica y
+   el lenguaje de línea fina que ya usan los gráficos de la historia. */
+.axes-reading-key {
+  width: min(1100px, 70vw);
+  display: grid;
+  grid-template-columns: auto auto minmax(44px, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  color: var(--color-text-secondary);
+  text-align: left;
+  position: relative;
+  z-index: 2;
+}
+.axes-reading-kicker {
+  color: var(--color-gold);
+  font-family: var(--font-body);
+  font-size: clamp(11px, 1vw, 14px);
+  font-weight: 600;
+  letter-spacing: 2.4px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.axes-reading-copy {
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(15px, 1.35vw, 19px);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.axes-reading-divider {
+  height: 1px;
+  min-width: 44px;
+  background: linear-gradient(90deg, rgba(255,215,106,0.38), rgba(255,255,255,0.08));
+}
+.axes-reading-direction {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--fs-micro);
+  letter-spacing: 1px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.axes-reading-tone {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.axes-reading-tone strong {
+  font-size: 1.15em;
+  font-weight: 500;
+}
+.axes-reading-tone--hawkish strong { color: var(--color-gold); }
+.axes-reading-tone--dovish strong { color: var(--color-dovish); }
+.axes-reading-trace {
+  color: var(--color-gold);
+  font-size: 0.88em;
+  letter-spacing: 0.7px;
+  opacity: 0.76;
+  text-transform: none;
+}
+
+/* El plano se dibuja en SVG encima del fondo 3D: círculos nítidos para el
+   dato, halo mínimo para conservar la sensación espacial y una retícula que
+   ordena la lectura sin convertirla en un panel de dashboard. */
+#d3-canvas svg {
+  shape-rendering: geometricPrecision;
+}
+#d3-canvas .axes-plot-field {
+  fill: rgba(10,14,26,0.14);
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 1;
+}
+#d3-canvas .axes-grid line {
+  stroke: rgba(255,255,255,0.045);
+  stroke-width: 1;
+}
+#d3-canvas .axes-grid .domain,
+#d3-canvas .axes-grid .tick line,
+#d3-canvas .axes-grid-guide {
+  stroke: rgba(255,255,255,0.045);
+}
+#d3-canvas .axes-zero-line {
+  stroke: rgba(255,255,255,0.20);
+  stroke-width: 1;
+}
+#d3-canvas .axes-data-halo {
+  opacity: 0.22;
+  filter: blur(3px);
+}
+#d3-canvas .axes-data-mark {
+  pointer-events: auto;
+  cursor: pointer;
+}
+#d3-canvas .axes-data-mark:focus-visible {
+  outline: none;
+}
+#d3-canvas .axes-data-mark:focus-visible .axes-data-point {
+  stroke: var(--color-gold);
+  stroke-width: 2.5;
+}
+#d3-canvas .axes-data-point {
+  stroke: #0a0e1a;
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+}
+#d3-canvas .axes-data-point--hawkish { fill: var(--color-gold); }
+#d3-canvas .axes-data-point--dovish { fill: var(--color-dovish); }
+#d3-canvas .axes-data-point--neutral { fill: #cfd6e4; }
+#d3-canvas .axes-data-halo--hawkish { fill: var(--color-gold); }
+#d3-canvas .axes-data-halo--dovish { fill: var(--color-dovish); }
+#d3-canvas .axes-data-halo--neutral { fill: #cfd6e4; }
+
+@media (min-width: 601px) and (max-width: 1100px) {
+  .axes-reading-key {
+    grid-template-columns: 1fr auto;
+    gap: 9px 12px;
+    padding-bottom: 10px;
+  }
+  .axes-reading-kicker {
+    font-size: clamp(10px, 1vw, 12px);
+    letter-spacing: 2px;
+  }
+  .axes-reading-copy {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    font-size: clamp(15px, 1.8vw, 18px);
+  }
+  .axes-reading-divider { display: none; }
+  .axes-reading-direction {
+    gap: 9px;
+    font-size: 10px;
+    letter-spacing: 0.7px;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1100px) and (max-height: 620px) {
+  #stageAxes > .sticky-container { padding-top: 10vh !important; }
+}
+
+@media (max-width: 600px) {
+  .axes-reading-key {
+    width: calc(100% - 28px);
+    grid-template-columns: 1fr auto;
+    gap: 9px 12px;
+    padding-bottom: 10px;
+  }
+  .axes-reading-kicker {
+    font-size: 10px;
+    letter-spacing: 1.8px;
+  }
+  .axes-reading-copy {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    font-size: clamp(15px, 4vw, 18px);
+  }
+  .axes-reading-divider { display: none; }
+  .axes-reading-direction {
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 9px;
+    letter-spacing: 0.7px;
+  }
+}
+
+@media (max-width: 380px) {
+  .axes-reading-key {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .axes-reading-kicker,
+  .axes-reading-copy,
+  .axes-reading-direction {
+    grid-column: 1;
+  }
+  .axes-reading-copy { grid-row: auto; }
+  .axes-reading-direction {
+    justify-content: flex-start;
+    font-size: 9px;
+  }
+}

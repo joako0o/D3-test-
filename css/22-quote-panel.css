@@ -1,0 +1,83 @@
+/* 22-quote-panel.css
+   Panel flotante de cita del enjambre de particulas.
+   Extraido de index.html — ver css/README.md para el orden de carga. */
+
+/* ─── ENJAMBRE DE PARTÍCULAS · panel de cita (Frosted Glass & Multi-Channel Motion) ─── */
+#quotePanel {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  z-index: 60; /* sobre el canvas y .stage-quotes para que nada lo tape */
+  width: min(380px, 88vw);
+  background: rgba(10, 14, 26, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 106, 0.18);
+  border-radius: 14px;
+  padding: 22px 24px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(-50% + 14px)) scale(0.96);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.35s ease;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.7), 0 0 20px rgba(255, 215, 106, 0.05);
+  box-sizing: border-box;
+}
+#quotePanel.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) scale(1);
+  box-shadow: 0 20px 70px rgba(0,0,0,0.8), 0 0 35px rgba(255, 215, 106, 0.12);
+}
+#quotePanel .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+#quotePanel .who { font-weight: 600; font-size: var(--fs-body); color: var(--color-text-primary); }
+#quotePanel .when { font-size: var(--fs-small); opacity: 0.6; }
+#quotePanel .tag { font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; padding: 2px 9px; border-radius: 999px; }
+#quotePanel .tag.hawkish { background: rgba(255,215,106,0.16); color: var(--color-gold); }
+#quotePanel .tag.dovish  { background: rgba(138,180,248,0.16); color: var(--color-dovish); }
+#quotePanel .tag.neutral { background: rgba(255,255,255,0.1);  color: #cfd6e4; }
+#quotePanel .txt { font-size: var(--fs-small); line-height: 1.75; color: var(--color-text-primary); }
+#quotePanel .score { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+#quotePanel .score-bar { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.12); overflow: hidden; }
+#quotePanel .score-bar i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--color-gold-dim), var(--color-gold)); }
+#quotePanel .score-val { font-size: var(--fs-micro); font-variant-numeric: tabular-nums; color: var(--color-text-primary); min-width: 30px; text-align: right; }
+#quotePanel .score-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-faint); }
+#quotePanel .year { margin-top: 10px; font-size: var(--fs-micro); letter-spacing: 1px; text-transform: uppercase; opacity: 0.62; /* AA */ }
+#quotePanel .source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  color: var(--color-gold);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  opacity: 0.78;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+#quotePanel .source-link::before { content: '↗'; font-size: 12px; }
+#quotePanel .source-link:hover,
+#quotePanel .source-link:focus-visible { opacity: 1; transform: translateX(2px); }
+#quotePanel .close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--color-text-primary); font-size: var(--fs-body); cursor: pointer; opacity: 0.55; transition: opacity 0.2s, transform 0.2s; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+#quotePanel .close:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+#quotePanel .close:active { transform: scale(0.95); }
+
+/* Modo 'classic' (puerta anterior): el stage de La Sala no existe en ese modo */
+body.mode-classic #stageRoom { display: none; }
+
+#canvas { cursor: grab; }
+#canvas.particle-hover { cursor: pointer; }
+
+
+  @supports (height: 100dvh) {
+  .hero, .stage-hook,
+  .pipeline-pin-wrapper, .timeline-pin-wrapper {
+    min-height: 100dvh;
+  }
+  .pipeline-pin-wrapper, .timeline-pin-wrapper { max-height: 100dvh; }
+  .sticky-container, .room-container { height: 100dvh !important; }
+  /* 100vh en móvil usa el viewport GRANDE (barra de URL plegada), así que
+     el pin se alarga por debajo de lo visible. 100dvh lo ajusta en tiempo
+     real a la barra de URL sin dejar un salto ni recortar el pin. */
+  .pipeline-pin-wrapper { height: 100dvh; }
+  .timeline-pin-wrapper { min-height: 100dvh; }
+}
