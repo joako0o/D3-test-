@@ -4361,7 +4361,7 @@
       /* Still de referencia: pórtico de piedra, vano oscuro, moneda = única joya.
          Las hojas doradas del GLB se apagan en el hero (el vano es noche) y
          vuelven en el acto 2, cuando la puerta de la reunión se cierra. */
-      CONFIG.door.widthVsCoin = 4.05;
+      CONFIG.door.widthVsCoin = 2.15;
       CONFIG.door.fogDensity = 0.026;
       CONFIG.door.doorDepthSquash = 0.72;
       CONFIG.door.maxDepthWorld = 4.8;
@@ -6664,7 +6664,7 @@
         const lockupMix = HERO_DOOR_LOCKUP
           ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
           : 0;
-        doorGroup.position.y = THREE.MathUtils.lerp(plantedY, CONFIG.coin.baseY + 0.14, lockupMix) + smoothMouseY * -0.06 * doorEase;
+        doorGroup.position.y = THREE.MathUtils.lerp(plantedY, CONFIG.coin.baseY, lockupMix) + smoothMouseY * -0.06 * doorEase;
         for (let i = 0; i < doorMats.length; i++) {
           doorMats[i].transparent = true;
           doorMats[i].opacity = doorVisOpacity;
