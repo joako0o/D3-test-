@@ -6670,8 +6670,11 @@
         if (doorTarget === 0 && doorFade < 0.03) doorFade = 0;
         /* La Sala (b1): la puerta se DISUELVE en la luz cálida al cruzar el umbral
            (en modo 'classic' dissolve=0 → comportamiento previo intacto). */
+        /* crossT CRUDO (no crossEff): al salir de la sala hacia El Método
+           la puerta NO debe reaparecer. Solo vuelve si el scroll deshace
+           el cruce (crossT↓, de vuelta a La Reunión). */
         const dissolve = DOOR_MODE === 'doorway'
-          ? THREE.MathUtils.smoothstep((crossEff - 0.15) / 0.55, 0, 1)
+          ? THREE.MathUtils.smoothstep((crossT - 0.15) / 0.55, 0, 1)
           : 0;
         doorVisOpacity = doorFade * (1 - dissolve);
         /* doorModel (no solo doorGroup.children) porque el grupo intermedio
@@ -7680,6 +7683,21 @@
         end: 'bottom bottom',
         scrub: true,
         onUpdate: (self) => { exitT = self.progress; },
+      });
+      /* Capítulos posteriores a La Sala: la puerta no debe seguir en escena
+         (El Método, ejes, etc.). Al volver atrás, doorTarget=1 y crossT
+         gobierna de nuevo la disolución. */
+      ScrollTrigger.create({
+        trigger: '#stageHook',
+        start: 'top 85%',
+        end: 'top 20%',
+        scrub: true,
+        onUpdate: (self) => {
+          if (!HERO_DOOR_LOCKUP) return;
+          doorTarget = 1 - THREE.MathUtils.clamp(self.progress, 0, 1);
+        },
+        onLeave: () => { if (HERO_DOOR_LOCKUP) doorTarget = 0; },
+        onEnterBack: () => { if (HERO_DOOR_LOCKUP) doorTarget = 1; },
       });
 
       /* Presencia en la sala: habilita el hover→cita y limpia el panel al salir */
