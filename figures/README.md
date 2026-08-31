@@ -44,9 +44,9 @@ de a poco.
 - ✅ **`figures/balanza.glb`** — La Justicia ciega (Lady Justice con la balanza),
   el símbolo del equilibrio. Origen: `Meshy_AI_Blind_Justice_Statue_0831090221_generate.glb`.
   Se normalizó a la convención del proyecto: **Draco**, **38.5 k triángulos**,
-  **177 KB** (<300 KB), **material oro metal** (`#ffd76a`, metallic 1, rough 0.22),
-  normales recalculadas y **base apoyada en `y=0`**. `available: true` en
-  `js/figures.js`.
+  **177 KB** (<300 KB), **acabado PIEDRA mate** (limestone, metallic 0, rough 0.82,
+  color `#c7b9a4`), normales recalculadas y **base apoyada en `y=0`**.
+  `available: true` en `js/figures.js` con `finish` propio en el def.
 
 ---
 
