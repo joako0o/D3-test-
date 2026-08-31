@@ -14,10 +14,19 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="og-image.jpg" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" as="font" href="https://fonts.gstatic.com/s/playfairdisplay/v37/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQZNLo_U2r.woff2" type="font/woff2" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <!-- Fuentes self-hosted (fonts/*.woff2). Sin dependencia de Google Fonts:
+       el render ya no cambia entre local, CI y producción, y funciona offline. -->
+  <style>
+    @font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400; src: url('fonts/playfair-display-400.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 500; src: url('fonts/playfair-display-500.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 600; src: url('fonts/playfair-display-600.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 700; src: url('fonts/playfair-display-700.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400; src: url('fonts/playfair-display-400-italic.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 300; src: url('fonts/inter-300.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; src: url('fonts/inter-400.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; src: url('fonts/inter-500.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; src: url('fonts/inter-600.woff2') format('woff2'); font-display: swap; }
+  </style>
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23dfab42'/><text x='50' y='65' text-anchor='middle' font-size='36' font-weight='bold' fill='%230a0e1a'>RPM</text></svg>" />
 
@@ -5487,7 +5496,16 @@
         return dateYear ? Number(dateYear[1]) : Number(q.year);
       };
       const grouped = new Map();
+      let excludedVoiceRows = 0;
       quotes.forEach((q, index) => {
+        /* Mismo criterio que el navegador de actas: el registro 1985 del
+           fixture no se mezcla con el período declarado 2000–2015. Se
+           contabiliza aparte y se informa en el meta del directorio. */
+        const year = getSourceYear(q);
+        if (!Number.isFinite(year) || year < 2000 || year > 2015) {
+          excludedVoiceRows += 1;
+          return;
+        }
         const name = q.participant || 'Participante anónimo';
         if (!grouped.has(name)) grouped.set(name, []);
         grouped.get(name).push({ q, index, normalizedText: normalizeTopicText(q.text) });
@@ -5512,7 +5530,7 @@
         };
       }).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'es'));
 
-      meta.textContent = `Muestra visual · ${voices.length} voces · ${quotes.length} fragmentos`;
+      meta.textContent = `Muestra visual · ${voices.length} voces · ${quotes.length - excludedVoiceRows} fragmentos${excludedVoiceRows ? ` · ${excludedVoiceRows} fuera del período` : ''}`;
       rail.innerHTML = '';
       const cards = [];
       let activeName = null;
