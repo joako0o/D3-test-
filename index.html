@@ -5456,8 +5456,8 @@
     let scatterProgress = 0;
     let storyProgress = 0;   // 0→1 a lo largo de todo el documento (para la coreografía)
     let coinFade = 1;
-    let doorFade = 0;
-    let doorTarget = 0;
+    let doorFade = HERO_DOOR_LOCKUP ? 1 : 0;
+    let doorTarget = HERO_DOOR_LOCKUP ? 1 : 0;
 
     /* Máquina de estados visual: ScrollTrigger escribe los objetivos y el loop
        único de GSAP interpola. Así la nube puede volver atrás sin saltos y una
@@ -5517,11 +5517,6 @@
                     punto bajo y detrás de la puerta). */
     const _lookBase = new THREE.Vector3(0, camBaseY, 0);
     const _doorLook = new THREE.Vector3();
-    /* Origen congelado del dolly 2→3: el encuadre real al arrancar el
-       cruce (fin de 1→2 / hold de La Reunión), no CONFIG.camera.z. */
-    const _doorwayFromPos = new THREE.Vector3();
-    const _doorwayFromLook = new THREE.Vector3();
-    let _doorwayFromArmed = false;
 
     /* ═══════════════════════════════════════════════════════════
        COREOGRAFÍA DE CÁMARA — plano-secuencia sobre el scroll.
@@ -6612,11 +6607,8 @@
 
     function animate() {
       const time = clock.getElapsedTime();
-      /* crossT EFECTIVO: mientras dura la salida de la sala (exitT) la cámara
-         deshace el cruce y toda la coreografía vinculada (mira, FOV, velo, luz
-         cálida, tinte) vuelve suavemente al estado base. EXCEPCIÓN intencional:
-         la disolución de la puerta usa crossT CRUDO — si la puerta se
-         "materializara" de nuevo durante la retirada sería un glitch evidente. */
+      /* crossT EFECTIVO: entrada y salida son la MISMA curva. Al volver
+         (crossT↓ o exitT↑) cámara, mira, FOV, velo y puerta deshacen el cruce. */
       const crossEff = crossT * (1 - exitT);
       particleStoryKeys.forEach((key) => {
         particleStoryMix[key] = THREE.MathUtils.lerp(
@@ -6679,7 +6671,7 @@
         /* La Sala (b1): la puerta se DISUELVE en la luz cálida al cruzar el umbral
            (en modo 'classic' dissolve=0 → comportamiento previo intacto). */
         const dissolve = DOOR_MODE === 'doorway'
-          ? THREE.MathUtils.smoothstep((crossT - 0.15) / 0.55, 0, 1)
+          ? THREE.MathUtils.smoothstep((crossEff - 0.15) / 0.55, 0, 1)
           : 0;
         doorVisOpacity = doorFade * (1 - dissolve);
         /* doorModel (no solo doorGroup.children) porque el grupo intermedio
@@ -6935,19 +6927,16 @@
         );
       }
 
-      /* La Sala (b1): dolly a través del umbral + luz cálida del interior + velo de fog.
-         En modo 'classic' crossT queda en 0 → rama clásica intacta. */
+      /* La Sala (b1): dolly a través del umbral. Ida y vuelta usan el mismo
+         lerp desde el encuadre de La Reunión — volver ES la animación inversa. */
       if (DOOR_MODE === 'doorway' && crossEff > 0.001) {
-        if (!_doorwayFromArmed) {
-          _doorwayFromPos.copy(choreo.pos);
-          _doorwayFromLook.copy(choreo.look);
-          _doorwayFromArmed = true;
-        }
+        const enterY = CONFIG.door.approachCamY ?? 0.62;
+        const enterZ = CONFIG.door.approachCamZ ?? CONFIG.camera.z;
         const crossEase = THREE.MathUtils.smoothstep(crossEff, 0, 1);
         camera.position.set(
-          THREE.MathUtils.lerp(_doorwayFromPos.x, CONFIG.camera.x, crossEase),
-          THREE.MathUtils.lerp(_doorwayFromPos.y, CONFIG.door.roomCamY ?? 0.62, crossEase),
-          THREE.MathUtils.lerp(_doorwayFromPos.z, CONFIG.door.roomCamZ ?? -0.5, crossEase)
+          THREE.MathUtils.lerp(0, CONFIG.camera.x, crossEase),
+          THREE.MathUtils.lerp(enterY, CONFIG.door.roomCamY ?? 0.62, crossEase),
+          THREE.MathUtils.lerp(enterZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
         );
         /* Encuadre del acercamiento (tres fases encadenadas por crossT):
              1) mira neutra → centro de la puerta  [aimDoor: crossT 0 → 0.45]
@@ -6960,7 +6949,7 @@
         const [ar0, ar1] = CONFIG.door.aimRoomT ?? [0.55, 0.95];
         const aimDoor = THREE.MathUtils.smoothstep((crossEff - ad0) / Math.max(ad1 - ad0, 1e-3), 0, 1);
         const aimRoom = THREE.MathUtils.smoothstep((crossEff - ar0) / Math.max(ar1 - ar0, 1e-3), 0, 1);
-        _lookBase.copy(_doorwayFromLook);
+        _lookBase.set(0, CONFIG.door.approachCamY ?? 0.62, 0);
         _doorLook.set(
           doorGroup.position.x,
           doorGroup.position.y + (doorBottomOffset + doorTopOffset) * 0.5 * doorModelGroup.scale.y * doorGroup.scale.x,
@@ -6972,7 +6961,6 @@
         /* Coreografía: la cámara viaja por los capítulos en vez de quedarse
            clavada. La rama del dolly (crossEff>0) sigue mandando durante el
            cruce; aquí se aplica el plano-secuencia del resto de la pieza. */
-        _doorwayFromArmed = false;
         camera.position.copy(choreo.pos);
         camera.lookAt(choreo.look);
       }
@@ -7621,7 +7609,12 @@
         start: 'top 70%',
         end: 'top 15%',
         scrub: true,
-        onUpdate: (self) => { doorTarget = THREE.MathUtils.clamp(self.progress, 0, 1); },
+        onUpdate: (self) => {
+          /* Lockup: la puerta YA está en el hero. Si aquí bajamos doorTarget
+             al volver, se desvanece en vez de deshacer 1→2 (leafT / lockupMix). */
+          if (HERO_DOOR_LOCKUP) { doorTarget = 1; return; }
+          doorTarget = THREE.MathUtils.clamp(self.progress, 0, 1);
+        },
       });
     }
 
