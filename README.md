@@ -65,6 +65,7 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
 
 - **Gabinete de figuras** (`#figureCabinet`): lista las figuras 3D y su estado. ✅ en el sitio.
 - **Sistema de figuras** (`js/figures.js`): intenta cargar cada `figures/*.glb`; si no existe aún, dibuja un placeholder. ✅ en el sitio.
+- **Balanza** (`figures/balanza.glb`): La Justicia ciega (Lady Justice), símbolo del equilibrio hawkish/dovish. ✅ lista (177 KB, Draco, oro metal). Ver `figures/README.md`.
 - **Nube de partículas continua**: ya no se apaga entre capítulos. ✅ en el sitio.
 - **Coreografía de cámara** (`cameraChoreography` + `cameraStops`): deriva suave entre etapas después del cruce puerta → sala. ✅ en el sitio.
 - **Fuentes self-hosted** (`fonts/*.woff2` + `@font-face`): ✅ completado el 2026-08-30 (ver `fonts/README.md`).
@@ -75,6 +76,7 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
 
 ### Tu lista de tareas (las que dependen de ti)
 
-1. **Modelar figuras Blender** → `figures/README.md` (empezar con `balanza.glb`).
+1. **Modelar figuras Blender** → `figures/README.md`. ✅ Balanza lista; quedan
+   `inflacion.glb`, `brote.glb`, `acta.glb`, `corpus.glb`, `campana.glb`.
 2. **Ajustar `js/figures.js`** si cambian posiciones/escalas de las figuras.
 3. **Definir moodboard** (el audio quedó desactivado; ver `PLAN_NIVEL_PREMIUM.md`).

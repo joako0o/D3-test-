@@ -19,7 +19,7 @@ export const FIGURE_DEFS = [
     label: 'Balanza',
     subtitle: 'Equilibrio hawkish / dovish',
     glb: 'figures/balanza.glb',
-    available: false,
+    available: true,
     x: 0, y: 0, z: -4.6,
     scale: 1.1,
     color: 0xffd76a,
