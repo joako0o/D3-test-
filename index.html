@@ -6357,9 +6357,21 @@
           : 1;
         const visibility = voiceVisibility * actVisibility * quoteVisibility;
         const warm = roomWarm * 0.22;
-        cols[idx] = THREE.MathUtils.lerp(pColors[idx], 1.00, warm) * visibility;
-        cols[idx + 1] = THREE.MathUtils.lerp(pColors[idx + 1], 0.80, warm) * visibility;
-        cols[idx + 2] = THREE.MathUtils.lerp(pColors[idx + 2], 0.52, warm) * visibility;
+        const litR = THREE.MathUtils.lerp(pColors[idx], 1.00, warm);
+        const litG = THREE.MathUtils.lerp(pColors[idx + 1], 0.80, warm);
+        const litB = THREE.MathUtils.lerp(pColors[idx + 2], 0.52, warm);
+        /* La atenuación narrativa no debe convertir el contexto en píxeles
+           negros. Se conserva un mínimo cromático y se interpola hacia él,
+           en vez de multiplicar el color hasta cero. El foco sigue teniendo
+           prioridad y puede superar 1 para ganar un poco de luz. */
+        const visibleMix = THREE.MathUtils.clamp(Math.max(visibility, 0.22), 0, 1);
+        const strength = Math.max(1, visibility);
+        const safeR = Math.max(pColors[idx] * 0.34, 0.14);
+        const safeG = Math.max(pColors[idx + 1] * 0.34, 0.16);
+        const safeB = Math.max(pColors[idx + 2] * 0.34, 0.20);
+        cols[idx] = THREE.MathUtils.lerp(safeR, litR, visibleMix) * strength;
+        cols[idx + 1] = THREE.MathUtils.lerp(safeG, litG, visibleMix) * strength;
+        cols[idx + 2] = THREE.MathUtils.lerp(safeB, litB, visibleMix) * strength;
       }
       pGeo.attributes.color.needsUpdate = true;
 
