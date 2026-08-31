@@ -25,7 +25,7 @@ python -m http.server 8000
 ```
 ├── index.html              ← Archivo principal (CSS + JS + Three.js inline)
 ├── js/
-│   ├── quotes.js           ← 100 citas de reuniones del Banco Central
+│   ├── quotes.js           ← 99 citas de reuniones del Banco Central
 │   ├── three.module.js     ← Three.js core
 │   ├── vendor/             ← GSAP, D3, Lenis, SplitText
 │   ├── loaders/            ← GLTFLoader, DRACOLoader

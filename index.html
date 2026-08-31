@@ -7,12 +7,15 @@
 
   <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
   <meta name="theme-color" content="#0a0e1a" />
+  <link rel="canonical" href="https://joako0o.github.io/D3-test-/" />
   <meta property="og:title" content="In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile" />
   <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="og-image.jpg" />
+  <meta property="og:locale" content="es_CL" />
+  <meta property="og:url" content="https://joako0o.github.io/D3-test-/" />
+  <meta property="og:image" content="https://joako0o.github.io/D3-test-/og-image.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="og-image.jpg" />
+  <meta name="twitter:image" content="https://joako0o.github.io/D3-test-/og-image.jpg" />
 
   <!-- Fuentes self-hosted (fonts/*.woff2). Sin dependencia de Google Fonts:
        el render ya no cambia entre local, CI y producción, y funciona offline. -->
@@ -823,8 +826,8 @@
       background: var(--color-surface); padding: 18px;
     }
     .seed-dot { aspect-ratio: 1; border-radius: 2px; background: rgba(255,255,255,0.07); }
-    .seed-dot.h.lit { background: var(--color-gold); }
-    .seed-dot.d.lit { background: var(--color-dovish); }
+    .seed-dot.hawkish.lit { background: var(--color-gold); }
+    .seed-dot.dovish.lit { background: var(--color-dovish); }
     .seed-dot.neutral.lit { background: rgba(207,214,228,0.8); }
 
     /* Panel 04 — muestra analítica por año */
@@ -3586,6 +3589,7 @@
        NIVEL PREMIUM — gabinete de figuras (HUD de esquina eliminado)
     ═══════════════════════════════════════════════════════════ */
     #figureCabinet {
+      display: none;
       position: fixed; left: 16px; bottom: 16px; z-index: 80;
       width: min(260px, calc(100vw - 32px));
       padding: 12px 14px;
@@ -3617,7 +3621,7 @@
   <a href="#mainContent" class="skip-link">Saltar al contenido principal</a>
 
   <!-- Progress bar -->
-  <div id="progressBar" style="position: fixed; top: 0; left: 0; width: 0%; height: 2px; background: linear-gradient(90deg, var(--color-gold), var(--color-dovish)); z-index: 9999; transition: width 0.1s ease-out;"></div>
+  <div id="progressBar" role="progressbar" aria-label="Progreso de lectura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="position: fixed; top: 0; left: 0; width: 0%; height: 2px; background: linear-gradient(90deg, var(--color-gold), var(--color-dovish)); z-index: 9999; transition: width 0.1s ease-out;"></div>
 
   <!-- Section indicator -->
   <div id="sectionIndicator" style="position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; font-family: var(--font-body); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--color-text-muted); opacity: 0; transition: opacity 0.3s; pointer-events: none;">hero</div>
@@ -3863,7 +3867,7 @@
         <div class="voice-explorer" id="voiceExplorer">
           <div class="voice-explorer-head">
             <span class="voice-explorer-label">Directorio de intervenciones</span>
-            <span class="voice-explorer-meta" id="voiceDirectoryMeta">Muestra visual · 18 voces · 100 fragmentos</span>
+            <span class="voice-explorer-meta" id="voiceDirectoryMeta">Muestra visual · 17 voces · 99 fragmentos</span>
           </div>
           <div class="voice-rail" id="voiceRail" role="list" aria-label="Participantes de la muestra"></div>
           <div class="voice-rail-hint">Desliza para recorrer las voces</div>
@@ -3999,16 +4003,16 @@
         </div>
         <div class="counter-item" data-counter>
           <div class="counter-kicker">Muestra visual</div>
-          <div class="counter-number" data-target="100" data-suffix="">0</div>
+          <div class="counter-number" data-target="99" data-suffix="">0</div>
           <div class="counter-label">fragmentos en la pieza</div>
         </div>
         <div class="counter-item" data-counter>
           <div class="counter-kicker">Muestra visual</div>
-          <div class="counter-number" data-target="18" data-suffix="">0</div>
+          <div class="counter-number" data-target="17" data-suffix="">0</div>
           <div class="counter-label">participantes representados</div>
         </div>
       </div>
-      <p class="counters-note">El corpus de referencia y la muestra interactiva no son la misma escala: esta pieza permite seguir 100 fragmentos de 18 participantes; no presenta las 182 reuniones completas.</p>
+      <p class="counters-note">El corpus de referencia y la muestra interactiva no son la misma escala: esta pieza permite seguir 99 fragmentos de 17 participantes; no presenta las 182 reuniones completas.</p>
     </div>
   </section>
 
@@ -4049,7 +4053,7 @@
             <div class="pipe-body">
               <div class="pipe-label">Muestra / criterio</div>
               <h3>Ejemplos que orientan la lectura</h3>
-              <p class="pipe-p">Los 100 registros visibles ya llevan una etiqueta observable: hawkish, dovish o neutral. La guía few-shot usa ejemplos para la consulta; no entrena un modelo general.</p>
+              <p class="pipe-p">Los 99 registros visibles ya llevan una etiqueta observable: hawkish, dovish o neutral. La guía few-shot usa ejemplos para la consulta; no entrena un modelo general.</p>
               <div class="seed-grid" id="seedGrid" aria-hidden="true"></div>
               <div class="word-meter" style="margin-top:14px">
                 <strong id="seedCount">0</strong>
@@ -4201,10 +4205,13 @@
     ──────────────────────────────── */
     const DEBUG_MODE = /[?&]debug\b/.test(location.search);
     if (!DEBUG_MODE) {
-      ['debugPanel', 'timelineScrubber'].forEach((id) => {
+      ['debugPanel', 'timelineScrubber', 'figureCabinet'].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
+    } else {
+      const cabinet = document.getElementById('figureCabinet');
+      if (cabinet) cabinet.style.display = 'block';
     }
 
     /* ────────────────────────────────
@@ -4450,7 +4457,7 @@
        Si un .glb de figures/ todavía no existe, se dibuja un
        icosaedro + halo y se marca "por modelar" en el gabinete.
     ═══════════════════════════════════════════════════════════ */
-    let figureSystem = initFigureSystem(scene);
+    let figureSystem = initFigureSystem(scene, { debug: DEBUG_MODE });
 
     /* ────────────────────────────────
        Door light rig — spotlights dedicados (no reutiliza los de la moneda)
@@ -7224,6 +7231,7 @@
 
       // Progress bar
       progressBar.style.width = (p * 100) + '%';
+      progressBar.setAttribute('aria-valuenow', String(Math.round(p * 100)));
 
       // Section indicator
       let sec = 'hero';
