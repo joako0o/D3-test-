@@ -6518,7 +6518,11 @@
         particleStoryMix.timeline * 0.78,
         particleStoryMix.quotes * 0.70
       );
-      pMat.opacity = (0.82 - 0.42 * scatterProgress) * (1 - 0.5 * veilShape) * (1 - 0.72 * stageDensity);
+      /* El dato contextual se atenúa, pero no cae por debajo de un umbral
+         visible: un alfa global demasiado bajo vuelve cualquier color oscuro
+         indistinguible del fondo en las escenas posteriores. */
+      const stageAlpha = Math.max(0.56, 1 - 0.72 * stageDensity);
+      pMat.opacity = (0.82 - 0.42 * scatterProgress) * (1 - 0.5 * veilShape) * stageAlpha;
 
       if (renderer) renderer.render(scene, camera);
     }
