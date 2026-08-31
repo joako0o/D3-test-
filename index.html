@@ -4978,7 +4978,20 @@
       grad.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 64, 64);
-      return new THREE.CanvasTexture(canvas);
+      /* Canvas 2D deja RGB negro en los píxeles transparentes. Con
+         NormalBlending eso puede producir pequeños halos negros sobre el fondo
+         oscuro aunque la partícula sea dorada o azul. Conservamos RGB blanco
+         en el borde y dejamos que el alfa controle únicamente la intensidad. */
+      const pixels = ctx.getImageData(0, 0, 64, 64);
+      for (let i = 0; i < pixels.data.length; i += 4) {
+        pixels.data[i] = 255;
+        pixels.data[i + 1] = 255;
+        pixels.data[i + 2] = 255;
+      }
+      ctx.putImageData(pixels, 0, 0);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
     }
 
     let sharedTexture = null;
@@ -5001,9 +5014,12 @@
       vertexColors: true,
       map: getParticleTexture(),
       transparent: true,
+      alphaTest: 0.06,
       opacity: 0.82,
       blending: THREE.NormalBlending,
+      depthTest: false,
       depthWrite: false,
+      fog: false,
     });
     const points = new THREE.Points(pGeo, pMat);
     swarm.add(points);
