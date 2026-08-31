@@ -5,7 +5,8 @@
   "scripts": {
     "start": "python3 -m http.server 8000",
     "dev": "python3 -m http.server 8000",
-    "check": "node tools/smoke-test.mjs"
+    "check": "node tools/smoke-test.mjs",
+    "shots": "node scripts/screenshots/capture.mjs"
   },
   "keywords": [
     "scrollytelling",
@@ -19,6 +20,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "jsdom": "^26.1.0"
+    "@sparticuz/chromium": "^133.0.0",
+    "jsdom": "^26.1.0",
+    "puppeteer-core": "^24.0.0"
   }
 }
