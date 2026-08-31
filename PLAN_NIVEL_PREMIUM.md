@@ -109,6 +109,11 @@ El tema es **política monetaria**, no un compositor. Meter música de Pendereck
 - [ ] Progress global + "ruta recomendada de 5 min".
 
 ### Fase 6 — Rendimiento y acabado (2–3 semanas)
+- [x] **GLBs comprimidos (2026-08-31):** `monedav5-draco.glb` 4.38 MB → 434 KB
+  (−90%) y `puerta-draco.glb` 824 KB → 76 KB (−91%). Draco re-encode + texturas
+  WebP 4:4:4 (normales clave en near-lossless; alfa aplanada con bleed, que no
+  usa el material OPAQUE). Mismos triángulos y bbox; calidad verificada con
+  métricas sobre píxeles visibles (p95 error angular 0°, PSNR ≥ 40 dB).
 - [ ] `three.module.min.js`.
 - [ ] Lazy load puerta/D3 por stage.
 - [ ] `app.js` + `styles.css` separados y minificados.

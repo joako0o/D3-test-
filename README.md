@@ -33,8 +33,8 @@ python -m http.server 8000
 │   ├── controls/           ← OrbitControls
 │   ├── environments/       ← RoomEnvironment
 │   └── objects/            ← Reflector
-├── monedav5-draco.glb      ← Modelo 3D de moneda (Draco compressed)
-├── puerta-draco.glb        ← Modelo 3D de puerta (Draco compressed)
+├── monedav5-draco.glb      ← Modelo 3D de moneda (Draco + texturas WebP, 434 KB)
+├── puerta-draco.glb        ← Modelo 3D de puerta (Draco + texturas WebP, 76 KB)
 └── servidor.bat            ← Script para servidor local en Windows
 ```
 
@@ -68,6 +68,12 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
 - **Balanza** (`figures/balanza.glb`): La Justicia ciega (Lady Justice), símbolo del equilibrio hawkish/dovish. ✅ lista (177 KB, Draco, acabado piedra mate). Ver `figures/README.md`.
 - **Nube de partículas continua**: ya no se apaga entre capítulos. ✅ en el sitio.
 - **Coreografía de cámara** (`cameraChoreography` + `cameraStops`): deriva suave entre etapas después del cruce puerta → sala. ✅ en el sitio.
+- **Compresión de GLBs (2026-08-31):** moneda 4.38 MB → **434 KB** y puerta 824 KB → **76 KB**
+  con el mismo criterio que la balanza: re-encode Draco + texturas re-optimizadas
+  (WebP 4:4:4; el mapa normal de la moneda y la pared en near-lossless). Fidelidad
+  verificada por métricas (p95 del error angular 0°, PSNR ≥ 40 dB en píxeles
+  visibles) y estructura intacta (mismos triángulos/bbox). El alfa no usado del
+  color se aplanó con *bleed*: además mejora los mipmaps del borde de la moneda.
 - **Fuentes self-hosted** (`fonts/*.woff2` + `@font-face`): ✅ completado el 2026-08-30 (ver `fonts/README.md`).
 - **HUD "La Sala de Deliberaciones"** (`#chapterHud`): pendiente (no implementado).
 - **Descubrimiento** (`Evidencia n/100` en localStorage): pendiente (no implementado).
