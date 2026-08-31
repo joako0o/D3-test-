@@ -317,7 +317,9 @@
       bottom: 24px; left: 50%;
       transform: translateX(-50%);
       display: flex; flex-direction: column; align-items: center; gap: 6px;
-      opacity: 0.45;
+      /* 0.62 es el mínimo que conserva 4.5:1 (WCAG AA) sobre --color-bg:
+         por debajo de ~0.58 el texto tenue deja de ser legible. */
+      opacity: 0.62;
       transition: opacity 0.4s;
     }
     .scroll-hint.hidden { opacity: 0; pointer-events: none; }
@@ -812,7 +814,7 @@
       transform: translateY(0);
     }
     .chart-axis-label {
-      font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; opacity: 0.45;
+      font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; opacity: 0.62; /* AA, ver .scroll-hint */
       text-align: center;
     }
     .chart-axes-svg {
@@ -846,7 +848,7 @@
       font-size: var(--fs-small);
       letter-spacing: 2px;
       text-transform: uppercase;
-      opacity: 0.55;
+      opacity: 0.62; /* AA, ver .scroll-hint */
       font-weight: 500;
     }
 
@@ -912,7 +914,7 @@
     .doc-head {
       display: flex; justify-content: space-between; gap: 12px;
       font-family: var(--font-body); font-size: var(--fs-micro);
-      letter-spacing: 2px; text-transform: uppercase; opacity: 0.45; margin-bottom: 14px;
+      letter-spacing: 2px; text-transform: uppercase; opacity: 0.62; margin-bottom: 14px; /* AA */
     }
     .doc-line { display: block; overflow: hidden; }
     .doc-line > span { display: inline-block; transform: translateY(110%); }
@@ -2843,7 +2845,7 @@
     }
     .quote-author {
       font-size: var(--fs-small);
-      opacity: 0.55;
+      opacity: 0.62; /* AA, ver .scroll-hint */
       margin-top: 12px;
       font-weight: 500;
     }
@@ -3115,7 +3117,7 @@
     #quotePanel .score-bar i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--color-gold-dim), var(--color-gold)); }
     #quotePanel .score-val { font-size: var(--fs-micro); font-variant-numeric: tabular-nums; color: var(--color-text-primary); min-width: 30px; text-align: right; }
     #quotePanel .score-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-faint); }
-    #quotePanel .year { margin-top: 10px; font-size: var(--fs-micro); letter-spacing: 1px; text-transform: uppercase; opacity: 0.45; }
+    #quotePanel .year { margin-top: 10px; font-size: var(--fs-micro); letter-spacing: 1px; text-transform: uppercase; opacity: 0.62; /* AA */ }
     #quotePanel .source-link {
       display: inline-flex;
       align-items: center;
@@ -3691,6 +3693,93 @@
       .quote-card::after { display: none; }
     }
 
+    /* ─── LA SALA · navegación por teclado de las voces en órbita ───
+       Patrón "oculto pero enfocable": la lista existe siempre para lectores de
+       pantalla y para el tabulador, pero solo se dibuja cuando algo dentro
+       recibe foco (:focus-within). Se usa clip-path en vez de display:none
+       porque display:none la sacaría del orden de tabulación. */
+    .room-voice-nav {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      z-index: 70;
+      width: min(320px, calc(100vw - 32px));
+      pointer-events: auto;
+      /* Oculta a la vista, presente para la tecnología asistiva. */
+      clip-path: inset(50%);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .room-voice-nav:focus-within {
+      clip-path: none;
+      opacity: 1;
+      transform: translateY(0);
+      padding: 14px 16px;
+      background: rgba(10, 14, 26, 0.94);
+      border: 1px solid var(--color-gold-dim);
+      border-radius: 12px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .room-voice-nav-title {
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      margin: 0 0 4px;
+    }
+    .room-voice-nav-help {
+      font-family: var(--font-body);
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--color-text-muted);
+      margin: 0 0 10px;
+    }
+    .room-voice-nav-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 42vh;
+      overflow-y: auto;
+    }
+    .room-voice-nav-item + .room-voice-nav-item { margin-top: 2px; }
+    .room-voice-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+    }
+    .room-voice-btn:hover { background: rgba(255, 255, 255, 0.06); }
+    .room-voice-btn:focus-visible {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 2px;
+      background: rgba(255, 215, 106, 0.1);
+    }
+    .room-voice-btn .room-voice-meta {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--color-text-faint);
+    }
+    .room-voice-btn[data-tone="hawkish"] { border-left: 2px solid var(--color-gold); }
+    .room-voice-btn[data-tone="dovish"] { border-left: 2px solid var(--color-dovish); }
+    .room-voice-btn[data-tone="neutral"] { border-left: 2px solid rgba(255, 255, 255, 0.35); }
+    @media (prefers-reduced-motion: reduce) {
+      .room-voice-nav { transition: none; transform: none; }
+    }
+
     /* ═══════════════════════════════════════════════════════════
        NIVEL PREMIUM — gabinete de figuras (HUD de esquina eliminado)
     ═══════════════════════════════════════════════════════════ */
@@ -3797,6 +3886,58 @@
 <body>
   <a href="#mainContent" class="skip-link">Saltar al contenido principal</a>
 
+  <!--
+    SIN JAVASCRIPT / SIN WEBGL
+    ──────────────────────────
+    El relato nace con `opacity: 0` y lo enciende GSAP a medida que se hace
+    scroll. Si el JS no corre (bloqueado, error de red, navegador antiguo) el
+    texto sigue en el DOM —un lector de pantalla lo lee— pero la pantalla se ve
+    negra. Este bloque devuelve el documento a su forma legible: quita el lienzo
+    3D, desactiva las alturas de scrollytelling y hace visible todo el copy.
+    Regla del proyecto: cualquier elemento nuevo que nazca oculto para animarse
+    debe quedar cubierto por estos selectores.
+  -->
+  <noscript>
+    <style>
+      /* Capas que solo tienen sentido con la escena 3D corriendo. */
+      #canvas, #load, #d3-canvas, #debugPanel, #timelineScrubber,
+      #progressBar, #sectionIndicator, #figureCabinet, .scroll-hint,
+      .object-reflection { display: none !important; }
+
+      /* Las secciones miden 150–200vh para dar recorrido al scroll y fijan su
+         contenido con `position: sticky`. Sin animación eso solo deja huecos. */
+      main#mainContent section { height: auto !important; min-height: 0 !important; }
+      main#mainContent section > div { position: static !important; height: auto !important; }
+      main#mainContent section,
+      main#mainContent section > div { pointer-events: auto !important; }
+
+      /* El copy que espera a GSAP: tanto el que trae `style="opacity: 0"`
+         inline como el que lo recibe por clase. */
+      main#mainContent [style*="opacity: 0"],
+      main#mainContent [style*="opacity:0"],
+      main#mainContent * {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        clip-path: none !important;
+      }
+
+      .noscript-note {
+        max-width: 760px;
+        margin: 40px auto 0;
+        padding: 18px 22px;
+        border: 1px solid var(--color-gold-dim);
+        border-radius: 12px;
+        background: rgba(255, 215, 106, 0.06);
+        color: var(--color-text-primary);
+        font-family: var(--font-body);
+        font-size: var(--fs-small);
+        line-height: 1.6;
+      }
+      .noscript-note strong { color: var(--color-gold); }
+    </style>
+  </noscript>
+
   <!-- Progress bar -->
   <div id="progressBar" role="progressbar" aria-label="Progreso de lectura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="position: fixed; top: 0; left: 0; width: 0%; height: 2px; background: linear-gradient(90deg, var(--color-gold), var(--color-dovish)); z-index: 9999; transition: width 0.1s ease-out;"></div>
 
@@ -3875,6 +4016,14 @@
 
   <!-- ═══════ STAGE 1 — Hero ═══════ -->
   <main id="mainContent">
+  <noscript>
+    <p class="noscript-note">
+      <strong>JavaScript está desactivado.</strong> Esta es una experiencia interactiva con
+      gráficos 3D y animación al hacer scroll; sin JavaScript verás el mismo contenido, pero
+      como un documento estático, sin la escena ni los gráficos. El texto completo del relato
+      está más abajo.
+    </p>
+  </noscript>
   <div class="hero" id="hero">
     <div class="top">
       <div class="brand"><strong>2000&#8211;2015</strong></div>
@@ -3923,9 +4072,26 @@
         Cada part&iacute;cula de luz que ves es un fragmento de lo que se dijo en una de estas reuniones.
       </p>
       <p id="roomHint" data-room-hint style="font-size: var(--fs-small); color: var(--color-text-muted); font-family: var(--font-body); text-align: center; margin-top: 1.6rem; letter-spacing: 0.3px; opacity: 0;">
-        Pasa el cursor sobre una voz para leer lo que dijo &middot; haz click para fijarla
+        Pasa el cursor sobre una voz para leer lo que dijo &middot; haz click para fijarla &middot; o rec&oacute;rrelas con el tabulador
       </p>
     </div>
+
+    <!--
+      EQUIVALENTE DE TECLADO PARA LAS VOCES EN ÓRBITA
+      ───────────────────────────────────────────────
+      Las partículas viven en el <canvas> y solo responden a puntero (raycast
+      sobre THREE.Points), así que sin esta lista serían inalcanzables para
+      quien navega con teclado o lector de pantalla. Cada botón corresponde a
+      un orbitador y abre exactamente la misma cita que el hover.
+      Está oculta visualmente pero NO para la accesibilidad, y se revela al
+      recibir foco para que quien usa teclado vea dónde está.
+      La rellena `initRoomVoiceNav()` en el modulo JS de la escena.
+    -->
+    <nav id="roomVoiceNav" class="room-voice-nav" aria-labelledby="roomVoiceNavTitle" hidden>
+      <h3 id="roomVoiceNavTitle" class="room-voice-nav-title">Voces en la sala</h3>
+      <p class="room-voice-nav-help">Tabula para o&iacute;r cada voz &middot; Enter abre la cita &middot; Escape cierra</p>
+      <ul id="roomVoiceNavList" class="room-voice-nav-list" role="list"></ul>
+    </nav>
   </section>
 
   <!-- ═══════ STAGE 4 — Hook (ACTO 3: EL MÉTODO) ═══════ -->
@@ -5678,6 +5844,10 @@
     function updateOrbitals(t, mix) {
       orbitMix = mix;
       orbitMat.uniforms.uOpacity.value = mix * (ORB.opacity ?? 0.95);
+      /* El mismo umbral que usa `pickPoint` para aceptar hits en las órbitas:
+         la lista de teclado aparece exactamente cuando las voces son
+         alcanzables con el puntero. */
+      setRoomVoiceNavActive(mix > 0.35 && ORB_N > 0);
       if (mix < 0.004 || ORB_N === 0) {
         orbitGroup.visible = false;
         return;
@@ -5696,6 +5866,83 @@
       }
       orbitGeo.attributes.position.needsUpdate = true;
     }
+
+    /* ─── Equivalente de teclado de las órbitas ───────────────────
+       Las partículas solo se pueden "tocar" con un raycast desde el puntero.
+       Esta lista de botones (ver #roomVoiceNav en el HTML) da a cada orbitador
+       una representación real en el DOM: enfocable, anunciable y con el mismo
+       efecto que el hover. Es el mismo patrón que ya usan las marcas del
+       gráfico D3 (`.axes-data-mark` con tabindex="0"). */
+    const roomVoiceNav = document.getElementById('roomVoiceNav');
+    const roomVoiceNavList = document.getElementById('roomVoiceNavList');
+    let roomVoiceNavOn = null;
+
+    function initRoomVoiceNav() {
+      if (!roomVoiceNav || !roomVoiceNavList || orbitParams.length === 0) return;
+      const frag = document.createDocumentFragment();
+      orbitParams.forEach((p, i) => {
+        const q = quotes[p.quoteIndex];
+        if (!q) return;
+        const li = document.createElement('li');
+        li.className = 'room-voice-nav-item';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'room-voice-btn';
+        btn.dataset.quoteIndex = String(p.quoteIndex);
+        btn.dataset.tone = q.label || 'neutral';
+        const who = q.participant || 'Participante anónimo';
+        const when = q.formatted_date || q.date || (q.year ? 'Año ' + q.year : 'fecha no especificada');
+        const tone = q.label || 'neutral';
+        btn.appendChild(document.createTextNode(who));
+        const meta = document.createElement('span');
+        meta.className = 'room-voice-meta';
+        meta.textContent = `${when} · ${tone}`;
+        btn.appendChild(meta);
+        /* Sin aria-label el nombre accesible sale pegado ("Céspedes13 de
+           Mayo"): el <span> es de bloque a la vista, pero se concatena sin
+           separador en el árbol de accesibilidad. */
+        btn.setAttribute('aria-label', `${who}, ${when}, tono ${tone}. Abrir la cita.`);
+        /* Enfocar = "pasar el cursor": abre la cita sin robar el foco, para que
+           se pueda recorrer la lista entera con el tabulador. */
+        btn.addEventListener('focus', () => {
+          hoverIndex = p.quoteIndex;
+          syncQuotePanel();
+        });
+        /* Activar = "fijar": abre la cita y lleva el foco al panel para leerla;
+           al cerrarlo (✕ o Escape) el foco vuelve a este botón. */
+        btn.addEventListener('click', () => {
+          pinnedIndex = p.quoteIndex;
+          lastFocusedCard = btn;
+          openQuote(p.quoteIndex, btn.getBoundingClientRect());
+          const closeBtn = document.getElementById('quotePanelClose');
+          if (closeBtn) closeBtn.focus({ preventScroll: true });
+        });
+        li.appendChild(btn);
+        frag.appendChild(li);
+      });
+      roomVoiceNavList.appendChild(frag);
+      /* Al salir de la lista con el tabulador, el "peek" se retira igual que
+         cuando el cursor abandona la nube. */
+      roomVoiceNav.addEventListener('focusout', (e) => {
+        if (roomVoiceNav.contains(e.relatedTarget)) return;
+        if (pinnedIndex >= 0) return;
+        hoverIndex = -1;
+        syncQuotePanel();
+      });
+    }
+
+    /* La lista solo debe existir en el orden de tabulación mientras La Sala
+       está en pantalla: fuera de ella serían 12 paradas sin contexto. */
+    function setRoomVoiceNavActive(on) {
+      if (!roomVoiceNav || on === roomVoiceNavOn) return;
+      roomVoiceNavOn = on;
+      if (!on && roomVoiceNav.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
+      roomVoiceNav.hidden = !on;
+    }
+
+    initRoomVoiceNav();
 
     /* Devuelve el índice del orbitador cuya cita está activa (hover o fijada),
        para que el shader la resalte. -1 = ninguno. */
