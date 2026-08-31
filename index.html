@@ -287,10 +287,12 @@
       z-index: 1;
     }
     /* Bloque de copy compacto: cabe en la franja inferior sin invadir la
-       estatua. En pantallas bajas se aprieta un poco más. */
+       estatua. El título respira menos y la bajada baja medio punto: son ~40px
+       menos de bloque, justo lo que separa el texto del pedestal. */
+    #roomTitle { margin-bottom: 1rem !important; }
     #roomLead { margin-top: 0 !important; }
-    #roomSub { margin-top: 0.7rem !important; }
-    #roomHint { margin-top: 1.1rem !important; }
+    #roomSub { margin-top: 0.65rem !important; font-size: var(--fs-small) !important; }
+    #roomHint { margin-top: 1rem !important; }
     @media (max-height: 780px) {
       #roomTitle { margin-bottom: 0.6rem !important; }
       #roomSub { margin-top: 0.5rem !important; }
@@ -4598,23 +4600,24 @@
         orbit: {
           count: 12,                    // fragmentos en órbita (4 por tono)
           trail: 58,                    // muestras de estela por fragmento
-          trailStep: 0.07,              // segundos entre muestras (58 × 0.07 ≈ 4 s de cola)
-          headSize: 0.175,              // tamaño del punto vivo (unidades de mundo)
-          tailSize: 0.095,              // tamaño de la muestra más nueva de la cola
+          trailStep: 0.085,             // segundos entre muestras (58 × 0.085 ≈ 5 s de cola)
+          headSize: 0.15,               // tamaño del punto vivo (unidades de mundo)
+          tailSize: 0.08,               // tamaño de la muestra más nueva de la cola
           minRadius: 0.46,              // radio menor de la órbita
           maxRadius: 0.95,              // radio mayor
-          minY: 0.26,                   // altura mínima del centro orbital (sobre el pedestal)
-          maxY: 1.14,                   // altura máxima
+          minY: 0.44,                   // altura mínima del centro orbital (por encima del pedestal)
+          maxY: 1.12,                   // altura máxima (por debajo de la cabeza: no cruzan la balanza)
           tilt: 34,                     // grados máximos de inclinación del plano orbital
           speed: 0.24,                  // rad/s de referencia (≈26 s por vuelta en r medio)
           precession: 0.028,            // rad/s de giro del plano (las estelas nunca se repiten)
-          opacity: 0.95,
+          opacity: 0.82,
+          neutralDim: 0.78,             // el plata en aditivo se va a blanco puro; se baja solo aquí
         },
         /* Luces de la pieza central. OJO: el renderer usa unidades físicas
            (useLegacyLights = false, three r160), así que estos valores son
            pequeños; el antiguo 210 del foco no quemaba la escena solo porque
            el target estaba mal y la estatua quedaba FUERA del cono. */
-        accentIntensity: 14,
+        accentIntensity: 12,
         fillIntensity: 4,
       },
     };
@@ -5611,11 +5614,15 @@
       const q = quotes[p.quoteIndex];
       const tone = ['hawkish', 'dovish', 'neutral'].includes(q?.label) ? q.label : 'neutral';
       const c = tone === 'hawkish' ? colorHawkish : tone === 'dovish' ? colorDovish : colorNeutral;
+      /* El plata neutral, sumado en aditivo sobre el navy, se va a blanco puro
+         y se come al oro y al azul. Se atenúa solo en las órbitas: la nube y la
+         leyenda conservan su color. */
+      const dim = tone === 'neutral' ? (ORB.neutralDim ?? 0.78) : 1;
       for (let k = 0; k < ORB_T; k++) {
         const n = i * ORB_T + k;
-        orbitColor[n * 3 + 0] = c.r;
-        orbitColor[n * 3 + 1] = c.g;
-        orbitColor[n * 3 + 2] = c.b;
+        orbitColor[n * 3 + 0] = c.r * dim;
+        orbitColor[n * 3 + 1] = c.g * dim;
+        orbitColor[n * 3 + 2] = c.b * dim;
         orbitOwner[n] = i;
         if (k === 0) {
           orbitSize[n] = ORB.headSize ?? 0.175;
@@ -7574,7 +7581,7 @@
         const statueDef = statueRecord?.def;
         const statueX = (statueDef?.x ?? 0) + figureSystem.group.position.x;
         const statueZ = (statueDef?.z ?? (CONFIG.room?.figure?.z ?? -4.8));
-        const statueMidY = figureSystem.group.position.y + 0.55 * (statueDef?.scale ?? 1.22) + (statueRecord?.root?.position.y ?? 0);
+        const statueMidY = figureSystem.group.position.y + 0.55 * (statueDef?.scale ?? 1.15) + (statueRecord?.root?.position.y ?? 0);
         figureAccent.intensity = statueT * (CONFIG.room?.accentIntensity ?? 14);
         figureAccent.position.set(statueX + 0.9, 3.1, statueZ + 2.2);
         figureAccentTarget.position.set(statueX, statueMidY, statueZ);

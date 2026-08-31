@@ -75,6 +75,10 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
   sección, con el **copy movido a la franja inferior** y un scrim que sube
   desde el borde de abajo (antes el scrim oscurecía el centro y el texto caía
   sobre la estatua). Encuadre: `CONFIG.door.roomLook.y = 0.55`.
+  Ajuste 2 (tras ver la captura real): el pedestal se estiró en Y (`stretchY:
+  1.6`) y se afinó de diámetro (0.70) porque plano y ancho se leía como una
+  chapa oscura detrás del texto; la estatua bajó a 1.15 para que los pies
+  queden por encima del bloque de copy.
 - **Órbitas con estela** (`CONFIG.room.orbit`): 12 fragmentos REALES del corpus
   (4 por tono: oro hawkish, azul dovish, plata neutral) giran sobre el eje de
   la figura en planos inclinados y dejan una cola de ~4 s que se apaga hacia

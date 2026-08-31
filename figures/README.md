@@ -53,8 +53,10 @@ de a poco.
   el repo (misma convención que la puerta/moneda: solo se versiona el
   comprimido); si hace falta se recupera con
   `git show 2119432:Soporte.glb > Soporte.glb`.
-  En `js/figures.js` es `scale: 0.82` (el `scale` normaliza la dimensión mayor
-  → aquí es el DIÁMETRO; el alto sale 0.186) y acabado piedra oscura azulada.
+  En `js/figures.js` es `scale: 0.70` + `stretchY: 1.6` (el `scale` normaliza la
+  dimensión mayor → aquí es el DIÁMETRO; con el estirado el alto sale 0.254) y
+  acabado piedra azulada. El disco original es muy plano: sin `stretchY` se lee
+  como una chapa oscura y no como pedestal.
 - ✅ **`figures/balanza.glb`** — La Justicia ciega (Lady Justice con la balanza),
   el símbolo del equilibrio. Origen: `Meshy_AI_Blind_Justice_Statue_0831090221_generate.glb`.
   Se normalizó a la convención del proyecto: **Draco**, **38.5 k triángulos**,

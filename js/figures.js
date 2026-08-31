@@ -27,12 +27,18 @@ export const FIGURE_DEFS = [
     available: true,
     x: 0, y: 0, z: -4.8,
     /* `scale` normaliza por la dimensión mayor: aquí es el DIÁMETRO.
-       0.82 de diámetro → 0.186 de alto (el GLB es un disco escalonado). */
-    scale: 0.82,
+       0.70 de diámetro → 0.159 de alto (el GLB es un disco escalonado).
+       `stretchY` estira SOLO el alto después de normalizar: el disco original
+       es demasiado plano y a tamaño de pantalla se leía como una chapa oscura
+       detrás del texto en vez de como un pedestal. 1.6 → 0.254 de alto, y el
+       diámetro se recortó a 0.70 para que no compita con la estatua
+       (una peana ancha y baja parecía una torta; alta y esbelta, un pedestal). */
+    scale: 0.70,
+    stretchY: 1.6,
     color: 0x9aa6bd,
     /* Piedra oscura azulada: contrasta con la caliza de la estatua sin
        competir con el oro del hero. */
-    finish: { metalness: 0.04, roughness: 0.78, color: 0x333a4b },
+    finish: { metalness: 0.05, roughness: 0.7, color: 0x424c63 },
   },
   {
     id: 'balanza',
@@ -49,7 +55,7 @@ export const FIGURE_DEFS = [
        alto del pedestal no queda escrito a mano en dos sitios. */
     x: 0, y: 0, z: -4.8,
     standsOn: 'soporte',
-    scale: 1.22,
+    scale: 1.15,
     color: 0xffd76a,
     /* Acabado PIEDRA mate (limestone): la figura no compite con la moneda
        dorada del hero. `applyModel` respeta estos valores en vez de forzar
@@ -184,6 +190,9 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
       const maxSize = Math.max(size.x, size.y, size.z) || 1;
       const s = def.scale / maxSize;
       model.scale.setScalar(s);
+      /* `stretchY` (opcional) estira el alto sin tocar la planta: sirve para
+         que una peana muy plana gane presencia sin volver a exportar el GLB. */
+      if (def.stretchY) model.scale.y *= def.stretchY;
       box.setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
       model.position.x -= center.x;
