@@ -438,7 +438,7 @@
     }
 
     /* ─── STAGE 4 — Mapa de intervenciones ─── */
-    /* La explicación funciona como una leyenda editorial del plano, no como
+    /* La explicación funciona como una leyenda editorial del planoo, no como
        un bloque de texto independiente: conserva la jerarquía tipográfica y
        el lenguaje de línea fina que ya usan los gráficos de la historia. */
     .axes-reading-key {
@@ -4359,16 +4359,25 @@
     };
 
     if (HERO_DOOR_LOCKUP) {
-      CONFIG.door.widthVsCoin = 2.55;
-      CONFIG.door.fogDensity = 0.04;
-      CONFIG.camera.fov = 34;
+      /* Still de referencia: pórtico de piedra, vano oscuro, moneda = única joya.
+         Las hojas doradas del GLB se apagan en el hero (el vano es noche) y
+         vuelven en el acto 2, cuando la puerta de la reunión se cierra. */
+      CONFIG.door.widthVsCoin = 3.2;
+      CONFIG.door.fogDensity = 0.026;
+      CONFIG.door.doorDepthSquash = 0.78;
+      CONFIG.camera.fov = 32;
       CONFIG.camera.y = 0.72;
-      CONFIG.camera.z = 7.15;
+      CONFIG.camera.z = 7.7;
+      CONFIG.exposure = 0.94;
+      CONFIG.door.spots.key = { color: 0xd4e0f2, intensity: 12, angle: 0.72, penumbra: 0.62, decay: 1.35, distance: 0, x: -3.8, y: 3.5, z: 4.4, tx: 0, ty: 0.2, tz: 0 };
+      CONFIG.door.spots.rim = { color: 0x6e819c, intensity: 6, angle: 0.8, penumbra: 0.75, decay: 1.35, distance: 0, x: 3.5, y: 1.6, z: 2.0, tx: 0, ty: 0.1, tz: -0.35 };
+      CONFIG.door.spots.under = { color: 0xffd76a, intensity: 3.2, angle: 0.7, penumbra: 0.85, decay: 1.6, distance: 0, x: 0, y: 0.5, z: 2.9, tx: 0, ty: 0.25, tz: 0 };
     }
 
     const canvas = document.getElementById('canvas');
     const loadEl = document.getElementById('load');
     const haloWrap = document.getElementById('haloWrap');
+    if (HERO_DOOR_LOCKUP && haloWrap) haloWrap.classList.add('hidden-stage');
     const objectReflection = document.getElementById('objectReflection');
     const scrollHint = document.getElementById('scrollHint');
     const heroEl = document.getElementById('hero');
@@ -4587,7 +4596,7 @@
         if (available > 0) {
           /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
              evita que el diámetro de la moneda se coma el copy del título. */
-          return Math.min(baseTargetPx, available * (HERO_DOOR_LOCKUP ? 0.48 : 0.82));
+          return Math.min(baseTargetPx, available * (HERO_DOOR_LOCKUP ? 0.36 : 0.82));
         }
         /* El título ya sube muy arriba: no hay cota positiva. En vez de dejar
            la moneda en su tamaño base (que choca con el texto), se reduce a un
@@ -4731,6 +4740,10 @@
           m.metalness = CONFIG.coin.metalness;
           m.roughness = CONFIG.coin.roughness;
           m.envMapIntensity = CONFIG.coin.envMapIntensity;
+          if (HERO_DOOR_LOCKUP) {
+            m.emissiveIntensity = 0.14;
+            m.envMapIntensity = 1.25;
+          }
           m.needsUpdate = true;
           coinMats.push(m);
         });
@@ -4828,6 +4841,70 @@
     }
     applyDoorTextStyle();
 
+    function makeDoorCanvasTexture(size, draw) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      draw(ctx, size);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.anisotropy = 8;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+      return tex;
+    }
+    function makeCarvedStoneMap() {
+      return makeDoorCanvasTexture(512, (ctx, s) => {
+        ctx.fillStyle = '#243044';
+        ctx.fillRect(0, 0, s, s);
+        for (let i = 0; i < 5200; i++) {
+          const a = 0.04 + Math.random() * 0.16;
+          ctx.fillStyle = Math.random() > 0.45
+            ? `rgba(210,224,240,${a})`
+            : `rgba(4,8,14,${a * 1.5})`;
+          ctx.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 4, 1 + Math.random() * 3);
+        }
+        ctx.globalAlpha = 0.22;
+        for (let y = 0; y < s; y += 28) {
+          ctx.fillStyle = y % 56 === 0 ? '#121820' : '#3a4c62';
+          ctx.fillRect(0, y, s, 2);
+        }
+        ctx.globalAlpha = 1;
+      });
+    }
+    function makeMeanderMap() {
+      return makeDoorCanvasTexture(256, (ctx, s) => {
+        ctx.fillStyle = '#1a222e';
+        ctx.fillRect(0, 0, s, s);
+        ctx.strokeStyle = '#c5b48a';
+        ctx.lineWidth = 9;
+        ctx.lineJoin = 'miter';
+        ctx.lineCap = 'square';
+        const cell = 64;
+        for (let y = 0; y < s; y += cell) {
+          for (let x = 0; x < s; x += cell) {
+            ctx.beginPath();
+            ctx.moveTo(x + 8, y + 18);
+            ctx.lineTo(x + 46, y + 18);
+            ctx.lineTo(x + 46, y + 50);
+            ctx.lineTo(x + 22, y + 50);
+            ctx.lineTo(x + 22, y + 34);
+            ctx.lineTo(x + 8, y + 34);
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+      });
+    }
+    const doorStoneMap = makeCarvedStoneMap();
+    doorStoneMap.repeat.set(2.4, 3.0);
+    const doorMeanderMap = makeMeanderMap();
+    doorMeanderMap.repeat.set(6, 8);
+    const doorLeafMats = [];
+    const doorLeafColorVoid = new THREE.Color('#07090f');
+    const doorLeafColorGold = new THREE.Color('#ffd76a');
+    let doorDust = null;
+
     const doorLoader = new GLTFLoader(manager);
     doorLoader.setDRACOLoader(dracoLoader);
     /* Base real de la puerta relativa al pivote, en unidades del modelo. Se usa
@@ -4882,16 +4959,37 @@
           if (!m || !('metalness' in m)) return;
           m.side = THREE.FrontSide;
           if (isDoorLeaf) {
-            // Hoja de la puerta interior — Dorado metálico brillante
-            m.color.set('#ffd76a');
-            m.metalness = 1.0;
-            m.roughness = 0.22;
-            m.envMapIntensity = 1.3;
+            if (HERO_DOOR_LOCKUP) {
+              /* Vano del still: las hojas se apagan a noche. El oro vuelve en el acto 2. */
+              m.color.copy(doorLeafColorVoid);
+              m.metalness = 0.12;
+              m.roughness = 0.92;
+              m.envMapIntensity = 0.12;
+              if (!m.emissive) m.emissive = new THREE.Color();
+              m.emissive.set('#000000');
+              m.emissiveIntensity = 0;
+              doorLeafMats.push(m);
+            } else {
+              m.color.set('#ffd76a');
+              m.metalness = 1.0;
+              m.roughness = 0.22;
+              m.envMapIntensity = 1.3;
+              if (!m.emissive) m.emissive = new THREE.Color();
+              m.emissive.set('#3d2508');
+              m.emissiveIntensity = 0.05;
+            }
+          } else if (HERO_DOOR_LOCKUP) {
+            m.color.set('#6e7d92');
+            m.metalness = 0.08;
+            m.roughness = 0.88;
+            m.map = doorStoneMap;
+            m.bumpMap = doorStoneMap;
+            m.bumpScale = 0.045;
+            m.envMapIntensity = 0.28;
             if (!m.emissive) m.emissive = new THREE.Color();
-            m.emissive.set('#3d2508');
-            m.emissiveIntensity = 0.05;
+            m.emissive.set('#000000');
+            m.emissiveIntensity = 0;
           } else {
-            // Pórtico exterior, dintel y escalones — Obsidiana / Negro azulado profundo mate
             m.color.set('#0d0f16');
             m.metalness = 0.15;
             m.roughness = 0.75;
@@ -4905,6 +5003,44 @@
         });
       });
       doorModelGroup.add(model);
+      if (HERO_DOOR_LOCKUP) {
+        const voidMat = new THREE.MeshBasicMaterial({ color: 0x05070c, side: THREE.DoubleSide });
+        const voidPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 2.05), voidMat);
+        voidPlane.position.set(0, 0.02, -0.22);
+        doorModelGroup.add(voidPlane);
+        doorMats.push(voidMat);
+        const dustN = 420;
+        const dustPos = new Float32Array(dustN * 3);
+        const dustCol = new Float32Array(dustN * 3);
+        const gold = new THREE.Color(0xffd76a);
+        for (let i = 0; i < dustN; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const r = 0.25 + Math.random() * 1.35;
+          dustPos[i * 3] = Math.cos(a) * r * 0.78;
+          dustPos[i * 3 + 1] = (Math.random() - 0.42) * 2.2;
+          dustPos[i * 3 + 2] = (Math.random() - 0.35) * 1.15;
+          const k = 0.45 + Math.random() * 0.55;
+          dustCol[i * 3] = gold.r * k;
+          dustCol[i * 3 + 1] = gold.g * k;
+          dustCol[i * 3 + 2] = gold.b * k;
+        }
+        const dustGeo = new THREE.BufferGeometry();
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+        dustGeo.setAttribute('color', new THREE.BufferAttribute(dustCol, 3));
+        doorDust = new THREE.Points(
+          dustGeo,
+          new THREE.PointsMaterial({
+            size: 0.028,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+          })
+        );
+        doorDust.name = 'doorDust';
+        doorModelGroup.add(doorDust);
+      }
     }, undefined, (err) => {
       console.error('Error cargando GLB:', err);
       loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la puerta</span>';
@@ -6454,8 +6590,9 @@
         /* Giro por oscilación, no rotación 360°: con swaySpeedY como frecuencia,
            la moneda se balancea frente a la cámara y nunca queda "de canto"
            (antes acumulaba ángulo y a veces se veía de perfil). */
-        coin.rotation.y = Math.sin(tElapsed * C.swaySpeedY) * 0.42 * introEase * motionScale
-          + smoothMouseX * 0.22 * motionScale
+        const swayAmp = HERO_DOOR_LOCKUP ? 0.10 : 0.42;
+        coin.rotation.y = Math.sin(tElapsed * C.swaySpeedY) * swayAmp * introEase * motionScale
+          + smoothMouseX * (HERO_DOOR_LOCKUP ? 0.08 : 0.22) * motionScale
           + dragRotY;
         coin.rotation.x = C.tiltBase + C.tiltOscillation * Math.sin(tElapsed * C.tiltSpeed * motionScale) + smoothMouseY * -0.12 * motionScale + dragRotX;
         coin.position.y = C.baseY + C.floatAmount * Math.sin(tElapsed * C.floatSpeed * motionScale) * motionScale;
@@ -6474,7 +6611,7 @@
           objectReflection.style.opacity = (coinFade * 0.46).toFixed(3);
         }
         coin.visible = (currentStage === 1) && (coinFade > 0.01);
-        if (HERO_DOOR_LOCKUP) coin.position.z = 0.42;
+        if (HERO_DOOR_LOCKUP) coin.position.z = 0.28;
         for (let i = 0; i < coinMats.length; i++) {
           coinMats[i].transparent = true;
           coinMats[i].opacity = coinFade;
@@ -6522,6 +6659,20 @@
         for (let i = 0; i < doorMats.length; i++) {
           doorMats[i].transparent = true;
           doorMats[i].opacity = doorVisOpacity;
+        }
+        if (HERO_DOOR_LOCKUP && doorLeafMats.length) {
+          const leafT = THREE.MathUtils.smoothstep(scatterProgress, 0.28, 0.9);
+          for (let i = 0; i < doorLeafMats.length; i++) {
+            const m = doorLeafMats[i];
+            m.color.copy(doorLeafColorVoid).lerp(doorLeafColorGold, leafT);
+            m.metalness = THREE.MathUtils.lerp(0.12, 1.0, leafT);
+            m.roughness = THREE.MathUtils.lerp(0.92, 0.22, leafT);
+            m.envMapIntensity = THREE.MathUtils.lerp(0.12, 1.3, leafT);
+          }
+          if (doorDust) {
+            doorDust.rotation.y = time * 0.045;
+            doorDust.material.opacity = 0.82 * (1 - leafT * 0.7) * doorVisOpacity;
+          }
         }
 
         /* rig de luces + fog solo mientras la puerta está presente */
@@ -8304,3 +8455,4 @@
 
 </body>
 </html>
+>
