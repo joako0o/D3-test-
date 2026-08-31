@@ -10,6 +10,9 @@
   <meta property="og:title" content="In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile" />
   <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="og-image.jpg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -3567,6 +3570,88 @@
       .room-particle-key { transition: none !important; }
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       NIVEL PREMIUM — HUD de la Sala, gabinete de figuras, audio
+    ═══════════════════════════════════════════════════════════ */
+    #chapterHud {
+      position: fixed; top: 16px; left: 16px; z-index: 80;
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 12px 16px; max-width: min(320px, calc(100vw - 32px));
+      color: var(--color-text-secondary);
+      background: rgba(10, 14, 26, 0.55);
+      border: 1px solid rgba(255,215,106,0.12);
+      border-radius: 12px;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      pointer-events: auto;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+    }
+    .hud-eyebrow {
+      display: flex; align-items: center; gap: 8px;
+      color: var(--color-gold); font-size: 10px; font-weight: 600;
+      letter-spacing: 2.4px; text-transform: uppercase;
+    }
+    .hud-eyebrow::before { content:""; width: 8px; height: 8px; border-radius: 50%; background: var(--color-gold); box-shadow: 0 0 10px var(--color-gold); }
+    .hud-title { font-family: var(--font-display); font-size: clamp(20px, 2.4vw, 32px); line-height: 1.05; color: var(--color-text-primary); }
+    .hud-meta { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--color-text-muted); }
+    .hud-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .hud-btn {
+      appearance: none; border: 1px solid rgba(255,215,106,0.22);
+      background: rgba(255,215,106,0.04); color: var(--color-text-secondary);
+      padding: 7px 12px; border-radius: 8px; font-size: 11px;
+      letter-spacing: 1.2px; text-transform: uppercase; cursor: pointer;
+      transition: background .25s, border-color .25s, color .25s, transform .25s;
+    }
+    .hud-btn:hover, .hud-btn:focus-visible { background: rgba(255,215,106,0.12); border-color: var(--color-gold); color: var(--color-gold); transform: translateY(-1px); }
+    .hud-progress {
+      display: flex; align-items: center; gap: 10px; margin-top: 6px;
+      font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--color-text-muted); font-variant-numeric: tabular-nums;
+    }
+    .hud-progress-track { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
+    .hud-progress-fill { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--color-gold), var(--color-dovish)); transition: width .5s cubic-bezier(.16,1,.3,1); }
+
+    #figureCabinet {
+      position: fixed; left: 16px; bottom: 16px; z-index: 80;
+      width: min(260px, calc(100vw - 32px));
+      padding: 12px 14px;
+      background: rgba(10, 14, 26, 0.5);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      pointer-events: auto; color: var(--color-text-muted);
+    }
+    .figure-cabinet-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--color-text-faint); margin-bottom: 8px; }
+    .figure-row { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; font-size: 11px; }
+    .figure-row-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.25); }
+    .figure-row.is-ready .figure-row-dot { background: var(--color-gold); box-shadow: 0 0 8px var(--color-gold); }
+    .figure-row.is-pending .figure-row-dot { background: var(--color-dovish); }
+    .figure-row-status { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+    .figure-row.is-ready .figure-row-status { color: var(--color-gold); }
+    .figure-row.is-pending .figure-row-status { color: var(--color-dovish); }
+
+    #soundToggle {
+      position: fixed; right: 18px; bottom: 18px; z-index: 90;
+      width: 46px; height: 46px; border-radius: 50%;
+      display: grid; place-items: center;
+      border: 1px solid rgba(255,215,106,0.25);
+      background: rgba(10,14,26,0.6); color: var(--color-gold);
+      font-size: 18px; cursor: pointer;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      transition: background .25s, border-color .25s, transform .25s, opacity .25s;
+    }
+    #soundToggle:hover, #soundToggle:focus-visible { border-color: var(--color-gold); opacity: 1; transform: translateY(-2px); }
+    #soundToggle[aria-pressed="true"] { background: rgba(255,215,106,0.14); }
+
+    @media (max-width: 768px) {
+      #chapterHud { top: 10px; left: 10px; right: 10px; max-width: none; padding: 10px 12px; }
+      #chapterHud .hud-title { font-size: 20px; }
+      #figureCabinet { display: none; }
+      #soundToggle { right: 12px; bottom: 12px; }
+    }
+    @media (max-width: 430px) {
+      #chapterHud .hud-meta, #chapterHud .hud-actions .hud-btn:last-child { display: none; }
+    }
+
   </style>
 </head>
 <body>
@@ -3587,6 +3672,26 @@
     </div>
     <div id="tsSection" style="font-family: monospace; font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 8px; text-align: center; max-width: 80px; line-height: 1.3; min-height: 20px;">hero</div>
   </div>
+
+  <!-- ═══ HUD de la Sala de Deliberaciones ═══ -->
+  <aside id="chapterHud" aria-label="La Sala de Deliberaciones">
+    <span class="hud-eyebrow">La Sala de Deliberaciones</span>
+    <div class="hud-title">16 años · Un mismo espacio</div>
+    <div class="hud-meta" id="hudMeta">Corpus 2000–2015 · muestra 100 fragmentos · 18 voces</div>
+    <div class="hud-actions">
+      <button class="hud-btn" id="guidedTour" type="button">Recorrido 5 min</button>
+      <button class="hud-btn" id="soundToggle" type="button" aria-pressed="false" aria-label="Activar sonido interactivo">Sonido</button>
+    </div>
+    <div class="hud-progress">
+      <span id="discoveryText">Evidencia 0/100</span>
+      <span class="hud-progress-track" aria-hidden="true"><span class="hud-progress-fill" id="discoveryFill"></span></span>
+    </div>
+  </aside>
+
+  <!-- ═══ Gabinete de figuras (por modelar / listas) ═══ -->
+  <aside id="figureCabinet" aria-label="Estado de las figuras 3D">
+    <div class="figure-cabinet-title">Figuras de la sala · Blender</div>
+  </aside>
 
   <div id="load">
     <div class="spinner"></div>
@@ -4134,6 +4239,7 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { initFigureSystem } from './js/figures.js';
 
     /* Los timelines de la escena se crean durante la inicialización de los
        gráficos. Registrar los plugins antes de construir cualquiera de ellos
@@ -4394,6 +4500,13 @@
     scene.add(key, fill, rim, front);
     const mouseLight = new THREE.PointLight(0xfff1c8, 0.4, 8);
     scene.add(mouseLight);
+
+    /* ═══════════════════════════════════════════════════════════
+       FIGURAS DE LA SALA — tu trabajo en Blender, con placeholders.
+       Si un .glb de figures/ todavía no existe, se dibuja un
+       icosaedro + halo y se marca "por modelar" en el gabinete.
+    ═══════════════════════════════════════════════════════════ */
+    let figureSystem = initFigureSystem(scene);
 
     /* ────────────────────────────────
        Door light rig — spotlights dedicados (no reutiliza los de la moneda)
@@ -5099,6 +5212,111 @@
       if (mark) mark.classList.add('is-focus');
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       AUDIO INTERACTIVO — sonifica la evidencia.
+       No es música: un tono cuyo grave/agudo depende de la etiqueta
+       y del score. Hawkish = grave · Dovish = agudo · Neutral = medio.
+       (Si quieres profundizar, deja esto y añade un sample en
+        `js/audio/` — ver PLAN_NIVEL_PREMIUM.md.)
+    ═══════════════════════════════════════════════════════════ */
+    const soundEngine = (() => {
+      let ctx = null;
+      let enabled = false;
+      const storeKey = 'd3sound';
+      try { enabled = localStorage.getItem(storeKey) === 'on'; } catch (e) { /* noop */ }
+      const btn = document.getElementById('soundToggle');
+      const setLabel = () => {
+        if (!btn) return;
+        btn.setAttribute('aria-pressed', String(enabled));
+      };
+      const ensure = () => {
+        if (!ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) ctx = new AC();
+        }
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+      };
+      function beep(label, score, kind) {
+        if (!enabled) return;
+        ensure();
+        if (!ctx) return;
+        const base = label === 'hawkish' ? 110 : label === 'dovish' ? 440 : 240;
+        const freq = THREE.MathUtils.lerp(base, base * (1.2 + (score || 0.7) * 0.5), 0.35);
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const isBlip = kind === 'blip';
+        osc.type = isBlip ? 'square' : 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        osc.frequency.exponentialRampToValueAtTime(isBlip ? freq * 1.5 : freq * 0.98, t + (isBlip ? 0.12 : 0.28));
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + (isBlip ? 0.15 : 0.32));
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + (isBlip ? 0.16 : 0.35));
+      }
+      setLabel();
+      if (btn) {
+        btn.addEventListener('click', () => {
+          enabled = !enabled;
+          try { localStorage.setItem(storeKey, enabled ? 'on' : 'off'); } catch (e) { /* noop */ }
+          setLabel();
+          if (enabled) ensure();
+        });
+      }
+      return { beep, get enabled() { return enabled; } };
+    })();
+
+    /* ═══════════════════════════════════════════════════════════
+       DESCUBRIMIENTO — cada cita abierta suma evidencia (localStorage).
+    ═══════════════════════════════════════════════════════════ */
+    const DISCOVERY_TOTAL = quotes.length || 100;
+    const discoveryStore = (() => {
+      try {
+        const v = JSON.parse(localStorage.getItem('d3discovery') || '[]');
+        if (Array.isArray(v)) return new Set(v.map(String));
+      } catch (e) { /* noop */ }
+      return new Set();
+    })();
+    function markDiscovery(q) {
+      if (!q) return;
+      const id = `${String(q.date || '')}|${q.participant || ''}|${String(q.year || '')}`;
+      discoveryStore.add(id);
+      try { localStorage.setItem('d3discovery', JSON.stringify([...discoveryStore])); } catch (e) { /* noop */ }
+      updateDiscoveryUI();
+    }
+    function updateDiscoveryUI() {
+      const n = discoveryStore.size;
+      const text = document.getElementById('discoveryText');
+      const fill = document.getElementById('discoveryFill');
+      if (text) text.textContent = `Evidencia ${Math.min(n, DISCOVERY_TOTAL)}/${DISCOVERY_TOTAL}`;
+      if (fill) fill.style.width = `${Math.min(100, (n / DISCOVERY_TOTAL) * 100)}%`;
+    }
+    updateDiscoveryUI();
+
+    /* ═══════════════════════════════════════════════════════════
+       RECORRIDO GUIADO — un camino recomendado de ~5 min.
+       Cambia los IDs si reordenas las secciones.
+    ═══════════════════════════════════════════════════════════ */
+    (function initGuidedTour() {
+      const btn = document.getElementById('guidedTour');
+      if (!btn) return;
+      const ids = ['hero', 'stageRoom', 'stageAxes', 'stageVoices', 'stageActs', 'stageTimeline', 'stageQuotes', 'stageClosing'];
+      let index = 0;
+      btn.addEventListener('click', () => {
+        const el = document.getElementById(ids[index % ids.length]);
+        index += 1;
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' && document.activeElement === btn) {
+          if (index >= ids.length) index = 0;
+          btn.click();
+        }
+      });
+    })();
+
     function openQuote(i, anchor) {
       const q = quotes[i];
       if (!q) return;
@@ -5139,6 +5357,8 @@
       }
       document.getElementById('quotePanel').classList.add('visible');
       positionQuotePanel(anchor);
+      soundEngine.beep(q.label, q.score);
+      markDiscovery(q);
     }
 
     let hoveredPoint = false;
@@ -6546,11 +6766,24 @@
         particleStoryMix.timeline * 0.78,
         particleStoryMix.quotes * 0.70
       );
-      /* El dato contextual se atenúa, pero no cae por debajo de un umbral
-         visible: un alfa global demasiado bajo vuelve cualquier color oscuro
-         indistinguible del fondo en las escenas posteriores. */
-      const stageAlpha = Math.max(0.56, 1 - 0.72 * stageDensity);
-      pMat.opacity = (0.82 - 0.42 * scatterProgress) * (1 - 0.5 * veilShape) * stageAlpha;
+      /* El dato contextual se atenúa, pero nunca se apaga: la Sala es UN solo
+         mundo visual, así que la nube permanece como atmósfera de fondo en
+         todos los capítulos (solo cede protagonismo al dato activo). */
+      const stageAlpha = Math.max(0.36, 1 - 0.60 * stageDensity);
+      const ambientMin = Math.max(0.42, 0.82 - 0.30 * scatterProgress);
+      pMat.opacity = ambientMin * (1 - 0.5 * veilShape) * stageAlpha;
+
+      /* Figuras de la sala: oscilación/giro sutil para que aún los placeholders
+         (tus futuros GLB de Blender) se sientan parte del mundo. Cuando subas
+         el .glb, reemplázalo y esta animación lo acompaña. */
+      if (figureSystem) {
+        figureSystem.figures.forEach((record) => {
+          if (record.placeholder) {
+            record.placeholder.rotation.y = time * 0.18;
+            record.placeholder.position.y = Math.sin(time * 0.6 + record.def.x) * 0.04;
+          }
+        });
+      }
 
       if (renderer) renderer.render(scene, camera);
     }
