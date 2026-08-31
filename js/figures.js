@@ -20,7 +20,11 @@ export const FIGURE_DEFS = [
     subtitle: 'Equilibrio hawkish / dovish',
     glb: 'figures/balanza.glb',
     available: true,
-    x: 0, y: 0, z: -4.6,
+    /* Centro y al FONDO de la La Sala (pieza central, tipo museo).
+       La cámara entra mirando a z=-2.0; a z=-4.8 queda detrás de la nube
+       de partículas (que se despeja al cruzar) y la luz de acento la
+       ilumina desde el frente. */
+    x: 0, y: 0, z: -4.8,
     scale: 1.1,
     color: 0xffd76a,
     /* Acabado PIEDRA mate (limestone): la figura no compite con la moneda

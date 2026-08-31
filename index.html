@@ -4551,6 +4551,24 @@
     let figureSystem = initFigureSystem(scene, { debug: DEBUG_MODE });
 
     /* ────────────────────────────────
+       Luz de acento tipo museo para las figuras centrales de la sala.
+       Se enciende al cruzar el umbral (figureReveal→1) y apunta al centro
+       visual de la estatua: la piedra mate destaca sobre el navy sin volver
+       a competir con la nube de partículas (que además se despeja al frente).
+    ──────────────────────────────── */
+    const figureAccent = new THREE.SpotLight(0xffd9a8, 0, 9, 0.55, 0.62, 1.4);
+    figureAccent.position.set(0, 2.8, -3.0);
+    const figureAccentTarget = new THREE.Object3D();
+    figureAccentTarget.position.set(0, 0.6, -4.8);
+    figureAccent.target = figureAccentTarget;
+    scene.add(figureAccent);
+    scene.add(figureAccentTarget);
+    /* Relleno frío desde la izquierda para no dejar la piedra plana. */
+    const figureFill = new THREE.PointLight(0x9fb4d8, 0, 8, 1.8);
+    figureFill.position.set(-2.4, 1.4, -2.4);
+    scene.add(figureFill);
+
+    /* ────────────────────────────────
        Door light rig — spotlights dedicados (no reutiliza los de la moneda)
     ──────────────────────────────── */
     const doorSpots = [];
@@ -7076,7 +7094,14 @@
          todos los capítulos (solo cede protagonismo al dato activo). */
       const stageAlpha = Math.max(0.36, 1 - 0.60 * stageDensity);
       const ambientMin = Math.max(0.42, 0.82 - 0.30 * scatterProgress);
-      pMat.opacity = ambientMin * (1 - 0.5 * veilShape) * stageAlpha;
+      /* Cuando la estatua central está al frente (dentro de La Sala), el
+         centro se despeja de partículas: la nube queda como polvo de fondo
+         (nunca se apaga) pero deja de ocultar a la figura. figureClear es
+         1 fuera de la sala, así el resto de la pieza no cambia. */
+      const figureClear = (DOOR_MODE === 'doorway')
+        ? 1 - 0.55 * THREE.MathUtils.smoothstep((roomSwarmT - 0.1) / 0.5, 0, 1)
+        : 1;
+      pMat.opacity = ambientMin * (1 - 0.5 * veilShape) * stageAlpha * figureClear;
 
       /* Figuras de la sala: se muestran recién al cruzar el umbral, nunca en
          el hero (en la captura anterior los placeholders saturaban la portada).
@@ -7088,12 +7113,26 @@
         figureSystem.group.visible = figureReveal > 0.01;
         figureSystem.group.scale.setScalar(0.86 + 0.14 * figureReveal);
         figureSystem.group.position.y = (1 - figureReveal) * 0.5;
+        /* Sigue la iluminación de las figuras (placeholder no enciende nada):
+           la estatua se enciende como pieza de museo al cruzar y el relleno
+           frío por la izquierda le da volumen a la piedra. */
+        let statueReady = false;
         figureSystem.figures.forEach((record) => {
           if (record.placeholder) {
             record.placeholder.rotation.y = time * 0.18 * figureReveal;
             record.placeholder.position.y = Math.sin(time * 0.6 + record.def.x) * 0.04 * figureReveal;
           }
+          if (record.model) statueReady = true;
         });
+        const statueT = statueReady ? figureReveal : 0;
+        figureAccent.intensity = statueT * 280;
+        figureAccent.position.x = figureSystem.group.position.x;
+        figureAccentTarget.position.set(
+          figureSystem.group.position.x,
+          0.6,
+          figureSystem.group.position.z
+        );
+        figureFill.intensity = statueT * 7;
       }
 
       if (renderer) renderer.render(scene, camera);
