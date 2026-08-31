@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>In the room where monetary policy happens: Learning from Two Decades of Central Bank Deliberation in Chile</title>
+  <title>In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile</title>
 
   <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
   <meta name="theme-color" content="#0a0e1a" />
-  <meta property="og:title" content="In the room where monetary policy happens: Learning from Two Decades of Central Bank Deliberation in Chile" />
+  <meta property="og:title" content="In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile" />
   <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
   <meta property="og:type" content="website" />
 
@@ -52,9 +52,9 @@
          los coeficientes vw; los mínimos (móvil) respetan legibilidad:
          cuerpo ≥16px y micro ≥12px (recomendación WCAG / clamp()).
          Ver best practices: min 16px cuerpo, máximo ≤2.5× mínimo. */
-      --fs-hero: clamp(18px, 2.6vw, 34px);
-      --fs-h2: clamp(22px, 3.2vw, 40px);
-      --fs-h3: clamp(16px, 1.8vw, 22px);
+      --fs-hero: clamp(18px, 2.6vw, 46px);
+      --fs-h2: clamp(22px, 3.2vw, 52px);
+      --fs-h3: clamp(16px, 1.8vw, 24px);
       --fs-body: clamp(16px, 1.9vw, 19px);
       --fs-small: clamp(13px, 1.3vw, 16px);
       --fs-micro: clamp(12px, 0.95vw, 13px);
@@ -990,8 +990,8 @@
     .legend-dot.dovish { color: var(--color-dovish); background: var(--color-dovish); }
     .word-evolution-chart-wrap {
       width: 100%;
-      height: clamp(270px, 39vh, 410px);
-      overflow: hidden;
+      height: clamp(300px, 42vh, 440px);
+      overflow: visible; /* las etiquetas del borde derecho no se cortan */
       border-top: 1px solid rgba(255,255,255,0.08);
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
@@ -1007,11 +1007,11 @@
     }
     #wordEvolutionSvg .word-axis-label {
       fill: var(--color-text-faint);
-      font: 11px var(--font-body);
+      font: 13px var(--font-body);
       font-variant-numeric: tabular-nums;
     }
     #wordEvolutionSvg .word-lane-label {
-      font: 600 10px var(--font-body);
+      font: 600 12px var(--font-body);
       letter-spacing: 2px;
       text-transform: uppercase;
     }
@@ -1035,7 +1035,7 @@
     #wordEvolutionSvg .word-point.hawkish { fill: var(--color-gold); }
     #wordEvolutionSvg .word-point.dovish { fill: var(--color-dovish); }
     #wordEvolutionSvg .word-end-label {
-      font: 600 12px var(--font-display);
+      font: 600 14px var(--font-display);
     }
     #wordEvolutionSvg .word-end-label.hawkish { fill: var(--color-gold); }
     #wordEvolutionSvg .word-end-label.dovish { fill: var(--color-dovish); }
@@ -2363,9 +2363,9 @@
       .word-evolution-board-head { align-items: flex-start; margin-bottom: 5px; }
       .word-evolution-label { font-size: 11px; letter-spacing: 1.2px; }
       .word-evolution-legend { gap: 10px; font-size: 10px; }
-      .word-evolution-chart-wrap { height: clamp(230px, 36vh, 310px); }
-      #wordEvolutionSvg .word-axis-label { font-size: 10px; }
-      #wordEvolutionSvg .word-end-label { font-size: 11px; }
+      .word-evolution-chart-wrap { height: clamp(260px, 37vh, 340px); }
+      #wordEvolutionSvg .word-axis-label { font-size: 12px; }
+      #wordEvolutionSvg .word-end-label { font-size: 14px; }
       .word-evolution-readout { gap: 9px; margin-top: 9px; }
       .word-evolution-year { font-size: 28px; }
       .word-evolution-readout-text { font-size: 12px; }
@@ -2458,7 +2458,7 @@
       .word-evolution-lead { font-size: 12px; line-height: 1.3; }
       .word-evolution-board { padding: 11px; }
       .word-evolution-legend { gap: 7px; font-size: 9px; }
-      .word-evolution-chart-wrap { height: 190px; }
+      .word-evolution-chart-wrap { height: 220px; }
       .word-evolution-readout { margin-top: 6px; }
       .word-evolution-year { font-size: 24px; }
       .word-evolution-readout-text { font-size: 10px; }
@@ -2494,7 +2494,7 @@
       .word-evolution-title { margin-top: 5px; font-size: clamp(24px, 4vw, 34px); }
       .word-evolution-lead { margin-top: 6px; font-size: 14px; line-height: 1.3; }
       .word-evolution-board { padding: 12px 14px; }
-      .word-evolution-chart-wrap { height: 210px; }
+      .word-evolution-chart-wrap { height: 240px; }
       .word-evolution-readout { margin-top: 5px; }
       .word-evolution-note { display: none; }
       .stage-voices { height: 300vh; }
@@ -3150,8 +3150,8 @@
        perder un ancho de lectura controlado. */
     @media (min-width: 1800px) and (min-height: 621px) {
       .hero-title h1 {
-        font-size: clamp(34px, 2.05vw, 46px);
-        line-height: 1.15;
+        font-size: clamp(42px, 2.4vw, 58px);
+        line-height: 1.12;
       }
 
       .hero-title p {
@@ -3651,7 +3651,7 @@
       <div class="brand" style="opacity:0.55">Política Monetaria</div>
     </div>
     <div class="hero-title">
-      <h1>In the room where monetary policy happens:<br>Learning from Two Decades of Central Bank Deliberation in Chile</h1>
+      <h1>In the room where monetary policy happens:<br>Learning from Sixteen Years of Central Bank Deliberation in Chile</h1>
       <p>Reuniones de política monetaria en Chile &middot; 2000&ndash;2015</p>
     </div>
     <div class="scroll-hint" id="scrollHint">
@@ -5970,6 +5970,15 @@
        taxonomía de palabras se mantiene deliberadamente legible para que el
        lector pueda seguir la evidencia hasta el acta.
     ──────────────────────────────── */
+    /* Rebuild-safe: al redimensionar la ventana (o cargar fuentes) la gráfica
+       de evolución se vuelve a dibujar. Antes tomaba el tamaño UNA sola vez y
+       usaba preserveAspectRatio:none, así que al cambiar el viewport el texto
+       y el trazo se estiraban (problema típico entre local y GitHub Pages). */
+    let wordEvolutionDisposers = [];
+    function disposeWordEvolution() {
+      wordEvolutionDisposers.forEach((dispose) => { try { dispose(); } catch (e) { /* noop */ } });
+      wordEvolutionDisposers.length = 0;
+    }
     function initWordEvolution() {
       const svg = document.getElementById('wordEvolutionSvg');
       const intro = document.querySelector('.word-evolution-intro');
@@ -5977,6 +5986,11 @@
       const yearEl = document.getElementById('wordEvolutionYear');
       const readoutEl = document.getElementById('wordEvolutionReadout');
       if (!svg || !intro || !board || !yearEl || !readoutEl || !quotes.length || !window.d3) return;
+
+      /* Limpiar el dibujo/animaciones previos antes de reconstruir. */
+      disposeWordEvolution();
+      d3.select(svg).selectAll('*').remove();
+      svg.removeAttribute('viewBox');
 
       const years = d3.range(2000, 2016);
       const labels = ['hawkish', 'dovish'];
@@ -6059,7 +6073,10 @@
       const x = d3.scaleLinear().domain([2000, 2015]).range([margin.left, W - margin.right]);
       const svgEl = d3.select(svg)
         .attr('viewBox', `0 0 ${W} ${H}`)
-        .attr('preserveAspectRatio', 'none');
+        /* Si el ratio del contenedor cambia entre el init y el redibujo, 'meet'
+           escala el contenido sin estirar el texto ni el trazo. Con 'none' la
+           etiquetas se deformaban al cambiar de viewport (local vs GitHub). */
+        .attr('preserveAspectRatio', 'xMidYMid meet');
       const chartGroup = svgEl.append('g').attr('class', 'word-chart-group');
       const cursor = svgEl.append('line')
         .attr('class', 'word-cursor')
@@ -6163,14 +6180,20 @@
       };
 
       updateYear(2000, 0);
-      svg.addEventListener('pointermove', (event) => {
+      const onPointerMove = (event) => {
         const rect = svg.getBoundingClientRect();
         const localX = ((event.clientX - rect.left) / rect.width) * W;
         updateYear(x.invert(localX), 1);
+      };
+      const onPointerLeave = () => updateYear(2000 + 15 * 0.5, 1);
+      svg.addEventListener('pointermove', onPointerMove);
+      chartWrap?.addEventListener('pointerleave', onPointerLeave);
+      wordEvolutionDisposers.push(() => {
+        svg.removeEventListener('pointermove', onPointerMove);
+        chartWrap?.removeEventListener('pointerleave', onPointerLeave);
       });
-      chartWrap?.addEventListener('pointerleave', () => updateYear(2000 + 15 * 0.5, 1));
 
-      gsap.timeline({
+      const introBoardTl = gsap.timeline({
         scrollTrigger: {
           trigger: '#stageWordEvolution',
           start: 'top 85%',
@@ -6181,8 +6204,12 @@
         .fromTo(intro, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.04)
         .fromTo(board, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.15, ease: 'none' }, 0.16)
         .to(intro, { opacity: 0, y: -14, duration: 0.08, ease: 'none' }, 0.90);
+      wordEvolutionDisposers.push(() => {
+        try { introBoardTl.scrollTrigger?.kill(); } catch (e) { /* noop */ }
+        try { introBoardTl.kill(); } catch (e) { /* noop */ }
+      });
 
-      ScrollTrigger.create({
+      const wordEvolutionST = ScrollTrigger.create({
         trigger: '#stageWordEvolution',
         start: 'top 85%',
         end: 'bottom bottom',
@@ -6192,6 +6219,7 @@
           updateYear(2000 + self.progress * 15, reveal);
         },
       });
+      wordEvolutionDisposers.push(() => wordEvolutionST.kill());
     }
 
     function animate() {
@@ -6865,6 +6893,7 @@
       d3ResizeT = setTimeout(() => {
         initD3Axes();
         buildParticleStoryTargets();
+        initWordEvolution();
         if (activeParticleFocus >= 0) syncAxesMarkFocus(activeParticleFocus);
       }, 150);
     }
@@ -7649,12 +7678,12 @@
                 .call(d3.axisBottom(x)
           .ticks(d3.timeYear.every(shortViewport && width < 520 ? 4 : 2))
           .tickFormat(d3.timeFormat('%Y')))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(12px, 1.05vw, 13px)');
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(14px, 1.25vw, 16px)');
       g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');
 
       g.append('g')
         .call(d3.axisLeft(y).ticks(5).tickFormat(d => d > 0 ? `+${d}` : d))
-        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(12px, 1.05vw, 13px)');
+        .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(14px, 1.25vw, 16px)');
       g.selectAll('.domain').style('stroke', 'none');
       g.selectAll('.tick line').style('stroke', 'rgba(255,255,255,0.06)');
 
@@ -7746,7 +7775,7 @@
         .attr('x', d => x(d.date))
         .attr('y', -8)
         .attr('text-anchor', 'middle')
-        .style('font-size', 'clamp(12px, 1.05vw, 13px)')
+        .style('font-size', 'clamp(14px, 1.25vw, 16px)')
         .style('fill', '#ffd76a')
         .style('opacity', 0.7)
         .text(d => d.label);
