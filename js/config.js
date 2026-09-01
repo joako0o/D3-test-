@@ -141,10 +141,39 @@ export const CONFIG = {
     shadowWidthMul: 1.3,
     shadowDepthMul: 2.2,
 
-    /* ── Materiales e Iluminación ── */
+    /* ── Materiales e Iluminación ──────────────────────────────────────
+       OJO: estos cuatro valores son los de la rama HERO_DOOR_LOCKUP = false,
+       que hoy NO se ejecuta. El acabado que se ve en pantalla es el de
+       `leaf` / `frameAnim`, más abajo. */
     color: '#ffd76a', metalness: 1.0, roughness: 0.22,
     envMapIntensity: 1.3,
     emissive: '#3d2508', emissiveIntensity: 0.05,
+
+    /* ── Acabado de la puerta a lo largo del scroll ──────────────────────
+       'hero' = still de portada (hojas apagadas, detrás de la moneda).
+       'meet' = Acto 2, La Reunión (hojas de oro, la puerta protagoniza).
+       animate() interpola entre ambos con leafT. Estos ocho números estaban
+       escritos a mano DENTRO de animate(), así que tocar el config no hacía
+       absolutamente nada: son la única palanca real del acabado.
+
+       LOS VALORES SON LOS MISMOS QUE HABÍA. Se movieron aquí sin cambiarlos
+       (equivalencia de píxeles verificada), para que se puedan ajustar.
+
+       Aviso para quien venga a subir el relieve por aquí: NO se puede.
+       El normal map de las hojas (textura_puerta_bcch, 2048x2048 dentro de
+       puerta-draco.glb) es un color liso RGB(128,127,255) = relieve CERO, un
+       bake que salió vacío. Medido: mover el foco key no cambia un píxel, y
+       bajar la metalicidad tampoco saca los paneles. Los cuadrados que se ven
+       en Blender no están en el archivo exportado, ni en malla ni en textura.
+       Hay que rehacer el export, no la iluminación. */
+    leaf: {
+      hero: { metalness: 0.12, roughness: 0.92, envMapIntensity: 0.12 },
+      meet: { metalness: 1.00, roughness: 0.22, envMapIntensity: 1.30 },
+    },
+    frameAnim: {
+      hero: { metalness: 0.08, roughness: 0.88, envMapIntensity: 0.28, bumpScale: 0.045 },
+      meet: { metalness: 0.42, roughness: 0.38, envMapIntensity: 0.72, bumpScale: 0.028 },
+    },
     spots: {
       key:  { color: 0xffe3b5, intensity: 120, angle: 0.45, penumbra: 0.5, decay: 1.2, distance: 0, x: 1.2, y: 5.5, z: 2.5, tx: 0, ty: 0.2, tz: 0 },
       rim:  { color: 0x90b9ff, intensity: 45, angle: 0.6, penumbra: 0.7, decay: 1.2, distance: 0, x: -4.5, y: 4.0, z: -4.5, tx: 0, ty: -0.2, tz: 0 },

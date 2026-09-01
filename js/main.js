@@ -1872,10 +1872,11 @@ function animate() {
       const leafT = THREE.MathUtils.smoothstep(scatterProgress, 0.28, 0.9);
       for (let i = 0; i < doorLeafMats.length; i++) {
         const m = doorLeafMats[i];
+        const LF = CONFIG.door.leaf;
         m.color.copy(doorLeafColorVoid).lerp(doorLeafColorGold, leafT);
-        m.metalness = THREE.MathUtils.lerp(0.12, 1.0, leafT);
-        m.roughness = THREE.MathUtils.lerp(0.92, 0.22, leafT);
-        m.envMapIntensity = THREE.MathUtils.lerp(0.12, 1.3, leafT);
+        m.metalness = THREE.MathUtils.lerp(LF.hero.metalness, LF.meet.metalness, leafT);
+        m.roughness = THREE.MathUtils.lerp(LF.hero.roughness, LF.meet.roughness, leafT);
+        m.envMapIntensity = THREE.MathUtils.lerp(LF.hero.envMapIntensity, LF.meet.envMapIntensity, leafT);
       }
       for (let i = 0; i < doorLeafMeshes.length; i++) {
         doorLeafMeshes[i].visible = leafT > 0.12;
@@ -1884,10 +1885,11 @@ function animate() {
       for (let i = 0; i < doorFrameMats.length; i++) {
         const m = doorFrameMats[i];
         m.color.copy(doorFrameColorHero).lerp(doorFrameColorMeet, leafT);
-        m.metalness = THREE.MathUtils.lerp(0.08, 0.42, leafT);
-        m.roughness = THREE.MathUtils.lerp(0.88, 0.38, leafT);
-        m.envMapIntensity = THREE.MathUtils.lerp(0.28, 0.72, leafT);
-        if (m.bumpScale != null) m.bumpScale = THREE.MathUtils.lerp(0.045, 0.028, leafT);
+        const FR = CONFIG.door.frameAnim;
+        m.metalness = THREE.MathUtils.lerp(FR.hero.metalness, FR.meet.metalness, leafT);
+        m.roughness = THREE.MathUtils.lerp(FR.hero.roughness, FR.meet.roughness, leafT);
+        m.envMapIntensity = THREE.MathUtils.lerp(FR.hero.envMapIntensity, FR.meet.envMapIntensity, leafT);
+        if (m.bumpScale != null) m.bumpScale = THREE.MathUtils.lerp(FR.hero.bumpScale, FR.meet.bumpScale, leafT);
         if (m.emissive) {
           m.emissive.setRGB(0, 0, 0);
           m.emissiveIntensity = 0;
