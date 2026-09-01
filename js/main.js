@@ -1537,6 +1537,99 @@ const _roomLookTarget = new THREE.Vector3(
   CONFIG.door?.roomLook?.y ?? 0.45,
   CONFIG.door?.roomLook?.z ?? -2.0
 );
+
+/* ── La Sala: encuadre contra el copy, igual que la portada ────────────
+ * El retablo (pedestal + estatua) lo coloca la cámara; el bloque de texto lo
+ * maqueta el CSS al fondo del contenedor sticky. Dos sistemas que no se ven
+ * entre sí, otra vez. Con la mira fija en `roomLook.y = 0.55` la base del
+ * pedestal caía siempre al ~65% del alto, pero el titular "LA SALA" sube al
+ * 65% en portátiles bajos: medido, a 1440x764 y 1366x768 quedaban a 2 y 3 px.
+ *
+ * Aquí NO se estima nada: se proyecta la caja real del grupo de figuras con
+ * una cámara de prueba en la pose exacta de la sala, y se resuelve qué mira
+ * deja la base del retablo a `gapRatio` del alto por encima del titular.
+ * Como la proyección es casi lineal en `lookY`, basta una secante de dos
+ * evaluaciones. Si el GLB cambia de tamaño, esto se recalibra solo.
+ *
+ * Signo: SUBIR la mira BAJA la figura en pantalla.
+ */
+const roomTitleEl = document.getElementById('roomTitle');
+const _roomProbeCam = new THREE.PerspectiveCamera();
+const _roomProbeBox = new THREE.Box3();
+const _roomProbePoint = new THREE.Vector3();
+const ROOM_LOOK_Y_BASE = CONFIG.door?.roomLook?.y ?? 0.45;
+let roomAimDirty = true;
+
+/* Y en píxeles de pantalla del punto más bajo del retablo, si la cámara de
+   sala mirase a `lookY`. */
+function projectRoomFootY(lookY) {
+  const { width: w, height: h } = getViewportSize();
+  const cam = _roomProbeCam;
+  cam.fov = CONFIG.camera.fov;
+  cam.aspect = w / h;
+  cam.near = 0.1;
+  cam.far = 100;
+  cam.position.set(
+    CONFIG.camera.x,
+    CONFIG.door?.roomCamY ?? 0.62,
+    CONFIG.door?.roomCamZ ?? -0.5
+  );
+  cam.up.set(0, 1, 0);
+  cam.lookAt(CONFIG.door?.roomLook?.x ?? 0, lookY, CONFIG.door?.roomLook?.z ?? -2.0);
+  cam.updateMatrixWorld(true);
+  cam.updateProjectionMatrix();
+  _roomProbePoint.set(
+    CONFIG.room?.figure?.x ?? 0,
+    _roomProbeBox.min.y,
+    CONFIG.room?.figure?.z ?? -4.8
+  ).project(cam);
+  return (1 - _roomProbePoint.y) * 0.5 * h;
+}
+
+function refreshRoomAim() {
+  roomAimDirty = false;
+  if (!figureSystem || !roomTitleEl) return;
+  /* Solo el PEDESTAL, no `figureSystem.group`: el grupo también contiene los
+     placeholders de las figuras aún sin modelar (inflación, brote…), que
+     viven a los lados y hundirían el mínimo en Y. */
+  const plinthRoot = figureSystem.figures.get('soporte')?.root;
+  if (!plinthRoot) return;
+
+  /* El grupo se escala y se desplaza cada frame según `figureReveal`. La caja
+     hay que medirla en el estado ASENTADO (escala 1, y 0) o el encuadre
+     dependería de por dónde iba el scroll cuando se redimensionó. */
+  const g = figureSystem.group;
+  const prevScale = g.scale.x;
+  const prevY = g.position.y;
+  g.scale.setScalar(1);
+  g.position.y = 0;
+  g.updateMatrixWorld(true);
+  _roomProbeBox.setFromObject(plinthRoot);
+  g.scale.setScalar(prevScale);
+  g.position.y = prevY;
+  g.updateMatrixWorld(true);
+  if (_roomProbeBox.isEmpty() || !Number.isFinite(_roomProbeBox.min.y)) return;
+
+  const { height: h } = getViewportSize();
+  /* offsetTop del titular DENTRO del contenedor sticky = su posición en
+     pantalla mientras la sección está fijada, y no depende del scroll. */
+  const titleTop = roomTitleEl.offsetTop;
+  if (!Number.isFinite(titleTop) || titleTop <= 0) return;
+  const target = titleTop - Math.max(24, h * (HERO.gapRatio ?? 0.045));
+
+  const y0 = ROOM_LOOK_Y_BASE;
+  const y1 = ROOM_LOOK_Y_BASE + 0.15;
+  const s0 = projectRoomFootY(y0);
+  const s1 = projectRoomFootY(y1);
+  const slope = (s1 - s0) / (y1 - y0);          // px por unidad de mundo
+  if (!Number.isFinite(slope) || Math.abs(slope) < 1) return;
+
+  _roomLookTarget.y = THREE.MathUtils.clamp(
+    y0 + (target - s0) / slope,
+    ROOM_LOOK_Y_BASE - 0.7,
+    ROOM_LOOK_Y_BASE + 0.35
+  );
+}
 /* Mira durante el cruce del umbral:
    _lookBase  = mira neutra de "La Reunión" (idéntica a la rama sin cruce,
                 así el primer frame del cruce es continuo con el último sin él).
@@ -3062,6 +3155,9 @@ function animate() {
     ? THREE.MathUtils.smoothstep((roomSwarmT - 0.08) / 0.55, 0, 1)
     : (currentStage !== 1 ? 1 : 0);
   if (figureSystem) {
+    /* El bbox solo es válido cuando los GLB han cargado; por eso se resuelve
+       aquí (una vez por resize) y no en syncViewportAndObjects(). */
+    if (roomAimDirty) refreshRoomAim();
     figureSystem.group.visible = figureReveal > 0.01;
     figureSystem.group.scale.setScalar(0.86 + 0.14 * figureReveal);
     figureSystem.group.position.y = (1 - figureReveal) * 0.5;
@@ -3142,6 +3238,7 @@ function syncViewportAndObjects() {
   }
   syncOrbitPointScale();
   applyCoinScale();
+  roomAimDirty = true;   // el retablo se reencuadra contra el titular de La Sala
   applyDoorScale();
   applyDoorTextStyle();
 }
@@ -3802,8 +3899,24 @@ if (DOOR_MODE === 'doorway') {
     gsap.timeline({
       scrollTrigger: {
         trigger: '#stageRoom',
-        start: 'top 85%',
-        end: '+=160%',
+        /* OJO CON ESTA VENTANA. Antes era `start: 'top 85%', end: '+=160%'`,
+           que arranca 765 px ANTES de que el sticky se fije. El bloque de
+           texto vive al final del contenedor (justify-content: flex-end), o
+           sea que durante esos 765 px está por debajo del borde inferior de
+           la ventana: las cuatro entradas se reproducían enteras fuera de
+           pantalla y, cuando La Sala por fin se veía, los cuatro textos ya
+           estaban puestos y lo único que quedaba por delante era el fundido
+           de salida. La sección no tenía entrada, solo decadencia.
+           Medido: en scroll = top del stage, la línea de tiempo ya iba por
+           0,53 y las cuatro entradas terminan en 0,51.
+
+           `top top` → `bottom bottom` mapea la línea de tiempo EXACTAMENTE
+           sobre el tramo en que el sticky está fijo, que es justo cuando el
+           texto se ve. No confundir con el trigger del cruce del umbral, que
+           unas líneas más arriba sí usa `top 85%` a propósito: el dolly a
+           través de la puerta tiene que haber terminado antes de fijarse. */
+        start: 'top top',
+        end: 'bottom bottom',
         scrub: true,
       },
     })
