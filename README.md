@@ -25,35 +25,115 @@ publica.
 
 ## Estructura del proyecto
 
+Cinco capas. La regla es que cada una solo puede depender de las de arriba.
+
+| Capa | Dónde | Qué es |
+|---|---|---|
+| **Datos** | `js/quotes.js` | Las 99 citas. Script clásico, publica `window.QUOTES`. |
+| **Configuración** | `js/config.js` | Todos los números de la escena. Ni una línea de lógica. |
+| **Funciones puras** | `js/topics.js`, `js/utils.js` | Sin DOM, sin Three.js. Testables tal cual. |
+| **Entorno** | `js/viewport.js` | El tamaño del lienzo. Lee el DOM, nada más. |
+| **Sistemas** | `js/figures.js` | El sistema de figuras 3D: carga, apilado, placeholders. |
+| **Secciones** | `js/sections/*.js` | Una sección de scrollytelling cada uno. Reciben sus datos por parámetro. |
+| **Aplicación** | `js/main.js` | La escena, el bucle de render y el resto de secciones. |
+
+Una sección solo puede vivir en `js/sections/` si **no toca la escena 3D**. En
+cuanto necesita saber qué partícula está señalada, deja de ser autónoma; ver
+el Paso 2 del plan más abajo.
+
 ```
-├── index.html              ← Solo HTML: 661 líneas de marcado y nada más
-├── css/                    ← Las hojas de estilo, una por sección (ver css/README.md)
+├── index.html              661 líneas · SOLO marcado: ni un <style>, ni un <script> con cuerpo
+├── css/                    22 hojas · 3.970 líneas · el prefijo numérico ES el orden de cascada
+│   └── README.md           qué hace cada hoja y por qué está en ese número
 ├── js/
-│   ├── main.js             ← Punto de entrada: escena 3D + scrollytelling
-│   ├── config.js           ← TODOS los números de la escena (cámara, luces, órbitas…)
-│   ├── figures.js          ← Sistema de figuras 3D (carga, pedestales, placeholders)
-│   ├── topics.js           ← Taxonomía temática y normalización de texto (puro)
-│   ├── utils.js            ← Funciones puras compartidas
-│   ├── quotes.js           ← 99 citas de reuniones del Banco Central
-│   ├── three.module.js     ← Three.js core
-│   ├── vendor/             ← GSAP, D3, Lenis, SplitText
-│   ├── loaders/            ← GLTFLoader, DRACOLoader
-│   ├── utils/              ← BufferGeometryUtils
-│   ├── controls/           ← OrbitControls
-│   ├── environments/       ← RoomEnvironment
-│   └── objects/            ← Reflector
-├── tools/
-│   └── smoke-test.mjs      ← `npm run check`: arranca el sitio en jsdom
+│   ├── main.js           4.241 líneas · escena 3D + secciones + scrollytelling  ⚠ ver "Deuda"
+│   ├── config.js           265 · cámara, luces, moneda, puerta, órbitas, La Sala, HERO
+│   ├── viewport.js          28 · getViewportSize() / isCompactWidth(), el tamaño del lienzo
+│   ├── figures.js          357 · sistema de figuras (carga GLB, apila sobre pedestal, placeholders)
+│   ├── sections/           secciones extraídas: DOM + D3, cero dependencias del 3D
+│   │   ├── word-evolution.js  275 · "El lenguaje cambia"
+│   │   └── timeline.js        252 · "Índice de orientación por año"
+│   ├── quotes.js           893 · las 99 citas (dato, no código)
+│   ├── topics.js            21 · taxonomía temática + normalización de texto (puro)
+│   ├── utils.js             13 · particleRandom (puro)
+│   ├── three.module.js         Three.js r160
+│   ├── vendor/                 GSAP, ScrollTrigger, SplitText, CustomEase, D3, Lenis, Draco
+│   └── loaders/ utils/ controls/ environments/ objects/    addons de Three.js
+├── tools/smoke-test.mjs    204 · `npm run check`
 ├── scripts/screenshots/
-│   ├── capture.mjs         ← `npm run shots`: PNG de cada sección con WebGL real
-│   └── hero-check.mjs      ← `npm run hero:check`: la portada en 12 viewports
-├── figures/
-│   ├── balanza.glb         ← Estatua de La Justicia (Draco, 177 KB)
-│   └── soporte.glb         ← Pedestal de la estatua (Draco, 28 KB)
-├── monedav5-draco.glb      ← Modelo 3D de moneda (Draco + texturas WebP, 434 KB)
-├── puerta-draco.glb        ← Modelo 3D de puerta (Draco + texturas WebP, 76 KB)
-└── servidor.bat            ← Script para servidor local en Windows
+│   ├── capture.mjs         161 · `npm run shots`
+│   └── hero-check.mjs      284 · `npm run hero:check`
+├── figures/                balanza.glb (177 KB) · soporte.glb (28 KB) · README.md
+├── monedav5-draco.glb      434 KB
+├── puerta-draco.glb         76 KB
+├── NARRATIVA.md            el arco narrativo: qué cuenta hoy y qué debería contar
+└── PLAN_NIVEL_PREMIUM.md
 ```
+
+### Mapa de `js/main.js`
+
+Es el archivo que hay que saber recorrer. Va en este orden:
+
+| Líneas | Región |
+|---|---|
+| 1–160 | imports, constantes del DOM, escena, cámara, luces, estado de módulo |
+| 163–260 | figuras de La Sala + rig de luces de la puerta |
+| **276–400** | **composición del hero**: `getHeroBand()` / `getHeroCoinFrame()` |
+| 480–795 | la puerta (Acto 2): carga, escalado, texto del vano |
+| 799–945 | enjambre de partículas (memoria trazable) |
+| 948–1560 | órbitas de La Sala + panel de cita + navegación por teclado |
+| **1572** | `refreshRoomAim()` — encuadre de La Sala contra su titular |
+| **1629–1760** | **coreografía de cámara** (`cameraChoreographyStops`) |
+| 1762–2065 | Las voces — directorio editorial |
+| 2071–2435 | Navegador de actas |
+| **2441–2925** | **`animate()`** — el bucle de render |
+| 2930–3440 | mapa D3 de intervenciones + hook de señales |
+| 3443–4035 | todos los `ScrollTrigger` de todas las secciones |
+| 4038–4241 | Quotes, Closing y las "técnicas premium" (parallax, velocidad) |
+
+Los números envejecen a cada commit. Para regenerar el mapa:
+
+```bash
+grep -n "^   [A-ZÁÉÍÓÚÑa-z].*—\|^function animate" js/main.js
+```
+
+### Dónde va cada cosa nueva
+
+- **Un número que cambia cómo se ve algo** → `js/config.js`. Si estás escribiendo
+  un literal numérico en `main.js`, casi seguro es un error.
+- **Una hoja de estilo nueva** → `css/NN-nombre.css` con el número que le toque
+  por cascada, y anótala en `css/README.md`. El prefijo no es decorativo.
+- **Marcado** → `index.html`, y nada más que marcado.
+- **Una figura 3D** → `figures/` + una entrada en `FIGURE_DEFS` de `figures.js`.
+  El sistema dibuja un placeholder si el GLB aún no existe.
+
+### Rutas: la trampa que cuesta una tarde
+
+Se resuelven contra dos bases distintas y no hay forma de saberlo mirando:
+
+- Los `import` de `js/main.js` se resuelven contra **`js/`** (`./config.js`).
+- El `importmap`, los GLB y el decodificador Draco se resuelven contra
+  **`index.html`**, o sea la raíz (`figures/soporte.glb`, no `../figures/...`).
+- El CSS se resuelve contra **la hoja**, por eso `fonts.css` dice `../fonts/`.
+
+### Deuda estructural (medida, no impresiones)
+
+Esto no está bien dividido, y conviene tenerlo escrito:
+
+| Síntoma | Medida |
+|---|---|
+| `main.js` acapara el código | **4.241 líneas = 82 %** de todo el JS propio sin contar los datos |
+| Mitad del archivo no son funciones | **2.005 líneas a nivel de módulo**: es un script, no un módulo |
+| Estado global compartido | **48 variables `let` de módulo** que cualquiera de las 52 funciones puede escribir |
+| Una función hace demasiado | `animate()` = **485 líneas** (moneda, puerta, partículas, órbitas, cámara, luces) |
+| Secciones que no pertenecen ahí | `initActBrowser` 364 · `initVoiceExplorer` 298 · `initD3Axes` 164 = **826 líneas** |
+| El archivo base del CSS es el que más pisa | `00-tokens-base.css` tiene **42 `!important`** de los 68 del proyecto |
+
+Consecuencia concreta y ya observada: `openQuote`, `closeQuotePanel` y
+`activeParticleFocus` tienen zona muerta temporal (TDZ) y solo se pueden usar
+dentro de manejadores de evento. Eso es el estado compartido pasando factura.
+
+**El plan de salida** está en la sección "Lo que aún está pendiente de ordenar".
 
 ## Cómo se trabaja en este repo
 
@@ -61,6 +141,10 @@ Esto está escrito porque el proyecto llegó a tener **9.077 líneas en un solo
 `index.html`** (3.769 de CSS + 4.713 de JS + 588 de HTML), con 62 `!important`
 y sin ninguna comprobación automática. Funcionaba, pero cada cambio era una
 apuesta. Las reglas de abajo existen para que no vuelva a pasar.
+
+Que el HTML y el CSS ya estén partidos **no significa que el proyecto esté bien
+dividido**: el JS sigue concentrado en un archivo. Lo medido está en "Deuda
+estructural" y el plan para salir de ahí, en el punto 5.
 
 ### 1. Cada cosa en su archivo
 
@@ -71,6 +155,7 @@ apuesta. Las reglas de abajo existen para que no vuelva a pasar.
 | El marcado de una sección | `index.html` |
 | Una figura 3D, su pedestal o su escala | `js/figures.js` |
 | Lógica de la escena o del scroll | `js/main.js` |
+| Una comprobación automática | `tools/` o `scripts/screenshots/` |
 
 **`index.html` es solo marcado.** Nada de `<style>`, nada de `<script>` con
 código dentro, nada de `style="..."` nuevo. Si te descubres añadiendo CSS o JS
@@ -141,16 +226,57 @@ No es un extra, y ya está construido. Al añadir cosas:
 
 ### 5. Lo que aún está pendiente de ordenar
 
-Honestidad sobre la deuda que queda:
+El plan de salida de la deuda medida más arriba, **en este orden**, porque cada
+paso hace más seguro el siguiente:
 
-- `js/main.js` sigue teniendo 4.601 líneas. Las funciones grandes que quedan
-  (`animate()` 473, `initActBrowser()` 364, `initVoiceExplorer()` 298,
-  `initWordEvolution()` 242) son extraíbles a módulos, pero comparten estado
-  mutable con el bucle de render. Hacerlo bien pide poder abrir la página para
-  verificar, así que se dejó a medias a propósito en vez de a ciegas.
-- 62 `!important` heredados en el CSS.
-- Los `style="..."` inline que quedan en `index.html` son de la maqueta
-  original.
+**Paso 1 — sacar las secciones que no tocan la escena 3D. ✅ HECHO.**
+`initWordEvolution()` y `buildTimeline()` no referenciaban ni una sola
+variable del 3D: eran DOM + D3 + `quotes`. Están en
+`js/sections/word-evolution.js` y `js/sections/timeline.js`, reciben `quotes`
+por parámetro y no hacen nada por el mero hecho de importarse. `getViewportSize()`
+e `isCompactWidth()` salieron con ellas a `js/viewport.js`.
+**main.js: 4.742 → 4.241 líneas.**
+
+> **La lección del Paso 1, que vale para los demás.** Al mover la llamada a
+> `initTimeline()` unas líneas más arriba, la sección dejó de fijarse y el
+> gráfico no se dibujaba. Los `ScrollTrigger` con `pin` cambian la altura del
+> documento, así que el ORDEN DE EJECUCIÓN es parte del contrato. Extraer
+> código a un módulo es seguro; cambiar cuándo se ejecuta, no. Lo cazó
+> `npm run shots` comparando píxeles, no la lectura del diff.
+
+**Paso 2 — sacar las tres que tocan el 3D por una rendija.**
+`initActBrowser()` (364), `initVoiceExplorer()` (298) e `initD3Axes()` (164)
+solo dependen del 3D a través de `hoverIndex` y `pinnedIndex` (qué partícula
+está señalada o fijada). Eso es una *selección*, no la escena: sale a un módulo
+pequeño con `get/set` y suscripción, y las tres secciones se van detrás.
+Otras 826 líneas fuera. `main.js` bajaría de 4.241 a ≈3.400.
+
+**Paso 3 — partir `animate()`.**
+485 líneas que actualizan seis sistemas distintos por frame. Cada uno tiene su
+propio estado y se puede extraer a `update<Sistema>(t, dt)`. Este es el que más
+cuidado pide: el orden de las actualizaciones importa y no está documentado.
+
+**Paso 4 — el estado global.**
+52 `let` de módulo. Después de los pasos 1–3 quedarán muchos menos, y los que
+sobrevivan se agrupan por sistema en vez de vivir sueltos.
+
+**Cómo se valida un paso de estos.** Antes no había forma de verificar un
+refactor de este tamaño; ahora hay tres redes:
+
+```bash
+npm run check                       # arranca sin navegador: imports, ids, excepciones
+npm run shots -- --w=1440 --h=900   # las 13 secciones con WebGL real, sale 1 si hay errores
+npm run hero:check                  # la portada en 12 viewports
+```
+
+El criterio del Paso 1 fue **equivalencia de píxeles**: capturar antes,
+refactorizar, capturar después y comparar. Quedó en 0,2 % de píxeles distintos
+en las dos secciones tocadas, que es exactamente el ruido de las partículas
+animadas del fondo 3D. Menos del 0,5 % = no ha cambiado nada.
+
+**Lo que NO conviene tocar todavía:** los `style="..."` inline que quedan en
+`index.html` son de la maqueta original y varios los pisa GSAP en caliente;
+moverlos a CSS sin comprobarlo uno a uno rompe animaciones.
 
 ## Secciones del scrollytelling
 
