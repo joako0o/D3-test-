@@ -17,10 +17,17 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { initFigureSystem } from './figures.js';
 import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js';
 import { getViewportSize, isCompactWidth } from './viewport.js';
+import {
+  selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
+  voiceFocus, axesState, focusReturn, particleFocus,
+} from './interaction-state.js';
 import { initWordEvolution } from './sections/word-evolution.js';
+import { initVoiceExplorer } from './sections/voice-explorer.js';
+import { initActBrowser } from './sections/act-browser.js';
+import { initD3Axes } from './sections/axes-map.js';
 import { initTimeline } from './sections/timeline.js';
 import { TOPIC_DEFINITIONS, normalizeTopicText, topicHasTerm } from './topics.js';
-import { particleRandom } from './utils.js';
+import { particleRandom, getQuoteAxisSentiment } from './utils.js';
 
 /* Los timelines de la escena se crean durante la inicialización de los
    gráficos. Registrar los plugins antes de construir cualquiera de ellos
@@ -1205,14 +1212,14 @@ function initRoomVoiceNav() {
     /* Enfocar = "pasar el cursor": abre la cita sin robar el foco, para que
        se pueda recorrer la lista entera con el tabulador. */
     btn.addEventListener('focus', () => {
-      hoverIndex = p.quoteIndex;
+      peekQuote(p.quoteIndex);
       syncQuotePanel();
     });
     /* Activar = "fijar": abre la cita y lleva el foco al panel para leerla;
        al cerrarlo (✕ o Escape) el foco vuelve a este botón. */
     btn.addEventListener('click', () => {
-      pinnedIndex = p.quoteIndex;
-      lastFocusedCard = btn;
+      pinQuote(p.quoteIndex);
+      focusReturn.card = btn;
       openQuote(p.quoteIndex, btn.getBoundingClientRect());
       const closeBtn = document.getElementById('quotePanelClose');
       if (closeBtn) closeBtn.focus({ preventScroll: true });
@@ -1225,8 +1232,8 @@ function initRoomVoiceNav() {
      cuando el cursor abandona la nube. */
   roomVoiceNav.addEventListener('focusout', (e) => {
     if (roomVoiceNav.contains(e.relatedTarget)) return;
-    if (pinnedIndex >= 0) return;
-    hoverIndex = -1;
+    if (isPinned()) return;
+    clearPeek();
     syncQuotePanel();
   });
 }
@@ -1247,9 +1254,9 @@ initRoomVoiceNav();
 /* Devuelve el índice del orbitador cuya cita está activa (hover o fijada),
    para que el shader la resalte. -1 = ninguno. */
 function orbitFocusOwner() {
-  if (typeof activeParticleFocus !== 'number' || activeParticleFocus < 0) return -1;
+  if (typeof particleFocus.index !== 'number' || particleFocus.index < 0) return -1;
   for (let i = 0; i < orbitParams.length; i++) {
-    if (orbitParams[i].quoteIndex === activeParticleFocus) return i;
+    if (orbitParams[i].quoteIndex === particleFocus.index) return i;
   }
   return -1;
 }
@@ -1353,7 +1360,7 @@ function syncAxesMarkFocus(index) {
 function openQuote(i, anchor) {
   const q = quotes[i];
   if (!q) return;
-  activeParticleFocus = i;
+  particleFocus.index = i;
   syncAxesMarkFocus(i);
   document.getElementById('qpWho').textContent = q.participant || 'Participante anónimo';
   const tag = document.getElementById('qpTag');
@@ -1393,22 +1400,17 @@ function openQuote(i, anchor) {
   quotePanel.setAttribute('aria-hidden', 'false');
   quotePanel.classList.add('visible');
   positionQuotePanel(anchor);
-  if (lastFocusedCard && document.activeElement === lastFocusedCard) {
+  if (focusReturn.card && document.activeElement === focusReturn.card) {
     document.getElementById('quotePanelClose').focus({ preventScroll: true });
   }
 }
 
 let hoveredPoint = false;
 let lastHoverAt = 0;
-/* Partículas: HOVER → panel "peek" (se cierra al salir); CLICK → panel
-   fijado (pin, se cierra con ✕/Escape). */
-let hoverIndex = -1;
-let pinnedIndex = -1;
 let hoverTimer = null;
-let activeParticleFocus = -1;
 
 function syncQuotePanel() {
-  const idx = pinnedIndex >= 0 ? pinnedIndex : hoverIndex;
+  const idx = activeQuoteIndex();
   if (idx >= 0) openQuote(idx);
   else closeQuotePanel();
 }
@@ -1429,17 +1431,17 @@ function updateHover(cx, cy) {
     hoveredPoint = hasHit;
     document.body.style.cursor = hasHit ? 'pointer' : (currentStage === 1 ? 'grab' : '');
   }
-  if (pinnedIndex >= 0) return;          // panel fijado: el hover no lo toca
+  if (isPinned()) return;                     // panel fijado: el hover no lo toca
   if (hasHit) {
     if (pointerOverPanel(cx, cy)) return; // leyendo el panel: no lo cerremos
-    if (hitIdx === hoverIndex && hoverIndex >= 0) return;
+    if (hitIdx === selection.hover && selection.hover >= 0) return;
     if (hoverTimer) clearTimeout(hoverTimer);
     hoverTimer = setTimeout(() => {
-      hoverIndex = hitIdx;
+      peekQuote(hitIdx);
       syncQuotePanel();
     }, CONFIG.interaction?.hoverDelayMs ?? 90);
-  } else if (hoverIndex >= 0) {
-    hoverIndex = -1;
+  } else if (selection.hover >= 0) {
+    clearPeek();
     syncQuotePanel();
   } else if (quotePanelEl.classList.contains('visible')) {
     /* Al alejar el cursor sin que haya click fijado, el panel se cierra. */
@@ -1457,13 +1459,12 @@ const origOnPointerDown = onPointerDown;
 onPointerDown = function(cx, cy) {
   const hit = pickPoint(cx, cy);
   if (hit >= 0) {
-    pinnedIndex = hit;   // click sobre una partícula fija el panel (✕/Escape lo cierra)
-    hoverIndex = -1;
+    pinQuote(hit);            // click sobre una partícula fija el panel (✕/Escape lo cierra)
     openQuote(hit);
     return;
   }
   /* click en el fondo cierra el panel fijado (mismo gesto que en tarjetas) */
-  if (pinnedIndex >= 0) closeQuotePanel();
+  if (isPinned()) closeQuotePanel();
   origOnPointerDown(cx, cy);
 };
 
@@ -1510,10 +1511,7 @@ let inRoom = false;  // estamos en el stage #stageRoom (habilita el hover→cita
 /* Foco editorial de Las voces: la selección atenúa las intervenciones de
    otras voces sin borrar su huella. Así el directorio conecta la lectura
    nominal con la misma nube que el lector acaba de explorar. */
-let voiceFocusParticipant = null;
-let voiceFocusRenderedParticipant = null;
 let voiceFocusMix = 0;
-let selectedVoiceQuoteIndex = -1;
 const _roomLook = new THREE.Vector3(0, 0.7, 0);
 const _roomLookTarget = new THREE.Vector3(
   CONFIG.door?.roomLook?.x ?? 0,
@@ -1758,685 +1756,11 @@ function cameraChoreography(progress) {
    alocaba uno nuevo en CADA frame → ~60 objetos/seg de basura para el GC). */
 const _spotTarget = new THREE.Vector3();
 
-/* ────────────────────────────────
-   Las voces — directorio editorial derivado del dataset
-   Una voz no hereda una etiqueta: el color resume la orientación detectada
-   en cada fragmento. El directorio hace visible quién aparece, durante qué
-   años y con qué frecuencia, y ofrece una muestra atribuida antes de abrir
-   el panel documental completo.
-──────────────────────────────── */
+/* "Las voces" vive en js/sections/voice-explorer.js.
+   La llamada se queda AQUÍ, en el mismo punto de la ejecución que antes: el
+   orden en que se crean los ScrollTrigger es parte del contrato. */
+initVoiceExplorer({ quotes, openQuote, closeQuotePanel });
 
-function initVoiceExplorer() {
-  const rail = document.getElementById('voiceRail');
-  const meta = document.getElementById('voiceDirectoryMeta');
-  const empty = document.getElementById('voiceDetailEmpty');
-  const content = document.getElementById('voiceDetailContent');
-  const detailName = document.getElementById('voiceDetailName');
-  const detailMeta = document.getElementById('voiceDetailMeta');
-  const detailSummary = document.getElementById('voiceDetailSummary');
-  const detailQuote = document.getElementById('voiceDetailQuote');
-  const detailCitation = document.getElementById('voiceDetailCitation');
-  const detailOpen = document.getElementById('voiceDetailOpen');
-  const profileOpen = document.getElementById('voiceProfileOpen');
-  const profilePanel = document.getElementById('voiceProfilePanel');
-  const profileClose = document.getElementById('voiceProfileClose');
-  const profileTitle = document.getElementById('voiceProfileTitle');
-  const profileSubtitle = document.getElementById('voiceProfileSubtitle');
-  const radar = document.getElementById('voiceRadar');
-  const topicList = document.getElementById('voiceTopicList');
-  const evidenceQuote = document.getElementById('voiceProfileEvidenceQuote');
-  const evidenceCitation = document.getElementById('voiceProfileEvidenceCitation');
-  if (!rail || !meta || !empty || !content || !detailOpen || !profileOpen || !profilePanel || !profileClose || !radar || !topicList || !evidenceQuote || !evidenceCitation || !quotes.length) return;
-
-  const getSourceYear = (q) => {
-    const dateYear = String(q.date || '').match(/^(\d{4})/);
-    return dateYear ? Number(dateYear[1]) : Number(q.year);
-  };
-  const grouped = new Map();
-  let excludedVoiceRows = 0;
-  quotes.forEach((q, index) => {
-    /* Mismo criterio que el navegador de actas: el registro 1985 del
-       fixture no se mezcla con el período declarado 2000–2015. Se
-       contabiliza aparte y se informa en el meta del directorio. */
-    const year = getSourceYear(q);
-    if (!Number.isFinite(year) || year < 2000 || year > 2015) {
-      excludedVoiceRows += 1;
-      return;
-    }
-    const name = q.participant || 'Participante anónimo';
-    if (!grouped.has(name)) grouped.set(name, []);
-    grouped.get(name).push({ q, index, normalizedText: normalizeTopicText(q.text) });
-  });
-
-  const voices = Array.from(grouped, ([name, rows]) => {
-    const toneCounts = { hawkish: 0, dovish: 0, neutral: 0 };
-    /* La fecha documental es la referencia temporal primaria; q.year queda
-       como fallback para registros que todavía no traen date. */
-    const years = rows.map(({ q }) => getSourceYear(q)).filter(Number.isFinite);
-    rows.forEach(({ q }) => {
-      const tone = q.label in toneCounts ? q.label : 'neutral';
-      toneCounts[tone] += 1;
-    });
-    return {
-      name,
-      rows,
-      count: rows.length,
-      toneCounts,
-      minYear: years.length ? Math.min(...years) : '—',
-      maxYear: years.length ? Math.max(...years) : '—',
-    };
-  }).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'es'));
-
-  meta.textContent = `Muestra visual · ${voices.length} voces · ${quotes.length - excludedVoiceRows} fragmentos${excludedVoiceRows ? ` · ${excludedVoiceRows} fuera del período` : ''}`;
-  rail.innerHTML = '';
-  const cards = [];
-  let activeName = null;
-
-  const toneLabels = {
-    hawkish: 'hawkish (restrictiva)',
-    dovish: 'dovish (expansiva)',
-    neutral: 'neutral',
-  };
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const createSvgElement = (tag, attrs = {}) => {
-    const node = document.createElementNS(svgNS, tag);
-    Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, String(value)));
-    return node;
-  };
-  const getVoiceSample = (rows) => {
-    if (!rows || !rows.length) return null;
-    const chronological = rows.slice().sort((a, b) => {
-      const da = String(a.q.date || a.q.year || '');
-      const db = String(b.q.date || b.q.year || '');
-      return da.localeCompare(db) || a.index - b.index;
-    });
-    return chronological[Math.floor((chronological.length - 1) / 2)];
-  };
-  const getTopicProfile = (voice) => TOPIC_DEFINITIONS.map((definition) => {
-    const matchedRows = voice.rows.filter((row) => definition.terms.some((term) => topicHasTerm(row.normalizedText, term)));
-    const termCounts = definition.terms.map((term) => ({
-      term,
-      count: voice.rows.filter((row) => topicHasTerm(row.normalizedText, term)).length,
-    })).filter((item) => item.count > 0).sort((a, b) => b.count - a.count || a.term.localeCompare(b.term, 'es'));
-    return {
-      definition,
-      rows: matchedRows,
-      value: voice.count ? (matchedRows.length / voice.count) * 100 : 0,
-      termCounts,
-    };
-  });
-
-  function drawVoiceRadar(profiles, voiceName) {
-    radar.innerHTML = '';
-    const cx = 150;
-    const cy = 128;
-    const radius = 82;
-    const count = profiles.length;
-    const angleFor = (index) => (-Math.PI / 2) + (index / count) * Math.PI * 2;
-    const pointFor = (index, value, distance = radius * (value / 100)) => {
-      const angle = angleFor(index);
-      return [cx + Math.cos(angle) * distance, cy + Math.sin(angle) * distance];
-    };
-    const polygonPoints = (distance) => profiles.map((_, index) => pointFor(index, 100, distance).join(',')).join(' ');
-
-    [0.25, 0.5, 0.75, 1].forEach((level) => {
-      radar.appendChild(createSvgElement('polygon', { class: 'radar-ring', points: polygonPoints(radius * level) }));
-    });
-    profiles.forEach((profile, index) => {
-      const [x, y] = pointFor(index, 100);
-      radar.appendChild(createSvgElement('line', { class: 'radar-axis', x1: cx, y1: cy, x2: x, y2: y }));
-    });
-    const shape = createSvgElement('polygon', {
-      class: 'radar-shape',
-      points: profiles.map((profile, index) => pointFor(index, profile.value).join(',')).join(' '),
-    });
-    radar.appendChild(shape);
-    profiles.forEach((profile, index) => {
-      const [x, y] = pointFor(index, profile.value);
-      radar.appendChild(createSvgElement('circle', { class: 'radar-point', cx: x, cy: y, r: 3.5 }));
-      const [lx, ly] = pointFor(index, 100, radius + 23);
-      const label = createSvgElement('text', {
-        class: 'radar-label',
-        x: lx,
-        y: ly + (ly < cy ? -2 : 4),
-        'text-anchor': lx < cx - 8 ? 'end' : lx > cx + 8 ? 'start' : 'middle',
-      });
-      label.textContent = profile.definition.short;
-      radar.appendChild(label);
-    });
-    radar.appendChild(createSvgElement('circle', { cx, cy, r: 2, fill: 'rgba(255,255,255,0.65)' }));
-    radar.setAttribute('aria-label', `Perfil temático de ${voiceName}. Cada eje muestra el porcentaje de sus fragmentos con una mención directa.`);
-    gsap.fromTo(shape, { opacity: 0, scale: 0.92, transformOrigin: `${cx}px ${cy}px` }, { opacity: 1, scale: 1, duration: 0.55, ease: 'cinematicOut' });
-  }
-
-  let profileVoice = null;
-  let profileCloseTimer = null;
-  let profileReturnFocus = null;
-  function setProfileEvidence(voice, rows) {
-    const sample = getVoiceSample(rows) || getVoiceSample(voice.rows);
-    if (!sample) return;
-    evidenceQuote.textContent = `“${sample.q.text || 'Sin texto disponible'}”`;
-    evidenceCitation.textContent = `— ${sample.q.participant || voice.name}, ${sample.q.formatted_date || sample.q.date || sample.q.year || 'fecha no especificada'}`;
-  }
-
-  function renderVoiceProfile(voice, activeTopicId = null) {
-    if (!voice) return;
-    profileVoice = voice;
-    const profiles = getTopicProfile(voice);
-    profileTitle.textContent = voice.name;
-    profileSubtitle.textContent = `${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'} · ${voice.minYear}–${voice.maxYear} · cada eje = proporción de fragmentos con mención directa`;
-    drawVoiceRadar(profiles, voice.name);
-    topicList.innerHTML = '';
-    profiles.forEach((profile) => {
-      const row = document.createElement('button');
-      row.type = 'button';
-      row.className = 'voice-topic-row' + (profile.definition.id === activeTopicId ? ' is-active' : '');
-      row.setAttribute('aria-pressed', String(profile.definition.id === activeTopicId));
-      row.setAttribute('aria-label', `${profile.definition.label}: ${Math.round(profile.value)} por ciento de los fragmentos`);
-      row.innerHTML = `
-        <span class="voice-topic-row-top"><span></span><strong></strong></span>
-        <span class="voice-topic-meter"><i></i></span>
-        <span class="voice-topic-terms"></span>`;
-      row.querySelector('.voice-topic-row-top span').textContent = profile.definition.label;
-      row.querySelector('.voice-topic-row-top strong').textContent = `${Math.round(profile.value)}%`;
-      row.querySelector('.voice-topic-meter i').style.width = `${profile.value}%`;
-      row.querySelector('.voice-topic-terms').textContent = profile.termCounts.length
-        ? profile.termCounts.slice(0, 3).map((item) => item.term).join(' · ')
-        : 'sin coincidencia directa en la muestra';
-      row.addEventListener('click', () => renderVoiceProfile(voice, profile.definition.id));
-      topicList.appendChild(row);
-    });
-    const activeProfile = profiles.find((profile) => profile.definition.id === activeTopicId);
-    setProfileEvidence(voice, activeProfile?.rows || voice.rows);
-  }
-
-  function openVoiceProfile(voice) {
-    if (!voice) return;
-    renderVoiceProfile(voice);
-    profileReturnFocus = document.activeElement;
-    profilePanel.hidden = false;
-    profilePanel.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('voice-profile-modal-open');
-    requestAnimationFrame(() => profilePanel.classList.add('is-open'));
-    profileClose.focus({ preventScroll: true });
-  }
-
-  function closeVoiceProfile() {
-    if (profilePanel.hidden) return;
-    profilePanel.classList.remove('is-open');
-    profilePanel.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('voice-profile-modal-open');
-    clearTimeout(profileCloseTimer);
-    profileCloseTimer = setTimeout(() => {
-      profilePanel.hidden = true;
-      if (profileReturnFocus && typeof profileReturnFocus.focus === 'function') {
-        profileReturnFocus.focus({ preventScroll: true });
-      }
-      profileReturnFocus = null;
-    }, 340);
-  }
-  profileClose.addEventListener('click', closeVoiceProfile);
-  profilePanel.querySelectorAll('[data-voice-profile-close]').forEach((element) => element.addEventListener('click', closeVoiceProfile));
-  window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !profilePanel.hidden) {
-      event.preventDefault();
-      closeVoiceProfile();
-    }
-  });
-
-  function updateDetail(voice) {
-    if (!voice) {
-      empty.hidden = false;
-      content.hidden = true;
-      selectedVoiceQuoteIndex = -1;
-      return;
-    }
-
-    /* La muestra se toma del centro cronológico para no convertir la tarjeta
-       en un ranking ni privilegiar automáticamente la primera/última cita. */
-    const sample = getVoiceSample(voice.rows);
-    const toneSummary = [
-      `${voice.toneCounts.hawkish} ${toneLabels.hawkish}`,
-      `${voice.toneCounts.dovish} ${toneLabels.dovish}`,
-      `${voice.toneCounts.neutral} neutral${voice.toneCounts.neutral === 1 ? '' : 'es'}`,
-    ].join(' · ');
-
-    empty.hidden = true;
-    content.hidden = false;
-    detailName.textContent = voice.name;
-    detailMeta.textContent = `${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'} en la muestra · ${voice.minYear}–${voice.maxYear}`;
-    detailSummary.textContent = `Señales detectadas en sus fragmentos: ${toneSummary}.`;
-    detailQuote.textContent = `“${sample.q.text || 'Sin texto disponible'}”`;
-    detailCitation.textContent = `— ${sample.q.participant || voice.name}, ${sample.q.formatted_date || sample.q.date || sample.q.year || 'fecha no especificada'}`;
-    selectedVoiceQuoteIndex = sample.index;
-  }
-
-  function selectVoice(name) {
-    activeName = activeName === name ? null : name;
-    voiceFocusParticipant = activeName;
-    if (activeName) voiceFocusRenderedParticipant = activeName;
-    cards.forEach(({ card, voice }) => {
-      const selected = voice.name === activeName;
-      card.setAttribute('aria-pressed', String(selected));
-    });
-    updateDetail(activeName ? voices.find((voice) => voice.name === activeName) : null);
-    /* Si el lector estaba leyendo una cita del enjambre, una nueva selección
-       no debe dejar un panel perteneciente a otra voz flotando sobre el rail. */
-    if (typeof closeQuotePanel === 'function') closeQuotePanel();
-  }
-
-  profileOpen.addEventListener('click', () => {
-    const voice = activeName ? voices.find((item) => item.name === activeName) : null;
-    openVoiceProfile(voice);
-  });
-
-  voices.forEach((voice, index) => {
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'voice-card';
-    card.setAttribute('role', 'listitem');
-    card.setAttribute('aria-pressed', 'false');
-    card.setAttribute('aria-label', `Seleccionar ${voice.name}: ${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'} entre ${voice.minYear} y ${voice.maxYear}.`);
-    card.innerHTML = `
-      <span class="voice-card-index"></span>
-      <span class="voice-card-name"></span>
-      <span class="voice-card-meta"></span>
-      <span class="voice-card-years"></span>
-      <span class="voice-signal-bar" aria-hidden="true">
-        <i class="hawkish"></i><i class="dovish"></i><i class="neutral"></i>
-      </span>`;
-    card.querySelector('.voice-card-index').textContent = String(index + 1).padStart(2, '0');
-    card.querySelector('.voice-card-name').textContent = voice.name;
-    card.querySelector('.voice-card-meta').textContent = `${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'}`;
-    card.querySelector('.voice-card-years').textContent = `${voice.minYear}–${voice.maxYear}`;
-    ['hawkish', 'dovish', 'neutral'].forEach((tone) => {
-      card.querySelector(`.voice-signal-bar .${tone}`).style.width = `${(voice.toneCounts[tone] / voice.count) * 100}%`;
-    });
-    card.addEventListener('click', () => selectVoice(voice.name));
-    rail.appendChild(card);
-    cards.push({ card, voice });
-  });
-
-  detailOpen.addEventListener('click', () => {
-    if (selectedVoiceQuoteIndex < 0) return;
-    pinnedIndex = selectedVoiceQuoteIndex;
-    hoverIndex = -1;
-    openQuote(selectedVoiceQuoteIndex, { x: window.innerWidth * 0.54, y: window.innerHeight * 0.62 });
-  });
-}
-
-initVoiceExplorer();
-
-/* ────────────────────────────────
-   Acto 6 — navegador por acta
-   La tarjeta no resume una "personalidad": vuelve de la señal al acta,
-   primero por fecha y participantes, después por el fragmento concreto y
-   los términos observables que acompañan la etiqueta exploratoria.
-──────────────────────────────── */
-function initActBrowser() {
-  const list = document.getElementById('actsList');
-  const meta = document.getElementById('actsIndexMeta');
-  const yearFilter = document.getElementById('actYearFilter');
-  const dateEl = document.getElementById('actDate');
-  const dateSubEl = document.getElementById('actDateSub');
-  const eraEl = document.getElementById('actEra');
-  const signalNameEl = document.getElementById('actSignalName');
-  const signalCountEl = document.getElementById('actSignalCount');
-  const signalExplanationEl = document.getElementById('actSignalExplanation');
-  const participantsEl = document.getElementById('actParticipants');
-  const termNetwork = document.getElementById('actTermNetwork');
-  const termList = document.getElementById('actTermList');
-  const evidenceList = document.getElementById('actEvidenceList');
-  const evidenceMeta = document.getElementById('actEvidenceMeta');
-  const evidenceQuote = document.getElementById('actEvidenceQuote');
-  const evidenceCitation = document.getElementById('actEvidenceCitation');
-  const openEvidence = document.getElementById('actOpenEvidence');
-  const browser = document.getElementById('actsBrowser');
-  const intro = document.querySelector('.acts-intro');
-  if (!list || !meta || !yearFilter || !dateEl || !dateSubEl || !eraEl || !signalNameEl || !signalCountEl || !signalExplanationEl || !participantsEl || !termNetwork || !termList || !evidenceList || !evidenceMeta || !evidenceQuote || !evidenceCitation || !openEvidence || !browser || !intro || !quotes.length) return;
-
-  const termDictionary = [
-    { key: 'inflacion', label: 'inflación' },
-    { key: 'precios', label: 'precios' },
-    { key: 'expectativas', label: 'expectativas' },
-    { key: 'tasa', label: 'tasa' },
-    { key: 'tasas', label: 'tasas' },
-    { key: 'aumento', label: 'aumento' },
-    { key: 'alza', label: 'alza' },
-    { key: 'subir', label: 'subir' },
-    { key: 'mantener', label: 'mantener' },
-    { key: 'bajar', label: 'bajar' },
-    { key: 'riesgo', label: 'riesgo' },
-    { key: 'crecimiento', label: 'crecimiento' },
-    { key: 'actividad', label: 'actividad' },
-    { key: 'demanda', label: 'demanda' },
-    { key: 'producto', label: 'producto' },
-    { key: 'contexto', label: 'contexto' },
-    { key: 'escenario', label: 'escenario' },
-    { key: 'internacional', label: 'internacional' },
-    { key: 'mercado', label: 'mercado' },
-    { key: 'mercados', label: 'mercados' },
-    { key: 'petróleo', label: 'petróleo' },
-    { key: 'cobre', label: 'cobre' },
-    { key: 'energía', label: 'energía' },
-    { key: 'alimentos', label: 'alimentos' },
-    { key: 'empleo', label: 'empleo' },
-    { key: 'salarios', label: 'salarios' },
-    { key: 'gasto', label: 'gasto' },
-    { key: 'presupuesto', label: 'presupuesto' },
-    { key: 'déficit', label: 'déficit' },
-    { key: 'consumo', label: 'consumo' },
-    { key: 'inversión', label: 'inversión' },
-  ].map((term) => ({ ...term, normalized: normalizeTopicText(term.key) }));
-
-  const eras = [
-    { id: 'E1', name: 'Despegue', from: 2000, to: 2003 },
-    { id: 'E2', name: 'Fiebre', from: 2004, to: 2007 },
-    { id: 'E3', name: 'Crisis', from: 2008, to: 2009 },
-    { id: 'E4', name: 'Normalización', from: 2010, to: 2014 },
-    { id: 'E5', name: 'Giro', from: 2015, to: 2015 },
-  ];
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const makeSvg = (tag, attrs = {}) => {
-    const node = document.createElementNS(svgNS, tag);
-    Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, String(value)));
-    return node;
-  };
-  const sourceYear = (q) => {
-    const dateYear = String(q.date || '').match(/^(\d{4})/);
-    return dateYear ? Number(dateYear[1]) : Number(q.year);
-  };
-  const formatDate = (date, year) => {
-    const parsed = date && /^\d{4}-\d{2}-\d{2}$/.test(date)
-      ? new Date(`${date}T00:00:00Z`)
-      : null;
-    if (!parsed || Number.isNaN(parsed.getTime())) return year ? `Año ${year}` : 'Fecha no especificada';
-    return new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(parsed);
-  };
-  const compactViewport = () => window.matchMedia && window.matchMedia('(max-width: 430px)').matches;
-  const formatReaderDate = (date, year) => {
-    if (!compactViewport()) return formatDate(date, year);
-    const parsed = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T00:00:00Z`) : null;
-    if (!parsed || Number.isNaN(parsed.getTime())) return formatDate(date, year);
-    const parts = new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).formatToParts(parsed);
-    const values = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]));
-    return `${values.day} ${values.month} ${values.year}`;
-  };
-  const formatListDate = (date, year) => compactViewport() ? formatReaderDate(date, year) : formatDate(date, year);
-  const getEra = (year) => eras.find((era) => year >= era.from && year <= era.to) || { id: '—', name: 'fuera de período' };
-  const getTerms = (row) => termDictionary.filter((term) => row.normalizedText.includes(term.normalized));
-  const getTone = (q) => ['hawkish', 'dovish', 'neutral'].includes(q.label) ? q.label : 'neutral';
-  const toneText = { hawkish: 'Hawkish', dovish: 'Dovish', neutral: 'Neutral', mixed: 'Mixta' };
-  const toneDetail = { hawkish: 'restrictiva', dovish: 'expansiva', neutral: 'sin orientación dominante' };
-
-  const grouped = new Map();
-  let excludedRows = 0;
-  quotes.forEach((q, index) => {
-    const year = sourceYear(q);
-    /* El navegador respeta el período declarado de la pieza. El registro
-       1985 del fixture queda contabilizado como fuera de período, no
-       mezclado silenciosamente con las actas 2000–2015. */
-    if (!Number.isFinite(year) || year < 2000 || year > 2015) {
-      excludedRows += 1;
-      return;
-    }
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(String(q.date || '')) ? q.date : `${year}-01-01`;
-    if (!grouped.has(date)) grouped.set(date, []);
-    grouped.get(date).push({ q, index, normalizedText: normalizeTopicText(q.text) });
-  });
-
-  const acts = [...grouped.entries()].map(([date, rows]) => {
-    const year = sourceYear(rows[0].q);
-    const toneCounts = { hawkish: 0, dovish: 0, neutral: 0 };
-    const participantSet = new Set();
-    const termCounts = new Map();
-    rows.forEach((row) => {
-      const tone = getTone(row.q);
-      toneCounts[tone] += 1;
-      participantSet.add(row.q.participant || 'Participante anónimo');
-      getTerms(row).forEach((term) => termCounts.set(term.normalized, {
-        label: term.label,
-        count: (termCounts.get(term.normalized)?.count || 0) + 1,
-      }));
-    });
-    const activeTones = Object.entries(toneCounts).filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]);
-    const dominantTone = activeTones.length > 1 && activeTones[0][1] === activeTones[1][1]
-      ? 'mixed'
-      : (activeTones[0]?.[0] || 'neutral');
-    return {
-      id: date,
-      date,
-      year,
-      rows,
-      count: rows.length,
-      participants: [...participantSet],
-      toneCounts,
-      dominantTone,
-      terms: [...termCounts.entries()].map(([key, item]) => ({ key, ...item })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'es')),
-    };
-  }).sort((a, b) => a.date.localeCompare(b.date));
-
-  if (!acts.length) return;
-  meta.textContent = `Muestra visible: ${acts.length} actas · ${acts.reduce((total, act) => total + act.count, 0)} fragmentos${excludedRows ? ` · ${excludedRows} fuera del período` : ''}`;
-  [...new Set(acts.map((act) => act.year))].sort((a, b) => a - b).forEach((year) => {
-    const option = document.createElement('option');
-    option.value = String(year);
-    option.textContent = year;
-    yearFilter.appendChild(option);
-  });
-
-  let activeAct = null;
-  let activeRowIndex = 0;
-  let activeTermKey = null;
-  const listItems = [];
-
-  const renderNetwork = (row) => {
-    termNetwork.innerHTML = '';
-    const terms = row ? getTerms(row).slice(0, 4) : [];
-    const tone = row ? getTone(row.q) : 'neutral';
-    const signalX = 48;
-    const signalY = 43;
-    const termStart = 125;
-    const termEnd = 492;
-    const step = terms.length > 1 ? (termEnd - termStart) / (terms.length - 1) : 0;
-    termNetwork.appendChild(makeSvg('text', { class: 'act-network-caption', x: signalX, y: 12, 'text-anchor': 'middle' })).textContent = 'SEÑAL';
-    termNetwork.appendChild(makeSvg('circle', { class: `act-network-signal ${tone}`, cx: signalX, cy: signalY, r: 22 }));
-    const signalText = makeSvg('text', { class: 'act-network-caption', x: signalX, y: signalY + 3, 'text-anchor': 'middle' });
-    signalText.textContent = toneText[tone].toUpperCase();
-    termNetwork.appendChild(signalText);
-    if (!terms.length) {
-      const emptyText = makeSvg('text', { class: 'act-network-term', x: 108, y: signalY + 4 });
-      emptyText.textContent = 'sin término de la taxonomía visible en este fragmento';
-      termNetwork.appendChild(emptyText);
-      termNetwork.setAttribute('aria-label', `La etiqueta ${toneText[tone]} no tiene términos de la taxonomía visible en este fragmento`);
-      return;
-    }
-    terms.forEach((term, index) => {
-      const x = terms.length === 1 ? 280 : termStart + step * index;
-      const y = index % 2 === 0 ? 29 : 65;
-      termNetwork.appendChild(makeSvg('line', { class: 'act-network-link', x1: signalX + 22, y1: signalY, x2: x - 8, y2: y - 3 }));
-      termNetwork.appendChild(makeSvg('circle', { class: 'act-network-signal', cx: x - 8, cy: y - 3, r: 3.5 }));
-      const label = makeSvg('text', { class: 'act-network-term', x, y, 'text-anchor': 'middle' });
-      label.textContent = term.label;
-      termNetwork.appendChild(label);
-    });
-    termNetwork.setAttribute('aria-label', `${toneText[tone]} conectada con ${terms.map((term) => term.label).join(', ')}`);
-  };
-
-  const renderEvidence = (act, rowIndex, termKey = null) => {
-    if (!act?.rows.length) return;
-    activeAct = act;
-    activeRowIndex = Math.max(0, Math.min(rowIndex, act.rows.length - 1));
-    activeTermKey = termKey;
-    const row = act.rows[activeRowIndex];
-    const terms = getTerms(row);
-    const tone = getTone(row.q);
-    const termNames = terms.slice(0, compactViewport() ? 3 : 5).map((term) => term.label);
-    const termPhrase = termNames.length ? `«${termNames.join('», «')}»` : 'ningún término de la taxonomía visible';
-    signalExplanationEl.textContent = compactViewport()
-      ? `${termPhrase} acompañan la etiqueta ${toneText[tone]} (${toneDetail[tone]}).`
-      : `Este fragmento reúne ${termPhrase}; en esta lectura exploratoria, esa evidencia léxica acompaña la etiqueta ${toneText[tone]} (${toneDetail[tone]}).`;
-    renderNetwork(row);
-    [...evidenceList.querySelectorAll('.act-evidence-row')].forEach((button) => {
-      button.setAttribute('aria-current', String(Number(button.dataset.rowIndex) === activeRowIndex));
-    });
-    [...termList.querySelectorAll('.act-term-chip')].forEach((button) => {
-      button.setAttribute('aria-pressed', String(button.dataset.termKey === activeTermKey));
-    });
-    evidenceQuote.textContent = `“${row.q.text || 'Sin texto disponible'}”`;
-    evidenceCitation.textContent = `— ${row.q.participant || 'Participante anónimo'}, ${row.q.formatted_date || formatDate(act.date, act.year)}`;
-    openEvidence.dataset.quoteIndex = String(row.index);
-  };
-
-  const renderAct = (act) => {
-    if (!act) return;
-    activeAct = act;
-    activeRowIndex = Math.min(activeRowIndex, act.rows.length - 1);
-    activeTermKey = null;
-    const era = getEra(act.year);
-    dateEl.textContent = formatReaderDate(act.date, act.year);
-    dateSubEl.textContent = `${act.count} ${act.count === 1 ? 'fragmento' : 'fragmentos'} · ${act.participants.length} ${act.participants.length === 1 ? 'participante' : 'participantes'}`;
-    eraEl.textContent = `${era.id} · ${era.name}`;
-    signalNameEl.textContent = toneText[act.dominantTone];
-    signalNameEl.className = `act-signal-name ${act.dominantTone}`;
-    const dominantCount = act.dominantTone === 'mixed' ? Math.max(...Object.values(act.toneCounts)) : (act.toneCounts[act.dominantTone] || 0);
-    signalCountEl.textContent = `${dominantCount}/${act.count} fragmentos`;
-    ['hawkish', 'dovish', 'neutral'].forEach((tone) => {
-      const bar = document.getElementById(`act${tone.charAt(0).toUpperCase()}${tone.slice(1)}Bar`);
-      if (bar) bar.style.width = `${(act.toneCounts[tone] / act.count) * 100}%`;
-    });
-    participantsEl.innerHTML = '';
-    act.participants.forEach((participant) => {
-      const pill = document.createElement('span');
-      pill.className = 'act-participant';
-      pill.textContent = participant;
-      participantsEl.appendChild(pill);
-    });
-
-    termList.innerHTML = '';
-    if (act.terms.length) {
-      act.terms.slice(0, 7).forEach((term) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'act-term-chip';
-        button.dataset.termKey = term.key;
-        button.setAttribute('aria-pressed', 'false');
-        button.innerHTML = `<span></span><small></small>`;
-        button.querySelector('span').textContent = term.label;
-        button.querySelector('small').textContent = term.count;
-        button.addEventListener('click', () => {
-          const rowIndex = act.rows.findIndex((row) => getTerms(row).some((item) => item.normalized === term.key));
-          renderEvidence(act, rowIndex >= 0 ? rowIndex : 0, term.key);
-        });
-        termList.appendChild(button);
-      });
-    } else {
-      const emptyTerm = document.createElement('span');
-      emptyTerm.className = 'acts-index-meta';
-      emptyTerm.textContent = 'sin términos directos en la muestra';
-      termList.appendChild(emptyTerm);
-    }
-
-    evidenceList.innerHTML = '';
-    evidenceMeta.textContent = `${act.count} ${act.count === 1 ? 'fragmento' : 'fragmentos'}`;
-    act.rows.forEach((row, rowIndex) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'act-evidence-row';
-      button.dataset.rowIndex = String(rowIndex);
-      button.setAttribute('role', 'listitem');
-      button.setAttribute('aria-current', 'false');
-      const person = document.createElement('span');
-      person.className = 'act-evidence-person';
-      person.textContent = row.q.participant || 'Participante anónimo';
-      const tone = document.createElement('span');
-      tone.className = `act-evidence-tone ${getTone(row.q)}`;
-      tone.textContent = toneText[getTone(row.q)];
-      button.append(person, tone);
-      button.addEventListener('click', () => renderEvidence(act, rowIndex));
-      evidenceList.appendChild(button);
-    });
-    renderEvidence(act, activeRowIndex);
-    listItems.forEach(({ button, act: listAct }) => button.setAttribute('aria-current', String(listAct.id === act.id)));
-  };
-
-  const selectAct = (act) => {
-    if (!act) return;
-    activeRowIndex = 0;
-    renderAct(act);
-    window.dispatchEvent(new CustomEvent('particle-act-focus', { detail: { date: act.date } }));
-    const selected = listItems.find(({ act: listAct }) => listAct.id === act.id);
-    selected?.button.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  };
-
-  const renderList = (yearValue = yearFilter.value) => {
-    const visibleActs = yearValue === 'all' ? acts : acts.filter((act) => String(act.year) === String(yearValue));
-    list.innerHTML = '';
-    listItems.length = 0;
-    if (!visibleActs.length) {
-      const emptyState = document.createElement('div');
-      emptyState.className = 'acts-empty';
-      emptyState.textContent = 'No hay actas disponibles para este año.';
-      list.appendChild(emptyState);
-      return;
-    }
-    visibleActs.forEach((act) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'act-list-item';
-      button.setAttribute('role', 'listitem');
-      button.setAttribute('aria-current', String(activeAct?.id === act.id));
-      button.setAttribute('aria-label', `Abrir acta del ${formatDate(act.date, act.year)}, ${act.count} fragmentos`);
-      const dot = document.createElement('i');
-      dot.className = `act-tone-dot ${act.dominantTone}`;
-      dot.setAttribute('aria-hidden', 'true');
-      const body = document.createElement('span');
-      const date = document.createElement('span');
-      date.className = 'act-list-date';
-      date.textContent = formatListDate(act.date, act.year);
-      const listMeta = document.createElement('span');
-      listMeta.className = 'act-list-meta';
-      listMeta.textContent = `${act.count} ${act.count === 1 ? 'fragmento' : 'fragmentos'} · ${act.participants.length} ${act.participants.length === 1 ? 'voz' : 'voces'}`;
-      body.append(date, listMeta);
-      const tone = document.createElement('span');
-      tone.className = 'act-list-signal';
-      tone.textContent = toneText[act.dominantTone];
-      button.append(dot, body, tone);
-      button.addEventListener('click', () => selectAct(act));
-      list.appendChild(button);
-      listItems.push({ button, act });
-    });
-  };
-
-  openEvidence.addEventListener('click', () => {
-    const quoteIndex = Number(openEvidence.dataset.quoteIndex);
-    if (!Number.isFinite(quoteIndex) || !quotes[quoteIndex]) return;
-    pinnedIndex = quoteIndex;
-    hoverIndex = -1;
-    openQuote(quoteIndex, { x: window.innerWidth * 0.62, y: window.innerHeight * 0.62 });
-  });
-  yearFilter.addEventListener('change', () => {
-    renderList(yearFilter.value);
-    const firstVisible = acts.find((act) => yearFilter.value === 'all' || String(act.year) === yearFilter.value);
-    if (firstVisible) selectAct(firstVisible);
-  });
-
-  renderList('all');
-  const defaultAct = acts.find((act) => act.date === '2010-05-13') || acts.slice().sort((a, b) => b.count - a.count || a.date.localeCompare(b.date))[0] || acts[0];
-  selectAct(defaultAct);
-
-  gsap.timeline({
-    scrollTrigger: {
-      trigger: '#stageActs',
-      start: 'top 85%',
-      end: 'bottom bottom',
-      scrub: true,
-    },
-  })
-    .fromTo(intro, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.13, ease: 'none' }, 0.04)
-    .fromTo(browser, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.16, ease: 'none' }, 0.16)
-    .to(intro, { opacity: 0, y: -14, duration: 0.08, ease: 'none' }, 0.90);
-}
 
 function animate() {
   const time = clock.getElapsedTime();
@@ -2638,11 +1962,11 @@ function animate() {
      la selección se pueda leer dentro del enjambre y la huella colectiva
      siga visible. El mismo tratamiento se usa para acta y cita, sin perder
      jamás las filas vecinas. */
-  const focusName = voiceFocusParticipant || voiceFocusRenderedParticipant;
-  voiceFocusMix = THREE.MathUtils.lerp(voiceFocusMix, voiceFocusParticipant ? 1 : 0, reduceMotion ? 1 : 0.08);
+  const focusName = voiceFocus.participant || voiceFocus.rendered;
+  voiceFocusMix = THREE.MathUtils.lerp(voiceFocusMix, voiceFocus.participant ? 1 : 0, reduceMotion ? 1 : 0.08);
   actFocusMix = THREE.MathUtils.lerp(actFocusMix, selectedActDate ? 1 : 0, reduceMotion ? 1 : 0.08);
-  if (!voiceFocusParticipant && voiceFocusMix < 0.005) voiceFocusRenderedParticipant = null;
-  const activeQuoteIndex = activeParticleFocus >= 0 ? activeParticleFocus : -1;
+  if (!voiceFocus.participant && voiceFocusMix < 0.005) voiceFocus.rendered = null;
+  const activeQuoteIndex = particleFocus.index >= 0 ? particleFocus.index : -1;
   const voiceStageMix = particleStoryMix.voices * voiceFocusMix;
   const actStageMix = particleStoryMix.acts * actFocusMix;
   const quoteStageMix = particleStoryMix.quotes;
@@ -2928,21 +2252,25 @@ function animate() {
 gsap.ticker.add(animate);
 
 const quotePanelEl = document.getElementById('quotePanel');
-let lastFocusedCard = null;
 let quotePanelHideTimer = null;
-const closeQuotePanel = () => {
+/* DECLARACIÓN DE FUNCIÓN, NO `const` CON FLECHA, A PROPÓSITO.
+   Se pasa como dependencia a initVoiceExplorer(), que se llama unas 500
+   líneas más arriba. Con `const closeQuotePanel = () => {...}` eso es zona
+   muerta temporal y revienta al arrancar. Una declaración se iza, y su
+   cuerpo no se ejecuta hasta que alguien la llama, que siempre es después
+   de que el módulo termine de cargar. */
+function closeQuotePanel() {
   quotePanelEl.classList.remove('visible');
   quotePanelEl.setAttribute('aria-hidden', 'true');
   clearTimeout(quotePanelHideTimer);
   quotePanelHideTimer = setTimeout(() => {
     if (!quotePanelEl.classList.contains('visible')) quotePanelEl.hidden = true;
   }, 360);
-  pinnedIndex = -1;
-  hoverIndex = -1;
-  activeParticleFocus = -1;
+  clearSelection();
+  particleFocus.index = -1;
   syncAxesMarkFocus(-1);
-  if (lastFocusedCard) { lastFocusedCard.focus({ preventScroll: true }); lastFocusedCard = null; }
-};
+  if (focusReturn.card) { focusReturn.card.focus({ preventScroll: true }); focusReturn.card = null; }
+}
 document.getElementById('quotePanelClose').addEventListener('click', closeQuotePanel);
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && quotePanelEl.classList.contains('visible')) closeQuotePanel();
@@ -2974,7 +2302,6 @@ if (window.visualViewport) {
 /* ────────────────────────────────
    Acto 4: D3.js + WebGL Bridge
 ──────────────────────────────── */
-let d3Scales = {};
 /* 0→1 mientras #stageAxes es protagonista: el enjambre ambiental cede
    protagonismo (opacidad) para que la capa factual SVG y sus destinos
    proyectados manden. */
@@ -2984,181 +2311,7 @@ let axesFocusT = 0;
    muestra. Así el plano comunica algo más que color: la distancia al eje
    central conserva la diferencia entre señales fuertes y suaves, siempre de
    forma determinística para que la composición no cambie al recargar. */
-function getQuoteAxisSentiment(q) {
-  const label = q?.label || 'neutral';
-  const score = THREE.MathUtils.clamp(Number(q?.score) || 0.7, 0, 1);
-  const seed = String(q?.date || '').length + String(q?.text || '').length;
-  let x = Math.sin(seed * 9301 + 49297) * 233280;
-  const seeded = x - Math.floor(x);
-  if (label === 'hawkish') return 0.30 + score * 0.40;
-  if (label === 'dovish') return -(0.30 + score * 0.40);
-  return (seeded - 0.5) * 0.18;
-}
 
-function initD3Axes() {
-  const container = document.getElementById('d3-canvas');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const vp = getViewportSize();
-  const width = vp.width;
-  const height = vp.height;
-
-  const svg = d3.select(container)
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    .attr('role', 'img')
-    .attr('aria-label', 'Mapa de intervenciones: cada punto conserva su fecha, participante y fragmento')
-    .style('position', 'absolute')
-    .style('inset', '0');
-
-  /* Más área vertical para que la diferencia entre tonos se lea como un
-     mapa y no como una hilera de puntos. El eje cero permanece cerca del
-     centro óptico de la pantalla. */
-  const margin = {
-    top: height * (width < 640 ? 0.34 : 0.28),
-    right: width * 0.15,
-    bottom: height * 0.18,
-    left: width * 0.15,
-  };
-  const innerW = width - margin.left - margin.right;
-  const innerH = height - margin.top - margin.bottom;
-
-  const xScale = d3.scaleTime()
-    .domain([new Date(2000, 0, 1), new Date(2015, 11, 31)])
-    .range([margin.left, width - margin.right]);
-
-  const yScale = d3.scaleLinear()
-    .domain([-1, 1])
-    .range([margin.top + innerH, margin.top]);
-
-  d3Scales = { xScale, yScale };
-
-  const axisY = margin.top + innerH / 2;
-  const g = svg.append('g');
-
-  /* Campo de lectura: una caja casi invisible, guías verticales y dos
-     referencias horizontales. El marco da estructura al mapa sin quitarle
-     aire ni hacerlo parecer un dashboard convencional. */
-  g.append('rect')
-    .attr('class', 'axes-plot-field')
-    .attr('x', margin.left)
-    .attr('y', margin.top)
-    .attr('width', innerW)
-    .attr('height', innerH)
-    .attr('rx', Math.min(8, width * 0.01));
-
-  const tickCount = width < 500 ? 4 : width < 900 ? 6 : 8;
-  const gridLayer = g.append('g').attr('class', 'axes-grid');
-  gridLayer.selectAll('.axes-grid-vertical')
-    .data(xScale.ticks(tickCount))
-    .join('line')
-    .attr('class', 'axes-grid-vertical')
-    .attr('x1', (date) => xScale(date)).attr('x2', (date) => xScale(date))
-    .attr('y1', margin.top).attr('y2', margin.top + innerH);
-
-  [-0.5, 0.5].forEach((value) => {
-    g.append('line')
-      .attr('class', 'axes-grid-guide')
-      .attr('x1', margin.left).attr('x2', width - margin.right)
-      .attr('y1', yScale(value)).attr('y2', yScale(value));
-  });
-  g.append('line')
-    .attr('class', 'axes-zero-line')
-    .attr('x1', margin.left).attr('x2', width - margin.right)
-    .attr('y1', axisY).attr('y2', axisY);
-
-  /* Puntos de dato nítidos en SVG. El enjambre 3D queda como atmósfera; este
-     plano es la lectura precisa de las 99 intervenciones dentro del rango
-     2000–2015 y el radio recupera el score de orientación. */
-  const domainStart = new Date(2000, 0, 1).getTime();
-  const domainEnd = new Date(2015, 11, 31).getTime();
-  const axisQuotes = quotes
-    .map((q, index) => ({ q, index, date: new Date(q.date) }))
-    .filter(({ date }) => date.getTime() >= domainStart && date.getTime() <= domainEnd);
-  const dataLayer = svg.append('g').attr('class', 'axes-data-layer');
-  const dataPoints = dataLayer.selectAll('.axes-data-point')
-    .data(axisQuotes, (d) => d.index)
-    .join((enter) => {
-      const group = enter.append('g').attr('class', 'axes-data-mark');
-      group.append('circle').attr('class', 'axes-data-halo');
-      group.append('circle').attr('class', 'axes-data-point');
-      return group;
-    });
-
-  dataPoints
-    .attr('transform', ({ q, date }) => `translate(${xScale(date)}, ${yScale(getQuoteAxisSentiment(q))})`)
-    .attr('data-quote-index', ({ index }) => index)
-    .attr('class', ({ q }) => `axes-data-mark axes-data-mark--${q.label || 'neutral'}`)
-    .attr('tabindex', '0')
-    .attr('role', 'button')
-    .attr('aria-label', ({ q }) => `Abrir intervención ${q.label || 'neutral'} de ${q.participant || 'participante anónimo'}, ${q.formatted_date || q.date || q.year || 'fecha no especificada'}`)
-    .on('keydown', (event, d) => {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      event.preventDefault();
-      lastFocusedCard = event.currentTarget;
-      pinnedIndex = d.index;
-      hoverIndex = -1;
-      openQuote(d.index, { x: window.innerWidth * 0.55, y: window.innerHeight * 0.58 });
-    })
-    .on('click', (event, d) => {
-      event.stopPropagation();
-      lastFocusedCard = event.currentTarget;
-      pinnedIndex = d.index;
-      hoverIndex = -1;
-      openQuote(d.index, { x: event.clientX, y: event.clientY });
-    })
-    .each(function ({ q }) {
-      const score = THREE.MathUtils.clamp(Number(q.score) || 0.7, 0, 1);
-      const radius = 2.8 + score * 2.1;
-      const mark = d3.select(this);
-      mark.select('.axes-data-halo')
-        .attr('r', radius * 1.9)
-        .attr('class', `axes-data-halo axes-data-halo--${q.label || 'neutral'}`);
-      mark.select('.axes-data-point')
-        .attr('r', radius)
-        .attr('class', `axes-data-point axes-data-point--${q.label || 'neutral'}`);
-    });
-
-  const xAxis = d3.axisBottom(xScale)
-    .ticks(tickCount)
-    .tickSizeOuter(0)
-    .tickFormat(d3.timeFormat('%Y'));
-  const xAxisGroup = g.append('g')
-    .attr('class', 'axes-x-axis')
-    .attr('transform', `translate(0, ${axisY})`)
-    .call(xAxis);
-  xAxisGroup.selectAll('text')
-    .attr('dy', '1.55em')
-    .style('fill', 'rgba(255,255,255,0.48)')
-    .style('font-family', 'var(--font-body)')
-    .style('font-size', width < 500 ? '10px' : '12px')
-    .style('letter-spacing', '0.2px');
-  xAxisGroup.selectAll('.domain, .tick line')
-    .style('stroke', 'rgba(255,255,255,0.13)');
-
-  /* Etiquetas de tono en el eje Y — el copy de la sección lo promete
-     ("arriba restrictivo, abajo expansivo") y ahora se apoyan en el marco
-     del plano, no flotan separadas del gráfico. */
-  const narrowAxes = width < 640;
-  const toneX = narrowAxes ? 10 : margin.left - 16;
-  const toneAnchor = narrowAxes ? 'start' : 'end';
-  svg.append('text')
-    .attr('x', toneX).attr('y', margin.top - 12)
-    .attr('text-anchor', toneAnchor)
-    .style('fill', 'rgba(255,215,106,0.82)').style('font-size', width < 500 ? '11px' : '13px')
-    .style('letter-spacing', '2px').style('text-transform', 'uppercase')
-    .text('Hawkish ↑');
-  svg.append('text')
-    .attr('x', toneX).attr('y', margin.top + innerH + 20)
-    .attr('text-anchor', toneAnchor)
-    .style('fill', 'rgba(138,180,248,0.82)').style('font-size', width < 500 ? '11px' : '13px')
-    .style('letter-spacing', '2px').style('text-transform', 'uppercase')
-    .text('Dovish ↓');
-
-  return d3Scales;
-}
 
 /* Cámara de "layout" para proyectar el scatter de intervenciones SIEMPRE
    con el encuadre base (hero), no con la cámara animada del momento. Si se
@@ -3180,7 +2333,7 @@ function getLayoutCamera() {
 }
 
 function get3DPosFromData(date, sentiment) {
-  const { xScale, yScale } = d3Scales;
+  const { xScale, yScale } = axesState.scales;
   if (!xScale || !yScale) return new THREE.Vector3(0, 0, 0);
 
   const px = xScale(date);
@@ -3200,7 +2353,7 @@ function get3DPosFromData(date, sentiment) {
    el SVG. No se inventa una segunda muestra: fecha, voz, acta y tono son
    los metadatos que deciden dónde puede ir cada punto. */
 function buildParticleStoryTargets() {
-  if (!quotes.length || !d3Scales.xScale || !d3Scales.yScale) return;
+  if (!quotes.length || !axesState.scales.xScale || !axesState.scales.yScale) return;
 
   const participantGroups = new Map();
   const actGroups = new Map();
@@ -3260,7 +2413,8 @@ function buildParticleStoryTargets() {
   particleTargetsReady = true;
 }
 
-initD3Axes();
+/* "Mapa de intervenciones" vive en js/sections/axes-map.js. */
+initD3Axes({ quotes, openQuote });
 buildParticleStoryTargets();
 /* Debounce: en mobile el resize dispara varias veces (barra de URL) y
    reconstruir el SVG entero en cada evento era innecesario */
@@ -3268,10 +2422,10 @@ let d3ResizeT;
 function onViewportResizeDebounced() {
   clearTimeout(d3ResizeT);
   d3ResizeT = setTimeout(() => {
-    initD3Axes();
+    initD3Axes({ quotes, openQuote });
     buildParticleStoryTargets();
     initWordEvolution(quotes);
-    if (activeParticleFocus >= 0) syncAxesMarkFocus(activeParticleFocus);
+    if (particleFocus.index >= 0) syncAxesMarkFocus(particleFocus.index);
     rebuildCameraChoreography();
   }, 150);
 }
@@ -3421,7 +2575,8 @@ updateScrubber();
    registradas; se inicializa aquí, después de construir el canvas D3. */
 initParticleStoryScroll();
 initWordEvolution(quotes);
-initActBrowser();
+/* "De la señal a la fuente" vive en js/sections/act-browser.js. */
+initActBrowser({ quotes, openQuote });
 
 const lenis = new Lenis({
   duration: reduceMotion ? 0 : 1.2,
@@ -3597,12 +2752,12 @@ if (DOOR_MODE === 'doorway') {
     onEnterBack: () => { inRoom = true; },
     onLeave: () => {
       inRoom = false;
-      pinnedIndex = -1; hoverIndex = -1;
+      clearSelection();
       syncQuotePanel();
     },
     onLeaveBack: () => {
       inRoom = false;
-      pinnedIndex = -1; hoverIndex = -1;
+      clearSelection();
       syncQuotePanel();
     },
   });
@@ -4058,9 +3213,8 @@ quoteEls.forEach((el) => {
     let idx = quotes.findIndex(q => q.participant === name && q.year === year);
     if (idx < 0) idx = quotes.findIndex(q => q.participant === name);
     if (idx >= 0) {
-      lastFocusedCard = el;
-      pinnedIndex = idx;
-      hoverIndex = -1;
+      focusReturn.card = el;
+      pinQuote(idx);
       const r = el.getBoundingClientRect();
       openQuote(idx, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
     }

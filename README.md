@@ -33,29 +33,40 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 | **Configuración** | `js/config.js` | Todos los números de la escena. Ni una línea de lógica. |
 | **Funciones puras** | `js/topics.js`, `js/utils.js` | Sin DOM, sin Three.js. Testables tal cual. |
 | **Entorno** | `js/viewport.js` | El tamaño del lienzo. Lee el DOM, nada más. |
+| **Estado compartido** | `js/interaction-state.js` | Lo único que las secciones y la escena 3D se dicen entre sí. |
 | **Sistemas** | `js/figures.js` | El sistema de figuras 3D: carga, apilado, placeholders. |
 | **Secciones** | `js/sections/*.js` | Una sección de scrollytelling cada uno. Reciben sus datos por parámetro. |
-| **Aplicación** | `js/main.js` | La escena, el bucle de render y el resto de secciones. |
+| **Aplicación** | `js/main.js` | La escena, el bucle de render y el scrollytelling. |
 
-Una sección solo puede vivir en `js/sections/` si **no toca la escena 3D**. En
-cuanto necesita saber qué partícula está señalada, deja de ser autónoma; ver
-el Paso 2 del plan más abajo.
+**Las dos reglas que hacen que esto se sostenga:**
+
+1. **Una sección no importa `main.js`.** Nunca. Lo que necesita de la
+   aplicación —`quotes`, `openQuote`, `closeQuotePanel`— lo recibe en la firma
+   de su `init`. Si mañana hay que probar una sección aislada, se le pasan
+   datos falsos y funciona.
+2. **El único puente con el 3D es `js/interaction-state.js`.** Nada más.
+   Una sección puede querer saber qué cita está señalada; no puede tocar la
+   cámara, ni las partículas, ni el renderer.
 
 ```
 ├── index.html              661 líneas · SOLO marcado: ni un <style>, ni un <script> con cuerpo
 ├── css/                    22 hojas · 3.970 líneas · el prefijo numérico ES el orden de cascada
 │   └── README.md           qué hace cada hoja y por qué está en ese número
 ├── js/
-│   ├── main.js           4.241 líneas · escena 3D + secciones + scrollytelling  ⚠ ver "Deuda"
+│   ├── main.js           3.395 líneas · escena 3D + bucle de render + scrollytelling
 │   ├── config.js           265 · cámara, luces, moneda, puerta, órbitas, La Sala, HERO
+│   ├── interaction-state.js  82 · el ÚNICO puente entre las secciones DOM y la escena 3D
 │   ├── viewport.js          28 · getViewportSize() / isCompactWidth(), el tamaño del lienzo
 │   ├── figures.js          357 · sistema de figuras (carga GLB, apila sobre pedestal, placeholders)
-│   ├── sections/           secciones extraídas: DOM + D3, cero dependencias del 3D
+│   ├── sections/         1.392 · una sección de scrollytelling por archivo
+│   │   ├── act-browser.js     376 · "Navegador de actas"
+│   │   ├── voice-explorer.js  311 · "Las voces" — directorio editorial
 │   │   ├── word-evolution.js  275 · "El lenguaje cambia"
-│   │   └── timeline.js        252 · "Índice de orientación por año"
+│   │   ├── timeline.js        252 · "Índice de orientación por año"
+│   │   └── axes-map.js        178 · "Mapa de intervenciones" (D3)
 │   ├── quotes.js           893 · las 99 citas (dato, no código)
 │   ├── topics.js            21 · taxonomía temática + normalización de texto (puro)
-│   ├── utils.js             13 · particleRandom (puro)
+│   ├── utils.js             33 · particleRandom, clamp, getQuoteAxisSentiment (puros)
 │   ├── three.module.js         Three.js r160
 │   ├── vendor/                 GSAP, ScrollTrigger, SplitText, CustomEase, D3, Lenis, Draco
 │   └── loaders/ utils/ controls/ environments/ objects/    addons de Three.js
@@ -76,20 +87,19 @@ Es el archivo que hay que saber recorrer. Va en este orden:
 
 | Líneas | Región |
 |---|---|
-| 1–160 | imports, constantes del DOM, escena, cámara, luces, estado de módulo |
-| 163–260 | figuras de La Sala + rig de luces de la puerta |
-| **276–400** | **composición del hero**: `getHeroBand()` / `getHeroCoinFrame()` |
-| 480–795 | la puerta (Acto 2): carga, escalado, texto del vano |
-| 799–945 | enjambre de partículas (memoria trazable) |
-| 948–1560 | órbitas de La Sala + panel de cita + navegación por teclado |
-| **1572** | `refreshRoomAim()` — encuadre de La Sala contra su titular |
-| **1629–1760** | **coreografía de cámara** (`cameraChoreographyStops`) |
-| 1762–2065 | Las voces — directorio editorial |
-| 2071–2435 | Navegador de actas |
-| **2441–2925** | **`animate()`** — el bucle de render |
-| 2930–3440 | mapa D3 de intervenciones + hook de señales |
-| 3443–4035 | todos los `ScrollTrigger` de todas las secciones |
-| 4038–4241 | Quotes, Closing y las "técnicas premium" (parallax, velocidad) |
+| 1–165 | imports, constantes del DOM, escena, cámara, luces, estado de módulo |
+| 170–260 | figuras de La Sala + rig de luces de la puerta |
+| **280–400** | **composición del hero**: `getHeroBand()` / `getHeroCoinFrame()` |
+| 487–800 | la puerta (Acto 2): carga, escalado, texto del vano |
+| 806–950 | enjambre de partículas (memoria trazable) |
+| 955–1560 | órbitas de La Sala + panel de cita + navegación por teclado |
+| **~1575** | `refreshRoomAim()` — encuadre de La Sala contra su titular |
+| **1627–1760** | **coreografía de cámara** (`cameraChoreographyStops`) |
+| 1762–2430 | llamadas a las secciones + construcción de objetivos de partículas |
+| 2438–2595 | hook de señales hawkish/dovish |
+| **2100–2600** | **`animate()`** — el bucle de render |
+| 2598–3245 | todos los `ScrollTrigger`, sección por sección |
+| 3250–3395 | "técnicas premium": color de fondo, parallax, velocidad de scroll |
 
 Los números envejecen a cada commit. Para regenerar el mapa:
 
@@ -118,22 +128,19 @@ Se resuelven contra dos bases distintas y no hay forma de saberlo mirando:
 
 ### Deuda estructural (medida, no impresiones)
 
-Esto no está bien dividido, y conviene tenerlo escrito:
+Dónde estaba el proyecto y dónde está ahora:
 
-| Síntoma | Medida |
-|---|---|
-| `main.js` acapara el código | **4.241 líneas = 82 %** de todo el JS propio sin contar los datos |
-| Mitad del archivo no son funciones | **2.005 líneas a nivel de módulo**: es un script, no un módulo |
-| Estado global compartido | **48 variables `let` de módulo** que cualquiera de las 52 funciones puede escribir |
-| Una función hace demasiado | `animate()` = **485 líneas** (moneda, puerta, partículas, órbitas, cámara, luces) |
-| Secciones que no pertenecen ahí | `initActBrowser` 364 · `initVoiceExplorer` 298 · `initD3Axes` 164 = **826 líneas** |
-| El archivo base del CSS es el que más pisa | `00-tokens-base.css` tiene **42 `!important`** de los 68 del proyecto |
+| Síntoma | Al empezar | Ahora |
+|---|---|---|
+| `main.js` acapara el código | 4.742 líneas = **88 %** del JS propio | 3.395 = **63 %** |
+| Estado global suelto | **52 `let` de módulo** | **40**, y 8 de ellos agrupados en `interaction-state.js` |
+| Una función hace demasiado | `animate()` = 485 líneas | `animate()` = **497 líneas** — sin tocar, es el Paso 3 |
+| Secciones que no pertenecen ahí | 5 secciones dentro de `main.js` = **1.392 líneas** | **0** |
+| El archivo base del CSS es el que más pisa | `00-tokens-base.css`: **42 `!important`** de los 68 | igual, sin tocar |
 
-Consecuencia concreta y ya observada: `openQuote`, `closeQuotePanel` y
-`activeParticleFocus` tienen zona muerta temporal (TDZ) y solo se pueden usar
-dentro de manejadores de evento. Eso es el estado compartido pasando factura.
-
-**El plan de salida** está en la sección "Lo que aún está pendiente de ordenar".
+Lo que queda es `animate()`, y es lo más delicado del archivo: 497 líneas que
+actualizan seis sistemas por frame en un orden que importa y que nadie ha
+escrito. **El plan de salida** está en "Lo que aún está pendiente de ordenar".
 
 ## Cómo se trabaja en este repo
 
@@ -142,9 +149,10 @@ Esto está escrito porque el proyecto llegó a tener **9.077 líneas en un solo
 y sin ninguna comprobación automática. Funcionaba, pero cada cambio era una
 apuesta. Las reglas de abajo existen para que no vuelva a pasar.
 
-Que el HTML y el CSS ya estén partidos **no significa que el proyecto esté bien
-dividido**: el JS sigue concentrado en un archivo. Lo medido está en "Deuda
-estructural" y el plan para salir de ahí, en el punto 5.
+El JS estaba igual de concentrado y ya no lo está: las cinco secciones de
+scrollytelling viven en `js/sections/`, y `main.js` bajó de 4.742 a 3.395
+líneas. Lo medido está en "Deuda estructural"; lo que queda por hacer, en el
+punto 5.
 
 ### 1. Cada cosa en su archivo
 
@@ -154,7 +162,10 @@ estructural" y el plan para salir de ahí, en el punto 5.
 | Cómo se ve algo | el `css/*.css` de esa sección |
 | El marcado de una sección | `index.html` |
 | Una figura 3D, su pedestal o su escala | `js/figures.js` |
-| Lógica de la escena o del scroll | `js/main.js` |
+| Una sección de scrollytelling (DOM, D3, listas, filtros) | `js/sections/<sección>.js` |
+| Qué cita está señalada o fijada | `js/interaction-state.js` |
+| Una función pura sin DOM ni Three.js | `js/utils.js` o `js/topics.js` |
+| La escena 3D, el bucle de render o los `ScrollTrigger` | `js/main.js` |
 | Una comprobación automática | `tools/` o `scripts/screenshots/` |
 
 **`index.html` es solo marcado.** Nada de `<style>`, nada de `<script>` con
@@ -163,6 +174,23 @@ ahí, es la señal de que estás repitiendo el problema.
 
 **`js/config.js` antes que un número mágico.** Un valor que ajusta cómo se ve
 la escena va con nombre en CONFIG, no incrustado a 3.000 líneas de distancia.
+
+**Una sección nueva se escribe así**, y en este orden:
+
+```js
+// js/sections/mi-seccion.js
+import { pinQuote } from '../interaction-state.js';   // si necesita la selección
+export function initMiSeccion({ quotes, openQuote }) { // TODO lo demás, por parámetro
+  const root = document.getElementById('mi-seccion');
+  if (!root) return;                                   // sin su DOM, no hace nada
+  …
+}
+```
+
+Y en `main.js`, **la llamada va exactamente donde estaba el código**. No unas
+líneas más arriba porque quede más ordenado: los `ScrollTrigger` con `pin`
+cambian la altura del documento y el orden de ejecución es parte del contrato.
+Esto ya rompió una sección una vez (ver el Paso 1 del punto 5).
 
 ### 2. Ejecuta `npm run check` antes de dar algo por bueno
 
@@ -244,21 +272,42 @@ e `isCompactWidth()` salieron con ellas a `js/viewport.js`.
 > código a un módulo es seguro; cambiar cuándo se ejecuta, no. Lo cazó
 > `npm run shots` comparando píxeles, no la lectura del diff.
 
-**Paso 2 — sacar las tres que tocan el 3D por una rendija.**
-`initActBrowser()` (364), `initVoiceExplorer()` (298) e `initD3Axes()` (164)
-solo dependen del 3D a través de `hoverIndex` y `pinnedIndex` (qué partícula
-está señalada o fijada). Eso es una *selección*, no la escena: sale a un módulo
-pequeño con `get/set` y suscripción, y las tres secciones se van detrás.
-Otras 826 líneas fuera. `main.js` bajaría de 4.241 a ≈3.400.
+**Pasos 2 y 4 — las tres secciones que tocaban el 3D, y el estado global. ✅ HECHO.**
+Se hicieron juntos porque son el mismo problema. `initActBrowser()`,
+`initVoiceExplorer()` e `initD3Axes()` no dependían de la escena: dependían de
+saber *qué cita está señalada*. Eso es una selección, no un renderer.
 
-**Paso 3 — partir `animate()`.**
-485 líneas que actualizan seis sistemas distintos por frame. Cada uno tiene su
+Primero salió `js/interaction-state.js`, que agrupa los ocho `let` sueltos que
+cruzaban la frontera —`hoverIndex`, `pinnedIndex`, `voiceFocusParticipant`,
+`d3Scales`, `focusReturnCard`…— en cuatro objetos con nombre (`selection`,
+`voiceFocus`, `axesState`, `particleFocus`) más los verbos que se hacían con
+ellos: `pinQuote()`, `peekQuote()`, `clearSelection()`, `isPinned()`. Leer
+`pinQuote(i)` dice qué pasa; `pinnedIndex = i` no decía nada.
+
+Con la frontera hecha explícita, las tres secciones se fueron detrás sin
+resistencia. **main.js: 4.241 → 3.395 líneas.**
+
+> **Las dos lecciones del Paso 2.**
+> **(a) Analizar dependencias buscando solo `let`/`const` no sirve.** Las
+> declaraciones `function` de nivel de módulo no aparecen en esa búsqueda, así
+> que un módulo se extrae "limpio" y revienta en tiempo de ejecución llamando a
+> algo que se quedó atrás (`normalizeTopicText`, `getQuoteAxisSentiment`).
+> Lo cazó `npm run check`, no la lectura.
+> **(b) Pasar una función como argumento fuerza a evaluarla ya.**
+> `closeQuotePanel` era un `const` con flecha declarado 500 líneas después de
+> donde ahora se inyecta: funcionaba solo porque hasta entonces únicamente se
+> leía dentro de manejadores de evento. Pasó a ser una declaración `function`,
+> que sí se iza. La TDZ estaba ahí desde siempre; la inyección la destapó.
+
+Efecto lateral que merece la pena: `getQuoteAxisSentiment()` —dónde cae una
+cita en el eje hawkish/dovish— la usaban el mapa SVG y la nube de partículas
+por separado. Ahora vive una sola vez en `js/utils.js`. Antes podían
+desincronizarse y nadie se habría enterado.
+
+**Paso 3 — partir `animate()`. ⬅ SIGUIENTE.**
+497 líneas que actualizan seis sistemas distintos por frame. Cada uno tiene su
 propio estado y se puede extraer a `update<Sistema>(t, dt)`. Este es el que más
 cuidado pide: el orden de las actualizaciones importa y no está documentado.
-
-**Paso 4 — el estado global.**
-52 `let` de módulo. Después de los pasos 1–3 quedarán muchos menos, y los que
-sobrevivan se agrupan por sistema en vez de vivir sueltos.
 
 **Cómo se valida un paso de estos.** Antes no había forma de verificar un
 refactor de este tamaño; ahora hay tres redes:
@@ -269,10 +318,16 @@ npm run shots -- --w=1440 --h=900   # las 13 secciones con WebGL real, sale 1 si
 npm run hero:check                  # la portada en 12 viewports
 ```
 
-El criterio del Paso 1 fue **equivalencia de píxeles**: capturar antes,
-refactorizar, capturar después y comparar. Quedó en 0,2 % de píxeles distintos
-en las dos secciones tocadas, que es exactamente el ruido de las partículas
-animadas del fondo 3D. Menos del 0,5 % = no ha cambiado nada.
+El criterio es **equivalencia de píxeles**: capturar antes, refactorizar,
+capturar después y comparar. Menos del 0,5 % de píxeles distintos = no ha
+cambiado nada; ese es el ruido de las partículas animadas del fondo 3D.
+
+Con una excepción que hay que saber leer: **el hero y La Sala tienen animación
+continua** (la moneda gira, las partículas orbitan). Ahí el diff numérico sale
+alto —10 % en el hero— sin que haya cambiado nada, porque las dos capturas
+pillan la moneda en distinta fase de giro. En esas dos secciones el diff no
+decide: hay que mirar las dos imágenes. Las once restantes sí son deterministas
+y en el Paso 2 quedaron todas por debajo del 0,4 %.
 
 **Lo que NO conviene tocar todavía:** los `style="..."` inline que quedan en
 `index.html` son de la maqueta original y varios los pisa GSAP en caliente;
