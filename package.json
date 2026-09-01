@@ -6,7 +6,8 @@
     "start": "python3 -m http.server 8000",
     "dev": "python3 -m http.server 8000",
     "check": "node tools/smoke-test.mjs",
-    "shots": "node scripts/screenshots/capture.mjs"
+    "shots": "node scripts/screenshots/capture.mjs",
+    "hero:check": "node scripts/screenshots/hero-check.mjs"
   },
   "keywords": [
     "scrollytelling",

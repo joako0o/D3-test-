@@ -251,6 +251,11 @@ const coinMats = [];
 let coinModel = null;
 let coinScaleBase = 0;
 let coinTargetPx = 0;
+/* Caja de la moneda en pantalla, cacheada. getHeroCoinFrame() lee offsetTop
+   del titular, o sea que fuerza layout: NO se puede llamar por frame. Se
+   recalcula en applyCoinScale(), que ya corre en cada resize y en
+   fonts.ready, y animate() lee esta copia. */
+let heroCoinFrame = { diameter: 0, centerY: 0, band: null };
 
 /* Basis de tamaño del layout: window.innerWidth/Height, como antes de la
    corrección de resize. visualViewport se usa SOLO como disparador de
@@ -280,58 +285,65 @@ function getHeroTitleTop() {
     : heroTitle.getBoundingClientRect().top + (window.scrollY || 0);
 }
 
-function getResponsiveCoinTargetPx() {
+/* ── Composición del hero: la BANDA LIBRE ────────────────────────────
+   El hueco real que queda entre la barra de marca y el titular. Todo lo
+   demás del hero (diámetro de la moneda y su altura en pantalla) se deriva
+   de aquí, así que la proporción es la misma en cualquier viewport.
+   Ver el diagrama y el porqué en js/config.js → HERO. */
+function getHeroBand() {
   const { width: w, height: h } = getViewportSize();
-  const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 34);
-  /* La moneda conserva una escala visual proporcional al viewport, pero no
-     puede crecer hasta invadir el bloque editorial del hero. */
-  const compact = isCompactWidth();
-  /* El diámetro es una DECISIÓN (fracción del alto, con tope por ancho para
-     móvil), no lo que sobra tras colocar el título. Antes se derivaba de
-     `available` y por eso la moneda cambiaba de tamaño cuando el titular
-     envolvía a otra línea, y crecía hasta el 52% del alto en portátiles
-     bajos mientras se quedaba en el 38% en un monitor grande: no era la
-     misma composición en dos pantallas. */
-  const minTargetPx = Math.min(w, h) * (HERO_DOOR_LOCKUP
-    ? (compact ? 0.40 : 0.38)
-    : (compact ? 0.46 : 0.40));
-  const designTargetPx = Math.min(h * HERO.coinSizeRatio, w * HERO.coinWidthRatio);
-  const baseTargetPx = HERO_DOOR_LOCKUP
-    ? designTargetPx
-    : Math.min(
-      Math.max(fontPx * 9, minTargetPx),
-      Math.min(w * 0.5, 680)
-    );
-
+  const top = THREE.MathUtils.clamp(h * HERO.safeTopRatio, 56, 112);
   const titleTop = getHeroTitleTop();
-  const safeTop = Math.max(64, Math.min(108, h * HERO.safeTopRatio));
-  const gap = Math.max(18, Math.min(32, Math.min(w, h) * 0.035));
-  const available = titleTop - safeTop - gap;
-  if (Number.isFinite(titleTop) && titleTop > 0) {
-    if (available > 0) {
-      /* En un móvil alto hay espacio de sobra; en una ventana baja el límite
-         evita que el diámetro de la moneda se coma el copy del título. */
-      if (HERO_DOOR_LOCKUP) {
-        /* Cota por espacio disponible SIEMPRE (antes solo si h <= 700):
-           al cruzar ese umbral la moneda volvía a su tamaño base y podía
-           volver a pisar el título justo encima de 700px o en paisaje.
-           available*0.86 + el piso minTargetPx*0.7 conservan el tamaño
-           visual; el Math.min(fit, available) es la cota dura: la moneda
-           nunca puede ser más grande que el hueco entre la zona segura y
-           el título, por muy estrecho que sea el viewport. */
-        /* `available` pasa a ser RED DE SEGURIDAD, no el mecanismo que
-           decide: solo actúa si el hueco real es menor que el diámetro
-           elegido (ventanas muy bajas o títulos de tres líneas). */
-        return Math.min(baseTargetPx, available);
-      }
-      return Math.min(baseTargetPx, available * 0.82);
-    }
-    /* El título ya sube muy arriba: no hay cota positiva. En vez de dejar
-       la moneda en su tamaño base (que choca con el texto), se reduce a un
-       mínimo seguro y se le da aire extra. */
-    return Math.min(baseTargetPx, minTargetPx * 0.62);
+  /* Si el título aún no ha maquetado (primer frame, fuentes sin cargar) se
+     usa una estimación; refreshLayout() vuelve a llamar en fonts.ready. */
+  const anchor = (Number.isFinite(titleTop) && titleTop > 0 && titleTop < h * 1.5)
+    ? titleTop
+    : h * 0.78;
+  const bottom = anchor - Math.max(18, h * HERO.gapRatio);
+  return { w, h, top, bottom, height: Math.max(0, bottom - top) };
+}
+
+/* Diámetro y centro de la moneda EN PÍXELES DE PANTALLA. Una sola función,
+   una sola verdad: quien quiera saber dónde está la moneda pregunta aquí. */
+function getHeroCoinFrame() {
+  const band = getHeroBand();
+  const { w, h } = band;
+
+  if (!HERO_DOOR_LOCKUP) {
+    /* Portada sin puerta: se conserva el encuadre histórico. */
+    const fontPx = THREE.MathUtils.clamp(0.028 * w, 16, 34);
+    const legacy = Math.min(
+      Math.max(fontPx * 9, Math.min(w, h) * (isCompactWidth() ? 0.46 : 0.40)),
+      Math.min(w * 0.5, 680),
+      band.height > 0 ? band.height * 0.82 : Infinity
+    );
+    return { diameter: legacy, centerY: h * 0.41, band };
   }
-  return baseTargetPx;
+
+  const diameter = Math.max(
+    Math.min(w, h) * HERO.minSizeRatio,
+    Math.min(
+      band.height * HERO.fillRatio,
+      w * HERO.coinWidthRatio,
+      h * HERO.maxSizeRatio
+    )
+  );
+
+  /* El centro va dentro de la banda; si la moneda no cabe (viewport
+     bajísimo) se centra en la banda y el respiro se reparte solo. */
+  const half = diameter / 2;
+  const lo = band.top + half;
+  const hi = band.bottom - half;
+  const wanted = band.top + band.height * HERO.bandAnchor;
+  const centerY = hi >= lo
+    ? THREE.MathUtils.clamp(wanted, lo, hi)
+    : (band.top + band.bottom) / 2;
+
+  return { diameter, centerY, band };
+}
+
+function getResponsiveCoinTargetPx() {
+  return getHeroCoinFrame().diameter;
 }
 
 function getResponsiveCoinScale() {
@@ -346,33 +358,22 @@ function getResponsiveCoinScale() {
   );
 }
 
-/* El centro de la moneda se calcula contra el borde REAL del título, no
-   contra una coordenada fija en unidades 3D. Así el espacio entre moneda y
-   copy se conserva aunque el título pase de dos a cuatro líneas, cambie la
-   orientación o el navegador modifique el alto útil con sus barras. */
+/* Altura de la moneda EN EL MUNDO 3D.
+ *
+ * OJO, ESTO NO MUEVE LA MONEDA EN PANTALLA. La cámara del hero apunta a
+ * CONFIG.coin.baseY (ver el bloque `lockupCamMix` en animate()), así que
+ * subir baseY sube la cámara con ella y la moneda se queda donde estaba.
+ * Lo que sí cambia es la posición RELATIVA de todo lo demás que vive en
+ * coordenadas de mundo: sobre todo la puerta, que se planta y luego se
+ * interpola hacia coin.baseY.
+ *
+ * Quien quiera mover la moneda en pantalla tiene que ir a getHeroCoinFrame()
+ * / HERO.bandAnchor. Este número decide a qué altura queda el vano de la
+ * puerta detrás de ella.
+ */
 function getResponsiveCoinBaseY() {
-  const { width: w, height: h } = getViewportSize();
-  const targetPx = getResponsiveCoinTargetPx();
-  const safeTop = Math.max(64, Math.min(108, h * HERO.safeTopRatio));
-  const gap = Math.max(18, Math.min(32, Math.min(w, h) * 0.035));
-  const titleTop = getHeroTitleTop();
-  /* La posición base conserva el lenguaje visual del hero (la moneda en
-     la franja superior-media), pero nunca permite que su borde inferior
-     entre en el título. La cota se aplica en TODAS las ramas (también en
-     el lockup): antes quedaba solo fuera del lockup, así que en el hero
-     con vano la moneda podía llegar a tocar el copy. */
-  let centerY = h * (HERO_DOOR_LOCKUP ? HERO.centerYRatio : 0.41);
-
-  if (Number.isFinite(titleTop) && titleTop > 0 && titleTop < h + targetPx) {
-    /* Deja un colchón extra para que la moneda nunca toque el título,
-       incluso cuando el título ocupa gran parte del viewport. */
-    centerY = Math.min(centerY, titleTop - gap - targetPx / 2 - targetPx * 0.06);
-  }
-
-  const minCenter = Math.min(h / 2, safeTop + targetPx / 2);
-  const maxCenter = Math.max(minCenter, h - targetPx / 2 - 8);
-  centerY = THREE.MathUtils.clamp(centerY, minCenter, maxCenter);
-
+  const { height: h } = getViewportSize();
+  const centerY = h * (HERO_DOOR_LOCKUP ? HERO.centerYRatio : 0.41);
   const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
   const worldPxPerUnit = h / (2 * tanHalf * CONFIG.camera.z);
   return THREE.MathUtils.clamp(
@@ -383,7 +384,8 @@ function getResponsiveCoinBaseY() {
 }
 
 function applyCoinScale() {
-  coinTargetPx = getResponsiveCoinTargetPx();
+  heroCoinFrame = getHeroCoinFrame();
+  coinTargetPx = heroCoinFrame.diameter;
   if (coinModel && coinScaleBase) {
     coinModel.scale.setScalar(coinScaleBase * getResponsiveCoinScale());
   }
@@ -396,6 +398,12 @@ function applyCoinScale() {
 function getCoinWorldSize() {
   return CONFIG.coin.scale * getResponsiveCoinScale();
 }
+
+/* Primer valor de la caja del hero, antes de que corra applyCoinScale(): sin
+   esto la mira de la cámara arrancaría apuntando a centerY = 0 (el borde
+   superior de la pantalla) durante los primeros frames. */
+heroCoinFrame = getHeroCoinFrame();
+coinTargetPx = heroCoinFrame.diameter;
 
 /* Primera posición antes de que cargue el GLB; applyCoinScale() la recalcula
    al cargar fuentes, cambiar orientación o cambiar el viewport. */
@@ -2931,20 +2939,20 @@ function animate() {
       THREE.MathUtils.lerp(approachY, CONFIG.camera.y, lockupCamMix),
       THREE.MathUtils.lerp(approachZ, CONFIG.camera.z, lockupCamMix)
     );
-    /* La mira NO va al centro de la moneda: baja `coinLiftRatio` del alto
-       del viewport, convertido a unidades de mundo con la geometría real
-       de la cámara (fov y distancia a la moneda, que vive en z = 0.55).
-       Al ser relativo al viewport, la moneda queda a la misma altura
-       proporcional en un portátil y en un monitor grande. */
+    /* AQUÍ se decide dónde cae la moneda en la pantalla.
+       La mira NO va a su centro: se desplaza para que la moneda aterrice
+       exactamente en getHeroCoinFrame().centerY, que es el centro de la
+       banda libre medida contra el titular real. Como la cámara proyecta
+       lo que mira en el centro del viewport:
+           screenY = vpH/2 + (look.y − coin.baseY) · pxPerUnit
+       despejando, look.y = coin.baseY + (centerY − vpH/2) / pxPerUnit.
+       pxPerUnit usa el fov real y la distancia real a la moneda (z = 0.55). */
     const vpH = getViewportSize().height;
     const coinDist = Math.max(CONFIG.camera.z - 0.55, 1e-3);
     const pxPerUnit = vpH / (2 * Math.tan((CONFIG.camera.fov * Math.PI) / 360) * coinDist);
-    const aimDrop = (vpH * HERO.coinLiftRatio) / Math.max(pxPerUnit, 1e-6);
-    choreo.look.set(
-      0,
-      THREE.MathUtils.lerp(approachY, CONFIG.coin.baseY - aimDrop, lockupCamMix),
-      0
-    );
+    const aimY = CONFIG.coin.baseY
+      + (heroCoinFrame.centerY - vpH / 2) / Math.max(pxPerUnit, 1e-6);
+    choreo.look.set(0, THREE.MathUtils.lerp(approachY, aimY, lockupCamMix), 0);
   }
 
   /* La Sala (b1): dolly a través del umbral. Ida y vuelta usan el mismo

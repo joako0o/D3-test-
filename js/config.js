@@ -14,39 +14,72 @@
 export const HERO_DOOR_LOCKUP = true;
 
 /* ── Encuadre de la portada ───────────────────────────────────────────
- * Los tres números que gobiernan la composición del hero. Estaban
- * enterrados como literales dentro de getResponsiveCoinTargetPx() y
- * getResponsiveCoinBaseY(), en js/main.js.
+ * CÓMO SE COMPONE EL HERO (léelo antes de tocar un número)
  *
- * Se pueden probar EN CALIENTE sin tocar el archivo, añadiendo parámetros
- * a la URL; los valores de aquí son los de fábrica:
- *     ?coinSize=0.34&coinY=0.26&coinTop=0.11
+ * La moneda NO se coloca con una fracción fija del viewport. Se coloca
+ * dentro de la BANDA LIBRE: el hueco que queda entre la barra de marca de
+ * arriba y el borde real del titular, medido del DOM en cada resize.
+ *
+ *     ┌──────────────────────────────┐  0
+ *     │  2000–2015      PROTOTIPO    │
+ *     ├──────────────────────────────┤  banda.top    = safeTopRatio · alto
+ *     │                              │
+ *     │           ( moneda )         │  diámetro     = fillRatio · banda
+ *     │                              │  centro       = bandAnchor de la banda
+ *     ├──────────────────────────────┤  banda.bottom = titleTop − gapRatio·alto
+ *     │  In the room where…          │
+ *     └──────────────────────────────┘
+ *
+ * POR QUÉ ASÍ. Antes había tres mecanismos peleándose: el diámetro salía de
+ * una fracción del alto, el centro de OTRA fracción del alto, y una tercera
+ * función movía CONFIG.coin.baseY para "esquivar" el título — pero la cámara
+ * apunta a coin.baseY, así que se cancelaba sola. Resultado: el aire entre
+ * moneda y titular iba de 42 px a 235 px según la pantalla (medido en 280
+ * viewports), y en móvil apaisado la moneda pisaba el texto. Con la banda,
+ * la proporción es la MISMA en todas partes por construcción.
+ *
+ * Los valores se pueden probar EN CALIENTE por URL, sin tocar el archivo:
+ *     ?coinFill=0.78&coinAnchor=0.44&coinGap=0.05&coinTop=0.12
+ *
+ * Verificación: `npm run hero:check` mide el render real en 12 viewports.
  */
 const heroParam = (key, fallback) => {
   const v = parseFloat(new URLSearchParams(location.search).get(key));
   return Number.isFinite(v) ? v : fallback;
 };
 export const HERO = {
-  /* Diámetro de la moneda como fracción del ALTO del viewport. Es una
-     decisión de composición, no un resto: antes el diámetro salía de
-     restar lo que ocupaban el título y los márgenes, así que cambiaba
-     de tamaño según cómo envolviera el titular. */
-  coinSizeRatio: heroParam('coinSize', 0.38),
-  /* Tope por ANCHO, para que en móvil (alto >> ancho) no se desborde. */
-  coinWidthRatio: heroParam('coinWide', 0.40),
-  /* Centro vertical deseado, como fracción del alto. */
-  centerYRatio: heroParam('coinY', 0.31),
-  /* Franja intocable de arriba (la barra de marca). Fracción del alto,
-     acotada después entre 64 y 108 px. */
+  /* Alto de la franja intocable de arriba (la barra de marca), como
+     fracción del alto del viewport. Se acota luego entre 56 y 112 px. */
   safeTopRatio: heroParam('coinTop', 0.13),
-  /* Cuánto SUBE la moneda respecto al centro del encuadre, como fracción
-     del alto del viewport. 0 = centrada (comportamiento anterior).
-     En la portada la cámara mira exactamente al centro de la moneda, así
-     que la moneda caía siempre en el centro exacto de la pantalla y no
-     había forma de moverla: mover CONFIG.coin.baseY desplazaba la cámara
-     con ella. Esto baja la MIRA unos grados, que es lo que de verdad
-     sube la moneda en pantalla y deja aire para el título. */
-  coinLiftRatio: heroParam('coinLift', 0.08),
+
+  /* Respiro mínimo entre el borde inferior de la moneda y el titular,
+     como fracción del alto. Es lo que separa la banda del texto. */
+  gapRatio: heroParam('coinGap', 0.045),
+
+  /* Diámetro de la moneda como fracción de la ALTURA DE LA BANDA.
+     Este es el número que de verdad manda en el tamaño percibido:
+     0.72 deja un 14% de aire arriba y otro 14% abajo dentro de la banda. */
+  fillRatio: heroParam('coinFill', 0.72),
+
+  /* Dónde cae el centro de la moneda dentro de la banda. 0.5 = centrada;
+     por debajo de 0.5 sube. Un pelo por encima del centro óptico compensa
+     el peso visual del titular. */
+  bandAnchor: heroParam('coinAnchor', 0.47),
+
+  /* Topes duros, para que la banda no mande en casos extremos:
+     - por ancho, para que en móvil vertical no se salga por los lados;
+     - por alto, para que en una banda enorme (tablet vertical) la moneda
+       no se convierta en un planeta;
+     - mínimo, para que en un viewport bajísimo siga siendo reconocible. */
+  coinWidthRatio: heroParam('coinWide', 0.40),
+  maxSizeRatio: heroParam('coinSize', 0.42),
+  minSizeRatio: heroParam('coinMin', 0.20),
+
+  /* SOLO gobierna a qué altura se planta la PUERTA detrás de la moneda
+     (CONFIG.coin.baseY). No mueve la moneda en pantalla: la cámara apunta
+     a coin.baseY, así que subir este número sube la cámara con ella.
+     Para mover la moneda en pantalla se usa bandAnchor. */
+  centerYRatio: heroParam('coinY', 0.31),
 };
 
 /* ────────────────────────────────

@@ -15,6 +15,8 @@ Exploración interactiva de 16 años de reuniones de política monetaria en Chil
 ```bash
 npm start            # servidor estático en http://localhost:8000
 npm run check        # arranca el sitio fuera del navegador y avisa si algo revienta
+npm run shots        # capturas reales de cada sección (necesita npm start)
+npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
 ```
 
 `npm run check` necesita las dependencias de desarrollo una sola vez
@@ -42,6 +44,9 @@ publica.
 │   └── objects/            ← Reflector
 ├── tools/
 │   └── smoke-test.mjs      ← `npm run check`: arranca el sitio en jsdom
+├── scripts/screenshots/
+│   ├── capture.mjs         ← `npm run shots`: PNG de cada sección con WebGL real
+│   └── hero-check.mjs      ← `npm run hero:check`: la portada en 12 viewports
 ├── figures/
 │   ├── balanza.glb         ← Estatua de La Justicia (Draco, 177 KB)
 │   └── soporte.glb         ← Pedestal de la estatua (Draco, 28 KB)
@@ -86,7 +91,35 @@ Lo que **no** cubre: no hay WebGL (no valida shaders ni cómo se ve nada) ni
 abrir la página; sustituye descubrir en producción que un `const` mal escrito
 dejó la pantalla en negro.
 
-### 3. Accesibilidad: lo que hay que mantener
+### 3. La portada se compone contra el título, no con números mágicos
+
+La moneda la dibuja WebGL sobre un `<canvas>` a pantalla completa; el titular
+lo maqueta el CSS. Son dos sistemas que no se ven el uno al otro, así que nada
+impide que se solapen — y durante un tiempo se solapaban en móvil apaisado.
+
+La regla, implementada en `getHeroBand()` / `getHeroCoinFrame()` de
+`js/main.js` y documentada con diagrama en `js/config.js` → `HERO`:
+
+> La moneda vive dentro de la **banda libre**: el hueco entre la barra de
+> marca y el borde real del titular, medido del DOM (`offsetTop`) en cada
+> resize. Su diámetro es una fracción de esa banda, no del viewport.
+
+Dos trampas que cuestan tiempo si no se saben:
+
+1. **`CONFIG.coin.baseY` no mueve la moneda en pantalla.** La cámara del hero
+   apunta a `coin.baseY`, así que subirlo sube la cámara con él y la moneda se
+   queda donde estaba. Lo que sí mueve la moneda es la **mira** de la cámara,
+   en el bloque `lockupCamMix` de `animate()`. `coin.baseY` solo decide a qué
+   altura queda la puerta detrás.
+2. **`getHeroCoinFrame()` lee `offsetTop`, o sea que fuerza un reflow.** No se
+   puede llamar por frame: `applyCoinScale()` la cachea en `heroCoinFrame` y
+   `animate()` lee la copia.
+
+Al tocar cualquier número del hero, o el CSS del titular, pasa
+`npm run hero:check`. Prueba valores en caliente sin editar nada:
+`localhost:8000/?coinFill=0.78&coinAnchor=0.44&coinGap=0.05`.
+
+### 4. Accesibilidad: lo que hay que mantener
 
 No es un extra, y ya está construido. Al añadir cosas:
 
@@ -106,7 +139,7 @@ No es un extra, y ya está construido. Al añadir cosas:
 - **Un panel que se oculta se oculta de verdad**: `hidden` o `display: none`,
   no solo `opacity: 0`, o sus botones siguen siendo alcanzables con Tab.
 
-### 4. Lo que aún está pendiente de ordenar
+### 5. Lo que aún está pendiente de ordenar
 
 Honestidad sobre la deuda que queda:
 
