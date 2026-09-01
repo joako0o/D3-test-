@@ -1,0 +1,34 @@
+/* 27-figure-cabinet.css
+   Gabinete de figuras 3D (panel de estado).
+   Extraido de index.html — ver css/README.md para el orden de carga. */
+
+
+/* ═══════════════════════════════════════════════════════════
+   NIVEL PREMIUM — gabinete de figuras (HUD de esquina eliminado)
+═══════════════════════════════════════════════════════════ */
+#figureCabinet {
+  display: none;
+  position: fixed; left: 16px; bottom: 16px; z-index: 80;
+  width: min(260px, calc(100vw - 32px));
+  padding: 12px 14px;
+  background: rgba(10, 14, 26, 0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  pointer-events: auto; color: var(--color-text-muted);
+}
+.figure-cabinet-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--color-text-faint); margin-bottom: 8px; }
+.figure-row { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; padding: 3px 0; font-size: 11px; }
+.figure-row-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.25); }
+.figure-row.is-ready .figure-row-dot { background: var(--color-gold); box-shadow: 0 0 8px var(--color-gold); }
+.figure-row.is-pending .figure-row-dot { background: var(--color-dovish); }
+.figure-row-status { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+.figure-row.is-ready .figure-row-status { color: var(--color-gold); }
+.figure-row.is-pending .figure-row-status { color: var(--color-dovish); }
+
+@media (max-width: 768px) {
+  #figureCabinet { display: none; }
+}
+@media (max-height: 700px) {
+  #figureCabinet { display: none; }
+}

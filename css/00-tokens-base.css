@@ -1,0 +1,336 @@
+/* 00-tokens-base.css
+   Tokens de color, tipografia y espaciado; reset; layout base; hero y scroll-hint.
+   Extraido de index.html — ver css/README.md para el orden de carga. */
+
+:root {
+  /* ── Color Tokens ── */
+  --color-gold: #ffd76a;
+  --color-gold-dim: rgba(255, 215, 106, 0.3);
+  --color-gold-glow: rgba(255, 215, 106, 0.6);
+  --color-dovish: #8ab4f8;
+  --color-dovish-dim: rgba(138, 180, 248, 0.16);
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: rgba(255, 255, 255, 0.55);
+  --color-text-faint: rgba(255, 255, 255, 0.45);
+  --color-surface: rgba(255, 255, 255, 0.03);
+  --color-surface-border: rgba(255, 255, 255, 0.06);
+  --color-bg: #0a0e1a;
+
+  /* ── Ambient light ──
+     The large gold glow is intentional in the hero, but it should not
+     flatten the hierarchy of every later stage. JavaScript lowers this
+     alpha as the story moves from object to data. */
+  --ambient-x: 50%;
+  --ambient-y: 42%;
+  --ambient-alpha: 0.16;
+  --ambient-size: 35%;
+
+  /* ── Typography Tokens ──
+     Fluido tipo Utopia (https://utopia.fyi): clamp(MIN rem, rem + vw, MAX rem).
+     El rem respeta zoom/accesibilidad; el vw escala entre ~360 y ~1440px.
+     No hace falta librería: es CSS nativo. */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --fs-micro: clamp(0.75rem, 0.73rem + 0.12vw, 0.8125rem);
+  --fs-small: clamp(0.8125rem, 0.76rem + 0.22vw, 1rem);
+  --fs-body: clamp(1rem, 0.94rem + 0.28vw, 1.1875rem);
+  --fs-h3: clamp(1rem, 0.88rem + 0.5vw, 1.5rem);
+  --fs-kicker: clamp(0.9375rem, 0.82rem + 0.45vw, 1.375rem);
+  --fs-display: clamp(1.25rem, 0.85rem + 1.35vw, 1.875rem);
+  --fs-hero: clamp(1.125rem, 0.72rem + 1.35vw, 2.125rem);
+  --fs-h2: clamp(1.375rem, 0.85rem + 1.85vw, 3.25rem);
+  --lh-tight: 1.25;
+  --lh-normal: 1.6;
+  --lh-relaxed: 1.8;
+
+  /* ── Spacing Tokens ── */
+  --space-xs: 8px;
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 48px;
+  --space-xl: 80px;
+  --space-section: clamp(80px, 12vh, 120px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { background: var(--color-bg); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+  font-family: var(--font-body);
+  color: var(--color-text-primary); overflow-x: clip;
+  font-weight: 400; letter-spacing: 0.01em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .scroll-hint { display: none; }
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at var(--ambient-x) var(--ambient-y), rgba(255,215,106,var(--ambient-alpha)), transparent var(--ambient-size)),
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(0,0,0,0.4) 100%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+#canvas {
+  display: block; position: fixed; inset: 0;
+  z-index: 2; cursor: grab;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+#canvas:active { cursor: grabbing; }
+#canvas.hidden-stage { opacity: 0; pointer-events: none; }
+
+.stage-hook, .stage-voices, .stage-acts, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing {
+  pointer-events: none;
+}
+.closing-cta, .quote-card, #timelineContainer, .voice-explorer, .voice-card, .voice-detail button, .acts-browser, .act-list-item, .act-term-chip, .act-evidence-row, .act-open-evidence {
+  pointer-events: auto;
+}
+
+.hero {
+  position: relative; width: 100%; min-height: 100vh;
+  z-index: 3; pointer-events: none;
+  display: flex; flex-direction: column;
+}
+.top {
+  padding: clamp(16px, 3vw, 28px) clamp(16px, 5vw, 40px);
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.brand { font-size: var(--fs-small); letter-spacing: 4px; text-transform: uppercase; opacity: 0.7; }
+.brand strong { color: var(--color-gold); font-weight: 600; }
+.top-meta { display: flex; align-items: center; gap: clamp(12px, 2vw, 24px); }
+.prototype-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 10px; border: 1px solid rgba(255, 215, 106, 0.28);
+  border-radius: 999px; background: rgba(10, 14, 26, 0.58);
+  color: var(--color-gold); font-size: var(--fs-micro);
+  letter-spacing: 1.2px; text-transform: uppercase; white-space: nowrap;
+}
+.prototype-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--color-gold); box-shadow: 0 0 10px rgba(255, 215, 106, 0.8); }
+.hero-title {
+  margin-top: auto; padding-bottom: 11vh; text-align: center;
+  position: relative;
+  z-index: 2;
+}
+.hero-title::before {
+  content: "";
+  position: absolute;
+  inset: -28px -12vw -36px -12vw;
+  background: linear-gradient(180deg, transparent 0%, rgba(8,12,22,0.55) 28%, rgba(8,12,22,0.88) 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+.hero-title h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-hero);
+  font-weight: 600; letter-spacing: 0.3px;
+  line-height: 1.2;
+  background: linear-gradient(120deg, var(--color-gold), var(--color-text-primary));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow:
+    0 0 8px rgba(255, 215, 106, 0.06),
+    0 0 20px rgba(255, 215, 106, 0.03);
+  /* OJO: no pongas aquí el max-width del titular. Este archivo se carga
+     antes que 24-layout-fluid.css, que define
+     `max-width: min(1180px, calc(100vw - 48px))` y lo pisa siempre.
+     Había un `max-width: 900px` en esta línea que llevaba tiempo sin
+     aplicarse (medido en el navegador: el h1 ocupa el 88% del ancho). */
+  margin: 0 auto;
+}
+.hero-title p { 
+  margin-top: 16px; font-size: clamp(13px, 1.3vw, 17px); opacity: 0.5; 
+  font-weight: 300; letter-spacing: 0.04em;
+}
+
+#stageObjectiveTitle {
+  font-family: var(--font-body) !important;
+  font-size: var(--fs-kicker) !important;
+  font-weight: 500 !important;
+  letter-spacing: clamp(0.18em, 0.1em + 0.4vw, 0.34em) !important;
+  text-transform: uppercase;
+  color: var(--color-gold) !important;
+  text-shadow: 0 0 28px rgba(255, 215, 106, 0.22), 0 2px 14px rgba(0, 0, 0, 0.75);
+}
+#stageObjectiveParagraph {
+  font-family: var(--font-display) !important;
+  font-size: var(--fs-display) !important;
+  font-weight: 500 !important;
+  line-height: 1.42 !important;
+  letter-spacing: -0.012em;
+  max-width: min(47rem, 90vw) !important;
+  text-wrap: balance;
+}
+#stageObjectiveParagraph span {
+  font-style: italic;
+  color: var(--color-gold);
+}
+
+#roomTitle {
+  font-family: var(--font-body) !important;
+  font-size: var(--fs-kicker) !important;
+  font-weight: 500 !important;
+  letter-spacing: clamp(0.18em, 0.1em + 0.4vw, 0.34em) !important;
+  text-transform: uppercase;
+  color: var(--color-gold) !important;
+  text-shadow: 0 0 28px rgba(255, 215, 106, 0.22), 0 2px 14px rgba(0, 0, 0, 0.75);
+  margin-bottom: 1.4rem !important;
+}
+#roomLead {
+  font-family: var(--font-display) !important;
+  font-size: var(--fs-display) !important;
+  font-weight: 500 !important;
+  line-height: 1.42 !important;
+  letter-spacing: -0.012em;
+  max-width: min(47rem, 90vw) !important;
+  text-wrap: balance;
+}
+#roomLead span {
+  font-style: italic;
+  color: var(--color-gold);
+}
+#roomSub {
+  font-family: var(--font-display) !important;
+  font-size: var(--fs-body) !important;
+  line-height: 1.5 !important;
+  max-width: min(40rem, 86vw) !important;
+  color: var(--color-text-secondary) !important;
+}
+#roomHint {
+  font-size: var(--fs-small) !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Scrim premium de La Sala: la composición es un RETABLO —
+   pedestal + estatua ocupan la mitad superior del encuadre y el copy vive
+   en la franja inferior. El scrim ya no oscurece el centro (antes tapaba la
+   estatua justo detrás del texto): ahora es una base de sombra que sube
+   desde el borde inferior, así la piedra "emerge" de la oscuridad y el
+   texto conserva contraste sin apagar la pieza. */
+#stageRoomContainer {
+  position: relative;
+}
+#stageRoomContainer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 62% 30% at 50% 104%,
+      rgba(4, 7, 15, 0.92) 0%,
+      rgba(4, 7, 15, 0.66) 42%,
+      rgba(4, 7, 15, 0.00) 76%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(4, 7, 15, 0.00) 0%,
+      rgba(4, 7, 15, 0.00) 44%,
+      rgba(4, 7, 15, 0.34) 66%,
+      rgba(4, 7, 15, 0.72) 84%,
+      rgba(4, 7, 15, 0.90) 100%
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+#stageRoomContainer > * {
+  position: relative;
+  z-index: 1;
+}
+/* Bloque de copy compacto: cabe en la franja inferior sin invadir la
+   estatua. El título respira menos y la bajada baja medio punto: son ~40px
+   menos de bloque, justo lo que separa el texto del pedestal. */
+#roomTitle { margin-bottom: 1rem !important; }
+#roomLead { margin-top: 0 !important; }
+#roomSub { margin-top: 0.65rem !important; font-size: var(--fs-small) !important; }
+#roomHint { margin-top: 1rem !important; }
+@media (max-height: 780px) {
+  #roomTitle { margin-bottom: 0.6rem !important; }
+  #roomSub { margin-top: 0.5rem !important; }
+  #roomHint { margin-top: 0.75rem !important; }
+}
+/* Móvil: el retablo ocupa menos alto útil, así que el copy se compacta y
+   la base de sombra sube un poco para que el texto no compita con la
+   piedra. */
+@media (max-width: 600px) {
+  #stageRoomContainer::before {
+    background:
+      radial-gradient(ellipse 78% 26% at 50% 102%, rgba(4,7,15,0.94) 0%, rgba(4,7,15,0.70) 44%, rgba(4,7,15,0.00) 78%),
+      linear-gradient(to bottom, rgba(4,7,15,0.00) 0%, rgba(4,7,15,0.00) 34%, rgba(4,7,15,0.46) 58%, rgba(4,7,15,0.82) 78%, rgba(4,7,15,0.94) 100%);
+  }
+  #roomTitle { margin-bottom: 0.55rem !important; letter-spacing: 3px !important; }
+  #roomSub { margin-top: 0.5rem !important; }
+  #roomHint { margin-top: 0.85rem !important; }
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  /* 0.62 es el mínimo que conserva 4.5:1 (WCAG AA) sobre --color-bg:
+     por debajo de ~0.58 el texto tenue deja de ser legible. */
+  opacity: 0.62;
+  transition: opacity 0.4s;
+}
+.scroll-hint.hidden { opacity: 0; pointer-events: none; }
+.scroll-hint span {
+  font-size: var(--fs-micro); letter-spacing: 3px; text-transform: uppercase;
+}
+.scroll-hint svg {
+  width: 20px; height: 20px;
+  animation: scrollBounce 2s ease-in-out infinite;
+}
+@keyframes scrollBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+.coin-halo-wrap {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 1;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition: opacity 0.35s ease;
+}
+.coin-halo-wrap.hidden-stage { opacity: 0 !important; }
+
+.coin-halo {
+  width: min(240px, 28vmin);
+  height: min(240px, 28vmin);
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(circle,
+      rgba(255,215,106,0.42) 0%,
+      rgba(255,215,106,0.12) 32%,
+      transparent 68%);
+  filter: blur(8px);
+  animation: haloPulse 8s ease-in-out infinite;
+}
+
+@keyframes haloPulse {
+  0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.94); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+}

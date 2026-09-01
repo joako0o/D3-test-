@@ -12,6 +12,7 @@ lector "toque" la evidencia en vez de solo leerla.
 
 | Archivo esperado | Figura | Dato que representa | Prioridad |
 |---|---|---|---|
+| `figures/soporte.glb` | Pedestal | Base de la pieza central | ✅ listo |
 | `figures/balanza.glb` | Balanza | Equilibrio hawkish / dovish por año | Alta |
 | `figures/inflacion.glb` | Vela / termómetro | Presión inflacionaria | Alta |
 | `figures/brote.glb` | Brote / árbol | Crecimiento, holgura | Media |
@@ -41,17 +42,36 @@ de a poco.
 
 **Figuras ya incluidas:**
 
+- ✅ **`figures/soporte.glb`** — Pedestal escalonado (3 discos) sobre el que se
+  apoya la estatua. Origen: `Soporte.glb` subido a la raíz del repo (1.04 MB,
+  Meshy, solo POSITION, 57.6 k triángulos). Pipeline de compresión:
+  `weld` → `simplify --ratio 0.12 --error 0.002` (57,622 → **6,914**
+  triángulos) → normales generadas con **crease de 38°** (el GLB no traía
+  NORMAL: sin esto three.js lo renderiza en flat shading y el disco se ve
+  facetado) → **Draco** (posición 14, normal 10). Resultado: **28 KB**
+  (−97.3 %), `validate` sin errores ni warnings. El GLB original ya no vive en
+  el repo (misma convención que la puerta/moneda: solo se versiona el
+  comprimido); si hace falta se recupera con
+  `git show 2119432:Soporte.glb > Soporte.glb`.
+  En `js/figures.js` es `scale: 0.70` + `stretchY: 1.6` (el `scale` normaliza la
+  dimensión mayor → aquí es el DIÁMETRO; con el estirado el alto sale 0.254) y
+  acabado piedra azulada. El disco original es muy plano: sin `stretchY` se lee
+  como una chapa oscura y no como pedestal.
 - ✅ **`figures/balanza.glb`** — La Justicia ciega (Lady Justice con la balanza),
   el símbolo del equilibrio. Origen: `Meshy_AI_Blind_Justice_Statue_0831090221_generate.glb`.
   Se normalizó a la convención del proyecto: **Draco**, **38.5 k triángulos**,
   **177 KB** (<300 KB), **acabado PIEDRA mate** (limestone, metallic 0, rough 0.82,
   color `#c7b9a4`), normales recalculadas y **base apoyada en `y=0`**.
   `available: true` en `js/figures.js` con `finish` propio en el def.
+  Va **apoyada sobre el pedestal** vía `standsOn: 'soporte'`: el sistema mide el
+  alto real del pedestal al cargarlo y recoloca la estatua (`restack()`), así el
+  alto no queda escrito a mano en dos sitios.
 
 ---
 
 ### TODO — TU TAREA (figuras Blender)
-1. ✅ **Balanza** ya está (ver arriba).
+1. ✅ **Balanza** y ✅ **pedestal** ya están (ver arriba).
 2. Exporta `figures/inflacion.glb` y `figures/brote.glb` con Draco y <300 KB.
 3. Repite con `acta.glb`, `corpus.glb` y `campana.glb`.
-4. Cuando tengas las demás, edita `js/figures.js` para ajustar posición/escala.
+4. Cuando tengas las demás, edita `js/figures.js` para ajustar posición/escala
+   (si una figura va sobre otra, usa `standsOn: 'idDeLaBase'`).

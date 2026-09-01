@@ -15,6 +15,32 @@ import { DRACOLoader } from './loaders/DRACOLoader.js';
 
 export const FIGURE_DEFS = [
   {
+    /* SOPORTE (pedestal escalonado) — la peana sobre la que se apoya la
+       estatua. Es la pieza que ancla la composición de La Sala: sin base, la
+       figura "flotaba" sobre el navy y el bloque de texto quedaba encima.
+       Origen: `Soporte.glb` (Meshy, 1.04 MB) → `figures/soporte.glb`
+       (28 KB, Draco, 6.9 k triángulos, normales con crease 38°). */
+    id: 'soporte',
+    label: 'Pedestal',
+    subtitle: 'Base de la pieza central',
+    glb: 'figures/soporte.glb',
+    available: true,
+    x: 0, y: 0, z: -4.8,
+    /* `scale` normaliza por la dimensión mayor: aquí es el DIÁMETRO.
+       0.70 de diámetro → 0.159 de alto (el GLB es un disco escalonado).
+       `stretchY` estira SOLO el alto después de normalizar: el disco original
+       es demasiado plano y a tamaño de pantalla se leía como una chapa oscura
+       detrás del texto en vez de como un pedestal. 1.6 → 0.254 de alto, y el
+       diámetro se recortó a 0.70 para que no compita con la estatua
+       (una peana ancha y baja parecía una torta; alta y esbelta, un pedestal). */
+    scale: 0.70,
+    stretchY: 1.6,
+    color: 0x9aa6bd,
+    /* Piedra oscura azulada: contrasta con la caliza de la estatua sin
+       competir con el oro del hero. */
+    finish: { metalness: 0.05, roughness: 0.7, color: 0x424c63 },
+  },
+  {
     id: 'balanza',
     label: 'Balanza',
     subtitle: 'Equilibrio hawkish / dovish',
@@ -23,10 +49,17 @@ export const FIGURE_DEFS = [
     /* Centro y al FONDO de la La Sala (pieza central, tipo museo).
        La cámara entra mirando a z=-2.0; a z=-4.8 queda detrás de la nube
        de partículas (que se despeja al cruzar) y la luz de acento la
-       ilumina desde el frente. El y se eleva para que la cabeza y la
-       balanza queden en la franja superior y el copy lea sobre la base. */
-    x: 0, y: 0.02, z: -4.6,
-    scale: 1.22,
+       ilumina desde el frente.
+       `standsOn: 'soporte'` → el sistema la apoya sobre la cara superior del
+       pedestal en cuanto ambos GLB terminan de cargar (ver `restack`), así el
+       alto del pedestal no queda escrito a mano en dos sitios. */
+    x: 0, y: 0, z: -4.8,
+    standsOn: 'soporte',
+    /* La balanza sale hacia un lado y la espada hacia el otro: centrada por
+       bounding box, la peana quedaba corrida sobre el pedestal. Se centra por
+       la huella. */
+    centerOn: 'base',
+    scale: 1.15,
     color: 0xffd76a,
     /* Acabado PIEDRA mate (limestone): la figura no compite con la moneda
        dorada del hero. `applyModel` respeta estos valores en vez de forzar
@@ -120,6 +153,45 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
     side: THREE.DoubleSide,
   });
 
+  /**
+   * Centro de la HUELLA (no de la silueta).
+   *
+   * `applyModel` centraba por bounding box, y eso funciona con objetos
+   * simétricos. La Justicia no lo es: extiende la balanza hacia un lado y la
+   * espada hacia el otro, así que el centro de la caja NO coincide con el de
+   * la peana del modelo — sobre el pedestal la figura quedaba corrida ~16% del
+   * radio (reportado a ojo, confirmado midiendo: +0.055 en x, −0.053 en z).
+   *
+   * Se mide la nube de vértices del `slab` inferior del modelo (su base) y se
+   * devuelve el punto medio de los percentiles 5–95 en x/z: es robusto a la
+   * punta de la espada, que también toca el suelo pero es un puñado de
+   * vértices, y a cualquier vértice suelto.
+   */
+  function footprintCenter(model, slab = 0.06) {
+    model.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(model);
+    const cut = box.min.y + (box.max.y - box.min.y) * slab;
+    const xs = [];
+    const zs = [];
+    const v = new THREE.Vector3();
+    model.traverse((obj) => {
+      const pos = obj.isMesh ? obj.geometry?.attributes?.position : null;
+      if (!pos) return;
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(obj.matrixWorld);
+        if (v.y <= cut) { xs.push(v.x); zs.push(v.z); }
+      }
+    });
+    if (xs.length < 8) return null;
+    const midRange = (values) => {
+      values.sort((a, b) => a - b);
+      const lo = values[Math.floor(values.length * 0.05)];
+      const hi = values[Math.min(values.length - 1, Math.floor(values.length * 0.95))];
+      return (lo + hi) / 2;
+    };
+    return { x: midRange(xs), z: midRange(zs) };
+  }
+
   function makePlaceholder(def) {
     const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.20, 0), placeholderMat);
     mesh.material = placeholderMat.clone();
@@ -161,11 +233,30 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
       const maxSize = Math.max(size.x, size.y, size.z) || 1;
       const s = def.scale / maxSize;
       model.scale.setScalar(s);
+      /* `stretchY` (opcional) estira el alto sin tocar la planta: sirve para
+         que una peana muy plana gane presencia sin volver a exportar el GLB. */
+      if (def.stretchY) model.scale.y *= def.stretchY;
       box.setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
-      model.position.x -= center.x;
-      model.position.z -= center.z;
+      /* `centerOn: 'base'` centra por la HUELLA en vez de por la caja: es lo
+         que hay que usar cuando el objeto tiene brazos/atributos que sobresalen
+         de un lado (ver `footprintCenter`). */
+      let offsetX = center.x;
+      let offsetZ = center.z;
+      if (def.centerOn === 'base') {
+        const footprint = footprintCenter(model, def.footprintSlab ?? 0.06);
+        if (footprint) {
+          offsetX = footprint.x;
+          offsetZ = footprint.z;
+        }
+      }
+      model.position.x -= offsetX;
+      model.position.z -= offsetZ;
       model.position.y -= box.min.y;
+      /* Alto REAL ya escalado: lo usa `restack()` para apoyar una figura
+         sobre otra (la estatua sobre el pedestal) sin números mágicos. */
+      box.setFromObject(model);
+      record.height = box.max.y - box.min.y;
       model.traverse((obj) => {
         if (!obj.isMesh || !obj.material) return;
         const mats = (Array.isArray(obj.material) ? obj.material : [obj.material]).filter(Boolean);
@@ -193,6 +284,7 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
       root.add(model);
       record.model = model;
       record.status = 'loaded';
+      restack();
       markCabinet(def, 'ready');
       onReady?.(record);
     };
@@ -218,6 +310,19 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
       showPlaceholder();
     }
   });
+
+  /* Apila figuras: `standsOn: 'otraFigura'` apoya el modelo sobre la cara
+     superior de esa figura. Se llama cada vez que un GLB termina de cargar,
+     así el orden de descarga no importa (si el pedestal llega después, la
+     estatua se recoloca sola). */
+  function restack() {
+    figures.forEach((record) => {
+      const base = record.def.standsOn ? figures.get(record.def.standsOn) : null;
+      if (!base) return;
+      const baseHeight = base.height ?? 0;
+      record.root.position.y = (record.def.y ?? 0) + (base.def.y ?? 0) + baseHeight;
+    });
+  }
 
   function markCabinet(def, status) {
     const cabinet = findCabinet();
@@ -248,5 +353,5 @@ export function initFigureSystem(scene, { onReady = null, debug = false } = {}) 
     }
   }
 
-  return { group, figures, defs: FIGURE_DEFS };
+  return { group, figures, defs: FIGURE_DEFS, restack };
 }

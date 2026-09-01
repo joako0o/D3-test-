@@ -1,0 +1,42 @@
+/* noscript.css
+   Solo se aplica cuando el navegador NO ejecuta JavaScript (va dentro de
+   <noscript> en index.html). Devuelve el documento a su forma legible: sin
+   lienzo 3D, sin alturas de scrollytelling y con todo el copy visible.
+   Extraido de index.html — ver css/README.md. */
+
+/* Capas que solo tienen sentido con la escena 3D corriendo. */
+#canvas, #load, #d3-canvas, #debugPanel, #timelineScrubber,
+#progressBar, #sectionIndicator, #figureCabinet, .scroll-hint,
+.object-reflection { display: none !important; }
+
+/* Las secciones miden 150–200vh para dar recorrido al scroll y fijan su
+   contenido con `position: sticky`. Sin animación eso solo deja huecos. */
+main#mainContent section { height: auto !important; min-height: 0 !important; }
+main#mainContent section > div { position: static !important; height: auto !important; }
+main#mainContent section,
+main#mainContent section > div { pointer-events: auto !important; }
+
+/* El copy que espera a GSAP: tanto el que trae `style="opacity: 0"`
+   inline como el que lo recibe por clase. */
+main#mainContent [style*="opacity: 0"],
+main#mainContent [style*="opacity:0"],
+main#mainContent * {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  clip-path: none !important;
+}
+
+.noscript-note {
+  max-width: 760px;
+  margin: 40px auto 0;
+  padding: 18px 22px;
+  border: 1px solid var(--color-gold-dim);
+  border-radius: 12px;
+  background: rgba(255, 215, 106, 0.06);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+}
+.noscript-note strong { color: var(--color-gold); }

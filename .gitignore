@@ -10,3 +10,11 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Renders de referencia (no versionados)
+.preview/
+.smoke-tmp/
+
+# Capturas y binarios del arnes visual (pesan cientos de MB)
+.shots/
+.cache/

@@ -1,0 +1,205 @@
+/* 10-stage-hook.css
+   Stage 2 "Hook" y su version editorial con senales hawkish/dovish.
+   Extraido de index.html — ver css/README.md para el orden de carga. */
+
+/* ─── STAGE 2 — Hook ─── */
+.stage-hook {
+  position: relative; z-index: 4;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: var(--space-section) 10%;
+  text-align: center;
+}
+.stage-hook .line {
+  font-family: var(--font-display);
+  font-size: var(--fs-hero);
+  font-weight: 500;
+  line-height: 1.5;
+  max-width: 800px;
+  opacity: 0;
+  transform: translateY(30px);
+}
+.stage-hook .paragraph {
+  margin-top: 32px;
+  max-width: 600px;
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
+  opacity: 0;
+  transform: translateY(20px);
+  font-weight: 300;
+}
+
+/* ─── STAGE 3b — Hook editorial · señales hawkish/dovish ─── */
+.hook-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(780px, 90vw);
+}
+.hook-lead {
+  max-width: 740px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3.4vw, 52px);
+  font-weight: 500;
+  line-height: 1.28;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+  text-wrap: balance;
+}
+.hook-lead .hook-signal {
+  font-style: italic;
+  color: var(--color-gold);
+}
+.hook-caption {
+  margin-top: 26px;
+  text-align: center;
+  font-size: var(--fs-micro);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.hook-divider {
+  width: min(600px, 78vw);
+  height: 1px;
+  margin: 42px auto 0;
+  overflow: hidden;
+}
+.hook-divider span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,215,106,0.45), transparent);
+  transform-origin: center center;
+}
+.signal-list {
+  width: min(680px, 90vw);
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.signal-card {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 22px 24px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  text-align: left;
+  pointer-events: auto;
+  transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+}
+.signal-card:hover { transform: translateY(-2px); }
+.signal-card--hawkish:hover {
+  border-color: rgba(255,215,106,0.28);
+  background: rgba(255,215,106,0.04);
+}
+.signal-card--dovish:hover {
+  border-color: rgba(138,180,248,0.28);
+  background: rgba(138,180,248,0.04);
+}
+.signal-num {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.35);
+}
+.signal-caption {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--fs-micro);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+}
+.signal-phrase {
+  font-family: var(--font-display);
+  font-size: clamp(17px, 2vw, 26px);
+  font-weight: 500;
+  line-height: 1.35;
+  color: #ffffff;
+}
+.signal-card--hawkish .signal-phrase strong { color: var(--color-gold); font-weight: 600; }
+.signal-card--dovish .signal-phrase strong { color: var(--color-dovish); font-weight: 600; }
+.signal-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding-left: 18px;
+  border-left: 1px solid rgba(255,255,255,0.10);
+}
+.signal-tag {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: var(--fs-micro);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.signal-card--hawkish .signal-tag {
+  color: var(--color-gold);
+  background: rgba(255,215,106,0.10);
+  border: 1px solid rgba(255,215,106,0.18);
+}
+.signal-card--dovish .signal-tag {
+  color: var(--color-dovish);
+  background: rgba(138,180,248,0.10);
+  border: 1px solid rgba(138,180,248,0.18);
+}
+.signal-note {
+  font-size: var(--fs-micro);
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.45);
+}
+.hook-footnote {
+  max-width: 620px;
+  margin-top: 38px;
+  text-align: center;
+  font-size: var(--fs-small);
+  line-height: 1.7;
+  font-weight: 300;
+  color: var(--color-text-muted);
+  text-wrap: balance;
+}
+
+@media (max-height: 740px) {
+  #stageHook h2[data-hook] { margin-bottom: 0.85rem !important; }
+  .hook-inner { width: min(720px, 90vw); }
+  .hook-lead {
+    font-size: clamp(24px, 3vw, 38px);
+    line-height: 1.22;
+  }
+  .hook-caption { margin-top: 18px; }
+  .hook-divider { margin-top: 24px; }
+  .signal-list {
+    margin-top: 18px;
+    gap: 10px;
+  }
+  .signal-card { padding: 16px 20px; }
+  .signal-caption { margin-bottom: 4px; }
+  .hook-footnote {
+    margin-top: 22px;
+    line-height: 1.55;
+  }
+}
+
+@media (max-width: 600px) {
+  .hook-lead { font-size: clamp(24px, 3vw, 36px); }
+  .hook-divider { margin-top: 32px; }
+  .signal-card { grid-template-columns: 32px 1fr; }
+  .signal-result {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 12px;
+    margin-top: 8px;
+    padding-left: 0;
+    border-left: none;
+  }
+  .hook-footnote { margin-top: 30px; }
+}
