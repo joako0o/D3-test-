@@ -31,14 +31,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { fileURLToPath } from 'node:url';
+import { ROOT, parseArgs, launchChromium, openSite } from '../lib/chromium.mjs';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const LIBS = path.join(ROOT, '.cache', 'chromium-libs');
-
-const args = Object.fromEntries(process.argv.slice(2)
-  .filter((a) => a.startsWith('--'))
-  .map((a) => { const [k, v = 'true'] = a.slice(2).split('='); return [k, v]; }));
+const args = parseArgs();
 
 const ORIGIN = args.origin || 'http://localhost:8000';
 const MIN_GAP = Number(args.gap || 20);
@@ -136,76 +131,12 @@ function goldSpan(img, yFrom, yTo) {
   return { top, bottom };
 }
 
-/* ── Librerías del sistema para Chromium (igual que capture.mjs) ──────── */
-async function ensureLibs() {
-  if (fs.existsSync(path.join(LIBS, 'lib', 'libnspr4.so'))) return;
-  console.log('Extrayendo las librerías de Chromium (solo la primera vez)…');
-  fs.mkdirSync(LIBS, { recursive: true });
-  const pkgDir = path.dirname(fileURLToPath(import.meta.resolve('@sparticuz/chromium/package.json')));
-  for (const name of ['al2023', 'swiftshader', 'fonts']) {
-    const file = path.join(pkgDir, 'bin', `${name}.tar.br`);
-    if (!fs.existsSync(file)) continue;
-    const buf = zlib.brotliDecompressSync(fs.readFileSync(file));
-    let off = 0;
-    while (off + 512 <= buf.length) {
-      const header = buf.subarray(off, off + 512);
-      const name0 = header.subarray(0, 100).toString('utf8').replace(/\0.*$/, '');
-      if (!name0) break;
-      const size = parseInt(header.subarray(124, 136).toString('utf8').replace(/\0.*$/, '').trim() || '0', 8);
-      const type = String.fromCharCode(header[156]);
-      off += 512;
-      if (type === '0' || type === '\0') {
-        const dest = path.join(LIBS, name0);
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, buf.subarray(off, off + size));
-        fs.chmodSync(dest, 0o755);
-      } else if (type === '5') fs.mkdirSync(path.join(LIBS, name0), { recursive: true });
-      off += Math.ceil(size / 512) * 512;
-    }
-  }
-}
-
-let chromium, puppeteer;
-try {
-  chromium = (await import('@sparticuz/chromium')).default;
-  puppeteer = (await import('puppeteer-core')).default;
-} catch {
-  console.error('Faltan dependencias:\n  npm install --save-dev puppeteer-core @sparticuz/chromium');
-  process.exit(2);
-}
-await ensureLibs();
 if (SAVE) fs.mkdirSync(SAVE_DIR, { recursive: true });
 
-const executablePath = await chromium.executablePath();
-const browser = await puppeteer.launch({
-  executablePath,
-  headless: 'shell',
-  args: [...chromium.args, '--use-gl=angle', '--use-angle=swiftshader',
-    '--enable-unsafe-swiftshader', '--force-device-scale-factor=1', '--hide-scrollbars'],
-  env: {
-    ...process.env,
-    LD_LIBRARY_PATH: [path.join(LIBS, 'lib'), LIBS, path.dirname(executablePath), process.env.LD_LIBRARY_PATH]
-      .filter(Boolean).join(':'),
-  },
-});
-
-const page = await browser.newPage();
-const errors = [];
-page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
-page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 160)); });
-await page.evaluateOnNewDocument(() => { history.scrollRestoration = 'manual'; });
-await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+const { browser, page, errors } = await launchChromium({ width: 1440, height: 900 });
 
 console.log(`Abriendo ${ORIGIN}…`);
-try {
-  await page.goto(`${ORIGIN}/index.html`, { waitUntil: 'networkidle0', timeout: 90000 });
-} catch {
-  console.error(`No respondió ${ORIGIN}. ¿Está corriendo "npm start"?`);
-  await browser.close();
-  process.exit(2);
-}
-await page.evaluate(() => window.scrollTo(0, 0));
-await new Promise((r) => setTimeout(r, 8000));   // GLB + convergencia de lerps
+await openSite(page, ORIGIN, { settleMs: 8000 });
 
 const rows = [];
 for (const vp of VPS) {

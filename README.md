@@ -17,6 +17,7 @@ npm start            # servidor estático en http://localhost:8000
 npm run check        # arranca el sitio fuera del navegador y avisa si algo revienta
 npm run shots        # capturas reales de cada sección (necesita npm start)
 npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
+npm run perf         # mide la fluidez del hilo principal haciendo scroll (ver § Fluidez)
 ```
 
 `npm run check` necesita las dependencias de desarrollo una sola vez
@@ -71,9 +72,12 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │   ├── vendor/                 GSAP, ScrollTrigger, SplitText, CustomEase, D3, Lenis, Draco
 │   └── loaders/ utils/ controls/ environments/ objects/    addons de Three.js
 ├── tools/smoke-test.mjs    204 · `npm run check`
-├── scripts/screenshots/
-│   ├── capture.mjs         161 · `npm run shots`
-│   └── hero-check.mjs      284 · `npm run hero:check`
+├── scripts/
+│   ├── lib/chromium.mjs    el Chromium con SwiftShader, compartido por las tres herramientas de abajo
+│   ├── perf/measure.mjs    `npm run perf` — mide el coste del hilo principal en scroll y reposo
+│   └── screenshots/
+│       ├── capture.mjs     `npm run shots`
+│       └── hero-check.mjs  `npm run hero:check`
 ├── figures/                balanza.glb (177 KB) · soporte.glb (28 KB) · README.md
 ├── monedav5-draco.glb      434 KB
 ├── puerta-draco.glb         76 KB
@@ -316,6 +320,7 @@ refactor de este tamaño; ahora hay tres redes:
 npm run check                       # arranca sin navegador: imports, ids, excepciones
 npm run shots -- --w=1440 --h=900   # las 13 secciones con WebGL real, sale 1 si hay errores
 npm run hero:check                  # la portada en 12 viewports
+npm run perf                        # coste del hilo principal en scroll y reposo (ver § Fluidez)
 ```
 
 El criterio es **equivalencia de píxeles**: capturar antes, refactorizar,
@@ -332,6 +337,82 @@ y en el Paso 2 quedaron todas por debajo del 0,4 %.
 **Lo que NO conviene tocar todavía:** los `style="..."` inline que quedan en
 `index.html` son de la maqueta original y varios los pisa GSAP en caliente;
 moverlos a CSS sin comprobarlo uno a uno rompe animaciones.
+
+## Fluidez (medida, no impresiones)
+
+"Va más suave" sin número era justo la clase de afirmación que este proyecto
+dejó de aceptar, así que la fluidez tiene su propia red: `npm run perf`.
+Abre Chromium con WebGL por software, hace scroll de verdad (rueda, no
+`scrollTo`) de ida y vuelta por todo el documento, y mide el coste del hilo
+principal con una traza de Chrome y un perfil de CPU por muestreo. Los FPS
+absolutos NO son comparables con una GPU real (rasteriza SwiftShader); lo
+comparable es el trabajo del hilo principal —scripting, style, layout,
+reflujos, compilación de shaders, draw calls— y por eso los presupuestos van
+sobre eso.
+
+Medido en 1440×900, recorrido completo, antes y después del trabajo del
+2026-09-02:
+
+| Métrica durante el scroll | Antes | Después | |
+|---|---|---|---|
+| Hilo principal ocupado | 19.540 ms | 5.300 ms | −73 % |
+| scripting (por segundo) | 356 ms/s | 63 ms/s | −82 % |
+| bucle rAF (Lenis+GSAP+animate) | 175 ms/s | 29 ms/s | −83 % |
+| peor tarea larga | 11.047 ms | 156 ms | −98,6 % |
+| programas compilados en pleno scroll | 5 | 0 | |
+| cortina de carga | — | ≈7,3 s | el coste se paga aquí |
+
+Lo que se hizo (todo en `js/main.js` y `js/viewport.js`):
+
+1. **Precalentado de la escena tras la cortina** (`warmUpScene()`). La primera
+   pinta de un material compila su programa y sube sus texturas de forma
+   síncrona, y eso caía en mitad del scroll (el congelamiento de 11 s). Ahora
+   se compilan los dos estados de luces y se provoca la introspección de
+   uniforms sin pintar nada, antes de levantar la cortina.
+2. **`renderer.debug.checkShaderErrors = DEBUG_MODE`.** En producción
+   preguntar al driver por el log de cada shader es trabajo tirado (llegó a
+   ser el 69 % del hilo principal); con `?debug` se conserva el aviso.
+3. **Snapshot de viewport en el bucle de render.** `getViewportSize()` lee
+   `clientWidth/clientHeight` y con el estilo sucio fuerza un reflujo; se
+   llamaba dos veces por frame en `animate()` (1.900 ms y 4.410 reflujos).
+   `getViewportSnapshot()` lo cachea e invalida con resize/orientación/
+   visualViewport.
+4. **`updateScrubber()` sin lecturas por evento.** El alto del documento se
+   cachea y se invalida en `resize` y `ScrollTrigger.refresh`, y sin `?debug`
+   no se escribe en el HUD oculto.
+5. **Entrar siempre por la portada.** El navegador restauraba el scroll de la
+   visita anterior y la página "nacía" a mitad de documento: `scatterProgress`
+   arrancaba en 1 (moneda invisible) y Lenis quedaba desincronizado, así que al
+   subir rápido al inicio la moneda podía no reconverger hasta pasar por otra
+   etapa. Ahora `main.js` fija `history.scrollRestoration = 'manual'` y
+   devuelve el scroll a 0 en el arranque, en `load` y en `pageshow` (bfcache),
+   antes de que se creen observadores, ScrollTriggers y Lenis.
+
+### Tres trampas que costaron mediciones enteras
+
+- **Los métodos del prototipo WebGL se instalan perezosos**: en
+  `document-start` el prototipo viene vacío y sus métodos no son escribibles;
+  hay que `Object.defineProperty` y reintentar por frame. Sin esto, los
+  contadores del arnés fallan en silencio.
+- **Pintar en un render target calienta otros programas**: three.js cambia el
+  `outputColorSpace` según el destino (`js/three.module.js:20753`), así que
+  una pinta de calentamiento calentaba variantes que nadie usaba (57 programas
+  creados, 16 sin usar y 9 fríos). Hay que provocar `program.getUniforms()`
+  sobre el programa que `compile()` deja en el material.
+- **`compile()` no adquiere la variante DoubleSide de los materiales
+  transparentes** (`prepareMaterial` los parte en dos pasadas y deja
+  `needsUpdate`): con `forceSinglePass = true` temporal se adquiere la
+  variante que de verdad se dibuja.
+
+### Lo que queda (medido, no adivinado)
+
+- **~2.584 reflujos forzados por pasada**: no son de este código (el perfil no
+  encuentra ni una lectura de layout propia); vienen del `window.scrollTo` de
+  Lenis por frame y del style+layout que Blink fuerza al componer. Es el
+  suelo de una página que anima el DOM; bajar de ahí es trabajo futuro, no un
+  presupuesto que se pueda exigir hoy.
+- **Los frames >50 ms** en este entorno los domina el raster por software; se
+  informan pero no suspenden la ejecución.
 
 ## Secciones del scrollytelling
 

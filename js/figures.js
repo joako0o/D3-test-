@@ -9,7 +9,7 @@
  * TUS TAREAS (en `figures/README.md`): modelar en Blender y subir cada .glb
  * con Draco, <300 KB, material oro/obsidiana/azul.
  */
-import * as THREE from './three.module.js';
+import * as THREE from './three.module.js?v=2';
 import { GLTFLoader } from './loaders/GLTFLoader.js';
 import { DRACOLoader } from './loaders/DRACOLoader.js';
 
