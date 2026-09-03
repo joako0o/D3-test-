@@ -36,6 +36,9 @@ const MATS = {
   stone_dark: std(0x4a4642, 0.05, 0.92),
   granite: std(0x2a2724, 0.1, 0.6),
   marble: std(0x8c8070, 0.05, 0.3),
+  /* Dorado propio de las medallas de pared (placa y medallón): main.js no
+     las repinta a piedra con el marco. */
+  medal: std(0xc9973f, 1.0, 0.35),
   bronze: std(0x8a6a3c, 1.0, 0.38),
   bronze_dark: std(0x4a3820, 1.0, 0.55),
   bronze_matte: std(0x6a4e2c, 0.9, 0.6),
@@ -269,11 +272,14 @@ export function buildCentralBankDoor() {
     for (const sx of [-1, 1]) {
       box('stone', 'frame', null, sx * (jamb_outer + panel_w / 2 - 0.01), -jamb_d / 2 + 0.031, z0 + panel_h / 2, panel_w, jamb_d - 0.06, panel_h);
     }
-    /* placa oval (número) y medallón: disco + aro, sin texto (peso) */
-    cyl('bronze', 'frame', null, -PLAQUE_X, -jamb_d - 0.025, z0 + PLAQUE_Z, 0.09, 0.02, 'Y', 20);
-    cyl('bronze_matte', 'frame', null, -PLAQUE_X, -jamb_d - 0.036, z0 + PLAQUE_Z, 0.075, 0.008, 'Y', 20);
-    cyl('bronze', 'frame', null, PLAQUE_X, -jamb_d - 0.025, z0 + PLAQUE_Z + 0.35, 0.11, 0.02, 'Y', 24);
-    torus('bronze', 'frame', null, PLAQUE_X, -jamb_d - 0.035, z0 + PLAQUE_Z + 0.35, 0.094, 0.006, 'Y', 24);
+    /* Placa y medallón: DOS MEDALLAS doradas en la pared — disco plano
+       encarado a la cámara (eje del cilindro en Y, no de canto como antes)
+       más un aro en relieve cerca del borde, especie de medallón.
+       Ambas a la MISMA altura (la que tenía la derecha). */
+    cyl('medal', 'medal', null, -PLAQUE_X, -jamb_d - 0.02, z0 + PLAQUE_Z + 0.35, 0.10, 0.03, 'Z', 24);
+    torus('medal', 'medal', null, -PLAQUE_X, -jamb_d - 0.045, z0 + PLAQUE_Z + 0.35, 0.08, 0.010, 'Y', 24);
+    cyl('medal', 'medal', null, PLAQUE_X, -jamb_d - 0.02, z0 + PLAQUE_Z + 0.35, 0.10, 0.03, 'Z', 24);
+    torus('medal', 'medal', null, PLAQUE_X, -jamb_d - 0.045, z0 + PLAQUE_Z + 0.35, 0.08, 0.010, 'Y', 24);
   }
 
   /* ── escalinata de 5 peldaños con nariz y zócalos ────────────────────── */
@@ -333,6 +339,9 @@ export function buildCentralBankDoor() {
     const mesh = new THREE.Mesh(merged, mat);
     mesh.name = `${role}_${matName}${pivotName ? '_' + pivotName : ''}`;
     mesh.userData.role = role;
+    /* main.js usa el nombre del material para dar a los ornamentos de las
+       hojas un dorado distinto del fondo (contraste de relieve). */
+    mesh.userData.matName = matName;
     mesh.matrixAutoUpdate = false;
     mesh.matrix.identity();
     const parent = pivotName ? pivotOf[pivotName] : group;
@@ -346,6 +355,7 @@ export function buildCentralBankDoor() {
     inst.instanceMatrix.needsUpdate = true;
     inst.name = `leaf_beads_${pivotName}`;
     inst.userData.role = 'leaf';
+    inst.userData.matName = 'bronze';
     pivotOf[pivotName].add(inst);
   }
   group.add(pivotL, pivotR);

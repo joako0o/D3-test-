@@ -15,8 +15,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { initFigureSystem } from './figures.js?v=2';
-import { buildCentralBankDoor } from './build-door.js?v=2';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=2';
+import { buildCentralBankDoor } from './build-door.js?v=4';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=3';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
@@ -864,10 +864,12 @@ const doorInteriorMeshes = [];
 const doorLeafMeshes = [];
 const doorFrameMats = [];
 const doorLeafColorVoid = new THREE.Color('#07090f');
-/* Bronce oscuro del Acto 2 (como el bronce envejecido del generador y del
-   GLB de referencia): el oro espejado queda reservado para el cruce. */
-const doorLeafColorBronze = new THREE.Color('#8a6a3c');
-const doorLeafColorGold = new THREE.Color('#ffd76a');
+/* Bronce oscuro del FONDO de las hojas en el Acto 2; los ornamentos llevan
+   su propio dorado (doorLeafOrn*) para que el relieve se lea con contraste. */
+const doorLeafColorBronze = new THREE.Color('#6b4f28');
+const doorLeafColorGold = new THREE.Color('#d9a94f');
+const doorLeafOrnBronze = new THREE.Color('#c9973f');
+const doorLeafOrnGold = new THREE.Color('#ffd76a');
 const doorFrameColorHero = new THREE.Color('#6e7d92');
 const doorFrameColorMeet = new THREE.Color('#3a4048');
 const doorSpotKeyHero = new THREE.Color(0xd4e0f2);
@@ -929,6 +931,7 @@ let doorLocalHeight = 0;
     const isDoorLeaf = object.userData.role === 'leaf';
     const isGlow = object.userData.role === 'glow';
     const isFacade = object.userData.role === 'facade';
+    const isMedal = object.userData.role === 'medal';
     /* La fachada (muros, pilastras, cornisa) vive en portada Y en el Acto 2:
        la puerta de la portada debe ser la MISMA figura completa que la del
        Acto 2 (antes le "faltaba parte del marco" respecto de La Reunión;
@@ -954,7 +957,12 @@ let doorLocalHeight = 0;
         if (!m.emissive) m.emissive = new THREE.Color();
         m.emissive.set('#000000');
         m.emissiveIntensity = 0;
-        if (!doorLeafMats.includes(m)) doorLeafMats.push(m);
+        if (!doorLeafMats.some((r) => r.m === m)) {
+          /* orn = ornamento (molduras, rosetas, perlado, herrajes): lleva el
+             dorado claro; el fondo (bronze_matte) el bronce oscuro. */
+          const orn = object.userData.matName ? object.userData.matName !== 'bronze_matte' : true;
+          doorLeafMats.push({ m, orn });
+        }
       } else {
         m.color.set('#ffd76a');
         m.metalness = 1.0;
@@ -964,6 +972,16 @@ let doorLocalHeight = 0;
         m.emissive.set('#3d2508');
         m.emissiveIntensity = 0.05;
       }
+    } else if (isMedal) {
+      /* Medallas de la pared (placa y medallón): siempre doradas; NO se
+         repintan a piedra con el marco como antes. */
+      m.color.set('#c9973f');
+      m.metalness = 1.0;
+      m.roughness = 0.35;
+      m.envMapIntensity = 0.9;
+      if (!m.emissive) m.emissive = new THREE.Color();
+      m.emissive.set('#000000');
+      m.emissiveIntensity = 0;
     } else if (HERO_DOOR_LOCKUP) {
       m.color.copy(doorFrameColorHero);
       m.metalness = 0.08;
@@ -2165,15 +2183,23 @@ function animate() {
          generador / del GLB de referencia), no un dorado plano a full. */
       const crossGold = THREE.MathUtils.smoothstep(crossT, 0.10, 0.60);
       for (let i = 0; i < doorLeafMats.length; i++) {
-        const m = doorLeafMats[i];
+        const rec = doorLeafMats[i];
+        const m = rec.m;
         const LF = CONFIG.door.leaf;
-        m.color.copy(doorLeafColorVoid).lerp(doorLeafColorBronze, leafT).lerp(doorLeafColorGold, crossGold);
+        /* Fondo y ornamentos por SEPARADO: si ambos llevan el mismo color
+           el relieve desaparece (el fallo que se veía: detalles que no se
+           leían). Fondo = bronce oscuro mate; ornamento = dorado pulido. */
+        const meet = rec.orn ? LF.meetOrn : LF.meet;
+        const cross = rec.orn ? LF.crossOrn : LF.cross;
+        m.color.copy(doorLeafColorVoid)
+          .lerp(rec.orn ? doorLeafOrnBronze : doorLeafColorBronze, leafT)
+          .lerp(rec.orn ? doorLeafOrnGold : doorLeafColorGold, crossGold);
         m.metalness = THREE.MathUtils.lerp(
-          THREE.MathUtils.lerp(LF.hero.metalness, LF.meet.metalness, leafT), LF.cross.metalness, crossGold);
+          THREE.MathUtils.lerp(LF.hero.metalness, meet.metalness, leafT), cross.metalness, crossGold);
         m.roughness = THREE.MathUtils.lerp(
-          THREE.MathUtils.lerp(LF.hero.roughness, LF.meet.roughness, leafT), LF.cross.roughness, crossGold);
+          THREE.MathUtils.lerp(LF.hero.roughness, meet.roughness, leafT), cross.roughness, crossGold);
         m.envMapIntensity = THREE.MathUtils.lerp(
-          THREE.MathUtils.lerp(LF.hero.envMapIntensity, LF.meet.envMapIntensity, leafT), LF.cross.envMapIntensity, crossGold);
+          THREE.MathUtils.lerp(LF.hero.envMapIntensity, meet.envMapIntensity, leafT), cross.envMapIntensity, crossGold);
       }
       /* Las hojas del modelo procedural permanecen visibles (cierran el
          vano en portada); el fundido noche→oro lo da el color, no el visible. */
