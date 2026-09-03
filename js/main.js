@@ -14,10 +14,10 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { initFigureSystem } from './figures.js';
-import { buildCentralBankDoor } from './build-door.js';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js';
-import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js';
+import { initFigureSystem } from './figures.js?v=2';
+import { buildCentralBankDoor } from './build-door.js?v=2';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=2';
+import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
   voiceFocus, axesState, focusReturn, particleFocus,
