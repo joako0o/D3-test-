@@ -890,6 +890,9 @@ let doorBottomOffset = -1.15;
    doorBottomOffset da el centro VISUAL de la figura completa, que es el punto
    de mira durante el dolly de cruce (ver animate — rama 'doorway'). */
 let doorTopOffset = 1.15;
+/* Alto TOTAL del modelo en sus unidades (sin escala): con él animate limita
+   el tamaño en pantalla del lockup para que el pórtico quepa en el viewport. */
+let doorLocalHeight = 0;
 {
   /* La puerta ya no es un GLB estático: la genera js/build-door.js (port del
      Blender build_door (2).py) con pivotes reales para abrir las hojas. */
@@ -918,6 +921,7 @@ let doorTopOffset = 1.15;
        pórtico gigante recortado en el Acto 2). */
     const wholeSize = box.getSize(new THREE.Vector3());
     doorFootprint = { width: Math.max(wholeSize.x, 1e-3), depth: Math.max(wholeSize.z, 1e-3) };
+    doorLocalHeight = Math.max(wholeSize.y, 1e-3);
     doorBottomOffset = box.min.y - center.y;
     doorTopOffset = box.max.y - center.y;
     doorModel = model;
@@ -2008,6 +2012,9 @@ function cameraChoreography(progress) {
 /* Vector reutilizado para apuntar los spotlights de la puerta (antes se
    alocaba uno nuevo en CADA frame → ~60 objetos/seg de basura para el GC). */
 const _spotTarget = new THREE.Vector3();
+/* Reutilizado por el tope de tamaño del lockup (proyección del centro de la
+   puerta a píxeles); evitar allocations por frame. */
+const _doorFitV = new THREE.Vector3();
 
 /* "Las voces" vive en js/sections/voice-explorer.js.
    La llamada se queda AQUÍ, en el mismo punto de la ejecución que antes: el
@@ -2135,6 +2142,27 @@ function animate() {
         )
       : 1;
     doorGroup.scale.setScalar((0.94 + 0.06 * doorEase) * heroMul);
+    /* TOPE DE PORTADA: el pórtico completo (≈9,75 m de alto) no cabe en un
+       viewport bajo con el factor del lockup, y se recortaba arriba mientras
+       la escalinata caía sobre el titular. Se proyecta la figura y se encoge
+       SOLO durante el lockup (lockupMix) para que quepa entre el borde
+       superior y el tope del titular (band.bottom, en px, cacheado). */
+    if (HERO_DOOR_LOCKUP && lockupMix > 0.001 && doorModel && doorLocalHeight > 0) {
+      const vpFit = getViewportSnapshot();
+      const worldH = doorLocalHeight * doorModelGroup.scale.y * doorGroup.scale.y;
+      const dist = Math.max(camera.position.distanceTo(doorGroup.position), 0.1);
+      const screenH = (worldH * vpFit.height) /
+        (2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)));
+      _doorFitV.copy(doorGroup.position).project(camera);
+      const cyPx = (-_doorFitV.y * 0.5 + 0.5) * vpFit.height;
+      const maxScreenH = 2 * Math.max(80, Math.min(
+        cyPx - vpFit.height * 0.02,
+        (heroCoinFrame?.band?.bottom ?? vpFit.height * 0.72) - cyPx
+      ));
+      if (screenH > maxScreenH) {
+        doorGroup.scale.multiplyScalar(1 - lockupMix * (1 - maxScreenH / screenH));
+      }
+    }
     /* La puerta se APOYA, no flota: el pivote (centro de las hojas) se pone
        donde haga falta para que la base de los escalones quede en groundY.
        Anclar el pivote (el `baseY` anterior) hacía que al cambiar el tamaño la
