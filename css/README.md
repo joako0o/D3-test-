@@ -30,7 +30,7 @@ cambiar cómo se ve el sitio sin tocar una sola regla.
 | `16-stage-voices.css` | Stage 5: las voces + ficha radial de perfil discursivo. |
 | `17-stage-timeline.css` | Stage 8: línea de tiempo. |
 | `18-stage-quotes.css` | Stage 9: tarjetas de cita. |
-| `19-stage-closing.css` | Stage 10: cierre y llamada final. |
+| `19-stage-closing.css` | Stage 10: cierre y llamada final, y la cortina de carga `#load` con la acuñación de la moneda (`.mint-*`) en divs que solo animan `transform`/`opacity` para componerse en la GPU y no congelarse mientras el arranque bloquea el hilo principal. Debe funcionar sin JS. |
 | `20-breakpoints.css` | Cortes tablet (768–1024), móvil (≤768) y móvil pequeño (≤430). |
 | `21-a11y-focus.css` | `prefers-reduced-motion` y estados de foco visibles. |
 | `22-quote-panel.css` | Panel flotante de cita del enjambre de partículas. |

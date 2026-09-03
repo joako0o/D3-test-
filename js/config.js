@@ -168,7 +168,12 @@ export const CONFIG = {
        Hay que rehacer el export, no la iluminación. */
     leaf: {
       hero: { metalness: 0.12, roughness: 0.92, envMapIntensity: 0.12 },
-      meet: { metalness: 1.00, roughness: 0.22, envMapIntensity: 1.30 },
+      /* Acto 2: bronce envejecido, como el generador y el GLB de referencia.
+         El dorado espejado de antes quemaba las hojas a un oro plano. */
+      meet: { metalness: 0.88, roughness: 0.50, envMapIntensity: 0.55 },
+      /* Cruce del umbral: recién ahí las hojas suben a oro, como en la
+         versión anterior del sitio. */
+      cross: { metalness: 1.00, roughness: 0.26, envMapIntensity: 1.15 },
     },
     frameAnim: {
       hero: { metalness: 0.08, roughness: 0.88, envMapIntensity: 0.28, bumpScale: 0.045 },

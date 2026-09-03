@@ -15,8 +15,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { initFigureSystem } from './figures.js';
+import { buildCentralBankDoor } from './build-door.js';
 import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js';
-import { getViewportSize, isCompactWidth } from './viewport.js';
+import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
   voiceFocus, axesState, focusReturn, particleFocus,
@@ -38,6 +39,27 @@ CustomEase.create("cinematicOut", "0.61,1,0.88,1");
 CustomEase.create("cinematicInOut", "0.65,0,0.35,1");
 CustomEase.create("cinematicSilk", "0.45,0.05,0.55,0.95");
 CustomEase.create("cinematicSnap", "0.16,1,0.3,1");
+
+/* ────────────────────────────────
+   Entrar siempre por la portada
+────────────────────────────────
+   Sin esto el navegador restaura el scroll de la visita anterior y la página
+   "nace" a mitad de documento. Eso deja dos cosas mal a la vez: el lector
+   aterriza sin contexto y la escena arranca con scatterProgress=1, o sea con
+   la moneda invisible y Lenis desincronizado del scroll real; al subir rápido
+   al inicio ese estado puede tardar en reconverger. Forzamos el inicio arriba
+   antes de que se creen observadores, ScrollTriggers y Lenis, para que todo se
+   inicialice contra un scroll 0 coherente. */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+/* La restauración del reload ocurre ANTES de que este módulo corra, así que el
+   scrollTo de arriba puede llegar tarde: en `load` el usuario aún no ha podido
+   interactuar, de modo que cualquier scroll distinto de 0 es una restauración
+   y lo devolvemos a la portada (observadores, ScrollTrigger y Lenis convergen
+   con el evento de scroll resultante). */
+window.addEventListener('load', () => { if (window.scrollY !== 0) window.scrollTo(0, 0); });
+/* bfcache (atrás/adelante) también restaura el scroll: lo mismo. */
+window.addEventListener('pageshow', (e) => { if (e.persisted) window.scrollTo(0, 0); });
 
 /* ────────────────────────────────
    Modo debug: solo con ?debug en la URL se muestran los HUDs
@@ -127,6 +149,14 @@ if (supportsWebGL) {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = CONFIG.exposure;
     renderer.shadowMap.enabled = false;
+    /* Three.js pregunta al driver por el log de CADA shader la primera vez que
+       usa un programa, para avisar de errores de compilación. En producción eso
+       es trabajo tirado: medido con `npm run perf`, getShaderInfoLog +
+       getProgramInfoLog eran 13,5 s de los 19,5 s que el hilo principal estuvo
+       ocupado en 92 s de scroll (69 %), y la peor tarea larga —11 s de página
+       congelada al empezar a bajar— era exactamente eso. Con `?debug` se
+       conserva el aviso, que es cuando hace falta. */
+    renderer.debug.checkShaderErrors = DEBUG_MODE;
   } catch (e) {
     renderer = null;
   }
@@ -155,6 +185,180 @@ if (renderer) {
   pmrem.dispose();
 }
 
+/* ────────────────────────────────
+   Precalentado de la escena
+────────────────────────────────
+   La primera vez que un material se dibuja pasan dos cosas caras y
+   SÍNCRONAS: three.js compila y enlaza su programa, y el navegador sube sus
+   texturas a la GPU. Si eso ocurre mientras el lector baja, se ve como un
+   tirón — y ocurría: medido con `npm run perf`, el scroll entero se gastaba
+   13,5 s en getProgramParameter y hasta 10 s en texSubImage2D, con una tarea
+   larga de 11 s justo al empezar a bajar (la página congelada).
+
+   Aquí se paga todo de una vez, con la cortina de carga todavía encima.
+
+   Se compila en los DOS estados de luces del relato —la puerta encendida y
+   apagada— porque el número de luces visibles forma parte de la clave con la
+   que three.js cachea los programas: si solo se precalienta uno de los dos,
+   el otro se compila en mitad del cruce a La Sala, que es justo lo que se
+   quiere evitar. Las texturas se suben una sola vez cada una (uuid). */
+const TEXTURE_SLOTS = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap',
+  'emissiveMap', 'bumpMap', 'alphaMap', 'displacementMap', 'lightMap', 'envMap'];
+const warmedTextures = new Set();
+
+let warmUpRuns = 0;
+let warmUpChain = null;
+let warmUpQueued = false;
+
+/* Ceder el hilo principal entre fases. Antes el precalentado era UNA sola
+   tarea: la sonda del arranque midió 2 631 ms de bloqueo continuo con la
+   moneda "acuñando" encima, y 15 frames en 6 s no es una animación, es una
+   foto. Cada `breathe` deja pintar.
+
+   `setTimeout(0)` y no `requestAnimationFrame`: rAF se sirve al principio del
+   siguiente frame, así que encadenar fases con rAF las deja todas dentro del
+   mismo presupuesto y no garantiza un paint entre medias. */
+const breathe = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+function warmUpScene() {
+  if (!renderer) return Promise.resolve();
+  /* Las figuras y la moneda/puerta avisan por separado y pueden caer a la vez.
+     Siendo síncrono el precalentado no se solapaba; ahora sí podría.
+
+     OJO con "optimizar" esto fusionando pases: se probó compartir una sola
+     promesa si ya había un pase en vuelo y `npm run perf` lo cazó — los tres
+     pases de 659/405/217 ms se volvieron uno de 3 253 ms y aparecieron 5
+     createProgram DENTRO del scroll, porque `renderer.compile` recorre con
+     traverseVisible y un pase único temprano no ve los materiales que aún no
+     son visibles. Cada aviso merece su pase entero; lo único que se evita es
+     que dos corran a la vez, y el que llega durante un pase se encola.
+
+     La promesa devuelta se resuelve cuando la cola queda vacía, no al terminar
+     el primer pase: quien la espera (la cortina) no debe destaparse con un
+     precalentado todavía en marcha. */
+  if (warmUpChain) { warmUpQueued = true; return warmUpChain; }
+  warmUpChain = drainWarmUps();
+  return warmUpChain;
+}
+
+async function drainWarmUps() {
+  do {
+    warmUpQueued = false;
+    try { await runWarmUp(); } catch (e) { console.warn('Precalentado de la escena incompleto:', e); }
+  } while (warmUpQueued);
+  warmUpChain = null;
+}
+
+async function runWarmUp() {
+  /* User Timing, no console.log: deja el coste del precalentado registrado en
+     la línea de tiempo del navegador, que es donde `npm run perf` lo lee. Si
+     un precalentado cae en mitad del scroll se ve ahí, no hay que adivinarlo.
+     La medida cubre el pase entero, cesiones incluidas: es tiempo de pared,
+     que es lo que espera el lector con la cortina delante. */
+  const markStart = `warmUpScene ${++warmUpRuns}`;
+  try { performance.mark(`${markStart} start`); } catch { /* sin User Timing no pasa nada */ }
+  const doorWas = doorLightGroup ? doorLightGroup.visible : null;
+  const singlePassDuringWarmUp = [];
+  const programs = new Set();
+  try {
+    /* compile() NO adquiere la variante a doble cara de los materiales
+       transparentes: three.js los parte en dos pasadas (FrontSide y BackSide)
+       y se deja el material con needsUpdate, así que la variante que de verdad
+       se dibujará se compilaría en el primer render real. Con
+       forceSinglePass=true durante el calentamiento se adquiere esa variante;
+       el flag no forma parte de la clave del programa, así que el programa
+       calentado es exactamente el que se usará después. */
+    scene.traverse((obj) => {
+      const mats = Array.isArray(obj.material) ? obj.material : (obj.material ? [obj.material] : []);
+      for (let i = 0; i < mats.length; i++) {
+        const m = mats[i];
+        if (m && m.transparent && m.side === THREE.DoubleSide && m.forceSinglePass === false) {
+          singlePassDuringWarmUp.push(m);
+          m.forceSinglePass = true;
+        }
+      }
+    });
+
+    await breathe();
+
+    /* Dos pasadas, una por estado de luces del relato (la puerta encendida y
+       apagada): el número de luces visibles forma parte de la clave con la que
+       three.js cachea los programas, así que cada estado es un programa
+       distinto y los dos se usan al bajar. */
+    for (const doorOn of doorWas === null ? [true] : [doorWas, !doorWas]) {
+      if (doorLightGroup) doorLightGroup.visible = doorOn;
+      renderer.compile(scene, camera);
+      /* compile() deja el programa en el material, pero la INTROSPECCIÓN de
+         uniforms (getProgramParameter + getActiveUniform, que es lo que
+         bloquea el hilo principal) solo la hace la primera pinta. Se provoca
+         aquí.
+
+         Pintar una vez NO sirve como atajo: three.js elige otra variante de
+         programa cuando el destino no es el canvas —el outputColorSpace cambia
+         (js/three.module.js:20753)—, así que una pinta de calentamiento
+         calienta programas que después no usa nadie. Medido: 57 programas
+         creados, 16 sin usar nunca, y 9 todavía fríos en el scroll. */
+      scene.traverse((obj) => {
+        const mats = Array.isArray(obj.material) ? obj.material : (obj.material ? [obj.material] : []);
+        for (let i = 0; i < mats.length; i++) {
+          const m = mats[i];
+          if (!m) continue;
+          const program = renderer.properties.get(m)?.currentProgram;
+          if (program) programs.add(program);
+        }
+      });
+      /* Ceder entre pasadas: cada `renderer.compile` de la escena entera es el
+         bloque más largo del pase y dejarlo seguido del siguiente convierte
+         dos tareas grandes en una enorme. */
+      await breathe();
+    }
+
+    /* La introspección de uniforms es lo segundo más caro del arranque
+       (1 595 ms medidos dentro de WebGLUniforms) y va programa por programa,
+       así que es el sitio natural para ceder: se deja pintar cada pocos. */
+    let introspected = 0;
+    for (const program of programs) {
+      try { program.getUniforms(); } catch { /* un programa roto ya fallará solo */ }
+      if (++introspected % 6 === 0) await breathe();
+    }
+
+    /* Y las texturas: se suben a la GPU ahora, no en el primer fotograma que
+       las necesite. Se recogen primero y se suben después porque dentro de un
+       `traverse` no se puede ceder; `texSubImage2D` costó 287 ms en el
+       arranque medido y repartido en lotes no bloquea ningún frame entero. */
+    const pendingTextures = [];
+    scene.traverse((obj) => {
+      const mats = Array.isArray(obj.material) ? obj.material : (obj.material ? [obj.material] : []);
+      for (let i = 0; i < mats.length; i++) {
+        const m = mats[i];
+        if (!m) continue;
+        for (let s = 0; s < TEXTURE_SLOTS.length; s++) {
+          const tex = m[TEXTURE_SLOTS[s]];
+          if (!tex || !tex.isTexture || warmedTextures.has(tex.uuid)) continue;
+          warmedTextures.add(tex.uuid);
+          pendingTextures.push(tex);
+        }
+      }
+    });
+    for (let i = 0; i < pendingTextures.length; i++) {
+      renderer.initTexture(pendingTextures[i]);
+      if (i % 4 === 3) await breathe();
+    }
+  } catch (e) {
+    /* Un precalentado que falla no debe tumbar la página: en el peor de los
+       casos se vuelve al comportamiento de antes (compilar al primer dibujo). */
+    console.warn('Precalentado de la escena incompleto:', e);
+  } finally {
+    for (let i = 0; i < singlePassDuringWarmUp.length; i++) singlePassDuringWarmUp[i].forceSinglePass = false;
+    if (doorLightGroup) doorLightGroup.visible = doorWas;
+    try {
+      performance.mark(`${markStart} end`);
+      performance.measure('warmUpScene', `${markStart} start`, `${markStart} end`);
+    } catch { /* idem */ }
+  }
+}
+
+
 const L = CONFIG.lights;
 const ambient = new THREE.AmbientLight(L.ambient.color, L.ambient.intensity);
 scene.add(ambient);
@@ -171,7 +375,17 @@ scene.add(mouseLight);
    Si un .glb de figures/ todavía no existe, se dibuja un
    icosaedro + halo y se marca "por modelar" en el gabinete.
 ═══════════════════════════════════════════════════════════ */
-let figureSystem = initFigureSystem(scene, { debug: DEBUG_MODE });
+/* Las figuras no pasan por el LoadingManager de la moneda y la puerta: cargan
+   por su cuenta. Precalientan al llegar, o su primer programa se compilaría
+   al entrar en La Sala. El `setTimeout` no es decorativo: `onReady` puede
+   dispararse de forma síncrona desde dentro de initFigureSystem (las figuras
+   que aún no tienen GLB se resuelven como placeholder ahí mismo), y en ese
+   instante `doorLightGroup` —que se declara más abajo— todavía está en zona
+   muerta temporal. Es el mismo fallo que documenta el README en el Paso 2. */
+let figureSystem = initFigureSystem(scene, {
+  debug: DEBUG_MODE,
+  onReady: () => setTimeout(warmUpScene, 0),
+});
 
 /* ────────────────────────────────
    Luz de acento tipo museo para las figuras centrales de la sala.
@@ -400,7 +614,19 @@ coinTargetPx = heroCoinFrame.diameter;
 CONFIG.coin.baseY = getResponsiveCoinBaseY();
 
 const manager = new THREE.LoadingManager();
-manager.onLoad = () => setTimeout(() => { if (renderer) loadEl.classList.add('hidden'); }, 300);
+/* Se precalienta ANTES de levantar la cortina: el trabajo sucio de la primera
+   pinta (compilar programas, subir texturas) ocurre tapado, no en el primer
+   scroll del lector. */
+manager.onLoad = () => {
+  /* Se ESPERA al precalentado antes de levantar la cortina: si se levanta
+     antes, el trabajo sucio de la primera pinta ocurre a la vista del lector.
+     Ahora que el precalentado cede el hilo, esperar no congela nada: la moneda
+     sigue girando mientras tanto, que es justo lo contrario de antes.
+     `finally` y no `then` para que un fallo no deje la cortina puesta. */
+  warmUpScene().finally(() => {
+    setTimeout(() => { if (renderer) loadEl.classList.add('hidden'); }, 300);
+  });
+};
 manager.onError = (url) => console.warn('Error cargando recurso:', url);
 
 // Loading timeout - show helpful message if loading takes too long
@@ -633,9 +859,19 @@ doorStoneMap.repeat.set(2.4, 3.0);
 const doorMeanderMap = makeMeanderMap();
 doorMeanderMap.repeat.set(6, 8);
 const doorLeafMats = [];
+const doorFacadeMeshes = [];
+/* Materiales clonados SOLO para la fachada: así su fundido de entrada (Acto 2)
+   no arrastra al marco, que comparte los materiales originales del generador
+   y debe seguir visible desde la portada. */
+const facadeMatClones = new Map();
+const doorFacadeMats = [];
+const doorInteriorMeshes = [];
 const doorLeafMeshes = [];
 const doorFrameMats = [];
 const doorLeafColorVoid = new THREE.Color('#07090f');
+/* Bronce oscuro del Acto 2 (como el bronce envejecido del generador y del
+   GLB de referencia): el oro espejado queda reservado para el cruce. */
+const doorLeafColorBronze = new THREE.Color('#8a6a3c');
 const doorLeafColorGold = new THREE.Color('#ffd76a');
 const doorFrameColorHero = new THREE.Color('#6e7d92');
 const doorFrameColorMeet = new THREE.Color('#3a4048');
@@ -644,8 +880,8 @@ const doorSpotKeyMeet = new THREE.Color(0xe8eef6);
 const doorSpotRimHero = new THREE.Color(0x6e819c);
 const doorSpotRimMeet = new THREE.Color(0x8a93a3);
 
-const doorLoader = new GLTFLoader(manager);
-doorLoader.setDRACOLoader(dracoLoader);
+/* Pivotes y glow del generador procedural (js/build-door.js). */
+let doorPivotL = null, doorPivotR = null, doorGlowMat = null;
 /* Base real de la puerta relativa al pivote, en unidades del modelo. Se usa
    para apoyar la puerta en CONFIG.door.groundY y para la sombra de contacto.
    Se recalcula al cargar el modelo; -1.15 es solo el valor de reserva. */
@@ -654,36 +890,34 @@ let doorBottomOffset = -1.15;
    doorBottomOffset da el centro VISUAL de la figura completa, que es el punto
    de mira durante el dolly de cruce (ver animate — rama 'doorway'). */
 let doorTopOffset = 1.15;
-doorLoader.load('puerta-draco.glb', (gltf) => {
-  const model = gltf.scene;
-  /* Asegura que las transformaciones del GLB ya estén aplicadas al medirlo;
-     de lo contrario el pivote puede quedar corrido según el navegador. */
+{
+  /* La puerta ya no es un GLB estático: la genera js/build-door.js (port del
+     Blender build_door (2).py) con pivotes reales para abrir las hojas. */
+  const built = buildCentralBankDoor();
+  const model = built.group;
+  /* El generador (port del Blender) construye con la fachada mirando a -Y;
+     la cámara de la pieza mira hacia -Z: se rota -90° en X para encararla
+     (el interior queda a -Z, detrás, y las bisagras verticales siguen
+     siendo verticales). */
+  model.rotation.x = -Math.PI / 2;
+  doorPivotL = built.pivotL; doorPivotR = built.pivotR; doorGlowMat = built.glowMat;
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   if (!box.isEmpty()) {
-    /* Pivote = centro de las HOJAS de la puerta (mallas 'toroide'), no el
-       centro del bounding box completo: el pórtico es asimétrico y corrida
-       el centro geométrico, así que la puerta giraba/escalaba alrededor de
-       un punto que no era su centro visual. */
+    /* Pivote = centro de las HOJAS (rol 'leaf'), igual que antes con 'toroide'. */
     const leafBox = new THREE.Box3();
-    model.traverse((o) => {
-      if (o.isMesh && (o.name || '').toLowerCase().includes('toroide')) leafBox.expandByObject(o);
-    });
+    model.traverse((o) => { if (o.userData.role === 'leaf') leafBox.expandByObject(o); });
     const pivotBox = leafBox.isEmpty() ? box : leafBox;
     const center = pivotBox.getCenter(new THREE.Vector3());
-    /* El desplazamiento se calcula con el centro de las hojas y no con el
-       centro del marco: así la rotación/parallax de doorGroup queda centrada
-       en la parte visual que el usuario reconoce como la puerta. */
     model.position.sub(center);
     model.updateMatrixWorld(true);
-    /* La huella que se dimensiona es el ANCHO TOTAL del conjunto (pórtico +
-       escalones), que es lo que el ojo lee como "la puerta". Gobernar solo las
-       hojas (como hacía la versión anterior) hacía que el pórtico midiera ~2×
-       más de lo que el knob prometía. */
+    /* La huella de escala es el ANCHO TOTAL del conjunto, fachada incluida,
+       igual que con el GLB anterior: la fachada se dibuja aunque no cuente
+       para el pivote, y si se excluye de la huella la puerta entera se
+       renderiza ~1,5× más grande de lo prometido (el fallo que se veía:
+       pórtico gigante recortado en el Acto 2). */
     const wholeSize = box.getSize(new THREE.Vector3());
     doorFootprint = { width: Math.max(wholeSize.x, 1e-3), depth: Math.max(wholeSize.z, 1e-3) };
-    /* Base del modelo (escalones) relativa al pivote: sirve para apoyar la
-       puerta en CONFIG.door.groundY y para pegar ahí la sombra de contacto. */
     doorBottomOffset = box.min.y - center.y;
     doorTopOffset = box.max.y - center.y;
     doorModel = model;
@@ -691,76 +925,86 @@ doorLoader.load('puerta-draco.glb', (gltf) => {
   }
   model.traverse((object) => {
     if (!object.isMesh || !object.material) return;
-    const name = (object.name || '').toLowerCase();
-    // Toroide.001 son las hojas de la puerta; Cubo es el marco/pórtico exterior
-    const isDoorLeaf = name.includes('toroide');
-    if (isDoorLeaf) {
-      doorLeafMeshes.push(object);
-      if (HERO_DOOR_LOCKUP) object.visible = false;
-    }
-    [object.material].flat().forEach((m) => {
-      if (!m || !('metalness' in m)) return;
-      m.side = THREE.FrontSide;
-      if (isDoorLeaf) {
-        if (HERO_DOOR_LOCKUP) {
-          /* Vano del still: las hojas se apagan a noche. El oro vuelve en el acto 2. */
-          m.color.copy(doorLeafColorVoid);
-          m.metalness = 0.12;
-          m.roughness = 0.92;
-          m.envMapIntensity = 0.12;
-          if (!m.emissive) m.emissive = new THREE.Color();
-          m.emissive.set('#000000');
-          m.emissiveIntensity = 0;
-          doorLeafMats.push(m);
-        } else {
-          m.color.set('#ffd76a');
-          m.metalness = 1.0;
-          m.roughness = 0.22;
-          m.envMapIntensity = 1.3;
-          if (!m.emissive) m.emissive = new THREE.Color();
-          m.emissive.set('#3d2508');
-          m.emissiveIntensity = 0.05;
-        }
-      } else if (HERO_DOOR_LOCKUP) {
-        m.color.copy(doorFrameColorHero);
-        m.metalness = 0.08;
-        m.roughness = 0.88;
-        m.map = doorStoneMap;
-        m.bumpMap = doorStoneMap;
-        m.bumpScale = 0.045;
-        m.envMapIntensity = 0.28;
-        if (!m.emissive) m.emissive = new THREE.Color();
-        m.emissive.set('#000000');
-        m.emissiveIntensity = 0;
-        doorFrameMats.push(m);
-      } else {
-        m.color.set('#0d0f16');
-        m.metalness = 0.15;
-        m.roughness = 0.75;
-        m.envMapIntensity = 0.3;
-        if (!m.emissive) m.emissive = new THREE.Color();
-        m.emissive.set('#000000');
-        m.emissiveIntensity = 0;
+    let m = object.material;
+    if (!('metalness' in m)) return;
+    const isDoorLeaf = object.userData.role === 'leaf';
+    const isGlow = object.userData.role === 'glow';
+    const isFacade = object.userData.role === 'facade';
+    if (isFacade) {
+      /* La fachada (muros, pilastras, cornisa) no existe en el lockup de
+         portada pero SÍ desde que arranca el Acto 2: antes quedaba oculta
+         hasta el cruce del umbral y la puerta se veía recortada (sin
+         pórtico) durante toda La Reunión. Aquí solo se clona su material
+         para poder fundirla aparte en animate(); el `visible` lo gobierna
+         el mismo fundido, no este setup. */
+      let fm = facadeMatClones.get(m);
+      if (!fm) {
+        fm = m.clone();
+        facadeMatClones.set(m, fm);
+        doorFacadeMats.push(fm);
       }
-      m.needsUpdate = true;
-      doorMats.push(m);
-    });
+      object.material = fm;
+      m = fm;
+      doorFacadeMeshes.push(object);
+    }
+    if (object.userData.role === 'interior' || object.userData.role === 'glow') {
+      doorInteriorMeshes.push(object);
+    }
+    if (isDoorLeaf) {
+      if (!doorLeafMeshes.includes(object)) doorLeafMeshes.push(object);
+      /* La hoja cerrada SÍ se ve en portada (bronce casi noche): el nuevo
+         modelo luce su relieve; el oro llega con leafT en el acto 2. */
+    }
+    if (isGlow) { m.needsUpdate = true; return; }   // el glow lo gobierna el scroll
+    m.side = THREE.FrontSide;
+    if (isDoorLeaf) {
+      if (HERO_DOOR_LOCKUP) {
+        /* Vano del still: las hojas se apagan a noche. El oro vuelve en el acto 2. */
+        m.color.copy(doorLeafColorVoid);
+        m.metalness = 0.12;
+        m.roughness = 0.92;
+        m.envMapIntensity = 0.12;
+        if (!m.emissive) m.emissive = new THREE.Color();
+        m.emissive.set('#000000');
+        m.emissiveIntensity = 0;
+        if (!doorLeafMats.includes(m)) doorLeafMats.push(m);
+      } else {
+        m.color.set('#ffd76a');
+        m.metalness = 1.0;
+        m.roughness = 0.22;
+        m.envMapIntensity = 1.3;
+        if (!m.emissive) m.emissive = new THREE.Color();
+        m.emissive.set('#3d2508');
+        m.emissiveIntensity = 0.05;
+      }
+    } else if (HERO_DOOR_LOCKUP) {
+      m.color.copy(doorFrameColorHero);
+      m.metalness = 0.08;
+      m.roughness = 0.88;
+      m.map = doorStoneMap;
+      m.bumpMap = doorStoneMap;
+      m.bumpScale = 0.045;
+      m.envMapIntensity = 0.28;
+      if (!m.emissive) m.emissive = new THREE.Color();
+      m.emissive.set('#000000');
+      m.emissiveIntensity = 0;
+      if (!doorFrameMats.includes(m)) doorFrameMats.push(m);
+    } else {
+      m.color.set('#0d0f16');
+      m.metalness = 0.15;
+      m.roughness = 0.75;
+      m.envMapIntensity = 0.3;
+      if (!m.emissive) m.emissive = new THREE.Color();
+      m.emissive.set('#000000');
+      m.emissiveIntensity = 0;
+    }
+    m.needsUpdate = true;
+    /* La fachada queda FUERA de doorMats: su opacidad la gobierna su fundido
+       propio en animate(), multiplicado por doorVisOpacity. */
+    if (!isFacade && !doorMats.includes(m)) doorMats.push(m);
   });
   doorModelGroup.add(model);
-  if (HERO_DOOR_LOCKUP) {
-    const voidMat = new THREE.MeshBasicMaterial({ color: 0x05070c, side: THREE.DoubleSide });
-    const voidPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 2.05), voidMat);
-    voidPlane.position.set(0, 0.02, -0.22);
-    doorModelGroup.add(voidPlane);
-    doorMats.push(voidMat);
-    /* Sin polvo dorado en el vano: en el still de portada era ruido
-       extra sobre la moneda y la piedra. */
-  }
-}, undefined, (err) => {
-  console.error('Error cargando GLB:', err);
-  loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la puerta</span>';
-  setTimeout(() => loadEl.classList.add('hidden'), 1200);
-});
+}
 
 const clock = new THREE.Clock();
 const C = CONFIG.coin;
@@ -903,19 +1147,28 @@ function createParticleTexture() {
   grad.addColorStop(0.25, 'rgba(255,255,255,0.85)');
   grad.addColorStop(0.7, 'rgba(255,255,255,0.2)');
   grad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 64, 64);
   /* Canvas 2D deja RGB negro en los píxeles transparentes. Con
      NormalBlending eso puede producir pequeños halos negros sobre el fondo
-     oscuro aunque la partícula sea dorada o azul. Conservamos RGB blanco
-     en el borde y dejamos que el alfa controle únicamente la intensidad. */
-  const pixels = ctx.getImageData(0, 0, 64, 64);
-  for (let i = 0; i < pixels.data.length; i += 4) {
-    pixels.data[i] = 255;
-    pixels.data[i + 1] = 255;
-    pixels.data[i + 2] = 255;
-  }
-  ctx.putImageData(pixels, 0, 0);
+     oscuro aunque la partícula sea dorada o azul. Hay que conservar RGB
+     blanco en el borde y dejar que el alfa controle únicamente la intensidad.
+
+     Cómo se hacía antes: fillRect(grad) → getImageData → un bucle sobre los
+     16 384 píxeles poniendo RGB a 255 → putImageData. El getImageData fuerza
+     una lectura SÍNCRONA del rasterizador, y medido con la sonda del arranque
+     esta función sola se comía 2 037 ms — el 25,6 % del CPU de la carga, con
+     la cortina todavía encima, o sea con la moneda congelada.
+
+     El mismo resultado sin leer un solo píxel: se pinta blanco opaco y el
+     degradado se aplica en `destination-in`, que conserva el color del
+     destino y toma el alfa del origen. Mismos píxeles, cero readback.
+     (Se descartó un DataTexture: en este three.js nace con NearestFilter y
+     generateMipmaps=false —js/three.module.js:32315— y las partículas se
+     verían dentadas.) */
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 64, 64);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 64, 64);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
@@ -1767,6 +2020,30 @@ function animate() {
   /* crossT EFECTIVO: entrada y salida son la MISMA curva. Al volver
      (crossT↓ o exitT↑) cámara, mira, FOV, velo y puerta deshacen el cruce. */
   const crossEff = crossT * (1 - exitT);
+  /* Apertura física de las hojas (pivotes en las bisagras, como el Blender):
+     cerrada en portada, abre al cruzar el umbral y vuelve a cerrar al volver. */
+  /* La fachada ya no se gobierna aquí: su fundido de entrada (Acto 2) vive
+     junto al fade de la puerta, donde ya está calculado doorVisOpacity. */
+  if (doorInteriorMeshes.length) {
+    /* El vestíbulo enmarca el umbral mientras se abre; una vez que la cámara
+       lo cruza se retira para no interponerse entre ella y La Sala. */
+    const interiorOn = crossT < 0.55;
+    for (let i = 0; i < doorInteriorMeshes.length; i++) doorInteriorMeshes[i].visible = interiorOn;
+  }
+  if (doorPivotL && doorPivotR) {
+    /* Un pelo más tarde que antes: al inicio del cruce la puerta todavía se
+       lee cerrada, como en la versión anterior (que ahí disolvía, no abría). */
+    const openT = THREE.MathUtils.smoothstep(crossT, 0.14, 0.72);
+    const openRad = THREE.MathUtils.degToRad(85) * openT;
+    doorPivotL.rotation.z = openRad * (doorPivotL.userData.openSign || 1);
+    doorPivotR.rotation.z = openRad * (doorPivotR.userData.openSign || -1);
+  }
+  if (doorGlowMat) {
+    /* Luz de interior, no losa luminosa: queda en ámbar tibio incluso con la
+       puerta abierta (antes 0.22 + 2.2 quemaba a crema y se leía como una
+       figura clara plantada detrás de las hojas). */
+    doorGlowMat.emissiveIntensity = 0.06 + 1.05 * THREE.MathUtils.smoothstep(crossT, 0.05, 0.6);
+  }
   particleStoryKeys.forEach((key) => {
     particleStoryMix[key] = THREE.MathUtils.lerp(
       particleStoryMix[key],
@@ -1795,7 +2072,9 @@ function animate() {
     mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
     coin.getWorldPosition(projectedPos);
     projectedPos.project(camera);
-    const vp = getViewportSize();
+    /* Snapshot, no lectura viva: leer clientWidth aquí dentro fuerza un
+       reflujo cada frame (ver js/viewport.js). */
+    const vp = getViewportSnapshot();
     const coinScreenX = (projectedPos.x * 0.5 + 0.5) * vp.width;
     const coinScreenY = (-projectedPos.y * 0.5 + 0.5) * vp.height;
     haloWrap.style.transform = `translate3d(${coinScreenX}px, ${coinScreenY}px, 0)`;
@@ -1828,9 +2107,9 @@ function animate() {
     /* crossT CRUDO (no crossEff): al salir de la sala hacia El Método
        la puerta NO debe reaparecer. Solo vuelve si el scroll deshace
        el cruce (crossT↓, de vuelta a La Reunión). */
-    const dissolve = DOOR_MODE === 'doorway'
-      ? THREE.MathUtils.smoothstep((crossT - 0.15) / 0.55, 0, 1)
-      : 0;
+    /* La puerta procedural YA no se disuelve al cruzar: las hojas se abren
+       (ver apertura por pivotes más abajo) y el interior cálido asoma. */
+    const dissolve = 0;
     doorVisOpacity = doorFade * (1 - dissolve);
     /* doorModel (no solo doorGroup.children) porque el grupo intermedio
        doorModelGroup se añade siempre: si el GLB no cargó, la escena sigue
@@ -1868,19 +2147,41 @@ function animate() {
       doorMats[i].transparent = true;
       doorMats[i].opacity = doorVisOpacity;
     }
+    /* Fachada COMPLETA desde que el lockup de portada se suelta (Acto 2), no
+       solo al cruzar el umbral: antes la puerta se veía recortada durante
+       toda La Reunión. Fundido propio sobre los materiales clonados, y el
+       cruce la mantiene a 1 por si se entra al Acto 2 ya pasado el hero. */
+    if (doorFacadeMats.length) {
+      const facadeFade = Math.max(
+        THREE.MathUtils.smoothstep(scatterProgress, 0.22, 0.60),
+        (crossT > 0.03 || crossEff > 0.03) ? 1 : 0
+      );
+      const facadeVis = facadeFade > 0.02 && doorVisOpacity > 0.02;
+      for (let i = 0; i < doorFacadeMeshes.length; i++) doorFacadeMeshes[i].visible = facadeVis;
+      for (let i = 0; i < doorFacadeMats.length; i++) {
+        doorFacadeMats[i].transparent = true;
+        doorFacadeMats[i].opacity = doorVisOpacity * facadeFade;
+      }
+    }
     if (HERO_DOOR_LOCKUP && doorLeafMats.length) {
       const leafT = THREE.MathUtils.smoothstep(scatterProgress, 0.28, 0.9);
+      /* El oro espejado llega con el CRUCE, como en la versión anterior del
+         sitio: durante el Acto 2 las hojas son bronce oscuro (el acabado del
+         generador / del GLB de referencia), no un dorado plano a full. */
+      const crossGold = THREE.MathUtils.smoothstep(crossT, 0.10, 0.60);
       for (let i = 0; i < doorLeafMats.length; i++) {
         const m = doorLeafMats[i];
         const LF = CONFIG.door.leaf;
-        m.color.copy(doorLeafColorVoid).lerp(doorLeafColorGold, leafT);
-        m.metalness = THREE.MathUtils.lerp(LF.hero.metalness, LF.meet.metalness, leafT);
-        m.roughness = THREE.MathUtils.lerp(LF.hero.roughness, LF.meet.roughness, leafT);
-        m.envMapIntensity = THREE.MathUtils.lerp(LF.hero.envMapIntensity, LF.meet.envMapIntensity, leafT);
+        m.color.copy(doorLeafColorVoid).lerp(doorLeafColorBronze, leafT).lerp(doorLeafColorGold, crossGold);
+        m.metalness = THREE.MathUtils.lerp(
+          THREE.MathUtils.lerp(LF.hero.metalness, LF.meet.metalness, leafT), LF.cross.metalness, crossGold);
+        m.roughness = THREE.MathUtils.lerp(
+          THREE.MathUtils.lerp(LF.hero.roughness, LF.meet.roughness, leafT), LF.cross.roughness, crossGold);
+        m.envMapIntensity = THREE.MathUtils.lerp(
+          THREE.MathUtils.lerp(LF.hero.envMapIntensity, LF.meet.envMapIntensity, leafT), LF.cross.envMapIntensity, crossGold);
       }
-      for (let i = 0; i < doorLeafMeshes.length; i++) {
-        doorLeafMeshes[i].visible = leafT > 0.12;
-      }
+      /* Las hojas del modelo procedural permanecen visibles (cierran el
+         vano en portada); el fundido noche→oro lo da el color, no el visible. */
       /* Muros: de piedra de portada a obsidiana gris (el oro es de las hojas). */
       for (let i = 0; i < doorFrameMats.length; i++) {
         const m = doorFrameMats[i];
@@ -2090,7 +2391,7 @@ function animate() {
            screenY = vpH/2 + (look.y − coin.baseY) · pxPerUnit
        despejando, look.y = coin.baseY + (centerY − vpH/2) / pxPerUnit.
        pxPerUnit usa el fov real y la distancia real a la moneda (z = 0.55). */
-    const vpH = getViewportSize().height;
+    const vpH = getViewportSnapshot().height;
     const coinDist = Math.max(CONFIG.camera.z - 0.55, 1e-3);
     const pxPerUnit = vpH / (2 * Math.tan((CONFIG.camera.fov * Math.PI) / 360) * coinDist);
     const aimY = CONFIG.coin.baseY
@@ -2537,34 +2838,54 @@ const progressBar = document.getElementById('progressBar');
 const sectionIndicator = document.getElementById('sectionIndicator');
 let indicatorTimeout;
 
+/* El alto del documento NO se lee en cada evento de scroll. Leer
+   `scrollHeight` con el estilo sucio fuerza un style+layout completo, y con
+   Lenis el scroll dispara esto en cada frame: la medición de la línea base
+   contaba 3.668 reflujos forzados por pasada. El alto solo cambia cuando
+   cambia el viewport o cuando un `pin` de ScrollTrigger reparte espacio, así
+   que se cachea y se invalida en esos dos momentos. */
+let docScrollSpan = -1;
+function invalidateDocScrollSpan() { docScrollSpan = -1; }
+window.addEventListener('resize', invalidateDocScrollSpan);
+ScrollTrigger.addEventListener('refresh', invalidateDocScrollSpan);
+
+/* La barra de progreso tiene 2 px de alto y una transición de 0,1 s: moverla
+   en pasos de 1 % es indistinguible y se escribe 100 veces por recorrido en
+   vez de una por frame (cada escritura invalida estilo). */
+let lastProgressPct = -1;
+
 function updateScrubber() {
   const scrollTop = window.scrollY || document.documentElement.scrollTop;
-  const vp = getViewportSize();
-  const docHeight = document.documentElement.scrollHeight - vp.height;
-  const p = docHeight > 0 ? scrollTop / docHeight : 0;
+  if (docScrollSpan < 0) docScrollSpan = document.documentElement.scrollHeight - getViewportSnapshot().height;
+  const p = docScrollSpan > 0 ? scrollTop / docScrollSpan : 0;
   storyProgress = p;
 
-  // Debug scrubber
-  tsProgress.textContent = Math.round(p * 100) + '%';
-  tsBar.style.height = (p * 100) + '%';
-  tsMarker.style.top = (p * 100) + '%';
+  const pct = Math.round(p * 100);
+  if (pct !== lastProgressPct) {
+    lastProgressPct = pct;
+    progressBar.style.width = pct + '%';
+    progressBar.setAttribute('aria-valuenow', String(pct));
+  }
 
-  // Progress bar
-  progressBar.style.width = (p * 100) + '%';
-  progressBar.setAttribute('aria-valuenow', String(Math.round(p * 100)));
+  /* El resto es el HUD de desarrollo, que está oculto sin `?debug`: escribir
+     en elementos que nadie ve ensuciaba el estilo igual. */
+  if (!DEBUG_MODE) return;
+
+  // Debug scrubber
+  tsProgress.textContent = pct + '%';
+  tsBar.style.height = pct + '%';
+  tsMarker.style.top = pct + '%';
 
   // Section indicator
   let sec = 'hero';
   for (let i = sections.length - 1; i >= 0; i--) {
     if (p >= sections[i].start) { sec = sections[i].label; break; }
   }
-  if (DEBUG_MODE) {
-    tsSection.textContent = sec;
-    sectionIndicator.textContent = sec;
-    sectionIndicator.style.opacity = '0.6';
-    clearTimeout(indicatorTimeout);
-    indicatorTimeout = setTimeout(() => { sectionIndicator.style.opacity = '0'; }, 1500);
-  }
+  tsSection.textContent = sec;
+  sectionIndicator.textContent = sec;
+  sectionIndicator.style.opacity = '0.6';
+  clearTimeout(indicatorTimeout);
+  indicatorTimeout = setTimeout(() => { sectionIndicator.style.opacity = '0'; }, 1500);
 }
 window.addEventListener('scroll', updateScrubber, { passive: true });
 updateScrubber();
@@ -2579,6 +2900,28 @@ initParticleStoryScroll();
 initWordEvolution(quotes);
 /* "De la señal a la fuente" vive en js/sections/act-browser.js. */
 initActBrowser({ quotes, openQuote });
+
+/* Gancho de diagnóstico solo con ?debug: deja leer el estado de la escena
+   (etapa, dispersión, visibilidad de la moneda, scroll) desde herramientas
+   externas sin tocar el render. Sirvió para cazar el bug de "la moneda no
+   aparece al volver arriba tras cargar a mitad de página". */
+if (DEBUG_MODE) {
+  window.__diag = {
+    get state() {
+      return {
+        stage: currentStage,
+        scatter: Number(scatterProgress.toFixed(3)),
+        coinVisible: coin.visible,
+        coinChildren: coin.children.length,
+        coinFade: Number(coinFade.toFixed(3)),
+        y: Math.round(window.scrollY),
+      };
+    },
+  };
+  /* Bisectación visual de artefactos de render: permite ocultar objetos
+     concretos desde herramientas externas (solo con ?debug). */
+  window.__objs = { doorGroup, doorFloor, swarm, orbitGroup, figureGroup: figureSystem ? figureSystem.group : null, scene };
+}
 
 const lenis = new Lenis({
   duration: reduceMotion ? 0 : 1.2,
