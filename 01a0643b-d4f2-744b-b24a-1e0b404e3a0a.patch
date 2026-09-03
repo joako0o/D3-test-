@@ -1,0 +1,1626 @@
+diff --git a/README.md b/README.md
+index e4dc037..0b3e507 100644
+--- a/README.md
++++ b/README.md
+@@ -17,6 +17,7 @@ npm start            # servidor estático en http://localhost:8000
+ npm run check        # arranca el sitio fuera del navegador y avisa si algo revienta
+ npm run shots        # capturas reales de cada sección (necesita npm start)
+ npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
++npm run perf         # mide la fluidez del hilo principal haciendo scroll (ver § Fluidez)
+ ```
+ 
+ `npm run check` necesita las dependencias de desarrollo una sola vez
+@@ -71,9 +72,12 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
+ │   ├── vendor/                 GSAP, ScrollTrigger, SplitText, CustomEase, D3, Lenis, Draco
+ │   └── loaders/ utils/ controls/ environments/ objects/    addons de Three.js
+ ├── tools/smoke-test.mjs    204 · `npm run check`
+-├── scripts/screenshots/
+-│   ├── capture.mjs         161 · `npm run shots`
+-│   └── hero-check.mjs      284 · `npm run hero:check`
++├── scripts/
++│   ├── lib/chromium.mjs    el Chromium con SwiftShader, compartido por las tres herramientas de abajo
++│   ├── perf/measure.mjs    `npm run perf` — mide el coste del hilo principal en scroll y reposo
++│   └── screenshots/
++│       ├── capture.mjs     `npm run shots`
++│       └── hero-check.mjs  `npm run hero:check`
+ ├── figures/                balanza.glb (177 KB) · soporte.glb (28 KB) · README.md
+ ├── monedav5-draco.glb      434 KB
+ ├── puerta-draco.glb         76 KB
+@@ -316,6 +320,7 @@ refactor de este tamaño; ahora hay tres redes:
+ npm run check                       # arranca sin navegador: imports, ids, excepciones
+ npm run shots -- --w=1440 --h=900   # las 13 secciones con WebGL real, sale 1 si hay errores
+ npm run hero:check                  # la portada en 12 viewports
++npm run perf                        # coste del hilo principal en scroll y reposo (ver § Fluidez)
+ ```
+ 
+ El criterio es **equivalencia de píxeles**: capturar antes, refactorizar,
+@@ -333,6 +338,82 @@ y en el Paso 2 quedaron todas por debajo del 0,4 %.
+ `index.html` son de la maqueta original y varios los pisa GSAP en caliente;
+ moverlos a CSS sin comprobarlo uno a uno rompe animaciones.
+ 
++## Fluidez (medida, no impresiones)
++
++"Va más suave" sin número era justo la clase de afirmación que este proyecto
++dejó de aceptar, así que la fluidez tiene su propia red: `npm run perf`.
++Abre Chromium con WebGL por software, hace scroll de verdad (rueda, no
++`scrollTo`) de ida y vuelta por todo el documento, y mide el coste del hilo
++principal con una traza de Chrome y un perfil de CPU por muestreo. Los FPS
++absolutos NO son comparables con una GPU real (rasteriza SwiftShader); lo
++comparable es el trabajo del hilo principal —scripting, style, layout,
++reflujos, compilación de shaders, draw calls— y por eso los presupuestos van
++sobre eso.
++
++Medido en 1440×900, recorrido completo, antes y después del trabajo del
++2026-09-02:
++
++| Métrica durante el scroll | Antes | Después | |
++|---|---|---|---|
++| Hilo principal ocupado | 19.540 ms | 5.300 ms | −73 % |
++| scripting (por segundo) | 356 ms/s | 63 ms/s | −82 % |
++| bucle rAF (Lenis+GSAP+animate) | 175 ms/s | 29 ms/s | −83 % |
++| peor tarea larga | 11.047 ms | 156 ms | −98,6 % |
++| programas compilados en pleno scroll | 5 | 0 | |
++| cortina de carga | — | ≈7,3 s | el coste se paga aquí |
++
++Lo que se hizo (todo en `js/main.js` y `js/viewport.js`):
++
++1. **Precalentado de la escena tras la cortina** (`warmUpScene()`). La primera
++   pinta de un material compila su programa y sube sus texturas de forma
++   síncrona, y eso caía en mitad del scroll (el congelamiento de 11 s). Ahora
++   se compilan los dos estados de luces y se provoca la introspección de
++   uniforms sin pintar nada, antes de levantar la cortina.
++2. **`renderer.debug.checkShaderErrors = DEBUG_MODE`.** En producción
++   preguntar al driver por el log de cada shader es trabajo tirado (llegó a
++   ser el 69 % del hilo principal); con `?debug` se conserva el aviso.
++3. **Snapshot de viewport en el bucle de render.** `getViewportSize()` lee
++   `clientWidth/clientHeight` y con el estilo sucio fuerza un reflujo; se
++   llamaba dos veces por frame en `animate()` (1.900 ms y 4.410 reflujos).
++   `getViewportSnapshot()` lo cachea e invalida con resize/orientación/
++   visualViewport.
++4. **`updateScrubber()` sin lecturas por evento.** El alto del documento se
++   cachea y se invalida en `resize` y `ScrollTrigger.refresh`, y sin `?debug`
++   no se escribe en el HUD oculto.
++5. **Entrar siempre por la portada.** El navegador restauraba el scroll de la
++   visita anterior y la página "nacía" a mitad de documento: `scatterProgress`
++   arrancaba en 1 (moneda invisible) y Lenis quedaba desincronizado, así que al
++   subir rápido al inicio la moneda podía no reconverger hasta pasar por otra
++   etapa. Ahora `main.js` fija `history.scrollRestoration = 'manual'` y
++   devuelve el scroll a 0 en el arranque, en `load` y en `pageshow` (bfcache),
++   antes de que se creen observadores, ScrollTriggers y Lenis.
++
++### Tres trampas que costaron mediciones enteras
++
++- **Los métodos del prototipo WebGL se instalan perezosos**: en
++  `document-start` el prototipo viene vacío y sus métodos no son escribibles;
++  hay que `Object.defineProperty` y reintentar por frame. Sin esto, los
++  contadores del arnés fallan en silencio.
++- **Pintar en un render target calienta otros programas**: three.js cambia el
++  `outputColorSpace` según el destino (`js/three.module.js:20753`), así que
++  una pinta de calentamiento calentaba variantes que nadie usaba (57 programas
++  creados, 16 sin usar y 9 fríos). Hay que provocar `program.getUniforms()`
++  sobre el programa que `compile()` deja en el material.
++- **`compile()` no adquiere la variante DoubleSide de los materiales
++  transparentes** (`prepareMaterial` los parte en dos pasadas y deja
++  `needsUpdate`): con `forceSinglePass = true` temporal se adquiere la
++  variante que de verdad se dibuja.
++
++### Lo que queda (medido, no adivinado)
++
++- **~2.584 reflujos forzados por pasada**: no son de este código (el perfil no
++  encuentra ni una lectura de layout propia); vienen del `window.scrollTo` de
++  Lenis por frame y del style+layout que Blink fuerza al componer. Es el
++  suelo de una página que anima el DOM; bajar de ahí es trabajo futuro, no un
++  presupuesto que se pueda exigir hoy.
++- **Los frames >50 ms** en este entorno los domina el raster por software; se
++  informan pero no suspenden la ejecución.
++
+ ## Secciones del scrollytelling
+ 
+ 1. **Hero** — Título con moneda 3D flotante
+diff --git a/css/19-stage-closing.css b/css/19-stage-closing.css
+index b39b3e2..26cdc11 100644
+--- a/css/19-stage-closing.css
++++ b/css/19-stage-closing.css
+@@ -88,12 +88,65 @@
+   transition: opacity 0.6s ease;
+ }
+ #load.hidden { opacity: 0; pointer-events: none; }
+-.spinner {
+-  width: 44px; height: 44px;
+-  border: 3px solid var(--color-gold-dim);
+-  border-top-color: var(--color-gold);
+-  border-radius: 50%;
+-  animation: spin 1s linear infinite;
+-}
+-@keyframes spin { to { transform: rotate(360deg); } }
++/* ── La acuñación de la moneda ──────────────────────────────────────────
++   Sustituye al spinner genérico. Dos razones para que sea SVG/CSS y no
++   Lottie: (1) esta cortina existe para cubrir el arranque del JS y de WebGL,
++   así que su animación no puede depender de JS (Lottie lo necesita); (2) el
++   activo de referencia era una "nube de carga", no una figura del proyecto.
++   Aquí la moneda se acuña: el canto dentado gira, el aro se graba y una
++   partícula (dovish, como las señales del relato) orbita. Solo tokens de
++   00-tokens-base.css. */
++.mint { position: relative; width: 116px; height: 116px; }
++.mint svg { display: block; width: 100%; height: 100%; overflow: visible; }
++
++.mint-halo {
++  fill: none; stroke: var(--color-gold-glow); stroke-width: 1;
++  animation: mint-pulse 2.4s ease-in-out infinite;
++}
++/* Canto dentado: 24 dientes sobre 2π·47 ≈ 295. Gira lento, como una moneda
++   que aún no ha caído. */
++.mint-reed {
++  fill: none; stroke: var(--color-gold-dim); stroke-width: 3;
++  stroke-dasharray: 2 4.16;
++  transform-origin: 60px 60px;
++  animation: mint-spin 9s linear infinite;
++}
++.mint-face { fill: rgba(255, 215, 106, 0.05); }
++/* El aro que se graba: 2π·38 ≈ 238.8. Empieza vacío, se acuña y se retira. */
++.mint-ring {
++  fill: none; stroke: var(--color-gold); stroke-width: 2.5; stroke-linecap: round;
++  stroke-dasharray: 238.8;
++  transform-origin: 60px 60px;
++  animation: mint-strike 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
++}
++.mint-orbit { transform-origin: 60px 60px; animation: mint-spin 2.4s linear infinite; }
++.mint-orbit circle { fill: var(--color-dovish); }
++
++.mint-mono {
++  position: absolute; inset: 0; display: grid; place-items: center;
++  font-family: var(--font-display);
++  font-size: 1.5rem; letter-spacing: 0.08em; color: var(--color-gold);
++  text-shadow: 0 0 18px var(--color-gold-glow);
++  animation: mint-mono 2.4s ease-in-out infinite;
++}
++
++@keyframes mint-spin { to { transform: rotate(360deg); } }
++@keyframes mint-pulse { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.4; } }
++@keyframes mint-strike {
++  0%   { stroke-dashoffset: 238.8; transform: rotate(-90deg); }
++  55%  { stroke-dashoffset: 0; }
++  100% { stroke-dashoffset: -238.8; transform: rotate(-90deg); }
++}
++@keyframes mint-mono {
++  0%, 100% { opacity: 0.55; transform: scale(0.98); }
++  50%      { opacity: 1; transform: scale(1); }
++}
++
++/* Sin movimiento: la moneda queda acuñada y quieta. */
++@media (prefers-reduced-motion: reduce) {
++  .mint-halo, .mint-reed, .mint-ring, .mint-orbit, .mint-mono { animation: none; }
++  .mint-ring { stroke-dashoffset: 0; }
++  .mint-mono { opacity: 1; }
++}
++
+ #load span { font-size: var(--fs-small); letter-spacing: 3px; text-transform: uppercase; opacity: 0.8; }
+diff --git a/css/21-a11y-focus.css b/css/21-a11y-focus.css
+index cf705e7..2145196 100644
+--- a/css/21-a11y-focus.css
++++ b/css/21-a11y-focus.css
+@@ -11,7 +11,7 @@
+   }
+   .coin-halo { animation: none; opacity: 0.7; }
+   .scroll-hint svg { animation: none; }
+-  .spinner { animation: none; }
++  .mint-halo, .mint-reed, .mint-ring, .mint-orbit, .mint-mono { animation: none; }
+ }
+ 
+ /* ─── Focus States (Accessibility) ─── */
+diff --git a/css/23-a11y-jargon.css b/css/23-a11y-jargon.css
+index 9939211..af410f6 100644
+--- a/css/23-a11y-jargon.css
++++ b/css/23-a11y-jargon.css
+@@ -10,7 +10,7 @@
+     transition-duration: 0.01ms !important;
+   }
+   .coin-halo { animation: none !important; }
+-  .spinner { animation: none !important; }
++  .mint-halo, .mint-reed, .mint-ring, .mint-orbit, .mint-mono { animation: none !important; }
+   .scroll-hint svg { animation: none !important; }
+ }
+ 
+diff --git a/css/README.md b/css/README.md
+index 09eb1a2..052c432 100644
+--- a/css/README.md
++++ b/css/README.md
+@@ -30,7 +30,7 @@ cambiar cómo se ve el sitio sin tocar una sola regla.
+ | `16-stage-voices.css` | Stage 5: las voces + ficha radial de perfil discursivo. |
+ | `17-stage-timeline.css` | Stage 8: línea de tiempo. |
+ | `18-stage-quotes.css` | Stage 9: tarjetas de cita. |
+-| `19-stage-closing.css` | Stage 10: cierre y llamada final. |
++| `19-stage-closing.css` | Stage 10: cierre y llamada final, y la cortina de carga `#load` con la acuñación SVG/CSS de la moneda (`.mint-*`), que debe funcionar sin JS. |
+ | `20-breakpoints.css` | Cortes tablet (768–1024), móvil (≤768) y móvil pequeño (≤430). |
+ | `21-a11y-focus.css` | `prefers-reduced-motion` y estados de foco visibles. |
+ | `22-quote-panel.css` | Panel flotante de cita del enjambre de partículas. |
+diff --git a/index.html b/index.html
+index f0dd810..af625a2 100644
+--- a/index.html
++++ b/index.html
+@@ -92,8 +92,17 @@
+   </aside>
+ 
+   <div id="load">
+-    <div class="spinner"></div>
+-    <span>Cargando moneda&hellip;</span>
++    <div class="mint" role="img" aria-label="Acuñando la moneda del Banco Central">
++      <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
++        <circle class="mint-halo" cx="60" cy="60" r="54"></circle>
++        <circle class="mint-reed" cx="60" cy="60" r="47"></circle>
++        <circle class="mint-face" cx="60" cy="60" r="38"></circle>
++        <circle class="mint-ring" cx="60" cy="60" r="38"></circle>
++        <g class="mint-orbit"><circle cx="60" cy="12" r="2.6"></circle></g>
++      </svg>
++      <span class="mint-mono" aria-hidden="true">RPM</span>
++    </div>
++    <span>Acu&ntilde;ando la moneda&hellip;</span>
+   </div>
+ 
+   <div id="quotePanel" role="dialog" aria-modal="false" aria-labelledby="qpWho" aria-live="polite" aria-hidden="true" hidden>
+diff --git a/js/main.js b/js/main.js
+index 0ae5420..599a683 100644
+--- a/js/main.js
++++ b/js/main.js
+@@ -16,7 +16,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+ import { initFigureSystem } from './figures.js';
+ import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js';
+-import { getViewportSize, isCompactWidth } from './viewport.js';
++import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js';
+ import {
+   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
+   voiceFocus, axesState, focusReturn, particleFocus,
+@@ -39,6 +39,27 @@ CustomEase.create("cinematicInOut", "0.65,0,0.35,1");
+ CustomEase.create("cinematicSilk", "0.45,0.05,0.55,0.95");
+ CustomEase.create("cinematicSnap", "0.16,1,0.3,1");
+ 
++/* ────────────────────────────────
++   Entrar siempre por la portada
++────────────────────────────────
++   Sin esto el navegador restaura el scroll de la visita anterior y la página
++   "nace" a mitad de documento. Eso deja dos cosas mal a la vez: el lector
++   aterriza sin contexto y la escena arranca con scatterProgress=1, o sea con
++   la moneda invisible y Lenis desincronizado del scroll real; al subir rápido
++   al inicio ese estado puede tardar en reconverger. Forzamos el inicio arriba
++   antes de que se creen observadores, ScrollTriggers y Lenis, para que todo se
++   inicialice contra un scroll 0 coherente. */
++if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
++window.scrollTo(0, 0);
++/* La restauración del reload ocurre ANTES de que este módulo corra, así que el
++   scrollTo de arriba puede llegar tarde: en `load` el usuario aún no ha podido
++   interactuar, de modo que cualquier scroll distinto de 0 es una restauración
++   y lo devolvemos a la portada (observadores, ScrollTrigger y Lenis convergen
++   con el evento de scroll resultante). */
++window.addEventListener('load', () => { if (window.scrollY !== 0) window.scrollTo(0, 0); });
++/* bfcache (atrás/adelante) también restaura el scroll: lo mismo. */
++window.addEventListener('pageshow', (e) => { if (e.persisted) window.scrollTo(0, 0); });
++
+ /* ────────────────────────────────
+    Modo debug: solo con ?debug en la URL se muestran los HUDs
+    (panel de debug, scrubber lateral, indicador de sección).
+@@ -127,6 +148,14 @@ if (supportsWebGL) {
+     renderer.toneMapping = THREE.ACESFilmicToneMapping;
+     renderer.toneMappingExposure = CONFIG.exposure;
+     renderer.shadowMap.enabled = false;
++    /* Three.js pregunta al driver por el log de CADA shader la primera vez que
++       usa un programa, para avisar de errores de compilación. En producción eso
++       es trabajo tirado: medido con `npm run perf`, getShaderInfoLog +
++       getProgramInfoLog eran 13,5 s de los 19,5 s que el hilo principal estuvo
++       ocupado en 92 s de scroll (69 %), y la peor tarea larga —11 s de página
++       congelada al empezar a bajar— era exactamente eso. Con `?debug` se
++       conserva el aviso, que es cuando hace falta. */
++    renderer.debug.checkShaderErrors = DEBUG_MODE;
+   } catch (e) {
+     renderer = null;
+   }
+@@ -155,6 +184,118 @@ if (renderer) {
+   pmrem.dispose();
+ }
+ 
++/* ────────────────────────────────
++   Precalentado de la escena
++────────────────────────────────
++   La primera vez que un material se dibuja pasan dos cosas caras y
++   SÍNCRONAS: three.js compila y enlaza su programa, y el navegador sube sus
++   texturas a la GPU. Si eso ocurre mientras el lector baja, se ve como un
++   tirón — y ocurría: medido con `npm run perf`, el scroll entero se gastaba
++   13,5 s en getProgramParameter y hasta 10 s en texSubImage2D, con una tarea
++   larga de 11 s justo al empezar a bajar (la página congelada).
++
++   Aquí se paga todo de una vez, con la cortina de carga todavía encima.
++
++   Se compila en los DOS estados de luces del relato —la puerta encendida y
++   apagada— porque el número de luces visibles forma parte de la clave con la
++   que three.js cachea los programas: si solo se precalienta uno de los dos,
++   el otro se compila en mitad del cruce a La Sala, que es justo lo que se
++   quiere evitar. Las texturas se suben una sola vez cada una (uuid). */
++const TEXTURE_SLOTS = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap',
++  'emissiveMap', 'bumpMap', 'alphaMap', 'displacementMap', 'lightMap', 'envMap'];
++const warmedTextures = new Set();
++
++let warmUpRuns = 0;
++function warmUpScene() {
++  if (!renderer) return;
++  /* User Timing, no console.log: deja el coste del precalentado registrado en
++     la línea de tiempo del navegador, que es donde `npm run perf` lo lee. Si
++     un precalentado cae en mitad del scroll se ve ahí, no hay que adivinarlo. */
++  const markStart = `warmUpScene ${++warmUpRuns}`;
++  try { performance.mark(`${markStart} start`); } catch { /* sin User Timing no pasa nada */ }
++  const doorWas = doorLightGroup ? doorLightGroup.visible : null;
++  const singlePassDuringWarmUp = [];
++  const programs = new Set();
++  try {
++    /* compile() NO adquiere la variante a doble cara de los materiales
++       transparentes: three.js los parte en dos pasadas (FrontSide y BackSide)
++       y se deja el material con needsUpdate, así que la variante que de verdad
++       se dibujará se compilaría en el primer render real. Con
++       forceSinglePass=true durante el calentamiento se adquiere esa variante;
++       el flag no forma parte de la clave del programa, así que el programa
++       calentado es exactamente el que se usará después. */
++    scene.traverse((obj) => {
++      const mats = Array.isArray(obj.material) ? obj.material : (obj.material ? [obj.material] : []);
++      for (let i = 0; i < mats.length; i++) {
++        const m = mats[i];
++        if (m && m.transparent && m.side === THREE.DoubleSide && m.forceSinglePass === false) {
++          singlePassDuringWarmUp.push(m);
++          m.forceSinglePass = true;
++        }
++      }
++    });
++
++    /* Dos pasadas, una por estado de luces del relato (la puerta encendida y
++       apagada): el número de luces visibles forma parte de la clave con la que
++       three.js cachea los programas, así que cada estado es un programa
++       distinto y los dos se usan al bajar. */
++    for (const doorOn of doorWas === null ? [true] : [doorWas, !doorWas]) {
++      if (doorLightGroup) doorLightGroup.visible = doorOn;
++      renderer.compile(scene, camera);
++      /* compile() deja el programa en el material, pero la INTROSPECCIÓN de
++         uniforms (getProgramParameter + getActiveUniform, que es lo que
++         bloquea el hilo principal) solo la hace la primera pinta. Se provoca
++         aquí.
++
++         Pintar una vez NO sirve como atajo: three.js elige otra variante de
++         programa cuando el destino no es el canvas —el outputColorSpace cambia
++         (js/three.module.js:20753)—, así que una pinta de calentamiento
++         calienta programas que después no usa nadie. Medido: 57 programas
++         creados, 16 sin usar nunca, y 9 todavía fríos en el scroll. */
++      scene.traverse((obj) => {
++        const mats = Array.isArray(obj.material) ? obj.material : (obj.material ? [obj.material] : []);
++        for (let i = 0; i < mats.length; i++) {
++          const m = mats[i];
++          if (!m) continue;
++          const program = renderer.properties.get(m)?.currentProgram;
++          if (program) programs.add(program);
++        }
++      });
++    }
++    for (const program of programs) {
++      try { program.getUniforms(); } catch { /* un programa roto ya fallará solo */ }
++    }
++
++    /* Y las texturas: se suben a la GPU ahora, no en el primer fotograma que
++       las necesite. */
++    scene.traverse((obj) => {
++      const mats = Array.isArray(obj.material) ? obj.material : (obj.material ? [obj.material] : []);
++      for (let i = 0; i < mats.length; i++) {
++        const m = mats[i];
++        if (!m) continue;
++        for (let s = 0; s < TEXTURE_SLOTS.length; s++) {
++          const tex = m[TEXTURE_SLOTS[s]];
++          if (!tex || !tex.isTexture || warmedTextures.has(tex.uuid)) continue;
++          warmedTextures.add(tex.uuid);
++          renderer.initTexture(tex);
++        }
++      }
++    });
++  } catch (e) {
++    /* Un precalentado que falla no debe tumbar la página: en el peor de los
++       casos se vuelve al comportamiento de antes (compilar al primer dibujo). */
++    console.warn('Precalentado de la escena incompleto:', e);
++  } finally {
++    for (let i = 0; i < singlePassDuringWarmUp.length; i++) singlePassDuringWarmUp[i].forceSinglePass = false;
++    if (doorLightGroup) doorLightGroup.visible = doorWas;
++    try {
++      performance.mark(`${markStart} end`);
++      performance.measure('warmUpScene', `${markStart} start`, `${markStart} end`);
++    } catch { /* idem */ }
++  }
++}
++
++
+ const L = CONFIG.lights;
+ const ambient = new THREE.AmbientLight(L.ambient.color, L.ambient.intensity);
+ scene.add(ambient);
+@@ -171,7 +312,17 @@ scene.add(mouseLight);
+    Si un .glb de figures/ todavía no existe, se dibuja un
+    icosaedro + halo y se marca "por modelar" en el gabinete.
+ ═══════════════════════════════════════════════════════════ */
+-let figureSystem = initFigureSystem(scene, { debug: DEBUG_MODE });
++/* Las figuras no pasan por el LoadingManager de la moneda y la puerta: cargan
++   por su cuenta. Precalientan al llegar, o su primer programa se compilaría
++   al entrar en La Sala. El `setTimeout` no es decorativo: `onReady` puede
++   dispararse de forma síncrona desde dentro de initFigureSystem (las figuras
++   que aún no tienen GLB se resuelven como placeholder ahí mismo), y en ese
++   instante `doorLightGroup` —que se declara más abajo— todavía está en zona
++   muerta temporal. Es el mismo fallo que documenta el README en el Paso 2. */
++let figureSystem = initFigureSystem(scene, {
++  debug: DEBUG_MODE,
++  onReady: () => setTimeout(warmUpScene, 0),
++});
+ 
+ /* ────────────────────────────────
+    Luz de acento tipo museo para las figuras centrales de la sala.
+@@ -400,7 +551,13 @@ coinTargetPx = heroCoinFrame.diameter;
+ CONFIG.coin.baseY = getResponsiveCoinBaseY();
+ 
+ const manager = new THREE.LoadingManager();
+-manager.onLoad = () => setTimeout(() => { if (renderer) loadEl.classList.add('hidden'); }, 300);
++/* Se precalienta ANTES de levantar la cortina: el trabajo sucio de la primera
++   pinta (compilar programas, subir texturas) ocurre tapado, no en el primer
++   scroll del lector. */
++manager.onLoad = () => {
++  warmUpScene();
++  setTimeout(() => { if (renderer) loadEl.classList.add('hidden'); }, 300);
++};
+ manager.onError = (url) => console.warn('Error cargando recurso:', url);
+ 
+ // Loading timeout - show helpful message if loading takes too long
+@@ -1795,7 +1952,9 @@ function animate() {
+     mouseLight.position.set(smoothMouseX * 2.5, CONFIG.coin.baseY + smoothMouseY * -1.8, 4.0);
+     coin.getWorldPosition(projectedPos);
+     projectedPos.project(camera);
+-    const vp = getViewportSize();
++    /* Snapshot, no lectura viva: leer clientWidth aquí dentro fuerza un
++       reflujo cada frame (ver js/viewport.js). */
++    const vp = getViewportSnapshot();
+     const coinScreenX = (projectedPos.x * 0.5 + 0.5) * vp.width;
+     const coinScreenY = (-projectedPos.y * 0.5 + 0.5) * vp.height;
+     haloWrap.style.transform = `translate3d(${coinScreenX}px, ${coinScreenY}px, 0)`;
+@@ -2090,7 +2249,7 @@ function animate() {
+            screenY = vpH/2 + (look.y − coin.baseY) · pxPerUnit
+        despejando, look.y = coin.baseY + (centerY − vpH/2) / pxPerUnit.
+        pxPerUnit usa el fov real y la distancia real a la moneda (z = 0.55). */
+-    const vpH = getViewportSize().height;
++    const vpH = getViewportSnapshot().height;
+     const coinDist = Math.max(CONFIG.camera.z - 0.55, 1e-3);
+     const pxPerUnit = vpH / (2 * Math.tan((CONFIG.camera.fov * Math.PI) / 360) * coinDist);
+     const aimY = CONFIG.coin.baseY
+@@ -2537,34 +2696,54 @@ const progressBar = document.getElementById('progressBar');
+ const sectionIndicator = document.getElementById('sectionIndicator');
+ let indicatorTimeout;
+ 
++/* El alto del documento NO se lee en cada evento de scroll. Leer
++   `scrollHeight` con el estilo sucio fuerza un style+layout completo, y con
++   Lenis el scroll dispara esto en cada frame: la medición de la línea base
++   contaba 3.668 reflujos forzados por pasada. El alto solo cambia cuando
++   cambia el viewport o cuando un `pin` de ScrollTrigger reparte espacio, así
++   que se cachea y se invalida en esos dos momentos. */
++let docScrollSpan = -1;
++function invalidateDocScrollSpan() { docScrollSpan = -1; }
++window.addEventListener('resize', invalidateDocScrollSpan);
++ScrollTrigger.addEventListener('refresh', invalidateDocScrollSpan);
++
++/* La barra de progreso tiene 2 px de alto y una transición de 0,1 s: moverla
++   en pasos de 1 % es indistinguible y se escribe 100 veces por recorrido en
++   vez de una por frame (cada escritura invalida estilo). */
++let lastProgressPct = -1;
++
+ function updateScrubber() {
+   const scrollTop = window.scrollY || document.documentElement.scrollTop;
+-  const vp = getViewportSize();
+-  const docHeight = document.documentElement.scrollHeight - vp.height;
+-  const p = docHeight > 0 ? scrollTop / docHeight : 0;
++  if (docScrollSpan < 0) docScrollSpan = document.documentElement.scrollHeight - getViewportSnapshot().height;
++  const p = docScrollSpan > 0 ? scrollTop / docScrollSpan : 0;
+   storyProgress = p;
+ 
+-  // Debug scrubber
+-  tsProgress.textContent = Math.round(p * 100) + '%';
+-  tsBar.style.height = (p * 100) + '%';
+-  tsMarker.style.top = (p * 100) + '%';
++  const pct = Math.round(p * 100);
++  if (pct !== lastProgressPct) {
++    lastProgressPct = pct;
++    progressBar.style.width = pct + '%';
++    progressBar.setAttribute('aria-valuenow', String(pct));
++  }
++
++  /* El resto es el HUD de desarrollo, que está oculto sin `?debug`: escribir
++     en elementos que nadie ve ensuciaba el estilo igual. */
++  if (!DEBUG_MODE) return;
+ 
+-  // Progress bar
+-  progressBar.style.width = (p * 100) + '%';
+-  progressBar.setAttribute('aria-valuenow', String(Math.round(p * 100)));
++  // Debug scrubber
++  tsProgress.textContent = pct + '%';
++  tsBar.style.height = pct + '%';
++  tsMarker.style.top = pct + '%';
+ 
+   // Section indicator
+   let sec = 'hero';
+   for (let i = sections.length - 1; i >= 0; i--) {
+     if (p >= sections[i].start) { sec = sections[i].label; break; }
+   }
+-  if (DEBUG_MODE) {
+-    tsSection.textContent = sec;
+-    sectionIndicator.textContent = sec;
+-    sectionIndicator.style.opacity = '0.6';
+-    clearTimeout(indicatorTimeout);
+-    indicatorTimeout = setTimeout(() => { sectionIndicator.style.opacity = '0'; }, 1500);
+-  }
++  tsSection.textContent = sec;
++  sectionIndicator.textContent = sec;
++  sectionIndicator.style.opacity = '0.6';
++  clearTimeout(indicatorTimeout);
++  indicatorTimeout = setTimeout(() => { sectionIndicator.style.opacity = '0'; }, 1500);
+ }
+ window.addEventListener('scroll', updateScrubber, { passive: true });
+ updateScrubber();
+@@ -2580,6 +2759,25 @@ initWordEvolution(quotes);
+ /* "De la señal a la fuente" vive en js/sections/act-browser.js. */
+ initActBrowser({ quotes, openQuote });
+ 
++/* Gancho de diagnóstico solo con ?debug: deja leer el estado de la escena
++   (etapa, dispersión, visibilidad de la moneda, scroll) desde herramientas
++   externas sin tocar el render. Sirvió para cazar el bug de "la moneda no
++   aparece al volver arriba tras cargar a mitad de página". */
++if (DEBUG_MODE) {
++  window.__diag = {
++    get state() {
++      return {
++        stage: currentStage,
++        scatter: Number(scatterProgress.toFixed(3)),
++        coinVisible: coin.visible,
++        coinChildren: coin.children.length,
++        coinFade: Number(coinFade.toFixed(3)),
++        y: Math.round(window.scrollY),
++      };
++    },
++  };
++}
++
+ const lenis = new Lenis({
+   duration: reduceMotion ? 0 : 1.2,
+   easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+diff --git a/js/viewport.js b/js/viewport.js
+index 1233625..63b52f3 100644
+--- a/js/viewport.js
++++ b/js/viewport.js
+@@ -26,3 +26,42 @@ export function getViewportSize() {
+ export function isCompactWidth() {
+   return getViewportSize().width <= 767;
+ }
++
++/* ── La copia para el bucle de render ────────────────────────────────────
++ *
++ * `getViewportSize()` lee `clientWidth`/`clientHeight`, y eso es una lectura
++ * de layout: si el estilo está sucio, el navegador recalcula estilo y layout
++ * ANTES de responder. Dentro de `animate()` el estilo siempre está sucio
++ * (se acaba de escribir el `transform` del halo), así que llamarla por frame
++ * provocaba un reflujo forzado en cada frame.
++ *
++ * Medido con `npm run perf` (1440x900, recorrido completo de ida y vuelta):
++ *   · 4.410 reflujos forzados y 2.074 ms de style+layout extra por pasada.
++ *   · 1.886 ms de tiempo propio en esta función: el 10 % de todo el tiempo
++ *     que el hilo principal estuvo ocupado, para leer dos números que solo
++ *     cambian cuando el lector redimensiona la ventana.
++ *
++ * El tamaño del viewport no cambia solo: cambia con `resize`, con la
++ * orientación y con la barra de URL en móvil. Esos tres eventos invalidan la
++ * copia. El manejador de resize de `main.js` se registra DESPUÉS de que este
++ * módulo se evalúe, así que cuando él lee el tamaño ya está refrescado.
++ *
++ * Quien necesite el valor vivo —el propio resize, los gráficos de D3 al
++ * montarse— sigue llamando a `getViewportSize()`, que no ha cambiado.
++ */
++let snapshot = null;
++
++export function getViewportSnapshot() {
++  if (snapshot === null) snapshot = Object.freeze(getViewportSize());
++  return snapshot;
++}
++
++export function invalidateViewportSnapshot() {
++  snapshot = null;
++}
++
++if (typeof window !== 'undefined') {
++  window.addEventListener('resize', invalidateViewportSnapshot);
++  window.addEventListener('orientationchange', invalidateViewportSnapshot);
++  if (window.visualViewport) window.visualViewport.addEventListener('resize', invalidateViewportSnapshot);
++}
+diff --git a/package.json b/package.json
+index d7af1ff..3f539da 100644
+--- a/package.json
++++ b/package.json
+@@ -7,7 +7,8 @@
+     "dev": "python3 -m http.server 8000",
+     "check": "node tools/smoke-test.mjs",
+     "shots": "node scripts/screenshots/capture.mjs",
+-    "hero:check": "node scripts/screenshots/hero-check.mjs"
++    "hero:check": "node scripts/screenshots/hero-check.mjs",
++    "perf": "node scripts/perf/measure.mjs"
+   },
+   "keywords": [
+     "scrollytelling",
+diff --git a/scripts/lib/chromium.mjs b/scripts/lib/chromium.mjs
+new file mode 100644
+index 0000000..ec03fba
+--- /dev/null
++++ b/scripts/lib/chromium.mjs
+@@ -0,0 +1,132 @@
++/* chromium.mjs — arrancar un Chromium con WebGL por software, en un solo sitio.
++ *
++ * POR QUÉ EXISTE
++ *   `capture.mjs`, `hero-check.mjs` y `perf/measure.mjs` necesitaban los
++ *   mismos ~50 pasos: descomprimir las librerías del sistema que trae
++ *   @sparticuz/chromium, montar LD_LIBRARY_PATH y lanzar con los flags de
++ *   SwiftShader. Estaban copiados en los dos primeros; el tercero los habría
++ *   copiado otra vez. Vivir aquí es lo que evita que un flag se arregle en un
++ *   script y no en los otros.
++ *
++ * QUÉ RESUELVE (y por qué así)
++ *   No hay GPU ni root en el entorno. @sparticuz/chromium trae el binario y
++ *   sus .so DENTRO del paquete npm: se descomprimen a .cache/chromium-libs/
++ *   la primera vez y se pasan al proceso hijo por LD_LIBRARY_PATH. El
++ *   renderizado 3D lo hace SwiftShader (software), así que los tiempos de
++ *   dibujo NO son comparables con una GPU real — lo que sí lo es es el coste
++ *   del hilo principal (JS, style, layout), que es lo que miden estas
++ *   herramientas.
++ */
++
++import fs from 'node:fs';
++import path from 'node:path';
++import zlib from 'node:zlib';
++import { fileURLToPath } from 'node:url';
++
++export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
++const LIBS = path.join(ROOT, '.cache', 'chromium-libs');
++
++/* Los tres scripts leen `--w=1440` igual; antes cada uno tenía su copia. */
++export function parseArgs(argv = process.argv.slice(2)) {
++  return Object.fromEntries(argv
++    .filter((a) => a.startsWith('--'))
++    .map((a) => { const [k, v = 'true'] = a.slice(2).split('='); return [k, v]; }));
++}
++
++export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
++
++/* ── Librerías del sistema (libnspr4, libnss3, SwiftShader…) ─────────────
++   Vienen comprimidas en el paquete; se extraen una vez y se cachean.
++   tar mínimo: cabeceras de 512 bytes, suficiente para estos archivos. */
++export async function ensureChromiumLibs() {
++  if (fs.existsSync(path.join(LIBS, 'lib', 'libnspr4.so'))) return;
++  console.log('Extrayendo las librerías de Chromium (solo la primera vez)…');
++  fs.mkdirSync(LIBS, { recursive: true });
++  const pkgDir = path.dirname(fileURLToPath(import.meta.resolve('@sparticuz/chromium/package.json')));
++  for (const name of ['al2023', 'swiftshader', 'fonts']) {
++    const file = path.join(pkgDir, 'bin', `${name}.tar.br`);
++    if (!fs.existsSync(file)) continue;
++    const buf = zlib.brotliDecompressSync(fs.readFileSync(file));
++    let off = 0;
++    while (off + 512 <= buf.length) {
++      const header = buf.subarray(off, off + 512);
++      const name0 = header.subarray(0, 100).toString('utf8').replace(/\0.*$/, '');
++      if (!name0) break;
++      const size = parseInt(header.subarray(124, 136).toString('utf8').replace(/\0.*$/, '').trim() || '0', 8);
++      const type = String.fromCharCode(header[156]);
++      off += 512;
++      if (type === '0' || type === '\0') {
++        const dest = path.join(LIBS, name0);
++        fs.mkdirSync(path.dirname(dest), { recursive: true });
++        fs.writeFileSync(dest, buf.subarray(off, off + size));
++        fs.chmodSync(dest, 0o755);
++      } else if (type === '5') {
++        fs.mkdirSync(path.join(LIBS, name0), { recursive: true });
++      }
++      off += Math.ceil(size / 512) * 512;
++    }
++  }
++}
++
++export async function loadChromium() {
++  try {
++    return {
++      chromium: (await import('@sparticuz/chromium')).default,
++      puppeteer: (await import('puppeteer-core')).default,
++    };
++  } catch {
++    console.error('Faltan dependencias. Instálalas con:\n  npm install');
++    process.exit(2);
++  }
++}
++
++/* Abre el navegador y devuelve { browser, page, errors }.
++   `errors` recoge pageerror + console.error, que es el fallo que más importa:
++   una pantalla en negro por un `const` mal escrito no se ve en una métrica. */
++export async function launchChromium({ width = 1440, height = 900, extraArgs = [] } = {}) {
++  const { chromium, puppeteer } = await loadChromium();
++  await ensureChromiumLibs();
++
++  const executablePath = await chromium.executablePath();
++  const browser = await puppeteer.launch({
++    executablePath,
++    headless: 'shell',
++    args: [...chromium.args,
++      '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
++      '--force-device-scale-factor=1', '--hide-scrollbars',
++      /* Sin estos, Chromium aparca la pestaña y `requestAnimationFrame` deja
++         de correr: se mediría una página congelada. */
++      '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows',
++      '--disable-renderer-backgrounding', ...extraArgs],
++    env: {
++      ...process.env,
++      LD_LIBRARY_PATH: [path.join(LIBS, 'lib'), LIBS, path.dirname(executablePath), process.env.LD_LIBRARY_PATH]
++        .filter(Boolean).join(':'),
++    },
++  });
++
++  const page = await browser.newPage();
++  const errors = [];
++  page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
++  page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 200)); });
++  /* Sin esto el navegador restaura el scroll anterior y la primera medida es
++     de una sección cualquiera en vez del hero. */
++  await page.evaluateOnNewDocument(() => { history.scrollRestoration = 'manual'; });
++  await page.setViewport({ width, height, deviceScaleFactor: 1 });
++
++  return { browser, page, errors };
++}
++
++/* Abre el sitio y espera a que converja: los GLB con Draco y los `lerp` de
++   la escena tardan unos segundos en asentarse, y medir antes daría números de
++   una página que todavía se está construyendo. */
++export async function openSite(page, origin, { settleMs = 7000 } = {}) {
++  try {
++    await page.goto(`${origin}/index.html`, { waitUntil: 'networkidle0', timeout: 90000 });
++  } catch {
++    console.error(`No respondió ${origin}. ¿Está corriendo "npm start"?`);
++    process.exit(2);
++  }
++  await page.evaluate(() => window.scrollTo(0, 0));
++  await sleep(settleMs);
++}
+diff --git a/scripts/perf/measure.mjs b/scripts/perf/measure.mjs
+new file mode 100644
+index 0000000..1f5ac8e
+--- /dev/null
++++ b/scripts/perf/measure.mjs
+@@ -0,0 +1,610 @@
++/* measure.mjs — ¿qué cuesta mover esta página?
++ *
++ * POR QUÉ EXISTE
++ *   El repo ya tenía tres redes: `check` (no revienta), `shots` (se ve bien),
++ *   `hero:check` (la portada compone). Ninguna decía si la página va fluida, y
++ *   "va más suave" sin número es exactamente la clase de afirmación que este
++ *   proyecto dejó de aceptar. Esto mide el coste del hilo principal mientras
++ *   alguien hace scroll de verdad, y lo deja por escrito.
++ *
++ * QUÉ MIDE
++ *   1. Frames: separación entre `requestAnimationFrame` (p50/p95/máx) y cuántos
++ *      pasan de 50 ms, por sección. Un frame de 50 ms es el que el ojo ve como
++ *      tirón.
++ *   2. Tareas largas: PerformanceObserver('longtask') — cualquier cosa que
++ *      bloquee el hilo principal más de 50 ms.
++ *   3. Desglose del hilo principal (traza de Chrome): scripting, recálculo de
++ *      estilo, layout, paint — y los *reflujos forzados*, que son layouts que
++ *      el propio JS provoca leyendo una medida con el estilo sucio. Se listan
++ *      con la pila que los causó, o sea con nombre y apellido.
++ *   4. Perfil de CPU por muestreo: las funciones que más tiempo propio
++ *      consumen. Es lo que dice DÓNDE optimizar en vez de adivinarlo.
++ *   5. Draw calls por frame, contando las llamadas reales a WebGL (se parchea
++ *      el prototipo del contexto antes de cargar la página: no hace falta que
++ *      main.js exponga nada).
++ *   6. Coste en reposo: la escena se anima sola, así que también se mide
++ *      quieto. Es lo que paga quien deja la pestaña abierta.
++ *
++ * USO
++ *   npm start                                  # el servidor, en otra terminal
++ *   npm run perf                               # 1440x900, documento completo
++ *   npm run perf -- --w=390 --h=844            # móvil
++ *   npm run perf -- --json=.shots/perf.json    # guarda el resultado
++ *   npm run perf -- --cpu=4                    # simula un portátil 4x más lento
++ *   npm run perf -- --budget=false             # solo informa, no suspende
++ *
++ * LÍMITES
++ *   Chromium pinta con SwiftShader (software): los FPS absolutos NO son los de
++ *   una GPU real y no hay que citarlos como si lo fueran. Lo que sí es
++ *   comparable entre ejecuciones y entre máquinas es el coste del hilo
++ *   principal —scripting, style, layout, reflujos, draw calls—, y por eso los
++ *   presupuestos se ponen sobre eso y los frames se imprimen como
++ *   informativos.
++ */
++
++import fs from 'node:fs';
++import path from 'node:path';
++import { ROOT, parseArgs, sleep, launchChromium, openSite } from '../lib/chromium.mjs';
++
++const args = parseArgs();
++const W = Number(args.w || 1440);
++const H = Number(args.h || 900);
++const ORIGIN = args.origin || 'http://localhost:8000';
++const CPU = Number(args.cpu || 1);
++const STEP_MS = Number(args.stepMs || 85);       // cadencia de los impulsos de rueda
++const STEP_PX = Number(args.stepPx || 0);        // 0 = medio viewport por impulso
++const IDLE_MS = Number(args.idleMs || 3000);
++/* `--quick` recorre el documento solo de bajada y acorta el reposo: la mitad
++   de tiempo para iterar. El informe definitivo se hace sin él. */
++const QUICK = args.quick === 'true';
++const JSON_OUT = args.json ? path.resolve(ROOT, args.json) : null;
++const CHECK_BUDGET = args.budget !== 'false';
++
++/* Presupuestos sobre el hilo principal. Calibrados con la línea base medida en
++   este mismo entorno (1440x900, Chromium + SwiftShader, `npm run perf`); si
++   cambia la máquina o el viewport hay que volver a mirarlos, no copiarlos. */
++const BUDGET = {
++  /* Calibrados con la medición del 2026-09-02 en este mismo entorno
++     (1440x900, Chromium + SwiftShader, recorrido completo de ida y vuelta).
++     Si cambia la máquina o el viewport hay que volver a mirarlos, no
++     copiarlos: son el suelo medido, no un deseo. */
++  scriptMsPerSec: Number(args.maxScriptMsPerSec || 120),  // medido: 63 ms/s
++  styleMsPerSec: Number(args.maxStyleMsPerSec || 60),     // medido: 22 ms/s
++  layoutMsPerSec: Number(args.maxLayoutMsPerSec || 45),   // medido: 1,3 ms/s
++  /* Medido: 2.584. No son de nuestro código (el perfil no encuentra ni una
++     lectura de layout propia): vienen del window.scrollTo de Lenis en cada
++     frame y del style+layout que Blink fuerza al componer. Es el suelo de
++     una página que anima el DOM; bajar de ahí es trabajo pendiente, no un
++     presupuesto que se pueda exigir hoy. */
++  forcedReflows: Number(args.maxForcedReflows || 3200),
++  /* La peor tarea larga con el código optimizado oscila entre 150 y 400 ms en
++     esta máquina; antes del arreglo era de 2 a 11 SEGUNDOS. El presupuesto se
++     pone en 1 s: tolera la varianza del entorno y sigue cazando cualquier
++     regresión de compilación-en-el-scroll. */
++  longTaskMs: Number(args.maxLongTaskMs || 1000),
++  curtainMs: Number(args.maxCurtainMs || 15000),          // medido: 7.328 ms
++};
++
++const { browser, page, errors } = await launchChromium({ width: W, height: H });
++const cdp = await page.createCDPSession();
++
++/* ── Instrumentación instalada ANTES de cargar la página ─────────────────
++   evaluateOnNewDocument corre antes que cualquier script del sitio, así que
++   el parche de WebGL cuenta las llamadas desde el primer draw. */
++await page.evaluateOnNewDocument(() => {
++  window.__perf = { frames: [], tasks: [], t0: 0 };
++  /* `links` y `creates` cuentan COMPILACIONES de programa: después del
++     arranque deberían ser 0. Un programa recompilado en caliente bloquea el
++     hilo principal decenas de milisegundos, que es justo el tirón que se ve. */
++  window.__gl = { draws: 0, links: 0, creates: 0, deletes: 0, infoLogs: 0, patched: false };
++
++  /* Dos trampas de Chromium que costaron mediciones enteras:
++     1. Los métodos del prototipo WebGL NO son escribibles: `proto.drawArrays = …`
++        falla en silencio. Hay que `Object.defineProperty`.
++     2. Chromium instala los miembros de WebGLRenderingContext DE FORMA
++        PEREZOSA: en `document-start` el prototipo viene vacío, así que no se
++        puede parchear una sola vez al principio. Se reintenta cada frame hasta
++        que están, que es antes de que el sitio cree su contexto.
++     Y solo se parchean las propiedades PROPIAS: las que WebGL2RenderingContext
++     hereda ya quedan cubiertas por el parche del padre. */
++  const COUNTED = {
++    drawArrays: () => { window.__gl.draws++; },
++    drawElements: () => { window.__gl.draws++; },
++    drawArraysInstanced: () => { window.__gl.draws++; },
++    drawElementsInstanced: () => { window.__gl.draws++; },
++    drawRangeElements: () => { window.__gl.draws++; },
++    linkProgram: () => { window.__gl.links++; },
++    createProgram: () => { window.__gl.creates++; },
++    deleteProgram: () => { window.__gl.deletes++; },
++    getShaderInfoLog: () => { window.__gl.infoLogs++; },
++    getProgramInfoLog: () => { window.__gl.infoLogs++; },
++  };
++  function tryPatchGL() {
++    if (window.__gl.patched) return true;
++    const protos = [window.WebGLRenderingContext, window.WebGL2RenderingContext].filter(Boolean);
++    if (!protos.length) return false;
++    let done = 0;
++    for (const proto of protos.map((P) => P.prototype)) {
++      for (const m of Object.keys(COUNTED)) {
++        if (!Object.prototype.hasOwnProperty.call(proto, m)) continue;
++        const d = Object.getOwnPropertyDescriptor(proto, m);
++        const orig = d.value;
++        if (typeof orig !== 'function' || orig.__counted) continue;
++        const wrapped = function (...a) { COUNTED[m](); return orig.apply(this, a); };
++        wrapped.__counted = true;
++        Object.defineProperty(proto, m, { value: wrapped, writable: true, configurable: true, enumerable: d.enumerable });
++        done++;
++      }
++    }
++    /* Solo se da por parcheado cuando el contador de draws está dentro:
++       sin eso, un 0 en el informe no se distinguiría de un parche fallido. */
++    if (window.WebGLRenderingContext && Object.prototype.hasOwnProperty.call(window.WebGLRenderingContext.prototype, 'drawArrays')
++      && window.WebGLRenderingContext.prototype.drawArrays.__counted) {
++      window.__gl.patched = true;
++      window.__gl.wrapped = done;
++      return true;
++    }
++    return false;
++  }
++
++  try {
++    new PerformanceObserver((list) => {
++      for (const e of list.getEntries()) window.__perf.tasks.push([e.startTime, e.duration, (e.attribution || [])[0]?.name || '']);
++    }).observe({ entryTypes: ['longtask'] });
++  } catch { /* longtask no está en todos los navegadores */ }
++
++  let last = performance.now();
++  (function loop() {
++    tryPatchGL();
++    const now = performance.now();
++    const d = now - last;
++    last = now;
++    /* [instante, ms desde el frame anterior, scrollY, draw calls del frame, compilaciones del frame] */
++    window.__perf.frames.push([now, d, window.scrollY, window.__gl.draws, window.__gl.links]);
++    window.__gl.draws = 0;
++    window.__gl.links = 0;
++    requestAnimationFrame(loop);
++  })();
++
++  window.__perf.reset = () => {
++    window.__perf.frames.length = 0;
++    window.__perf.tasks.length = 0;
++    window.__perf.t0 = performance.now();
++    window.__gl.links = 0;
++    window.__gl.creates = 0;
++    window.__gl.deletes = 0;
++    window.__gl.infoLogs = 0;
++  };
++  window.__perf.glTotals = () => ({ ...window.__gl });
++});
++
++console.log(`Abriendo ${ORIGIN} a ${W}x${H}…`);
++await openSite(page, ORIGIN, { settleMs: 0 });
++
++/* ¿Cuándo se levanta la cortina de carga? Mover trabajo del scroll al
++   arranque solo es un trato honesto si se enseña lo que cuesta el arranque. */
++const curtainMs = await page.evaluate(() => new Promise((resolve) => {
++  const el = document.getElementById('load');
++  if (!el || el.classList.contains('hidden')) return resolve(Math.round(performance.now()));
++  const iv = setInterval(() => {
++    if (el.classList.contains('hidden')) { clearInterval(iv); resolve(Math.round(performance.now())); }
++  }, 50);
++  setTimeout(() => { clearInterval(iv); resolve(-1); }, 120000);
++}));
++const nav = await page.evaluate(() => {
++  const n = performance.getEntriesByType('navigation')[0] || {};
++  return { domReady: Math.round(n.domContentLoadedEventEnd || 0), load: Math.round(n.loadEventEnd || 0) };
++});
++console.log(`Arranque: DOM en ${nav.domReady} ms · load en ${nav.load} ms · cortina arriba a los ${curtainMs < 0 ? '—(no llegó)' : curtainMs + ' ms'}.`);
++await sleep(3000);
++
++const glDiag = await page.evaluate(() => window.__perf.glTotals());
++if (!glDiag.patched) console.log('  ⚠ el contador de WebGL no se instaló: los draw calls saldrán a 0 y no significan nada.');
++const doc = await page.evaluate(() => ({
++  max: document.documentElement.scrollHeight - window.innerHeight,
++  sections: [...document.querySelectorAll('.hero, main#mainContent section[id]')].map((el) => {
++    const r = el.getBoundingClientRect();
++    return { id: el.id || 'hero', top: Math.round(r.top + window.scrollY), h: Math.round(r.height) };
++  }),
++}));
++console.log(`Documento: ${Math.round(doc.max + H)} px · ${doc.sections.length} secciones.`);
++
++/* Se mueve con la rueda de verdad (Input.dispatchMouseEvent), no con
++   scrollTo: así el camino medido es el que recorre un lector — Lenis
++   interpola, ScrollTrigger se entera y la escena responde. */
++const STEP = STEP_PX || Math.round(H * 0.42);
++await page.mouse.move(Math.round(W / 2), Math.round(H / 2));
++await page.evaluate(() => window.scrollTo(0, 0));
++await sleep(1200);
++
++async function scrollPass(direction) {
++  let y = await page.evaluate(() => window.scrollY);
++  while (direction > 0 ? y < doc.max - 4 : y > 4) {
++    await page.mouse.wheel({ deltaY: direction * STEP });
++    await sleep(STEP_MS);
++    y = await page.evaluate(() => window.scrollY);
++  }
++}
++
++async function measuredPhase(name, fn) {
++  await page.evaluate(() => window.__perf.reset());
++  /* Marca de reloj DE LA PÁGINA: sirve para saber si algo (un precalentado,
++     una carga tardía) cayó dentro de la fase que se está midiendo. */
++  const pageStart = await page.evaluate(() => performance.now());
++  const traceFile = path.join(ROOT, '.cache', `perf-trace-${name}.json`);
++  fs.mkdirSync(path.dirname(traceFile), { recursive: true });
++  await cdp.send('Profiler.enable');
++  await cdp.send('Profiler.setSamplingInterval', { interval: 250 });
++  /* Ojo con los nombres: `dev.timeline` no existe, la categoría buena es
++     `devtools.timeline`, y Layout/UpdateLayoutTree viven en `blink`. Con los
++     nombres mal puestos la traza sale vacía y el informe dice 0 ms de todo. */
++  await page.tracing.start({ path: traceFile, categories: [
++    'blink', 'devtools.timeline', 'disabled-by-default-devtools.timeline', 'v8.execute',
++  ] });
++  await cdp.send('Profiler.start');
++  const startedAt = Date.now();
++  await fn();
++  const wallMs = Date.now() - startedAt;
++  const { profile } = await cdp.send('Profiler.stop');
++  await page.tracing.stop();
++  await sleep(300);
++  const perf = await page.evaluate(() => ({ frames: window.__perf.frames, tasks: window.__perf.tasks, gl: window.__perf.glTotals() }));
++  return { name, wallMs, pageStart, pageEnd: await page.evaluate(() => performance.now()), perf, profile, trace: readTrace(traceFile) };
++}
++
++function readTrace(file) {
++  const raw = fs.readFileSync(file, 'utf8');
++  let parsed;
++  try { parsed = JSON.parse(raw); } catch { parsed = JSON.parse(`{"traceEvents":${raw}`); }
++  return Array.isArray(parsed) ? parsed : parsed.traceEvents || [];
++}
++
++/* Un portátil de gama media no es esta máquina. El throttling de CPU hace que
++   los números del hilo principal se parezcan más a lo que ve un lector. */
++if (CPU > 1) {
++  await cdp.send('Emulation.setCPUThrottlingRate', { rate: CPU });
++  console.log(`Throttling de CPU x${CPU} activado.`);
++}
++
++console.log('\n Midiendo el scroll completo (ida y vuelta)…');
++const scrollPhase = await measuredPhase('scroll', async () => {
++  await scrollPass(1);
++  await sleep(600);
++  if (!QUICK) { await scrollPass(-1); await sleep(400); }
++});
++
++console.log(' Midiendo el coste en reposo (la escena se anima sola)…');
++await page.evaluate((m) => window.scrollTo(0, m), Math.round(doc.max * 0.35));
++await sleep(2500);
++const idlePhase = await measuredPhase('idle', () => sleep(QUICK ? 1500 : IDLE_MS));
++
++/* Con el navegador todavía abierto: después de close() la página está
++   desconectada y esto revienta (pasó). */
++const warmUps = await page.evaluate(() => performance.getEntriesByType('measure')
++  .filter((m) => m.name === 'warmUpScene')
++  .map((m) => ({ at: Math.round(m.startTime), ms: Math.round(m.duration) })));
++
++await browser.close();
++
++/* ──────────────────────────── análisis ──────────────────────────── */
++
++const pct = (arr, p) => {
++  if (!arr.length) return 0;
++  const s = [...arr].sort((a, b) => a - b);
++  return s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))];
++};
++
++/* Qué sección contiene cada scrollY. */
++function sectionAt(y) {
++  for (const s of doc.sections) if (y >= s.top && y < s.top + s.h) return s.id;
++  let best = doc.sections[0];
++  for (const s of doc.sections) if (Math.abs(s.top - y) < Math.abs(best.top - y)) best = s;
++  return best?.id || '?';
++}
++
++function analyzeFrames(frames) {
++  const deltas = frames.slice(1).map((f) => f[1]);          // el primer frame no tiene anterior
++  const jank = deltas.filter((d) => d > 50).length;
++  const bySection = new Map();
++  for (const f of frames.slice(1)) {
++    const id = sectionAt(f[2]);
++    if (!bySection.has(id)) bySection.set(id, []);
++    bySection.get(id).push(f[1]);
++  }
++  const draws = frames.map((f) => f[3]).filter((d) => d > 0);
++  return {
++    count: deltas.length,
++    p50: pct(deltas, 50), p95: pct(deltas, 95), max: deltas.length ? Math.max(...deltas) : 0,
++    jank, jankRate: deltas.length ? (jank / deltas.length) * 100 : 0,
++    bySection, draws,
++  };
++}
++
++/* La traza de Chrome: qué hizo el hilo principal y durante cuánto. */
++function analyzeTrace(events) {
++  /* En un Chromium normal el hilo se llama CrRendererMain; en headless shell
++     el renderer vive dentro del proceso del navegador y se llama
++     Chrome_InProcRendererThread. Si ninguno aparece, se toma el hilo con más
++     eventos completos, que es el principal por definición. */
++  const MAIN_NAMES = new Set(['CrRendererMain', 'Chrome_InProcRendererThread']);
++  const mainThreads = new Set();
++  const byThread = new Map();
++  for (const e of events) {
++    if (e.ph === 'M' && e.name === 'thread_name' && MAIN_NAMES.has(e.args?.name)) {
++      mainThreads.add(`${e.pid}:${e.tid}`);
++    } else if (e.ph === 'X') {
++      const k = `${e.pid}:${e.tid}`;
++      byThread.set(k, (byThread.get(k) || 0) + 1);
++    }
++  }
++  if (!mainThreads.size && byThread.size) {
++    mainThreads.add([...byThread.entries()].sort((a, b) => b[1] - a[1])[0][0]);
++  }
++  const isMain = (e) => mainThreads.has(`${e.pid}:${e.tid}`);
++
++  /* Estos eventos se ANIDAN (un UpdateStyleAndLayout contiene updateStyle y
++     Layout), así que no se pueden sumar entre sí: cada fila del informe es una
++     medida independiente de un tipo de trabajo. */
++  const BUCKETS = {
++    script: new Set(['FunctionCall', 'EvaluateScript', 'v8.run', 'TimerFire', 'EventDispatch',
++      'FireAnimationFrame', 'MicrotaskRun', 'v8.compile']),
++    raf: new Set(['FrameRequestCallbackCollection::ExecuteFrameCallbacks']),
++    style: new Set(['UpdateLayoutTree']),
++    layout: new Set(['Layout']),
++    forced: new Set(['Blink.ForcedStyleAndLayout.UpdateTime']),
++    paint: new Set(['LocalFrameView::RunPaintLifecyclePhase', 'Paint', 'PaintImage']),
++  };
++  const totals = { script: 0, raf: 0, style: 0, layout: 0, forced: 0, paint: 0, other: 0 };
++  const counts = { script: 0, raf: 0, style: 0, layout: 0, forced: 0, paint: 0, other: 0 };
++  let forced = 0;
++  const forcedStacks = new Map();
++  let span = 0;
++  let first = Infinity, last = 0;
++
++  for (const e of events) {
++    if (e.ph !== 'X' || !isMain(e) || !e.dur) continue;
++    if (e.ts < first) first = e.ts;
++    if (e.ts + e.dur > last) last = e.ts + e.dur;
++    let bucket = 'other';
++    for (const [name, set] of Object.entries(BUCKETS)) if (set.has(e.name)) { bucket = name; break; }
++    totals[bucket] += e.dur / 1000;
++    counts[bucket]++;
++    const trace0 = e.args?.beginData?.stackTrace;
++    if (e.name === 'Layout' && trace0?.length) {
++      forced++;
++      const top = trace0[0];
++      const key = `${top?.functionName || '(anónimo)'} @ ${(top?.url || '').split('/').pop() || '?'}:${top?.lineNumber ?? '?'}`;
++      forcedStacks.set(key, (forcedStacks.get(key) || 0) + 1);
++    }
++  }
++  span = first === Infinity ? 0 : (last - first) / 1000;
++  return { totals, counts, forced, forcedStacks: [...forcedStacks.entries()].sort((a, b) => b[1] - a[1]), spanMs: span };
++}
++
++/* Perfil de CPU: tiempo propio por función (no tiempo total, que contabiliza
++   varias veces las llamadas anidadas). */
++function analyzeProfile(profile) {
++  if (!profile?.nodes?.length) return { rows: [], totalUs: 0, ownUs: 0, parentOf: new Map(), byId: new Map() };
++  const byId = new Map(profile.nodes.map((n) => [n.id, n]));
++  const parentOf = new Map();
++  for (const n of profile.nodes) for (const c of n.children || []) parentOf.set(c, n.id);
++  const self = new Map();
++  let total = 0;
++  for (let i = 0; i < profile.samples.length; i++) {
++    const dt = profile.timeDeltas[i] || 0;
++    if (dt <= 0 || dt > 50000) continue;          // el primer delta y las pausas no son trabajo
++    total += dt;
++    self.set(profile.samples[i], (self.get(profile.samples[i]) || 0) + dt);
++  }
++  const grouped = new Map();
++  let own = 0;
++  for (const [id, us] of self) {
++    const cf = byId.get(id)?.callFrame || {};
++    const url = cf.url || '';
++    const isOwn = /\/(js|css)\//.test(url) && !/vendor|three\.module/.test(url);
++    if (isOwn) own += us;
++    const key = `${cf.functionName || '(anónimo)'}|${(url.split('/').pop() || '(nativo)')}|${cf.lineNumber ?? -1}`;
++    const rec = grouped.get(key) || { us: 0, fn: cf.functionName || '(anónimo)', file: url.split('/').pop() || '(nativo)', line: cf.lineNumber ?? -1, own: isOwn };
++    rec.us += us;
++    grouped.set(key, rec);
++  }
++  return {
++    rows: [...grouped.values()].sort((a, b) => b.us - a.us),
++    totalUs: total,
++    ownUs: own,
++    byId, parentOf, selfById: self,
++  };
++}
++
++/* De quién viene el tiempo: sube por el árbol del perfil hasta la raíz. Sin
++   esto sabemos que `getShaderInfoLog` es caro, pero no quién lo pide. */
++function stackOf(prof, fnName) {
++  const node = [...prof.byId.values()].find((n) => (n.callFrame?.functionName || '(anónimo)') === fnName
++    && (prof.selfById.get(n.id) || 0) > 0);
++  if (!node) return [];
++  const out = [];
++  let id = node.id;
++  while (id != null && out.length < 8) {
++    const n = prof.byId.get(id);
++    const cf = n?.callFrame || {};
++    out.push(`${cf.functionName || '(anónimo)'} @ ${(cf.url || '').split('/').pop() || 'nativo'}:${(cf.lineNumber ?? -1) + 1}`);
++    id = prof.parentOf.get(id);
++  }
++  return out;
++}
++
++const scrollFrames = analyzeFrames(scrollPhase.perf.frames);
++const idleFrames = analyzeFrames(idlePhase.perf.frames);
++const scrollTrace = analyzeTrace(scrollPhase.trace);
++const idleTrace = analyzeTrace(idlePhase.trace);
++const scrollProfile = analyzeProfile(scrollPhase.profile);
++const idleProfile = analyzeProfile(idlePhase.profile);
++
++const scrollSec = scrollPhase.wallMs / 1000;
++const rate = (ms) => ms / Math.max(scrollSec, 0.001);
++
++/* Las lecturas de DOM que fuerzan style+layout. No aparecen como "Layout" en
++   la traza con su pila (Chrome solo la adjunta con DevTools enganchado), pero
++   en el perfil de CPU sí están, con su función llamadora: es la forma de
++   saber QUIÉN las hace. */
++const LAYOUT_READS = /^(getBoundingClientRect|getComputedStyle|offsetTop|offsetLeft|offsetWidth|offsetHeight|offsetHeight|clientWidth|clientHeight|clientTop|scrollTop|scrollHeight|scrollWidth|scrollTo|scrollBy|scrollY|scrollX|innerWidth|innerHeight|getClientRects|focus|innerText)$/;
++
++function layoutReads(prof) {
++  const out = [];
++  for (const n of prof.byId.values()) {
++    const name = n.callFrame?.functionName || '';
++    const us = prof.selfById.get(n.id) || 0;
++    if (!us || !LAYOUT_READS.test(name)) continue;
++    let id = prof.parentOf.get(n.id);
++    const callers = [];
++    while (id != null && callers.length < 4) {
++      const cf = prof.byId.get(id)?.callFrame || {};
++      callers.push(`${cf.functionName || '(anónimo)'} @ ${(cf.url || '').split('/').pop() || 'nativo'}:${(cf.lineNumber ?? -1) + 1}`);
++      id = prof.parentOf.get(id);
++    }
++    out.push({ name, us, callers: callers.join(' ← ') });
++  }
++  return out.sort((a, b) => b.us - a.us);
++}
++
++/* ──────────────────────────── informe ──────────────────────────── */
++
++const ms = (v) => (v >= 100 ? v.toFixed(0) : v.toFixed(1));
++console.log('');
++console.log(`  SCROLL${QUICK ? ' (solo bajada)' : ' · ida y vuelta'} · ${W}x${H} · ${scrollSec.toFixed(1)} s de recorrido · ${scrollFrames.count} frames`);
++console.log('  ' + '─'.repeat(76));
++console.log('  sección                     frames   p50ms   p95ms   máxms  >50ms');
++for (const s of doc.sections) {
++  const d = scrollFrames.bySection.get(s.id);
++  if (!d || !d.length) { console.log(`  ${s.id.padEnd(26)} ${'—'.padStart(6)}`); continue; }
++  const jank = d.filter((x) => x > 50).length;
++  console.log(`  ${s.id.padEnd(26)} ${String(d.length).padStart(6)} ${ms(pct(d, 50)).padStart(7)} ${ms(pct(d, 95)).padStart(7)} ${ms(Math.max(...d)).padStart(7)} ${String(jank).padStart(6)}`);
++}
++console.log('  ' + '─'.repeat(76));
++console.log(`  global: p50 ${ms(scrollFrames.p50)} ms · p95 ${ms(scrollFrames.p95)} ms · máx ${ms(scrollFrames.max)} ms`
++  + ` · frames >50 ms: ${scrollFrames.jank} (${scrollFrames.jankRate.toFixed(1)}%)`);
++console.log('  (frames en SwiftShader: informativos; una GPU real rinde más. Lo comparable es lo de abajo.)');
++
++const longTasks = [...scrollPhase.perf.tasks, ...idlePhase.perf.tasks].sort((a, b) => b[1] - a[1]);
++console.log('');
++console.log('  HILO PRINCIPAL · durante el scroll');
++console.log('  ' + '─'.repeat(76));
++console.log(`  scripting      ${ms(scrollTrace.totals.script).padStart(8)} ms   (${ms(rate(scrollTrace.totals.script))} ms por segundo de scroll)`);
++console.log(`  estilo         ${ms(scrollTrace.totals.style).padStart(8)} ms   (${ms(rate(scrollTrace.totals.style))} ms/s · ${scrollTrace.counts.style} recálculos)`);
++console.log(`  layout         ${ms(scrollTrace.totals.layout).padStart(8)} ms   (${ms(rate(scrollTrace.totals.layout))} ms/s · ${scrollTrace.counts.layout} layouts)`);
++console.log(`  paint          ${ms(scrollTrace.totals.paint).padStart(8)} ms   (${scrollTrace.counts.paint} eventos)`);
++console.log(`  bucle rAF        ${ms(scrollTrace.totals.raf).padStart(8)} ms   (${ms(rate(scrollTrace.totals.raf))} ms/s · ${scrollTrace.counts.raf} frames: Lenis + GSAP + animate)`);
++console.log(`  reflujos forzados        ${String(scrollTrace.forced + scrollTrace.counts.forced).padStart(4)}   (style+layout que el JS provoca leyendo medidas con el estilo sucio)`);
++console.log(`      por traza: ${scrollTrace.counts.forced} × Blink.ForcedStyleAndLayout (${ms(scrollTrace.totals.forced)} ms) · con pila: ${scrollTrace.forced}`);
++for (const [stack, n] of scrollTrace.forcedStacks.slice(0, 5)) console.log(`      ${String(n).padStart(4)}×  ${stack}`);
++console.log(`  tareas largas (>50 ms)   ${String(longTasks.length).padStart(4)}   peor: ${longTasks.length ? ms(longTasks[0][1]) + ' ms' : '—'}`);
++for (const t of longTasks.slice(0, 5)) console.log(`      ${ms(t[1]).padStart(7)} ms  en ${sectionAt(scrollPhase.perf.frames.reduce((best, f) => (Math.abs(f[0] - t[0]) < Math.abs(best[0] - t[0]) ? f : best), [Infinity, 0, 0])[2])} · ${t[2] || 'self'}`);
++console.log(`  draw calls por frame     ${scrollFrames.draws.length ? (scrollFrames.draws.reduce((a, b) => a + b, 0) / scrollFrames.draws.length).toFixed(1) : '—'}`
++  + ` (máx ${scrollFrames.draws.length ? Math.max(...scrollFrames.draws) : 0})`);
++const gl = scrollPhase.perf.gl || {};
++const linkFrames = scrollPhase.perf.frames.filter((f) => f[4] > 0).length;
++console.log(`  programas compilados     ${String(gl.links ?? 0).padStart(4)}   (debería ser 0 tras el arranque; ${linkFrames} frames con compilación)`
++  + ` · createProgram ${gl.creates ?? 0} · deleteProgram ${gl.deletes ?? 0} · getShaderInfoLog ${gl.infoLogs ?? 0}`);
++
++console.log('');
++console.log('  REPOSO · la escena animada sin tocar nada');
++console.log('  ' + '─'.repeat(76));
++const idleSec = Math.max(idlePhase.wallMs / 1000, 0.001);
++console.log(`  frames ${idleFrames.count} · p50 ${ms(idleFrames.p50)} ms · p95 ${ms(idleFrames.p95)} ms · máx ${ms(idleFrames.max)} ms`
++  + ` · scripting ${(idleTrace.totals.script / idleSec).toFixed(1)} ms/s · layout ${(idleTrace.totals.layout / idleSec).toFixed(1)} ms/s`
++  + ` · reflujos ${idleTrace.forced}`);
++
++function printProfile(title, prof) {
++  if (!prof.rows.length) return;
++  console.log('');
++  console.log(`  ${title} (perfil de CPU, tiempo propio)`);
++  console.log('  ' + '─'.repeat(76));
++  for (const r of prof.rows.slice(0, 18)) {
++    const share = ((r.us / prof.totalUs) * 100).toFixed(1);
++    const where = r.line >= 0 ? `${r.file}:${r.line + 1}` : r.file;
++    console.log(`  ${(r.us / 1000).toFixed(1).padStart(8)} ms ${share.padStart(5)}%  ${r.fn.padEnd(28).slice(0, 28)} ${where}${r.own ? '  ← nuestro' : ''}`);
++  }
++  console.log(`  código propio (js/ y css/ sin vendor): ${((prof.ownUs / prof.totalUs) * 100).toFixed(1)}% del tiempo de JS`
++    + ` · hilo principal ocupado ${((prof.totalUs - (prof.rows.find((r) => r.fn === '(idle)')?.us || 0)) / 1000).toFixed(0)} ms`);
++  const busy = prof.totalUs - (prof.rows.find((r) => r.fn === '(idle)')?.us || 0);
++  const worst = prof.rows.find((r) => r.fn !== '(idle)');
++  if (worst && busy > 0) {
++    console.log(`  la función más cara se llama desde:`);
++    for (const line of stackOf(prof, worst.fn)) console.log(`      ${line}`);
++  }
++}
++printProfile('FUNCIONES MÁS CARAS AL HACER SCROLL', scrollProfile);
++
++const reads = layoutReads(scrollProfile);
++if (reads.length) {
++  console.log('');
++  console.log('  LECTURAS DE LAYOUT DURANTE EL SCROLL (cada una puede forzar un reflujo)');
++  console.log('  ' + '─'.repeat(76));
++  for (const r of reads.slice(0, 8)) console.log(`  ${(r.us / 1000).toFixed(1).padStart(8)} ms  ${r.name.padEnd(22)} ${r.callers}`);
++}
++printProfile('FUNCIONES MÁS CARAS EN REPOSO', idleProfile);
++
++/* ──────────────────────────── veredicto ──────────────────────────── */
++
++const failures = [];
++const check = (label, value, max, unit = 'ms') => {
++  const ok = value <= max;
++  console.log(`  ${ok ? '✓' : '✗'} ${label.padEnd(34)} ${ms(value).padStart(8)} ${unit}  (máx ${max} ${unit})`);
++  if (!ok) failures.push(label);
++};
++console.log('');
++console.log(`  arranque: cortina arriba a los ${curtainMs < 0 ? '—' : curtainMs + ' ms'} (el precalentado paga aquí lo que antes se pagaba en el scroll)`);
++console.log('');
++console.log('  PRESUPUESTOS');
++console.log('  ' + '─'.repeat(76));
++check('scripting por segundo', rate(scrollTrace.totals.script), BUDGET.scriptMsPerSec);
++check('estilo por segundo', rate(scrollTrace.totals.style), BUDGET.styleMsPerSec);
++check('layout por segundo', rate(scrollTrace.totals.layout), BUDGET.layoutMsPerSec);
++check('reflujos forzados', scrollTrace.forced, BUDGET.forcedReflows, 'uds');
++check('peor tarea larga', longTasks.length ? longTasks[0][1] : 0, BUDGET.longTaskMs);
++/* Los frames por encima de 50 ms se INFORMAN pero no suspenden: en este
++   entorno el raster es por software y el número lo domina SwiftShader, no el
++   código de la página. En una GPU real no significa lo mismo. */
++console.log(`  · frames >50 ms por cada 100       ${scrollFrames.jankRate.toFixed(1)}   (informativo: raster por software)`);
++check('arranque hasta la cortina', curtainMs < 0 ? 1e9 : curtainMs, BUDGET.curtainMs);
++
++console.log('');
++console.log('  PRECALENTADOS DE LA ESCENA');
++console.log('  ' + '─'.repeat(76));
++if (!warmUps.length) console.log('  ninguno (sin WebGL o la página no llegó a cargar)');
++for (const w of warmUps) {
++  const inside = w.at >= scrollPhase.pageStart && w.at <= scrollPhase.pageEnd;
++  console.log(`  a los ${String(w.at).padStart(6)} ms · duró ${String(w.ms).padStart(6)} ms${inside ? '   ⚠ CAYÓ DENTRO DEL SCROLL: el lector lo paga como tirón' : ''}`);
++}
++
++if (errors.length) {
++  console.log('\n  ERRORES DE PÁGINA:');
++  [...new Set(errors)].slice(0, 8).forEach((e) => console.log('   ', e));
++}
++
++const result = {
++  viewport: `${W}x${H}`, scrollSeconds: Number(scrollSec.toFixed(2)), curtainMs,
++  frames: { p50: scrollFrames.p50, p95: scrollFrames.p95, max: scrollFrames.max, jank: scrollFrames.jank, jankRate: scrollFrames.jankRate },
++  mainThreadPerSec: {
++    script: Number(rate(scrollTrace.totals.script).toFixed(1)),
++    style: Number(rate(scrollTrace.totals.style).toFixed(1)),
++    layout: Number(rate(scrollTrace.totals.layout).toFixed(1)),
++  },
++  forcedReflows: scrollTrace.forced,
++  worstLongTaskMs: longTasks.length ? longTasks[0][1] : 0,
++  idle: { p50: idleFrames.p50, p95: idleFrames.p95, scriptMsPerSec: Number((idleTrace.totals.script / idleSec).toFixed(1)) },
++  topFunctions: scrollProfile.rows.slice(0, 10).map((r) => ({ fn: r.fn, file: r.file, ms: Number((r.us / 1000).toFixed(1)) })),
++};
++if (JSON_OUT) {
++  fs.mkdirSync(path.dirname(JSON_OUT), { recursive: true });
++  fs.writeFileSync(JSON_OUT, JSON.stringify(result, null, 2));
++  console.log(`\n  resultado en ${path.relative(ROOT, JSON_OUT)}`);
++}
++
++if (errors.length) { console.log('\n  ✗ hay errores de página.'); process.exit(1); }
++if (CHECK_BUDGET && failures.length) {
++  console.log(`\n  ✗ ${failures.length} presupuesto(s) superados: ${failures.join(', ')}`);
++  process.exit(1);
++}
++console.log('\n  ✓ dentro de presupuestos.');
++process.exit(0);
+diff --git a/scripts/screenshots/capture.mjs b/scripts/screenshots/capture.mjs
+index 7227919..e2b50dd 100644
+--- a/scripts/screenshots/capture.mjs
++++ b/scripts/screenshots/capture.mjs
+@@ -7,10 +7,9 @@
+  *   por software (SwiftShader), que guarda un PNG de cada sección.
+  *
+  * CÓMO FUNCIONA SIN GPU NI ROOT
+- *   @sparticuz/chromium trae el binario de Chromium y sus librerías DENTRO del
+- *   paquete npm (nada que descargar de Google, nada que instalar con apt).
+- *   Este script las descomprime a .cache/chromium-libs/ la primera vez y se las
+- *   pasa al proceso hijo por LD_LIBRARY_PATH.
++ *   Lo resuelve scripts/lib/chromium.mjs (compartido con hero-check.mjs y con
++ *   la medición de rendimiento): descomprime las librerías que trae
++ *   @sparticuz/chromium y lanza con SwiftShader.
+  *
+  * USO
+  *   npm start                        # el servidor tiene que estar corriendo
+@@ -27,101 +26,23 @@
+ 
+ import fs from 'node:fs';
+ import path from 'node:path';
+-import zlib from 'node:zlib';
+-import tar from 'node:stream/consumers';
+-import { fileURLToPath } from 'node:url';
++import { ROOT, parseArgs, launchChromium, openSite } from '../lib/chromium.mjs';
+ 
+-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+ const OUT = path.join(ROOT, '.shots');
+-const LIBS = path.join(ROOT, '.cache', 'chromium-libs');
+ 
+-const args = Object.fromEntries(process.argv.slice(2)
+-  .filter((a) => a.startsWith('--'))
+-  .map((a) => { const [k, v = 'true'] = a.slice(2).split('='); return [k, v]; }));
++const args = parseArgs();
+ const W = Number(args.w || 1600);
+ const H = Number(args.h || 900);
+ const ORIGIN = args.origin || 'http://localhost:8000';
+ const ONLY = args.only ? args.only.split(',').map((s) => s.trim()) : null;
+ const SETTLE = Number(args.settle || 2200);
+ 
+-let chromium, puppeteer;
+-try {
+-  chromium = (await import('@sparticuz/chromium')).default;
+-  puppeteer = (await import('puppeteer-core')).default;
+-} catch {
+-  console.error('Faltan dependencias. Instálalas con:\n  npm install --save-dev puppeteer-core @sparticuz/chromium');
+-  process.exit(2);
+-}
+-
+-/* ── Librerías del sistema que Chromium necesita (libnspr4, libnss3…) ─────
+-   Vienen comprimidas en el paquete; se extraen una vez y se cachean. */
+-async function ensureLibs() {
+-  if (fs.existsSync(path.join(LIBS, 'lib', 'libnspr4.so'))) return;
+-  console.log('Extrayendo las librerías de Chromium (solo la primera vez)…');
+-  fs.mkdirSync(LIBS, { recursive: true });
+-  const pkgDir = path.dirname(fileURLToPath(import.meta.resolve('@sparticuz/chromium/package.json')));
+-  for (const name of ['al2023', 'swiftshader', 'fonts']) {
+-    const file = path.join(pkgDir, 'bin', `${name}.tar.br`);
+-    if (!fs.existsSync(file)) continue;
+-    const buf = zlib.brotliDecompressSync(fs.readFileSync(file));
+-    /* tar mínimo: cabeceras de 512 bytes, suficiente para estos archivos. */
+-    let off = 0;
+-    while (off + 512 <= buf.length) {
+-      const header = buf.subarray(off, off + 512);
+-      const name0 = header.subarray(0, 100).toString('utf8').replace(/\0.*$/, '');
+-      if (!name0) break;
+-      const size = parseInt(header.subarray(124, 136).toString('utf8').replace(/\0.*$/, '').trim() || '0', 8);
+-      const type = String.fromCharCode(header[156]);
+-      off += 512;
+-      if (type === '0' || type === '\0') {
+-        const dest = path.join(LIBS, name0);
+-        fs.mkdirSync(path.dirname(dest), { recursive: true });
+-        fs.writeFileSync(dest, buf.subarray(off, off + size));
+-        fs.chmodSync(dest, 0o755);
+-      } else if (type === '5') {
+-        fs.mkdirSync(path.join(LIBS, name0), { recursive: true });
+-      }
+-      off += Math.ceil(size / 512) * 512;
+-    }
+-  }
+-}
+-
+-await ensureLibs();
+ fs.mkdirSync(OUT, { recursive: true });
+ 
+-const executablePath = await chromium.executablePath();
+-const browser = await puppeteer.launch({
+-  executablePath,
+-  headless: 'shell',
+-  args: [...chromium.args,
+-    '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
+-    '--force-device-scale-factor=1', '--hide-scrollbars'],
+-  env: {
+-    ...process.env,
+-    LD_LIBRARY_PATH: [path.join(LIBS, 'lib'), LIBS, path.dirname(executablePath), process.env.LD_LIBRARY_PATH]
+-      .filter(Boolean).join(':'),
+-  },
+-});
+-
+-const page = await browser.newPage();
+-await page.setViewport({ width: W, height: H, deviceScaleFactor: 1 });
+-const errors = [];
+-page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
+-page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 200)); });
+-/* Sin esto el navegador restaura el scroll anterior y la primera foto sale
+-   de una sección cualquiera en vez del hero. */
+-await page.evaluateOnNewDocument(() => { history.scrollRestoration = 'manual'; });
++const { browser, page, errors } = await launchChromium({ width: W, height: H });
+ 
+ console.log(`Abriendo ${ORIGIN} a ${W}x${H}…`);
+-try {
+-  await page.goto(`${ORIGIN}/index.html`, { waitUntil: 'networkidle0', timeout: 90000 });
+-} catch {
+-  console.error(`No respondió ${ORIGIN}. ¿Está corriendo "npm start"?`);
+-  await browser.close();
+-  process.exit(2);
+-}
+-await page.evaluate(() => window.scrollTo(0, 0));
+-await new Promise((r) => setTimeout(r, 7000));   // GLB + convergencia de los lerps
++await openSite(page, ORIGIN);
+ 
+ async function shot(name, y) {
+   await page.evaluate((yy) => window.scrollTo(0, yy), y);
+diff --git a/scripts/screenshots/hero-check.mjs b/scripts/screenshots/hero-check.mjs
+index e8622a8..4dc31b9 100644
+--- a/scripts/screenshots/hero-check.mjs
++++ b/scripts/screenshots/hero-check.mjs
+@@ -31,14 +31,9 @@
+ import fs from 'node:fs';
+ import path from 'node:path';
+ import zlib from 'node:zlib';
+-import { fileURLToPath } from 'node:url';
++import { ROOT, parseArgs, launchChromium, openSite } from '../lib/chromium.mjs';
+ 
+-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+-const LIBS = path.join(ROOT, '.cache', 'chromium-libs');
+-
+-const args = Object.fromEntries(process.argv.slice(2)
+-  .filter((a) => a.startsWith('--'))
+-  .map((a) => { const [k, v = 'true'] = a.slice(2).split('='); return [k, v]; }));
++const args = parseArgs();
+ 
+ const ORIGIN = args.origin || 'http://localhost:8000';
+ const MIN_GAP = Number(args.gap || 20);
+@@ -136,76 +131,12 @@ function goldSpan(img, yFrom, yTo) {
+   return { top, bottom };
+ }
+ 
+-/* ── Librerías del sistema para Chromium (igual que capture.mjs) ──────── */
+-async function ensureLibs() {
+-  if (fs.existsSync(path.join(LIBS, 'lib', 'libnspr4.so'))) return;
+-  console.log('Extrayendo las librerías de Chromium (solo la primera vez)…');
+-  fs.mkdirSync(LIBS, { recursive: true });
+-  const pkgDir = path.dirname(fileURLToPath(import.meta.resolve('@sparticuz/chromium/package.json')));
+-  for (const name of ['al2023', 'swiftshader', 'fonts']) {
+-    const file = path.join(pkgDir, 'bin', `${name}.tar.br`);
+-    if (!fs.existsSync(file)) continue;
+-    const buf = zlib.brotliDecompressSync(fs.readFileSync(file));
+-    let off = 0;
+-    while (off + 512 <= buf.length) {
+-      const header = buf.subarray(off, off + 512);
+-      const name0 = header.subarray(0, 100).toString('utf8').replace(/\0.*$/, '');
+-      if (!name0) break;
+-      const size = parseInt(header.subarray(124, 136).toString('utf8').replace(/\0.*$/, '').trim() || '0', 8);
+-      const type = String.fromCharCode(header[156]);
+-      off += 512;
+-      if (type === '0' || type === '\0') {
+-        const dest = path.join(LIBS, name0);
+-        fs.mkdirSync(path.dirname(dest), { recursive: true });
+-        fs.writeFileSync(dest, buf.subarray(off, off + size));
+-        fs.chmodSync(dest, 0o755);
+-      } else if (type === '5') fs.mkdirSync(path.join(LIBS, name0), { recursive: true });
+-      off += Math.ceil(size / 512) * 512;
+-    }
+-  }
+-}
+-
+-let chromium, puppeteer;
+-try {
+-  chromium = (await import('@sparticuz/chromium')).default;
+-  puppeteer = (await import('puppeteer-core')).default;
+-} catch {
+-  console.error('Faltan dependencias:\n  npm install --save-dev puppeteer-core @sparticuz/chromium');
+-  process.exit(2);
+-}
+-await ensureLibs();
+ if (SAVE) fs.mkdirSync(SAVE_DIR, { recursive: true });
+ 
+-const executablePath = await chromium.executablePath();
+-const browser = await puppeteer.launch({
+-  executablePath,
+-  headless: 'shell',
+-  args: [...chromium.args, '--use-gl=angle', '--use-angle=swiftshader',
+-    '--enable-unsafe-swiftshader', '--force-device-scale-factor=1', '--hide-scrollbars'],
+-  env: {
+-    ...process.env,
+-    LD_LIBRARY_PATH: [path.join(LIBS, 'lib'), LIBS, path.dirname(executablePath), process.env.LD_LIBRARY_PATH]
+-      .filter(Boolean).join(':'),
+-  },
+-});
+-
+-const page = await browser.newPage();
+-const errors = [];
+-page.on('pageerror', (e) => errors.push(String(e).slice(0, 160)));
+-page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 160)); });
+-await page.evaluateOnNewDocument(() => { history.scrollRestoration = 'manual'; });
+-await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
++const { browser, page, errors } = await launchChromium({ width: 1440, height: 900 });
+ 
+ console.log(`Abriendo ${ORIGIN}…`);
+-try {
+-  await page.goto(`${ORIGIN}/index.html`, { waitUntil: 'networkidle0', timeout: 90000 });
+-} catch {
+-  console.error(`No respondió ${ORIGIN}. ¿Está corriendo "npm start"?`);
+-  await browser.close();
+-  process.exit(2);
+-}
+-await page.evaluate(() => window.scrollTo(0, 0));
+-await new Promise((r) => setTimeout(r, 8000));   // GLB + convergencia de lerps
++await openSite(page, ORIGIN, { settleMs: 8000 });
+ 
+ const rows = [];
+ for (const vp of VPS) {
