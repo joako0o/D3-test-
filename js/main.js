@@ -860,11 +860,6 @@ const doorMeanderMap = makeMeanderMap();
 doorMeanderMap.repeat.set(6, 8);
 const doorLeafMats = [];
 const doorFacadeMeshes = [];
-/* Materiales clonados SOLO para la fachada: así su fundido de entrada (Acto 2)
-   no arrastra al marco, que comparte los materiales originales del generador
-   y debe seguir visible desde la portada. */
-const facadeMatClones = new Map();
-const doorFacadeMats = [];
 const doorInteriorMeshes = [];
 const doorLeafMeshes = [];
 const doorFrameMats = [];
@@ -934,23 +929,11 @@ let doorLocalHeight = 0;
     const isDoorLeaf = object.userData.role === 'leaf';
     const isGlow = object.userData.role === 'glow';
     const isFacade = object.userData.role === 'facade';
-    if (isFacade) {
-      /* La fachada (muros, pilastras, cornisa) no existe en el lockup de
-         portada pero SÍ desde que arranca el Acto 2: antes quedaba oculta
-         hasta el cruce del umbral y la puerta se veía recortada (sin
-         pórtico) durante toda La Reunión. Aquí solo se clona su material
-         para poder fundirla aparte en animate(); el `visible` lo gobierna
-         el mismo fundido, no este setup. */
-      let fm = facadeMatClones.get(m);
-      if (!fm) {
-        fm = m.clone();
-        facadeMatClones.set(m, fm);
-        doorFacadeMats.push(fm);
-      }
-      object.material = fm;
-      m = fm;
-      doorFacadeMeshes.push(object);
-    }
+    /* La fachada (muros, pilastras, cornisa) vive en portada Y en el Acto 2:
+       la puerta de la portada debe ser la MISMA figura completa que la del
+       Acto 2 (antes le "faltaba parte del marco" respecto de La Reunión;
+       en la versión de GitHub el pórtico entero estaba en el still). */
+    if (isFacade) doorFacadeMeshes.push(object);
     if (object.userData.role === 'interior' || object.userData.role === 'glow') {
       doorInteriorMeshes.push(object);
     }
@@ -1003,9 +986,7 @@ let doorLocalHeight = 0;
       m.emissiveIntensity = 0;
     }
     m.needsUpdate = true;
-    /* La fachada queda FUERA de doorMats: su opacidad la gobierna su fundido
-       propio en animate(), multiplicado por doorVisOpacity. */
-    if (!isFacade && !doorMats.includes(m)) doorMats.push(m);
+    if (!doorMats.includes(m)) doorMats.push(m);
   });
   doorModelGroup.add(model);
 }
@@ -2175,22 +2156,8 @@ function animate() {
       doorMats[i].transparent = true;
       doorMats[i].opacity = doorVisOpacity;
     }
-    /* Fachada COMPLETA desde que el lockup de portada se suelta (Acto 2), no
-       solo al cruzar el umbral: antes la puerta se veía recortada durante
-       toda La Reunión. Fundido propio sobre los materiales clonados, y el
-       cruce la mantiene a 1 por si se entra al Acto 2 ya pasado el hero. */
-    if (doorFacadeMats.length) {
-      const facadeFade = Math.max(
-        THREE.MathUtils.smoothstep(scatterProgress, 0.22, 0.60),
-        (crossT > 0.03 || crossEff > 0.03) ? 1 : 0
-      );
-      const facadeVis = facadeFade > 0.02 && doorVisOpacity > 0.02;
-      for (let i = 0; i < doorFacadeMeshes.length; i++) doorFacadeMeshes[i].visible = facadeVis;
-      for (let i = 0; i < doorFacadeMats.length; i++) {
-        doorFacadeMats[i].transparent = true;
-        doorFacadeMats[i].opacity = doorVisOpacity * facadeFade;
-      }
-    }
+    /* La fachada ya no se funde aparte: es parte de la figura en portada y
+       en el Acto 2, y su opacidad la lleva doorMats como el resto. */
     if (HERO_DOOR_LOCKUP && doorLeafMats.length) {
       const leafT = THREE.MathUtils.smoothstep(scatterProgress, 0.28, 0.9);
       /* El oro espejado llega con el CRUCE, como en la versión anterior del
