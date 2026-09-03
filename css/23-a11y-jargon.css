@@ -10,7 +10,7 @@
     transition-duration: 0.01ms !important;
   }
   .coin-halo { animation: none !important; }
-  .spinner { animation: none !important; }
+  .mint-halo, .mint-reed, .mint-ring, .mint-orbit, .mint-mono { animation: none !important; }
   .scroll-hint svg { animation: none !important; }
 }
 

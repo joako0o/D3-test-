@@ -11,7 +11,7 @@
   }
   .coin-halo { animation: none; opacity: 0.7; }
   .scroll-hint svg { animation: none; }
-  .spinner { animation: none; }
+  .mint-halo, .mint-reed, .mint-ring, .mint-orbit, .mint-mono { animation: none; }
 }
 
 /* ─── Focus States (Accessibility) ─── */

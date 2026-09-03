@@ -88,3 +88,4 @@
 @media (prefers-reduced-motion: reduce) {
   .room-voice-nav { transition: none; transform: none; }
 }
+

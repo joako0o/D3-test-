@@ -88,12 +88,134 @@
   transition: opacity 0.6s ease;
 }
 #load.hidden { opacity: 0; pointer-events: none; }
-.spinner {
-  width: 44px; height: 44px;
-  border: 3px solid var(--color-gold-dim);
-  border-top-color: var(--color-gold);
+/* ── La acuñación de la moneda ──────────────────────────────────────────
+   Sustituye al spinner genérico. Dos razones para que sea SVG/CSS y no
+   Lottie: (1) esta cortina existe para cubrir el arranque del JS y de WebGL,
+   así que su animación no puede depender de JS (Lottie lo necesita); (2) el
+   activo de referencia era una "nube de carga", no una figura del proyecto.
+   Aquí la moneda se acuña: el canto dentado gira, el aro se graba y una
+   partícula (dovish, como las señales del relato) orbita. Solo tokens de
+   00-tokens-base.css.
+
+   POR QUÉ DIVS Y NO SVG (medido, no preferencia)
+   La primera versión era un <svg> con `transform: rotate()` y
+   `stroke-dashoffset` animados. Chromium NO compone animaciones de elementos
+   SVG: cada frame recalcula estilo y hace layout en el hilo principal. Medido
+   con los contadores de Blink sobre esta misma cortina en reposo, 3 s:
+
+       SVG               → 183 recálculos de estilo + 183 layouts
+       divs transform    →   0 layouts, 2 recálculos
+
+   O sea 61 veces por segundo colgada del hilo principal. Y el hilo principal
+   está ocupado justo ahora: `warmUpScene()` lo bloquea ~2,6 s seguidos. La
+   sonda del arranque dio 15 frames en 6 s de cortina: la moneda no iba
+   "lenta", estaba congelada. Por eso las cinco capas son divs que solo animan
+   `transform` y `opacity`, que sí van al compositor, y el aro ya no se dibuja
+   con `stroke-dashoffset` (pintura) sino con un arco con cola que GIRA.
+
+   La geometría es la del SVG original, en porcentajes del mismo espacio de
+   120 unidades: halo r=54, canto r=47, cara y aro r=38, partícula a 48. */
+.mint { position: relative; width: 116px; height: 116px; }
+.mint > span { position: absolute; }
+
+/* Halo exterior: r 54 + medio trazo = 54,5 de 60 → 90,8 % de la caja.
+   Sin `inset`, `conic-gradient` ni `mask-image`: en un motor antiguo esas
+   propiedades caen y la capa desaparece (justo lo que pasó al sustituir el
+   SVG). Bordes y tamaños explícitos pintan en todos los navegadores de la
+   última década, y al animar solo transform/opacity lo compone la GPU. */
+.mint-halo {
+  left: 4.58%; top: 4.58%; width: 90.83%; height: 90.83%;
+  box-sizing: border-box;
+  border: 1px solid var(--color-gold-glow);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  opacity: 0.15;
+  animation: mint-pulse 2.4s ease-in-out infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* Canto dentado: el SVG usaba stroke-dasharray 2 4.16 sobre 2π·47. Aquí un
+   borde PUNTEADO —el mismo gesto dentado, sin gradientes ni máscaras— que
+   gira con transform puro. Banda exterior r 45,5–48,5 → 80,8 % de la caja. */
+.mint-reed {
+  left: 9.58%; top: 9.58%; width: 80.83%; height: 80.83%;
+  box-sizing: border-box;
+  border: 3px dashed var(--color-gold-dim);
+  border-radius: 50%;
+  animation: mint-spin 9s linear infinite;
+}
+.mint-face {
+  left: 18.33%; top: 18.33%; width: 63.33%; height: 63.33%;  /* r 38 de 60 */
+  border-radius: 50%;
+  background: rgba(255, 215, 106, 0.05);
+}
+/* El aro que se graba. Antes (SVG): stroke-dashoffset, pintura en el hilo
+   principal; mi primer intento en divs usó conic-gradient + mask-image y en
+   motores sin soporte el aro no pintaba — el fallo que se vio. Ahora la forma
+   más compatible de un arco que gira: un círculo con el borde transparente y
+   solo dos lados en oro, rotando. Banda r 36,75–39,25 → 65,4 % de la caja,
+   una vuelta cada 2,4 s. Transform puro: lo compone la GPU. */
+.mint-ring {
+  left: 17.29%; top: 17.29%; width: 65.42%; height: 65.42%;
+  box-sizing: border-box;
+  border: 3px solid transparent;
+  border-top-color: var(--color-gold);
+  border-right-color: var(--color-gold);
+  border-radius: 50%;
+  animation: mint-spin 2.4s linear infinite;
+}
+.mint-orbit {
+  left: 0; top: 0; width: 100%; height: 100%;
+  animation: mint-spin 2.4s linear infinite;
+}
+/* Dos señales en el MISMO eje de giro, una de cada tono del enjambre
+   (js/main.js:1065): dovish arriba, hawkish abajo. Giran juntas con .mint-orbit. */
+.mint-orbit::after {
+  content: "";
+  position: absolute;
+  top: 7.83%; left: 50%;                 /* centro al 10 % del alto, radio 48/60 */
+  width: 4.33%; height: 4.33%;           /* diámetro 2·2,6 = 4,3 % */
+  margin-left: -2.167%;
+  border-radius: 50%;
+  background: var(--color-dovish);
+}
+.mint-orbit::before {
+  content: "";
+  position: absolute;
+  top: 87.84%; left: 50%;                /* opuesta: centro al 90 % */
+  width: 4.33%; height: 4.33%;
+  margin-left: -2.167%;
+  border-radius: 50%;
+  background: var(--color-gold);
+}
+
+.mint-mono {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem; letter-spacing: 0.08em; color: var(--color-gold);
+  text-shadow: 0 0 18px var(--color-gold-glow);
+  animation: mint-mono 2.4s ease-in-out infinite;
+}
+
+@keyframes mint-spin { to { transform: rotate(360deg); } }
+@keyframes mint-pulse { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.4; } }
+@keyframes mint-mono {
+  0%, 100% { opacity: 0.55; transform: scale(0.98); }
+  50%      { opacity: 1; transform: scale(1); }
+}
+
+/* Las capas se promueven SOLO mientras la cortina está encima. Dejar
+   will-change puesto para siempre costaría memoria de GPU toda la sesión, y
+   al ocultarse #load las animaciones dejan de costar (medido: 6 layouts en
+   4 s con la cortina oculta, contra 183 en 3 s con ella visible). */
+#load:not(.hidden) .mint-halo { will-change: opacity; }
+#load:not(.hidden) .mint-mono { will-change: opacity, transform; }
+#load:not(.hidden) .mint-reed,
+#load:not(.hidden) .mint-ring,
+#load:not(.hidden) .mint-orbit { will-change: transform; }
+
+/* Sin movimiento: la moneda queda acuñada y quieta. */
+@media (prefers-reduced-motion: reduce) {
+  .mint-halo, .mint-reed, .mint-ring, .mint-orbit, .mint-mono { animation: none; }
+  .mint-halo { opacity: 0.4; }
+  .mint-mono { opacity: 1; }
+}
+
 #load span { font-size: var(--fs-small); letter-spacing: 3px; text-transform: uppercase; opacity: 0.8; }
