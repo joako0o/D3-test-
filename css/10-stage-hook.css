@@ -31,6 +31,41 @@
 }
 
 /* ─── STAGE 3b — Hook editorial · señales hawkish/dovish ─── */
+#textParticleSection {
+  isolation: isolate;
+  overflow: hidden;
+}
+#textParticleSection::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(860px, 86vw);
+  height: min(620px, 72vh);
+  transform: translate(-50%, -50%);
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(255, 215, 106, 0.14) 0%, rgba(255, 149, 56, 0.052) 34%, transparent 67%),
+    radial-gradient(ellipse at 18% 50%, rgba(255, 215, 106, 0.055), transparent 42%),
+    radial-gradient(ellipse at 82% 50%, rgba(138, 180, 248, 0.060), transparent 44%);
+  filter: blur(2px);
+}
+#textParticleSection::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(780px, 82vw);
+  height: min(480px, 58vh);
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  pointer-events: none;
+  border-top: 1px solid rgba(255, 215, 106, 0.14);
+  border-bottom: 1px solid rgba(138, 180, 248, 0.10);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.025), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
 .hook-inner {
   display: flex;
   flex-direction: column;
@@ -85,12 +120,18 @@
   gap: 18px;
   align-items: center;
   padding: 22px 24px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.070), rgba(255,255,255,0.018)),
+    rgba(6, 10, 20, 0.36);
+  border: 1px solid rgba(255,255,255,0.095);
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
   text-align: left;
   pointer-events: auto;
-  transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+  transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 .signal-card:hover { transform: translateY(-2px); }
 .signal-card--hawkish:hover {
