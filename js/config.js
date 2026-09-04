@@ -170,18 +170,24 @@ export const CONFIG = {
       hero: { metalness: 0.12, roughness: 0.92, envMapIntensity: 0.12 },
       /* Acto 2: bronce envejecido, como el generador y el GLB de referencia.
          El dorado espejado de antes quemaba las hojas a un oro plano. */
-      meet: { metalness: 0.88, roughness: 0.50, envMapIntensity: 0.55 },
-      /* Cruce del umbral: recién ahí las hojas suben a oro, como en la
-         versión anterior del sitio. */
-      cross: { metalness: 1.00, roughness: 0.26, envMapIntensity: 1.15 },
+      meet: { metalness: 0.88, roughness: 0.50, envMapIntensity: 0.54 },
+      /* Cruce del umbral: sube el brillo, pero conserva bronce viejo; evitar
+         el amarillo plano que quema los paneles. */
+      cross: { metalness: 0.95, roughness: 0.38, envMapIntensity: 0.72 },
       /* Ornamentos (molduras, rosetas, perlado, herrajes): siempre un punto
          más pulidos y claros que el fondo, para que el relieve se lea. */
-      meetOrn: { metalness: 1.00, roughness: 0.30, envMapIntensity: 0.90 },
-      crossOrn: { metalness: 1.00, roughness: 0.22, envMapIntensity: 1.20 },
+      meetOrn: { metalness: 0.95, roughness: 0.28, envMapIntensity: 0.88 },
+      crossOrn: { metalness: 1.00, roughness: 0.23, envMapIntensity: 1.05 },
+      /* Ranuras/sombras: menos reflectantes para que los filetes negros no
+         se laven con las luces de la puerta. */
+      meetDark: { metalness: 0.55, roughness: 0.72, envMapIntensity: 0.18 },
+      crossDark: { metalness: 0.65, roughness: 0.64, envMapIntensity: 0.24 },
     },
     frameAnim: {
-      hero: { metalness: 0.08, roughness: 0.88, envMapIntensity: 0.28, bumpScale: 0.045 },
-      meet: { metalness: 0.42, roughness: 0.38, envMapIntensity: 0.72, bumpScale: 0.028 },
+      hero: { metalness: 0.06, roughness: 0.90, envMapIntensity: 0.24, bumpScale: 0.045 },
+      /* Acto 2: pórtico más sobrio que la piedra clara original, pero aún con
+         lectura de material y volumen. */
+      meet: { metalness: 0.04, roughness: 0.88, envMapIntensity: 0.22, bumpScale: 0.030 },
     },
     spots: {
       key:  { color: 0xffe3b5, intensity: 120, angle: 0.45, penumbra: 0.5, decay: 1.2, distance: 0, x: 1.2, y: 5.5, z: 2.5, tx: 0, ty: 0.2, tz: 0 },
@@ -284,7 +290,7 @@ if (HERO_DOOR_LOCKUP) {
   /* Still de referencia: pórtico de piedra, vano oscuro, moneda = única joya.
      Las hojas doradas del GLB se apagan en el hero (el vano es noche) y
      vuelven en el acto 2, cuando la puerta de la reunión se cierra. */
-  CONFIG.door.widthVsCoin = 2.15;
+  CONFIG.door.widthVsCoin = 2.42;
   CONFIG.door.fogDensity = 0.026;
   CONFIG.door.doorDepthSquash = 0.72;
   CONFIG.door.maxDepthWorld = 4.8;
@@ -297,7 +303,7 @@ if (HERO_DOOR_LOCKUP) {
   CONFIG.door.approachCamY = 0.62;
   CONFIG.door.approachCamZ = CONFIG.camera.z;
   CONFIG.exposure = 0.94;
-  CONFIG.door.spots.key = { color: 0xd4e0f2, intensity: 12, angle: 0.72, penumbra: 0.62, decay: 1.35, distance: 0, x: -3.8, y: 3.5, z: 4.4, tx: 0, ty: 0.2, tz: 0 };
-  CONFIG.door.spots.rim = { color: 0x6e819c, intensity: 6, angle: 0.8, penumbra: 0.75, decay: 1.35, distance: 0, x: 3.5, y: 1.6, z: 2.0, tx: 0, ty: 0.1, tz: -0.35 };
-  CONFIG.door.spots.under = { color: 0xffd76a, intensity: 3.2, angle: 0.7, penumbra: 0.85, decay: 1.6, distance: 0, x: 0, y: 0.5, z: 2.9, tx: 0, ty: 0.25, tz: 0 };
+  CONFIG.door.spots.key = { color: 0xffe3b5, intensity: 15, angle: 0.72, penumbra: 0.62, decay: 1.35, distance: 0, x: -3.8, y: 3.5, z: 4.4, tx: 0, ty: 0.2, tz: 0 };
+  CONFIG.door.spots.rim = { color: 0x9fb2cb, intensity: 6.5, angle: 0.8, penumbra: 0.75, decay: 1.35, distance: 0, x: 3.5, y: 1.6, z: 2.0, tx: 0, ty: 0.1, tz: -0.35 };
+  CONFIG.door.spots.under = { color: 0xffc26f, intensity: 4.4, angle: 0.7, penumbra: 0.85, decay: 1.6, distance: 0, x: 0, y: 0.5, z: 2.9, tx: 0, ty: 0.25, tz: 0 };
 }

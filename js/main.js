@@ -15,8 +15,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { initFigureSystem } from './figures.js?v=2';
-import { buildCentralBankDoor } from './build-door.js?v=4';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=3';
+import { buildCentralBankDoor } from './build-door.js?v=14';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=9';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
@@ -142,7 +142,9 @@ camera.lookAt(0, HERO_DOOR_LOCKUP ? 0.95 : 0.7, HERO_DOOR_LOCKUP ? -0.25 : 0);
 let renderer = null;
 if (supportsWebGL) {
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
+    /* Los ornamentos de la puerta viven en pocos píxeles; con antialias=false
+       los filetes y aristas se rompen justo donde necesitamos legibilidad. */
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(initialVp.width, initialVp.height);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -747,6 +749,17 @@ const doorMats = [];
    escala de la puerta sale de applyDoorScale(), que es la ÚNICA fuente de
    tamaño: ancho objetivo = diámetro de la moneda × CONFIG.door.widthVsCoin. */
 let doorFootprint = null;  // { width, depth } en unidades del modelo
+/* GLB subido por el usuario en GitHub: será la base visual de la puerta.
+   La puerta procedural queda como respaldo y conserva los pivotes de apertura
+   hasta que el GLB esté recortado en hojas separadas. */
+let bcchDoorModel = null;
+let proceduralDoorModel = null;
+let bcchPivotL = null;
+let bcchPivotR = null;
+const bcchDoorMats = [];
+const bcchApertureMats = [];
+const bcchEdgeMats = [];
+const proceduralDoorMats = [];
 
 function applyDoorScale() {
   if (!doorModel || !doorFootprint) return;
@@ -762,7 +775,11 @@ function applyDoorScale() {
   /* Squash de profundidad calculado sobre la escala FINAL. Antes se medía con
      una escala intermedia que nunca se llegaba a usar, así que el valor de Z
      salía prácticamente al azar según el viewport. */
-  const squash = THREE.MathUtils.clamp(cfg.doorDepthSquash ?? 1, 0.05, 1);
+  /* No aplastar en Z el GLB abrible: una escala padre no uniforme deforma
+     cualquier hoja que rota dentro de él. La compresión se conserva solo para
+     el respaldo procedural/fallback. */
+  const isOpenableBcch = !!bcchDoorModel && doorModel === bcchDoorModel;
+  const squash = isOpenableBcch ? 1 : THREE.MathUtils.clamp(cfg.doorDepthSquash ?? 1, 0.05, 1);
   const depthWorld = doorFootprint.depth * s * squash;
   const depthFix = Math.min(1, (cfg.maxDepthWorld ?? Infinity) / Math.max(depthWorld, 1e-6));
   doorModelGroup.scale.set(s, s, s * squash * depthFix);
@@ -772,6 +789,24 @@ function applyDoorScale() {
     depthWorld * depthFix * (cfg.shadowDepthMul ?? 2.2),
     1
   );
+}
+
+function fitDoorModelToStage(model) {
+  model.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model);
+  if (box.isEmpty()) return null;
+  const center = box.getCenter(new THREE.Vector3());
+  model.position.sub(center);
+  model.updateMatrixWorld(true);
+  const fittedBox = new THREE.Box3().setFromObject(model);
+  const size = fittedBox.getSize(new THREE.Vector3());
+  doorFootprint = { width: Math.max(size.x, 1e-3), depth: Math.max(size.z, 1e-3) };
+  doorLocalHeight = Math.max(size.y, 1e-3);
+  doorBottomOffset = fittedBox.min.y;
+  doorTopOffset = fittedBox.max.y;
+  doorModel = model;
+  applyDoorScale();
+  return fittedBox;
 }
 
 function applyDoorTextStyle() {
@@ -854,28 +889,119 @@ function makeMeanderMap() {
     }
   });
 }
+function makeBronzePatinaMap() {
+  return makeDoorCanvasTexture(512, (ctx, s) => {
+    /* Bronce vivo: base irregular con rayas verticales muy suaves. La textura
+       se multiplica por la paleta de materiales, por eso se mantiene casi
+       neutra y solo entrega variación/relieve. */
+    const grd = ctx.createLinearGradient(0, 0, s, s);
+    /* El mapa se mantiene claro porque Three multiplica `map × color`.
+       Si el mapa ya es café oscuro, la puerta termina roja/negra. */
+    grd.addColorStop(0, '#f0c875');
+    grd.addColorStop(0.48, '#d8a653');
+    grd.addColorStop(1, '#fff0b1');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, s, s);
+    for (let i = 0; i < 4200; i++) {
+      const a = 0.025 + Math.random() * 0.10;
+      ctx.fillStyle = Math.random() > 0.52
+        ? `rgba(255,238,178,${a})`
+        : `rgba(72,43,13,${a * 1.20})`;
+      const x = Math.random() * s;
+      const y = Math.random() * s;
+      ctx.fillRect(x, y, 1 + Math.random() * 2.5, 3 + Math.random() * 16);
+    }
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = '#211307';
+    ctx.lineWidth = 1;
+    for (let x = 6; x < s; x += 18 + Math.random() * 8) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + Math.sin(x) * 5, s);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  });
+}
+function makeDoorAuraMap() {
+  return makeDoorCanvasTexture(512, (ctx, s) => {
+    /* Luz editorial detrás del pórtico: no representa un objeto físico, sino
+       un foco teatral que hace que la puerta sea el centro de la escena. */
+    const g = ctx.createRadialGradient(s * 0.5, s * 0.45, 0, s * 0.5, s * 0.48, s * 0.52);
+    g.addColorStop(0.00, 'rgba(255, 192, 94, 0.75)');
+    g.addColorStop(0.30, 'rgba(255, 150, 46, 0.26)');
+    g.addColorStop(0.58, 'rgba(146, 76, 20, 0.08)');
+    g.addColorStop(1.00, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, s, s);
+  });
+}
 const doorStoneMap = makeCarvedStoneMap();
 doorStoneMap.repeat.set(2.4, 3.0);
+const doorBronzeMap = makeBronzePatinaMap();
+doorBronzeMap.repeat.set(1.4, 4.6);
 const doorMeanderMap = makeMeanderMap();
 doorMeanderMap.repeat.set(6, 8);
+const doorAuraMap = makeDoorAuraMap();
+doorAuraMap.wrapS = doorAuraMap.wrapT = THREE.ClampToEdgeWrapping;
+const doorAuraMat = new THREE.MeshBasicMaterial({
+  map: doorAuraMap,
+  transparent: true,
+  opacity: 0,
+  depthWrite: false,
+  depthTest: false,
+  blending: THREE.AdditiveBlending,
+  toneMapped: false,
+});
+const doorAura = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), doorAuraMat);
+doorAura.name = 'doorEditorialAura';
+doorAura.renderOrder = -5;
+doorAura.visible = false;
+doorGroup.add(doorAura);
 const doorLeafMats = [];
+const doorLeafLineMats = [];
+const doorFrameLineMats = [];
 const doorFacadeMeshes = [];
 const doorInteriorMeshes = [];
 const doorLeafMeshes = [];
 const doorFrameMats = [];
 const doorLeafColorVoid = new THREE.Color('#07090f');
-/* Bronce oscuro del FONDO de las hojas en el Acto 2; los ornamentos llevan
-   su propio dorado (doorLeafOrn*) para que el relieve se lea con contraste. */
-const doorLeafColorBronze = new THREE.Color('#6b4f28');
-const doorLeafColorGold = new THREE.Color('#d9a94f');
+/* Paleta de la puerta: bronce envejecido + sombras incisas + oro solo en los
+   relieves. Separar base / sombra / ornamento evita el amarillo plano que
+   escondía los detalles de los paneles. */
+const doorLeafBaseBronze = new THREE.Color('#6b4f28');
+const doorLeafBaseGold = new THREE.Color('#d9a94f');
+const doorLeafDarkBronze = new THREE.Color('#201307');
+const doorLeafDarkGold = new THREE.Color('#2d1b08');
 const doorLeafOrnBronze = new THREE.Color('#c9973f');
 const doorLeafOrnGold = new THREE.Color('#ffd76a');
-const doorFrameColorHero = new THREE.Color('#6e7d92');
-const doorFrameColorMeet = new THREE.Color('#3a4048');
+const doorFrameToneColors = {
+  stone: {
+    hero: new THREE.Color('#6e7d92'),
+    meet: new THREE.Color('#3a4048'),
+  },
+  dark: {
+    hero: new THREE.Color('#4c5666'),
+    meet: new THREE.Color('#252b33'),
+  },
+  granite: {
+    hero: new THREE.Color('#2a2724'),
+    meet: new THREE.Color('#22201e'),
+  },
+  medal: {
+    hero: new THREE.Color('#c9973f'),
+    meet: new THREE.Color('#c9973f'),
+  },
+};
 const doorSpotKeyHero = new THREE.Color(0xd4e0f2);
 const doorSpotKeyMeet = new THREE.Color(0xe8eef6);
 const doorSpotRimHero = new THREE.Color(0x6e819c);
 const doorSpotRimMeet = new THREE.Color(0x8a93a3);
+function doorFrameTone(matName) {
+  if (matName === 'stone_dark') return 'dark';
+  if (matName === 'granite') return 'granite';
+  return 'stone';
+}
 
 /* Pivotes y glow del generador procedural (js/build-door.js). */
 let doorPivotL = null, doorPivotR = null, doorGlowMat = null;
@@ -895,6 +1021,7 @@ let doorLocalHeight = 0;
      Blender build_door (2).py) con pivotes reales para abrir las hojas. */
   const built = buildCentralBankDoor();
   const model = built.group;
+  proceduralDoorModel = model;
   /* El generador (port del Blender) construye con la fachada mirando a -Y;
      la cámara de la pieza mira hacia -Z: se rota -90° en X para encararla
      (el interior queda a -Z, detrás, y las bisagras verticales siguen
@@ -928,10 +1055,12 @@ let doorLocalHeight = 0;
     if (!object.isMesh || !object.material) return;
     let m = object.material;
     if (!('metalness' in m)) return;
-    const isDoorLeaf = object.userData.role === 'leaf';
-    const isGlow = object.userData.role === 'glow';
-    const isFacade = object.userData.role === 'facade';
-    const isMedal = object.userData.role === 'medal';
+    const role = object.userData.role;
+    const isDoorLeaf = role === 'leaf';
+    const isGlow = role === 'glow';
+    const isFacade = role === 'facade';
+    const isMedal = role === 'medal';
+    const isFrame = role === 'frame';
     /* La fachada (muros, pilastras, cornisa) vive en portada Y en el Acto 2:
        la puerta de la portada debe ser la MISMA figura completa que la del
        Acto 2 (antes le "faltaba parte del marco" respecto de La Reunión;
@@ -942,10 +1071,63 @@ let doorLocalHeight = 0;
     }
     if (isDoorLeaf) {
       if (!doorLeafMeshes.includes(object)) doorLeafMeshes.push(object);
+      const matName = object.userData.matName || '';
+      if (matName !== 'bronze_dark') {
+        m.map = null;
+        m.bumpMap = null;
+        m.bumpScale = 0;
+      }
+      /* Contorno técnico sutil: se dibuja una malla de aristas encima de las
+         hojas para que los paneles sigan leyéndose cuando la puerta se achica.
+         No se aplica a las perlas instanciadas ni a las ranuras negras. */
+      if (!object.isInstancedMesh && matName !== 'bronze_dark' && object.geometry && !object.userData.edgeLinesAdded) {
+        const lineMat = new THREE.LineBasicMaterial({
+          color: 0x160b03,
+          transparent: true,
+          opacity: 0.42,
+          depthTest: true,
+          depthWrite: false,
+        });
+        const lines = new THREE.LineSegments(new THREE.EdgesGeometry(object.geometry, 38), lineMat);
+        lines.name = `${object.name}_edgeLines`;
+        lines.renderOrder = 3;
+        object.add(lines);
+        doorLeafLineMats.push(lineMat);
+        object.userData.edgeLinesAdded = true;
+      }
       /* La hoja cerrada SÍ se ve en portada (bronce casi noche): el nuevo
          modelo luce su relieve; el oro llega con leafT en el acto 2. */
     }
-    if (isGlow) { m.needsUpdate = true; return; }   // el glow lo gobierna el scroll
+    if ((isFacade || isFrame) && object.geometry && !object.userData.edgeLinesAdded) {
+      const tone = doorFrameTone(object.userData.matName || 'stone');
+      const opacity = tone === 'dark' ? 0.22 : (tone === 'granite' ? 0.28 : 0.12);
+      const lineMat = new THREE.LineBasicMaterial({
+        color: tone === 'stone' ? 0x3c3327 : 0x110d09,
+        transparent: true,
+        opacity,
+        depthTest: true,
+        depthWrite: false,
+      });
+      const lines = new THREE.LineSegments(new THREE.EdgesGeometry(object.geometry, 36), lineMat);
+      lines.name = `${object.name}_stoneEdges`;
+      lines.renderOrder = 2;
+      object.add(lines);
+      doorFrameLineMats.push({ m: lineMat, baseOpacity: opacity });
+      object.userData.edgeLinesAdded = true;
+    }
+    if (isGlow) {
+      /* El glow es solo atmósfera del umbral. Si escribe profundidad u opacidad
+         alta, se ve como una placa color piel justo cuando la cámara entra y
+         oculta la estatua de La Sala. */
+      m.transparent = true;
+      m.opacity = 0;
+      m.depthWrite = false;
+      m.depthTest = true;
+      m.side = THREE.DoubleSide;
+      m.blending = THREE.AdditiveBlending;
+      m.needsUpdate = true;
+      return;
+    }   // el glow lo gobierna el scroll
     m.side = THREE.FrontSide;
     if (isDoorLeaf) {
       if (HERO_DOOR_LOCKUP) {
@@ -958,10 +1140,13 @@ let doorLocalHeight = 0;
         m.emissive.set('#000000');
         m.emissiveIntensity = 0;
         if (!doorLeafMats.some((r) => r.m === m)) {
-          /* orn = ornamento (molduras, rosetas, perlado, herrajes): lleva el
-             dorado claro; el fondo (bronze_matte) el bronce oscuro. */
-          const orn = object.userData.matName ? object.userData.matName !== 'bronze_matte' : true;
-          doorLeafMats.push({ m, orn });
+          /* Tono por material horneado:
+             - bronze_matte = paño base / paneles, bronce medio
+             - bronze_dark  = ranuras y sombras, casi negro
+             - bronze       = molduras, rosetas, perlas y herrajes, oro viejo */
+          const matName = object.userData.matName || '';
+          const tone = matName === 'bronze_dark' ? 'dark' : (matName === 'bronze_matte' ? 'base' : 'orn');
+          doorLeafMats.push({ m, tone });
         }
       } else {
         m.color.set('#ffd76a');
@@ -983,17 +1168,19 @@ let doorLocalHeight = 0;
       m.emissive.set('#000000');
       m.emissiveIntensity = 0;
     } else if (HERO_DOOR_LOCKUP) {
-      m.color.copy(doorFrameColorHero);
-      m.metalness = 0.08;
-      m.roughness = 0.88;
+      const tone = doorFrameTone(object.userData.matName || 'stone');
+      const toneColors = doorFrameToneColors[tone] || doorFrameToneColors.stone;
+      m.color.copy(toneColors.hero);
+      m.metalness = tone === 'granite' ? 0.10 : 0.04;
+      m.roughness = tone === 'granite' ? 0.68 : 0.86;
       m.map = doorStoneMap;
       m.bumpMap = doorStoneMap;
-      m.bumpScale = 0.045;
-      m.envMapIntensity = 0.28;
+      m.bumpScale = tone === 'dark' ? 0.020 : 0.040;
+      m.envMapIntensity = tone === 'granite' ? 0.20 : 0.26;
       if (!m.emissive) m.emissive = new THREE.Color();
       m.emissive.set('#000000');
       m.emissiveIntensity = 0;
-      if (!doorFrameMats.includes(m)) doorFrameMats.push(m);
+      if (!doorFrameMats.some((r) => r.m === m)) doorFrameMats.push({ m, tone });
     } else {
       m.color.set('#0d0f16');
       m.metalness = 0.15;
@@ -1005,9 +1192,260 @@ let doorLocalHeight = 0;
     }
     m.needsUpdate = true;
     if (!doorMats.includes(m)) doorMats.push(m);
+    if (!proceduralDoorMats.includes(m)) proceduralDoorMats.push(m);
   });
   doorModelGroup.add(model);
 }
+
+const bcchScratch = new THREE.Vector3();
+const bcchNormalScratch = new THREE.Vector3();
+const bcchStoneLow = new THREE.Color('#151a1d');
+const bcchStoneHigh = new THREE.Color('#343b3d');
+const bcchStep = new THREE.Color('#090d10');
+const bcchBronzeLow = new THREE.Color('#9f6118');
+const bcchBronzeHigh = new THREE.Color('#d9a23a');
+const bcchGold = new THREE.Color('#f2d16a');
+const bcchDoorLight = new THREE.Color('#d6a030');
+const bcchLineDark = new THREE.Color('#090502');
+const bcchTmp = new THREE.Color();
+const bcchHeroTint = new THREE.Color('#24251e');
+const bcchMeetTint = new THREE.Color('#f1f0e7');
+const bcchLeafMeetTint = new THREE.Color('#f1f0e7');
+const bcchLeafGlow = new THREE.Color('#211706');
+const bcchFrameGlow = new THREE.Color('#05070a');
+const bcchObsidianLeaf = new THREE.Color('#1c2427');
+function bcchSmooth(edge0, edge1, x) {
+  const t = THREE.MathUtils.clamp((x - edge0) / Math.max(edge1 - edge0, 1e-6), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+function bcchLeafBodyRegion(x, y, z = 0) {
+  /* Hojas reales dentro de Cubo.064. Estas medidas salen de inspeccionar la
+     malla: son los dos prismas delgados centrales, no las columnas ni el muro. */
+  if (y < -0.86 || y > 0.84) return false;
+  const leftLeafSlab = x > -0.61 && x < -0.35 && z > 0.070 && z < 0.175;
+  const rightLeafSlab = x > 0.32 && x < 0.59 && z > 0.070 && z < 0.175;
+  return leftLeafSlab || rightLeafSlab;
+}
+function bcchDoorRegion(x, y, isGoldMesh = false, z = 0) {
+  /* Apertura corregida:
+     - Cubo.064 solo gira en sus DOS prismas-hoja centrales.
+     - Toroide.001 gira como capa dorada/ornamental de esas hojas.
+     Todo muro/columna/escalera queda fijo. */
+  if (isGoldMesh) {
+    if (y < -0.87 || y > 0.84 || z < 0.015 || z > 0.24) return false;
+    return x > -0.54 && x < 0.49;
+  }
+  return bcchLeafBodyRegion(x, y, z);
+}
+function bcchApertureRegion(x, y, isGoldMesh = false, z = 0) {
+  /* Tapón central fijo del Cubo: no gira. Se desvanece al cruzar para evitar
+     la placa café/marrón que llenaba la pantalla al entrar a La Sala. */
+  if (isGoldMesh || bcchLeafBodyRegion(x, y, z)) return false;
+  if (y < -0.86 || y > 0.84) return false;
+  if (z > 0.22) return false;
+  return Math.abs(x) < 0.48;
+}
+function bcchDoorMaskAt(x, y, isGoldMesh = false, z = 0) {
+  if (!bcchDoorRegion(x, y, isGoldMesh, z)) return 0;
+  if (!isGoldMesh) return 0.18;
+  const doorY = bcchSmooth(-0.86, -0.72, y) * (1 - bcchSmooth(0.74, 0.86, y));
+  return THREE.MathUtils.clamp(0.86 + 0.14 * doorY, 0, 1);
+}
+function bcchColorAt(point, isGoldMesh = false, target = new THREE.Color()) {
+  const x = point.x;
+  const y = point.y;
+  const z = point.z;
+  const ax = Math.abs(x);
+  const isStep = y < -0.62 || (y < -0.48 && ax > 0.42);
+  const isCornice = y > 0.82;
+  const isSidePillar = ax > 0.47 && ax < 0.86 && y > -0.64 && y < 0.84;
+  const doorMask = bcchDoorMaskAt(x, y, isGoldMesh, z);
+
+  /* Dos capas reales del GLB, sin sobreinterpretar piezas:
+     1) Material.023 / Cubo.064 = cuerpo completo: gris obsidiana/piedra.
+     2) Material.002 / Toroide.001 = capa dorada actual. */
+  if (isGoldMesh) {
+    const goldLift = THREE.MathUtils.clamp(0.42 + 0.34 * (y + 0.85) / 1.7 + (x > 0 ? 0.03 : 0.0), 0, 0.86);
+    target.copy(bcchBronzeLow).lerp(bcchBronzeHigh, goldLift);
+    target.lerp(bcchDoorLight, 0.16);
+    target.lerp(bcchGold, 0.16 + 0.10 * doorMask);
+    const groove = (1 - bcchSmooth(0.00, 0.035, ax))
+      * bcchSmooth(-0.70, -0.54, y) * (1 - bcchSmooth(0.64, 0.82, y));
+    target.lerp(bcchLineDark, groove * 0.18);
+    return 0.94;
+  }
+
+  const stoneLift = THREE.MathUtils.clamp(0.24 + 0.18 * (y + 0.9) / 1.8 + 0.05 * (1 - Math.min(ax, 1)), 0, 0.46);
+  target.copy(bcchStoneLow).lerp(bcchStoneHigh, stoneLift);
+  if (doorMask > 0.01) {
+    /* La hoja-base también es de la capa obsidiana; las molduras/aros dorados
+       vienen encima en Toroide. */
+    target.lerp(bcchObsidianLeaf, 0.62);
+  }
+  if (isSidePillar) target.lerp(bcchStoneLow, 0.38);
+  if (isCornice) target.lerp(bcchLineDark, 0.54);
+  if (isStep) target.lerp(bcchStep, 0.78);
+  return doorMask > 0.01 ? 0.16 : 0.08;
+}
+function makeBcchDoorMaterial(kind = 'frame') {
+  const mat = new THREE.MeshStandardMaterial({
+    color: bcchHeroTint.clone(),
+    vertexColors: true,
+    metalness: 0.1,
+    roughness: 0.82,
+    envMapIntensity: 0.72,
+    emissive: 0x000000,
+    emissiveIntensity: 0,
+    transparent: true,
+    opacity: 0,
+    depthWrite: true,
+    side: THREE.DoubleSide,
+  });
+  mat.userData.bcchKind = kind;
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float bcchDoorMask;\nvarying float vBcchDoorMask;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBcchDoorMask = bcchDoorMask;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vBcchDoorMask;')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.92, 0.38, vBcchDoorMask);')
+      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(0.035, 0.82, vBcchDoorMask);');
+  };
+  mat.customProgramCacheKey = () => 'bcch-door-openable-recolor-v13';
+  return mat;
+}
+function buildGeometryFromTriangles(tris, pivotX = 0) {
+  if (!tris.length) return null;
+  const positions = new Float32Array(tris.length * 9);
+  const normals = new Float32Array(tris.length * 9);
+  const colors = new Float32Array(tris.length * 9);
+  const masks = new Float32Array(tris.length * 3);
+  let pi = 0, ni = 0, ci = 0, mi = 0;
+  for (const tri of tris) {
+    for (const v of tri) {
+      positions[pi++] = v.p.x - pivotX;
+      positions[pi++] = v.p.y;
+      positions[pi++] = v.p.z;
+      normals[ni++] = v.n.x;
+      normals[ni++] = v.n.y;
+      normals[ni++] = v.n.z;
+      colors[ci++] = v.c.r;
+      colors[ci++] = v.c.g;
+      colors[ci++] = v.c.b;
+      masks[mi++] = v.mask;
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('bcchDoorMask', new THREE.BufferAttribute(masks, 1));
+  geo.computeBoundingSphere();
+  return geo;
+}
+function makeBcchMesh(geometry, name, kind = 'frame') {
+  if (!geometry) return null;
+  const mat = makeBcchDoorMaterial(kind);
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.name = name;
+  mesh.renderOrder = 5;
+  mesh.userData.role = 'bcchDoor';
+  if (geometry.attributes.position?.count > 0) {
+    const edgeMat = new THREE.LineBasicMaterial({
+      color: kind === 'leaf' ? 0x120803 : 0x050403,
+      transparent: true,
+      opacity: 0,
+      depthTest: true,
+      depthWrite: false,
+    });
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, kind === 'leaf' ? 26 : 34), edgeMat);
+    edges.name = `${name}_edgeLines`;
+    edges.renderOrder = 6;
+    mesh.add(edges);
+    bcchEdgeMats.push({ m: edgeMat, baseOpacity: kind === 'leaf' ? 0.22 : 0.15, kind });
+  }
+  doorMats.push(mat);
+  bcchDoorMats.push(mat);
+  if (kind === 'aperture') bcchApertureMats.push(mat);
+  return mesh;
+}
+function buildOpenableBcchDoor(sourceModel, rawCenter) {
+  const group = new THREE.Group();
+  group.name = 'Puerta_bcch_Openable';
+  const hingeX = 0.57;
+  const pivotL = new THREE.Object3D();
+  const pivotR = new THREE.Object3D();
+  pivotL.name = 'Puerta_bcch_LeftPivot';
+  pivotR.name = 'Puerta_bcch_RightPivot';
+  pivotL.position.set(-hingeX, 0, 0);
+  pivotR.position.set(hingeX, 0, 0);
+  pivotL.userData.openSign = 1;
+  pivotR.userData.openSign = -1;
+  const staticTris = [];
+  const apertureTris = [];
+  const leftTris = [];
+  const rightTris = [];
+
+  sourceModel.updateMatrixWorld(true);
+  sourceModel.traverse((object) => {
+    if (!object.isMesh || !object.geometry) return;
+    const geo = object.geometry;
+    const pos = geo.attributes.position;
+    const normal = geo.attributes.normal;
+    if (!pos || !normal) return;
+    const normalMatrix = new THREE.Matrix3().getNormalMatrix(object.matrixWorld);
+    const isGoldMesh = /Material\.002|Toroide/i.test(object.material?.name || '') || /Toroide/i.test(object.name || '');
+    const index = geo.index;
+    const triCount = index ? index.count / 3 : pos.count / 3;
+    for (let t = 0; t < triCount; t++) {
+      const ids = index
+        ? [index.getX(t * 3), index.getX(t * 3 + 1), index.getX(t * 3 + 2)]
+        : [t * 3, t * 3 + 1, t * 3 + 2];
+      const tri = ids.map((id) => {
+        const p = new THREE.Vector3().fromBufferAttribute(pos, id).applyMatrix4(object.matrixWorld).sub(rawCenter);
+        const n = new THREE.Vector3().fromBufferAttribute(normal, id).applyMatrix3(normalMatrix).normalize();
+        const c = new THREE.Color();
+        const mask = bcchColorAt(p, isGoldMesh, c);
+        return { p, n, c, mask };
+      });
+      const cx = (tri[0].p.x + tri[1].p.x + tri[2].p.x) / 3;
+      const cy = (tri[0].p.y + tri[1].p.y + tri[2].p.y) / 3;
+      const cz = (tri[0].p.z + tri[1].p.z + tri[2].p.z) / 3;
+      if (bcchDoorRegion(cx, cy, isGoldMesh, cz)) {
+        (cx < 0 ? leftTris : rightTris).push(tri);
+      } else if (bcchApertureRegion(cx, cy, isGoldMesh, cz)) {
+        apertureTris.push(tri);
+      } else {
+        staticTris.push(tri);
+      }
+    }
+  });
+
+  const staticMesh = makeBcchMesh(buildGeometryFromTriangles(staticTris), 'Puerta_bcch_frame', 'frame');
+  const apertureMesh = makeBcchMesh(buildGeometryFromTriangles(apertureTris), 'Puerta_bcch_umbral_fijo', 'aperture');
+  const leftMesh = makeBcchMesh(buildGeometryFromTriangles(leftTris, -hingeX), 'Puerta_bcch_left_leaf', 'leaf');
+  const rightMesh = makeBcchMesh(buildGeometryFromTriangles(rightTris, hingeX), 'Puerta_bcch_right_leaf', 'leaf');
+  if (staticMesh) group.add(staticMesh);
+  if (apertureMesh) group.add(apertureMesh);
+  if (leftMesh) pivotL.add(leftMesh);
+  if (rightMesh) pivotR.add(rightMesh);
+  group.add(pivotL, pivotR);
+  bcchPivotL = pivotL;
+  bcchPivotR = pivotR;
+  return group;
+}
+
+loader.load('Puerta_bcch (1).glb?v=15', (gltf) => {
+  const rawBox = new THREE.Box3().setFromObject(gltf.scene);
+  const rawCenter = rawBox.getCenter(new THREE.Vector3());
+  const model = buildOpenableBcchDoor(gltf.scene, rawCenter);
+  model.visible = false;
+  bcchDoorModel = model;
+  fitDoorModelToStage(model);
+  doorModelGroup.add(model);
+}, undefined, (err) => {
+  console.warn('No se pudo cargar Puerta_bcch (1).glb; se usa la puerta procedural:', err);
+});
 
 const clock = new THREE.Clock();
 const C = CONFIG.coin;
@@ -1757,11 +2195,10 @@ window.addEventListener('particle-act-focus', (event) => {
 const DOOR_MODE = (CONFIG.door && CONFIG.door.transition === 'doorway') ? 'doorway' : 'classic';
 if (DOOR_MODE === 'classic') document.body.classList.add('mode-classic');
 let crossT = 0;      // 0 = afuera de la puerta · 1 = dentro de la sala
-/* Al terminar el dwell de La Sala la cámara deshace el cruce (exitT 0→1).
-   Sin esta salida crossT quedaba en 1 PARA SIEMPRE: la cámara seguía dentro
-   de la sala en todas las secciones posteriores y los overlays 3D calculados
-   para la cámara base (p. ej. el plano de #stageAxes) quedaban detrás del
-   plano de visión — invisibles. */
+/* Salida de La Sala hacia El Método. Importante: NO invierte `crossT` ni
+   reabre la puerta en sentido contrario; solo disuelve sala/puerta y devuelve
+   la cámara a la coreografía general para que los overlays posteriores queden
+   alineados. */
 let exitT = 0;
 let inRoom = false;  // estamos en el stage #stageRoom (habilita el hover→cita)
 /* Foco editorial de Las voces: la selección atenúa las intervenciones de
@@ -2023,9 +2460,12 @@ initVoiceExplorer({ quotes, openQuote, closeQuotePanel });
 
 function animate() {
   const time = clock.getElapsedTime();
-  /* crossT EFECTIVO: entrada y salida son la MISMA curva. Al volver
-     (crossT↓ o exitT↑) cámara, mira, FOV, velo y puerta deshacen el cruce. */
-  const crossEff = crossT * (1 - exitT);
+  /* crossT es SOLO la entrada por la puerta. `exitT` ya no invierte esa
+     animación: al pasar de La Sala a El Método la sala se disuelve y la cámara
+     vuelve a la coreografía general sin mostrar un regreso por el umbral. */
+  const roomExitT = THREE.MathUtils.smoothstep(exitT, 0, 1);
+  const crossEff = crossT;
+  const roomPresence = crossT * (1 - roomExitT);
   /* Apertura física de las hojas (pivotes en las bisagras, como el Blender):
      cerrada en portada, abre al cruzar el umbral y vuelve a cerrar al volver. */
   /* La fachada ya no se gobierna aquí: su fundido de entrada (Acto 2) vive
@@ -2037,18 +2477,29 @@ function animate() {
     for (let i = 0; i < doorInteriorMeshes.length; i++) doorInteriorMeshes[i].visible = interiorOn;
   }
   if (doorPivotL && doorPivotR) {
-    /* Un pelo más tarde que antes: al inicio del cruce la puerta todavía se
-       lee cerrada, como en la versión anterior (que ahí disolvía, no abría). */
+    /* Respaldo procedural: queda oculto cuando el GLB BCCH está disponible. */
     const openT = THREE.MathUtils.smoothstep(crossT, 0.14, 0.72);
     const openRad = THREE.MathUtils.degToRad(85) * openT;
     doorPivotL.rotation.z = openRad * (doorPivotL.userData.openSign || 1);
     doorPivotR.rotation.z = openRad * (doorPivotR.userData.openSign || -1);
   }
+  if (bcchPivotL && bcchPivotR) {
+    /* El GLB subido por el usuario no traía pivotes, así que lo partimos en
+       marco + hoja izquierda + hoja derecha y abrimos SUS propias hojas. */
+    const openT = THREE.MathUtils.smoothstep(crossT, 0.10, 0.66);
+    const openRad = THREE.MathUtils.degToRad(78) * openT;
+    bcchPivotL.rotation.y = openRad;
+    bcchPivotR.rotation.y = -openRad;
+  }
   if (doorGlowMat) {
-    /* Luz de interior, no losa luminosa: queda en ámbar tibio incluso con la
-       puerta abierta (antes 0.22 + 2.2 quemaba a crema y se leía como una
-       figura clara plantada detrás de las hojas). */
-    doorGlowMat.emissiveIntensity = 0.06 + 1.05 * THREE.MathUtils.smoothstep(crossT, 0.05, 0.6);
+    /* Destello breve de umbral, no pared. El plano cálido se enciende apenas
+       se abre la puerta y se apaga antes de que la estatua quede encuadrada;
+       así no aparece la “figura” color piel que tapaba la entrada. */
+    const glowIn = THREE.MathUtils.smoothstep(crossT, 0.02, 0.22);
+    const glowOut = 1 - THREE.MathUtils.smoothstep(crossT, 0.32, 0.52);
+    const glowT = glowIn * glowOut;
+    doorGlowMat.opacity = 0.10 * glowT;
+    doorGlowMat.emissiveIntensity = 0.03 + 0.42 * glowT;
   }
   particleStoryKeys.forEach((key) => {
     particleStoryMix[key] = THREE.MathUtils.lerp(
@@ -2116,7 +2567,13 @@ function animate() {
     /* La puerta procedural YA no se disuelve al cruzar: las hojas se abren
        (ver apertura por pivotes más abajo) y el interior cálido asoma. */
     const dissolve = 0;
-    doorVisOpacity = doorFade * (1 - dissolve);
+    /* Al salir hacia El Método, ocultar el pórtico inmediatamente: la cámara
+       puede reencuadrar la escena, pero el lector no ve una vuelta por la
+       misma puerta que acaba de cruzar. */
+    const postRoomDoorHide = DOOR_MODE === 'doorway'
+      ? THREE.MathUtils.smoothstep(exitT, 0.00, 0.18)
+      : 0;
+    doorVisOpacity = doorFade * (1 - dissolve) * (1 - postRoomDoorHide);
     /* doorModel (no solo doorGroup.children) porque el grupo intermedio
        doorModelGroup se añade siempre: si el GLB no cargó, la escena sigue
        "teniendo" la puerta y se encendían niebla y sombra sobre la nada. */
@@ -2170,9 +2627,43 @@ function animate() {
     const plantedY = (CONFIG.door.groundY ?? 0) - doorBottomWorld;
     doorGroup.rotation.x = -0.12 * lockupMix + smoothMouseY * -0.03 * doorEase * doorMouse;
     doorGroup.position.y = THREE.MathUtils.lerp(plantedY, CONFIG.coin.baseY, lockupMix) + smoothMouseY * -0.06 * doorEase * doorMouse;
-    for (let i = 0; i < doorMats.length; i++) {
-      doorMats[i].transparent = true;
-      doorMats[i].opacity = doorVisOpacity;
+    const bcchVisualT = bcchDoorModel ? 1 : 0;
+    const proceduralVisualT = bcchDoorModel ? 0 : 1;
+    const bcchColorT = THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88);
+    if (bcchDoorModel) bcchDoorModel.visible = doorVisOpacity > 0.001;
+    if (proceduralDoorModel) proceduralDoorModel.visible = doorVisOpacity > 0.001 && proceduralVisualT > 0.001;
+    const apertureHold = 1 - THREE.MathUtils.smoothstep(crossT, 0.58, 0.80);
+    for (let i = 0; i < bcchDoorMats.length; i++) {
+      const m = bcchDoorMats[i];
+      const kind = m.userData?.bcchKind || 'frame';
+      const isLeaf = kind === 'leaf';
+      const isAperture = kind === 'aperture';
+      const lightT = THREE.MathUtils.smoothstep(bcchColorT, 0.10, 1.0);
+      m.transparent = true;
+      m.opacity = doorVisOpacity * bcchVisualT * (isAperture ? apertureHold : 1);
+      m.color.copy(bcchHeroTint).lerp(bcchMeetTint, bcchColorT);
+      m.envMapIntensity = isLeaf
+        ? THREE.MathUtils.lerp(0.22, 0.58, lightT)
+        : THREE.MathUtils.lerp(0.10, 0.24, lightT);
+      if (m.emissive) {
+        m.emissive.copy(isLeaf ? bcchLeafGlow : bcchFrameGlow);
+        m.emissiveIntensity = (isLeaf ? 0.006 : 0.0015) * lightT;
+      }
+    }
+    for (let i = 0; i < bcchEdgeMats.length; i++) {
+      const rec = bcchEdgeMats[i];
+      const edgeHold = rec.kind === 'aperture' ? apertureHold : 1;
+      rec.m.opacity = rec.baseOpacity * doorVisOpacity * bcchVisualT * edgeHold * (0.55 + 0.45 * bcchColorT);
+    }
+    for (let i = 0; i < proceduralDoorMats.length; i++) {
+      proceduralDoorMats[i].transparent = true;
+      proceduralDoorMats[i].opacity = doorVisOpacity * proceduralVisualT;
+    }
+    for (let i = 0; i < doorLeafLineMats.length; i++) {
+      doorLeafLineMats[i].opacity = 0.42 * doorVisOpacity * proceduralVisualT;
+    }
+    for (let i = 0; i < doorFrameLineMats.length; i++) {
+      doorFrameLineMats[i].m.opacity = doorFrameLineMats[i].baseOpacity * doorVisOpacity * proceduralVisualT;
     }
     /* La fachada ya no se funde aparte: es parte de la figura en portada y
        en el Acto 2, y su opacidad la lleva doorMats como el resto. */
@@ -2186,14 +2677,18 @@ function animate() {
         const rec = doorLeafMats[i];
         const m = rec.m;
         const LF = CONFIG.door.leaf;
-        /* Fondo y ornamentos por SEPARADO: si ambos llevan el mismo color
-           el relieve desaparece (el fallo que se veía: detalles que no se
-           leían). Fondo = bronce oscuro mate; ornamento = dorado pulido. */
-        const meet = rec.orn ? LF.meetOrn : LF.meet;
-        const cross = rec.orn ? LF.crossOrn : LF.cross;
+        /* Fondo, ranuras y ornamentos por SEPARADO: si todo comparte dorado,
+           los relieves desaparecen. Base = bronce viejo, dark = incisiones,
+           orn = oro usado solo en molduras/rosetas/perlas. */
+        const isOrn = rec.tone === 'orn';
+        const isDark = rec.tone === 'dark';
+        const meet = isOrn ? LF.meetOrn : (isDark ? (LF.meetDark || LF.meet) : LF.meet);
+        const cross = isOrn ? LF.crossOrn : (isDark ? (LF.crossDark || LF.cross) : LF.cross);
+        const meetColor = isOrn ? doorLeafOrnBronze : (isDark ? doorLeafDarkBronze : doorLeafBaseBronze);
+        const crossColor = isOrn ? doorLeafOrnGold : (isDark ? doorLeafDarkGold : doorLeafBaseGold);
         m.color.copy(doorLeafColorVoid)
-          .lerp(rec.orn ? doorLeafOrnBronze : doorLeafColorBronze, leafT)
-          .lerp(rec.orn ? doorLeafOrnGold : doorLeafColorGold, crossGold);
+          .lerp(meetColor, leafT)
+          .lerp(crossColor, crossGold);
         m.metalness = THREE.MathUtils.lerp(
           THREE.MathUtils.lerp(LF.hero.metalness, meet.metalness, leafT), cross.metalness, crossGold);
         m.roughness = THREE.MathUtils.lerp(
@@ -2203,15 +2698,22 @@ function animate() {
       }
       /* Las hojas del modelo procedural permanecen visibles (cierran el
          vano en portada); el fundido noche→oro lo da el color, no el visible. */
-      /* Muros: de piedra de portada a obsidiana gris (el oro es de las hojas). */
+      /* Piedra del pórtico por tonos: el muro se aclara hacia la referencia,
+         pero las juntas, acanaladuras y escalones conservan sombra propia. */
       for (let i = 0; i < doorFrameMats.length; i++) {
-        const m = doorFrameMats[i];
-        m.color.copy(doorFrameColorHero).lerp(doorFrameColorMeet, leafT);
+        const rec = doorFrameMats[i];
+        const m = rec.m;
+        const colors = doorFrameToneColors[rec.tone] || doorFrameToneColors.stone;
+        m.color.copy(colors.hero).lerp(colors.meet, leafT);
         const FR = CONFIG.door.frameAnim;
-        m.metalness = THREE.MathUtils.lerp(FR.hero.metalness, FR.meet.metalness, leafT);
+        const darkMul = rec.tone === 'dark' ? 0.72 : (rec.tone === 'granite' ? 0.82 : 1);
+        m.metalness = THREE.MathUtils.lerp(FR.hero.metalness, FR.meet.metalness, leafT) * darkMul;
         m.roughness = THREE.MathUtils.lerp(FR.hero.roughness, FR.meet.roughness, leafT);
-        m.envMapIntensity = THREE.MathUtils.lerp(FR.hero.envMapIntensity, FR.meet.envMapIntensity, leafT);
-        if (m.bumpScale != null) m.bumpScale = THREE.MathUtils.lerp(FR.hero.bumpScale, FR.meet.bumpScale, leafT);
+        m.envMapIntensity = THREE.MathUtils.lerp(FR.hero.envMapIntensity, FR.meet.envMapIntensity, leafT) * darkMul;
+        if (m.bumpScale != null) {
+          const toneBump = rec.tone === 'dark' ? 0.55 : 1;
+          m.bumpScale = THREE.MathUtils.lerp(FR.hero.bumpScale, FR.meet.bumpScale, leafT) * toneBump;
+        }
         if (m.emissive) {
           m.emissive.setRGB(0, 0, 0);
           m.emissiveIntensity = 0;
@@ -2219,14 +2721,14 @@ function animate() {
       }
       if (doorSpots[0]) {
         doorSpots[0].color.copy(doorSpotKeyHero).lerp(doorSpotKeyMeet, leafT);
-        doorSpots[0].intensity = THREE.MathUtils.lerp(12, 18, leafT);
+        doorSpots[0].intensity = THREE.MathUtils.lerp(8.5, 13.5, leafT);
       }
       if (doorSpots[1]) {
         doorSpots[1].color.copy(doorSpotRimHero).lerp(doorSpotRimMeet, leafT);
-        doorSpots[1].intensity = THREE.MathUtils.lerp(6, 10, leafT);
+        doorSpots[1].intensity = THREE.MathUtils.lerp(4.8, 7.5, leafT);
       }
       if (doorSpots[2]) {
-        doorSpots[2].intensity = THREE.MathUtils.lerp(3.2, 8, leafT);
+        doorSpots[2].intensity = THREE.MathUtils.lerp(2.4, 4.2, leafT);
       }
     }
 
@@ -2239,6 +2741,19 @@ function animate() {
     /* La sombra vive exactamente en la línea de suelo (doorBottomWorld ya se
        usó arriba para apoyar el modelo), y solo existe si la puerta existe. */
     doorFloor.position.set(doorGroup.position.x, doorGroup.position.y + doorBottomWorld, doorGroup.position.z);
+    if (doorAura && doorModel && doorFootprint) {
+      const localCenterY = (doorBottomOffset + doorTopOffset) * 0.5 * doorModelGroup.scale.y;
+      doorAura.position.set(0, localCenterY + 0.08, -0.34);
+      doorAura.scale.set(
+        doorFootprint.width * doorModelGroup.scale.x * 1.78,
+        Math.max(doorLocalHeight * doorModelGroup.scale.y * 1.08, 1),
+        1
+      );
+      const entryAuraOut = 1 - THREE.MathUtils.smoothstep(crossT, 0.12, 0.36);
+      const stageAura = THREE.MathUtils.smoothstep(scatterProgress, 0.48, 0.92) * entryAuraOut;
+      doorAuraMat.opacity = doorActive ? 0.18 * doorEase * stageAura : 0;
+      doorAura.visible = doorAuraMat.opacity > 0.002;
+    }
     if (doorActive) {
       _spotTarget.set(doorGroup.position.x, doorGroup.position.y, doorGroup.position.z);
       doorSpots.forEach((sp) => {
@@ -2253,8 +2768,8 @@ function animate() {
      de lo contrario el giro continuo la pasa detrás de la cámara en
      ciertos ángulos y la sección queda sin partículas. */
   const roomSwarmCfg = CONFIG.door?.roomSwarm ?? { x: 0, y: 0.55, z: -2.5, scale: 0.35 };
-  const roomSwarmT = (DOOR_MODE === 'doorway' && crossEff > 0)
-    ? THREE.MathUtils.smoothstep((crossEff - 0.25) / 0.5, 0, 1)
+  const roomSwarmT = (DOOR_MODE === 'doorway' && roomPresence > 0)
+    ? THREE.MathUtils.smoothstep((roomPresence - 0.25) / 0.5, 0, 1)
     : 0;
   const roomSwarmScale = THREE.MathUtils.lerp(1, roomSwarmCfg.scale ?? 0.35, roomSwarmT);
   swarm.position.set(
@@ -2279,7 +2794,7 @@ function animate() {
      interior"). Las partículas son unlit (PointsMaterial), así que la luz
      cálida se expresa teñiendo color; al salir, vuelve al tono base. */
   const roomWarm = (DOOR_MODE === 'doorway')
-    ? THREE.MathUtils.smoothstep((crossEff - 0.3) / 0.5, 0, 1)
+    ? THREE.MathUtils.smoothstep((roomPresence - 0.3) / 0.5, 0, 1)
     : 0;
 
   /* Al elegir una voz, el resto no desaparece: baja de intensidad para que
@@ -2420,8 +2935,9 @@ function animate() {
     choreo.look.set(0, THREE.MathUtils.lerp(approachY, aimY, lockupCamMix), 0);
   }
 
-  /* La Sala (b1): dolly a través del umbral. Ida y vuelta usan el mismo
-     lerp desde el encuadre de La Reunión — volver ES la animación inversa. */
+  /* La Sala (b1): dolly de entrada por el umbral. La salida hacia El Método
+     ya NO invierte este plano: se mezcla hacia la coreografía general con el
+     pórtico oculto, para que no parezca que volvemos por la misma puerta. */
   if (DOOR_MODE === 'doorway' && crossEff > 0.001) {
     const enterY = CONFIG.door.approachCamY ?? 0.62;
     const enterZ = CONFIG.door.approachCamZ ?? CONFIG.camera.z;
@@ -2431,6 +2947,7 @@ function animate() {
       THREE.MathUtils.lerp(enterY, CONFIG.door.roomCamY ?? 0.62, crossEase),
       THREE.MathUtils.lerp(enterZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
     );
+    if (roomExitT > 0.001) camera.position.lerp(choreo.pos, roomExitT);
     /* Encuadre del acercamiento (tres fases encadenadas por crossT):
          1) mira neutra → centro de la puerta  [aimDoor: crossT 0 → 0.45]
          2) mira bloqueada en la puerta mientras ésta se disuelve
@@ -2449,6 +2966,7 @@ function animate() {
       doorGroup.position.z
     );
     _roomLook.copy(_lookBase).lerp(_doorLook, aimDoor).lerp(_roomLookTarget, aimRoom);
+    if (roomExitT > 0.001) _roomLook.lerp(choreo.look, roomExitT);
     camera.lookAt(_roomLook);
   } else {
     /* Coreografía: la cámara viaja por los capítulos en vez de quedarse
@@ -2458,10 +2976,11 @@ function animate() {
     camera.lookAt(choreo.look);
   }
 
-  /* La Sala (b1): la luz del interior sube con el cruce y se mantiene en la sala */
+  /* La Sala (b1): la luz del interior sube al entrar y se apaga al disolver
+     hacia El Método, sin reactivar el pórtico. */
   if (roomLight) {
     const lightT = DOOR_MODE === 'doorway'
-      ? THREE.MathUtils.smoothstep((crossEff - 0.2) / 0.5, 0, 1)
+      ? THREE.MathUtils.smoothstep(roomPresence, 0.56, 0.92)
       : 0;
     roomLight.intensity = lightT * (CONFIG.door?.roomLight?.intensity ?? 10);
   }
@@ -2779,14 +3298,20 @@ function initTextToParticlePOC() {
   gsap.timeline({
     scrollTrigger: {
       trigger: '#stageHook',
-      start: 'top top',
+      /* Entrar cuando el contenido ya puede verse en pantalla. Arrancar antes
+         hacía avanzar la línea de tiempo fuera del viewport y dejaba un tramo
+         vacío poco premium entre La Sala y El Método. */
+      start: 'top 45%',
       end: 'bottom bottom',
       scrub: 1
     }
   })
+    .fromTo('#stageHook h2[data-hook]',
+      { opacity: 0, y: 16, filter: 'blur(8px)' },
+      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.10, ease: 'none' }, 0.00)
     .fromTo('.hook-lead',
-      { opacity: 0, y: 18 },
-      { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.02)
+      { opacity: 0, y: 18, filter: 'blur(8px)' },
+      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.14, ease: 'none' }, 0.06)
     .fromTo('.hook-caption',
       { opacity: 0, y: 12 },
       { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.18)
@@ -3079,19 +3604,18 @@ if (DOOR_MODE === 'doorway') {
     onUpdate: (self) => { crossT = self.progress; },
   });
 
-  /* SALIDA DE LA SALA: cuando el dwell está por terminar, la cámara deshace
-     el cruce (exitT 0→1) y recupera la posición base — espejo del cruce de
-     entrada (mismo easing, velo y kick de FOV). Se reserva solo el último
-     25% del viewport (`bottom 125%` → `bottom bottom`), para que la sala no
-     se apague demasiado pronto y "El Método" entre sin una cola vacía.
-     Termina justo cuando el sticky se libera, con los overlays 3D de los
-     ejes ya alineados con su proyección. */
+  /* SALIDA DE LA SALA: transición directa y muy corta hacia El Método.
+     Se dispara con #stageHook, no con #stageRoom: así la estatua permanece
+     hasta que el siguiente acto ya está entrando, y desaparece en ~22vh sin
+     volver por la puerta ni dejar una cola vacía. */
   ScrollTrigger.create({
-    trigger: '#stageRoom',
-    start: 'bottom 125%',
-    end: 'bottom bottom',
+    trigger: '#stageHook',
+    start: 'top 56%',
+    end: 'top 34%',
     scrub: true,
     onUpdate: (self) => { exitT = self.progress; },
+    onLeave: () => { exitT = 1; },
+    onLeaveBack: () => { exitT = 0; },
   });
   /* Capítulos posteriores a La Sala: la puerta no debe seguir en escena
      (El Método, ejes, etc.). Al volver atrás, doorTarget=1 y crossT
@@ -3653,7 +4177,7 @@ bgSections.forEach(({ trigger, color }) => {
 const ambientLayer = document.documentElement;
 const ambientStates = [
   { trigger: '#hero',          alpha: 0.16 },
-  { trigger: '#stageObjective', alpha: 0.10 },
+  { trigger: '#stageObjective', alpha: 0.14 },
   { trigger: '#stageRoom',     alpha: 0.07 },
   { trigger: '#stageHook',     alpha: 0.025 },
   { trigger: '#stageAxes',     alpha: 0.015 },
