@@ -9,7 +9,7 @@
  * lo que no se puede es reasignar la variable CONFIG entera.
  */
 
-/* Portada: la puerta GLB (puerta-draco.glb) entra desde el hero, detrás de
+/* Portada: la puerta GLB (Puerta_bcch (1).glb) entra desde el hero, detrás de
    la moneda, y el scroll del acto 2 hace dolly hacia el umbral. */
 export const HERO_DOOR_LOCKUP = true;
 
@@ -161,8 +161,9 @@ export const CONFIG = {
 
        Aviso para quien venga a subir el relieve por aquí: NO se puede.
        El normal map de las hojas (textura_puerta_bcch, 2048x2048 dentro de
-       puerta-draco.glb) es un color liso RGB(128,127,255) = relieve CERO, un
-       bake que salió vacío. Medido: mover el foco key no cambia un píxel, y
+       Puerta_bcch (1).glb; la versión comprimida puerta-draco.glb trae la
+       misma textura en WebP) es un color liso RGB(128,127,255) = relieve CERO,
+       un bake que salió vacío. Medido: mover el foco key no cambia un píxel, y
        bajar la metalicidad tampoco saca los paneles. Los cuadrados que se ven
        en Blender no están en el archivo exportado, ni en malla ni en textura.
        Hay que rehacer el export, no la iluminación. */
@@ -281,8 +282,8 @@ export const CONFIG = {
        (useLegacyLights = false, three r160), así que estos valores son
        pequeños; el antiguo 210 del foco no quemaba la escena solo porque
        el target estaba mal y la estatua quedaba FUERA del cono. */
-    accentIntensity: 12,
-    fillIntensity: 4,
+    accentIntensity: 26,
+    fillIntensity: 10,
   },
 };
 

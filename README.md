@@ -35,7 +35,7 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 | **Funciones puras** | `js/topics.js`, `js/utils.js` | Sin DOM, sin Three.js. Testables tal cual. |
 | **Entorno** | `js/viewport.js` | El tamaño del lienzo. Lee el DOM, nada más. |
 | **Estado compartido** | `js/interaction-state.js` | Lo único que las secciones y la escena 3D se dicen entre sí. |
-| **Sistemas** | `js/figures.js` | El sistema de figuras 3D: carga, apilado, placeholders. |
+| **Sistemas** | `js/figures.js`, `js/build-door.js` | Figuras 3D (carga, apilado, placeholders) y la puerta BCCh procedural con pivotes. |
 | **Secciones** | `js/sections/*.js` | Una sección de scrollytelling cada uno. Reciben sus datos por parámetro. |
 | **Aplicación** | `js/main.js` | La escena, el bucle de render y el scrollytelling. |
 
@@ -50,15 +50,16 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
    cámara, ni las partículas, ni el renderer.
 
 ```
-├── index.html              661 líneas · SOLO marcado: ni un <style>, ni un <script> con cuerpo
-├── css/                    22 hojas · 3.970 líneas · el prefijo numérico ES el orden de cascada
+├── index.html              723 líneas · SOLO marcado: ni un <style>, ni un <script> con cuerpo
+├── css/                    22 hojas · 4.141 líneas · el prefijo numérico ES el orden de cascada
 │   └── README.md           qué hace cada hoja y por qué está en ese número
 ├── js/
-│   ├── main.js           3.395 líneas · escena 3D + bucle de render + scrollytelling
-│   ├── config.js           265 · cámara, luces, moneda, puerta, órbitas, La Sala, HERO
+│   ├── main.js           4.285 líneas · escena 3D + bucle de render + scrollytelling
+│   ├── config.js           309 · cámara, luces, moneda, puerta, órbitas, La Sala, HERO
 │   ├── interaction-state.js  82 · el ÚNICO puente entre las secciones DOM y la escena 3D
-│   ├── viewport.js          28 · getViewportSize() / isCompactWidth(), el tamaño del lienzo
+│   ├── viewport.js          67 · getViewportSize() / isCompactWidth(), el tamaño del lienzo
 │   ├── figures.js          357 · sistema de figuras (carga GLB, apila sobre pedestal, placeholders)
+│   ├── build-door.js       364 · puerta BCCh procedural con pivotes reales (port del .py de Blender)
 │   ├── sections/         1.392 · una sección de scrollytelling por archivo
 │   │   ├── act-browser.js     376 · "Navegador de actas"
 │   │   ├── voice-explorer.js  311 · "Las voces" — directorio editorial
@@ -71,7 +72,9 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │   ├── three.module.js         Three.js r160
 │   ├── vendor/                 GSAP, ScrollTrigger, SplitText, CustomEase, D3, Lenis, Draco
 │   └── loaders/ utils/ controls/ environments/ objects/    addons de Three.js
-├── tools/smoke-test.mjs    204 · `npm run check`
+├── tools/
+│   ├── smoke-test.mjs     204 · `npm run check`
+│   └── build_door.py         generador paramétrico de la puerta BCCh (Blender, Cycles/EEVEE)
 ├── scripts/
 │   ├── lib/chromium.mjs    el Chromium con SwiftShader, compartido por las tres herramientas de abajo
 │   ├── perf/measure.mjs    `npm run perf` — mide el coste del hilo principal en scroll y reposo
@@ -79,8 +82,14 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │       ├── capture.mjs     `npm run shots`
 │       └── hero-check.mjs  `npm run hero:check`
 ├── figures/                balanza.glb (177 KB) · soporte.glb (28 KB) · README.md
-├── monedav5-draco.glb      434 KB
-├── puerta-draco.glb         76 KB
+├── monedav5-draco.glb      434 KB · la moneda (se carga en el hero)
+├── Puerta_bcch_v3.glb      282 KB · la puerta BCCh que se carga hoy: hojas separadas
+│                           (Puerta_Izquierda/Derecha) con sus bisagras propias
+├── Puerta_bcch (1).glb    1,1 MB · puerta anterior (lámina dorada continua, legado)
+├── puerta-nueva-draco.glb  650 KB · puerta Meshy; se ve con preview-puerta.html
+├── puerta-draco.glb         76 KB · puerta anterior, ya no se carga (legado)
+├── preview-puerta.html       visor del GLB puerta-nueva-draco.glb (OrbitControls)
+├── servidor.bat             doble clic para `python -m http.server` en Windows
 ├── NARRATIVA.md            el arco narrativo: qué cuenta hoy y qué debería contar
 └── PLAN_NIVEL_PREMIUM.md
 ```
@@ -91,19 +100,18 @@ Es el archivo que hay que saber recorrer. Va en este orden:
 
 | Líneas | Región |
 |---|---|
-| 1–165 | imports, constantes del DOM, escena, cámara, luces, estado de módulo |
-| 170–260 | figuras de La Sala + rig de luces de la puerta |
-| **280–400** | **composición del hero**: `getHeroBand()` / `getHeroCoinFrame()` |
-| 487–800 | la puerta (Acto 2): carga, escalado, texto del vano |
-| 806–950 | enjambre de partículas (memoria trazable) |
-| 955–1560 | órbitas de La Sala + panel de cita + navegación por teclado |
-| **~1575** | `refreshRoomAim()` — encuadre de La Sala contra su titular |
-| **1627–1760** | **coreografía de cámara** (`cameraChoreographyStops`) |
-| 1762–2430 | llamadas a las secciones + construcción de objetivos de partículas |
-| 2438–2595 | hook de señales hawkish/dovish |
-| **2100–2600** | **`animate()`** — el bucle de render |
-| 2598–3245 | todos los `ScrollTrigger`, sección por sección |
-| 3250–3395 | "técnicas premium": color de fondo, parallax, velocidad de scroll |
+| 1–375 | imports, constantes del DOM, escena, cámara, luces, estado de módulo, warmup |
+| 376–410 | figuras de La Sala + rig de luces de la puerta |
+| 411–714 | rig de luces de la puerta, moneda, composición del hero |
+| 715–1490 | la puerta (Acto 2): GLB `Puerta_bcch`, pivotes, hoja procedural de respaldo |
+| 1491–1648 | enjambre de partículas (memoria trazable) |
+| 1649–2319 | órbitas de La Sala + panel de cita + navegación por teclado |
+| 2320–2460 | coreografía de cámara (`cameraChoreographyStops`) |
+| **2461–3104** | **`animate()`** — el bucle de render |
+| 3105–3280 | panel de cita + hook de señales hawkish/dovish |
+| 3281–3534 | preparación de las secciones + objetivos de partículas |
+| 3535–4139 | todos los `ScrollTrigger`, sección por sección |
+| 4140–4285 | "técnicas premium": color de fondo, parallax, velocidad de scroll |
 
 Los números envejecen a cada commit. Para regenerar el mapa:
 
@@ -136,13 +144,18 @@ Dónde estaba el proyecto y dónde está ahora:
 
 | Síntoma | Al empezar | Ahora |
 |---|---|---|
-| `main.js` acapara el código | 4.742 líneas = **88 %** del JS propio | 3.395 = **63 %** |
-| Estado global suelto | **52 `let` de módulo** | **40**, y 8 de ellos agrupados en `interaction-state.js` |
-| Una función hace demasiado | `animate()` = 485 líneas | `animate()` = **497 líneas** — sin tocar, es el Paso 3 |
+| `main.js` acapara el código | 4.742 líneas = **88 %** del JS propio | 4.285 = **55 %** (de 7.803 líneas propias, sin three.js ni vendor) |
+| Estado global suelto | **52 `let` de módulo** | **51**, y el estado compartido agrupado en objetos de `interaction-state.js` |
+| Una función hace demasiado | `animate()` = 485 líneas | `animate()` = **~640 líneas** — sin tocar, es el Paso 3 |
 | Secciones que no pertenecen ahí | 5 secciones dentro de `main.js` = **1.392 líneas** | **0** |
 | El archivo base del CSS es el que más pisa | `00-tokens-base.css`: **42 `!important`** de los 68 | igual, sin tocar |
 
-Lo que queda es `animate()`, y es lo más delicado del archivo: 497 líneas que
+> Desde el paso 2, `main.js` volvió a crecer (3.395 → 4.285) con la puerta BCCh
+> (`Puerta_bcch_v3.glb`, con hojas y bisagras propias, + la hoja procedural de
+> `js/build-door.js`), su rig de luces y el precalentado de shaders. Las
+> secciones siguen fuera: el crecimiento es de la escena, no del scrollytelling.
+
+Lo que queda es `animate()`, y es lo más delicado del archivo: ~640 líneas que
 actualizan seis sistemas por frame en un orden que importa y que nadie ha
 escrito. **El plan de salida** está en "Lo que aún está pendiente de ordenar".
 
@@ -155,8 +168,9 @@ apuesta. Las reglas de abajo existen para que no vuelva a pasar.
 
 El JS estaba igual de concentrado y ya no lo está: las cinco secciones de
 scrollytelling viven en `js/sections/`, y `main.js` bajó de 4.742 a 3.395
-líneas. Lo medido está en "Deuda estructural"; lo que queda por hacer, en el
-punto 5.
+líneas (hoy ha vuelto a 4.285 con la puerta BCCh y su rig de luces, pero solo
+código de escena, no de secciones). Lo medido está en "Deuda estructural"; lo
+que queda por hacer, en el punto 5.
 
 ### 1. Cada cosa en su archivo
 
@@ -309,7 +323,7 @@ por separado. Ahora vive una sola vez en `js/utils.js`. Antes podían
 desincronizarse y nadie se habría enterado.
 
 **Paso 3 — partir `animate()`. ⬅ SIGUIENTE.**
-497 líneas que actualizan seis sistemas distintos por frame. Cada uno tiene su
+~640 líneas que actualizan seis sistemas distintos por frame. Cada uno tiene su
 propio estado y se puede extraer a `update<Sistema>(t, dt)`. Este es el que más
 cuidado pide: el orden de las actualizaciones importa y no está documentado.
 
@@ -474,13 +488,19 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
   verificada por métricas (p95 del error angular 0°, PSNR ≥ 40 dB en píxeles
   visibles) y estructura intacta (mismos triángulos/bbox). El alfa no usado del
   color se aplanó con *bleed*: además mejora los mipmaps del borde de la moneda.
+  **Pendiente de recuperar:** la puerta activa es hoy `Puerta_bcch (1).glb`
+  (1,1 MB, export de Blender sin Draco), pero `puerta-draco.glb` (76 KB) es la
+  misma malla ya comprimida con la misma textura en WebP y no se carga. Volver
+  a apuntar el loader al GLB comprimido recupera ~1 MB; hay que validarlo con
+  `npm run shots` antes de darlo por bueno.
 - **Nueva puerta Meshy (`Puerta_nueva.glb` → `puerta-nueva-draco.glb`, 2026-08-31):**
   20.2 MB → **650 KB** (−96.8%). Pipeline `@gltf-transform/cli` 4.4.2: `weld` +
   `simplify` (341,532 → **44,392** triángulos, error p95 ≈ 1% del bbox) + texturas
   2048 JPEG → **1024 WebP** (baseColor 108 KB / normal 33 KB / metalRough 49 KB,
   q85/q90/q80) + Draco (posición 14, normal 10, uv 12). `validate`: 0 errores,
-  0 warnings; decode verificada con el SDK (36,768 vértices). Pendiente: adaptar
-  el loader de `index.html` (la malla se llama `mesh`, no `toroide`/`cubo`).
+  0 warnings; decode verificada con el SDK (36,768 vértices). Ya no se carga en
+  el relato: la puerta activa es `Puerta_bcch (1).glb` (pivotes reales para
+  abrir las hojas), y esta se revisa con `preview-puerta.html`.
 - **Fuentes self-hosted** (`fonts/*.woff2` + `@font-face`): ✅ completado el 2026-08-30 (ver `fonts/README.md`).
 - **HUD "La Sala de Deliberaciones"** (`#chapterHud`): pendiente (no implementado).
 - **Descubrimiento** (`Evidencia n/100` en localStorage): pendiente (no implementado).

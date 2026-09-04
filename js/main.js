@@ -16,7 +16,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { initFigureSystem } from './figures.js?v=2';
 import { buildCentralBankDoor } from './build-door.js?v=14';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=9';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=10';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
@@ -1018,7 +1018,7 @@ let doorTopOffset = 1.15;
 let doorLocalHeight = 0;
 {
   /* La puerta ya no es un GLB estático: la genera js/build-door.js (port del
-     Blender build_door (2).py) con pivotes reales para abrir las hojas. */
+     Blender tools/build_door.py) con pivotes reales para abrir las hojas. */
   const built = buildCentralBankDoor();
   const model = built.group;
   proceduralDoorModel = model;
@@ -1199,9 +1199,9 @@ let doorLocalHeight = 0;
 
 const bcchScratch = new THREE.Vector3();
 const bcchNormalScratch = new THREE.Vector3();
-const bcchStoneLow = new THREE.Color('#151a1d');
-const bcchStoneHigh = new THREE.Color('#343b3d');
-const bcchStep = new THREE.Color('#090d10');
+const bcchStoneLow = new THREE.Color('#2e3741');
+const bcchStoneHigh = new THREE.Color('#5c6874');
+const bcchStep = new THREE.Color('#232a32');
 const bcchBronzeLow = new THREE.Color('#9f6118');
 const bcchBronzeHigh = new THREE.Color('#d9a23a');
 const bcchGold = new THREE.Color('#f2d16a');
@@ -1213,41 +1213,18 @@ const bcchMeetTint = new THREE.Color('#f1f0e7');
 const bcchLeafMeetTint = new THREE.Color('#f1f0e7');
 const bcchLeafGlow = new THREE.Color('#211706');
 const bcchFrameGlow = new THREE.Color('#05070a');
-const bcchObsidianLeaf = new THREE.Color('#1c2427');
+const bcchObsidianLeaf = new THREE.Color('#39434e');
 function bcchSmooth(edge0, edge1, x) {
   const t = THREE.MathUtils.clamp((x - edge0) / Math.max(edge1 - edge0, 1e-6), 0, 1);
   return t * t * (3 - 2 * t);
 }
-function bcchLeafBodyRegion(x, y, z = 0) {
-  /* Hojas reales dentro de Cubo.064. Estas medidas salen de inspeccionar la
-     malla: son los dos prismas delgados centrales, no las columnas ni el muro. */
-  if (y < -0.86 || y > 0.84) return false;
-  const leftLeafSlab = x > -0.61 && x < -0.35 && z > 0.070 && z < 0.175;
-  const rightLeafSlab = x > 0.32 && x < 0.59 && z > 0.070 && z < 0.175;
-  return leftLeafSlab || rightLeafSlab;
-}
-function bcchDoorRegion(x, y, isGoldMesh = false, z = 0) {
-  /* Apertura corregida:
-     - Cubo.064 solo gira en sus DOS prismas-hoja centrales.
-     - Toroide.001 gira como capa dorada/ornamental de esas hojas.
-     Todo muro/columna/escalera queda fijo. */
-  if (isGoldMesh) {
-    if (y < -0.87 || y > 0.84 || z < 0.015 || z > 0.24) return false;
-    return x > -0.54 && x < 0.49;
-  }
-  return bcchLeafBodyRegion(x, y, z);
-}
-function bcchApertureRegion(x, y, isGoldMesh = false, z = 0) {
-  /* Tapón central fijo del Cubo: no gira. Se desvanece al cruzar para evitar
-     la placa café/marrón que llenaba la pantalla al entrar a La Sala. */
-  if (isGoldMesh || bcchLeafBodyRegion(x, y, z)) return false;
-  if (y < -0.86 || y > 0.84) return false;
-  if (z > 0.22) return false;
-  return Math.abs(x) < 0.48;
-}
 function bcchDoorMaskAt(x, y, isGoldMesh = false, z = 0) {
-  if (!bcchDoorRegion(x, y, isGoldMesh, z)) return 0;
-  if (!isGoldMesh) return 0.18;
+  /* La puerta v3 trae las hojas ya separadas: la máscara dorada cubre TODA la
+     hoja (solo se atenúa en los cantos superior e inferior). Ya no se recorta
+     por x como con el GLB anterior (que traía el dorado fundido en una sola
+     lámina continua bajo los pilares). */
+  if (!isGoldMesh) return 0;
+  if (y < -0.86 || y > 0.84 || z < 0.015 || z > 0.24) return 0;
   const doorY = bcchSmooth(-0.86, -0.72, y) * (1 - bcchSmooth(0.74, 0.86, y));
   return THREE.MathUtils.clamp(0.86 + 0.14 * doorY, 0, 1);
 }
@@ -1283,7 +1260,7 @@ function bcchColorAt(point, isGoldMesh = false, target = new THREE.Color()) {
     target.lerp(bcchObsidianLeaf, 0.62);
   }
   if (isSidePillar) target.lerp(bcchStoneLow, 0.38);
-  if (isCornice) target.lerp(bcchLineDark, 0.54);
+  if (isCornice) target.lerp(bcchLineDark, 0.30);
   if (isStep) target.lerp(bcchStep, 0.78);
   return doorMask > 0.01 ? 0.16 : 0.08;
 }
@@ -1314,7 +1291,7 @@ function makeBcchDoorMaterial(kind = 'frame') {
   mat.customProgramCacheKey = () => 'bcch-door-openable-recolor-v13';
   return mat;
 }
-function buildGeometryFromTriangles(tris, pivotX = 0) {
+function buildGeometryFromTriangles(tris, pivotX = 0, pivotZ = 0) {
   if (!tris.length) return null;
   const positions = new Float32Array(tris.length * 9);
   const normals = new Float32Array(tris.length * 9);
@@ -1325,7 +1302,7 @@ function buildGeometryFromTriangles(tris, pivotX = 0) {
     for (const v of tri) {
       positions[pi++] = v.p.x - pivotX;
       positions[pi++] = v.p.y;
-      positions[pi++] = v.p.z;
+      positions[pi++] = v.p.z - pivotZ;
       normals[ni++] = v.n.x;
       normals[ni++] = v.n.y;
       normals[ni++] = v.n.z;
@@ -1372,17 +1349,41 @@ function makeBcchMesh(geometry, name, kind = 'frame') {
 function buildOpenableBcchDoor(sourceModel, rawCenter) {
   const group = new THREE.Group();
   group.name = 'Puerta_bcch_Openable';
-  const hingeX = 0.57;
+  /* Puerta v3 (Puerta_bcch_v3.glb): ya trae las hojas separadas
+     (Puerta_Izquierda / Puerta_Derecha) y sus BISAGRAS como nodos
+     (Bisagra_Izquierda / Bisagra_Derecha). Usamos esas bisagras como pivotes
+     reales de giro, en vez de recortar la lámina dorada por x como con el
+     GLB anterior (donde la bisagra se adivinaba y caía en la muralla). */
+  let hingeL = -0.511;
+  let hingeR = 0.459;
+  /* Bisagras reales del GLB v3: no están en el plano de la fachada (z=0),
+     sino hundidas en el grosor de la puerta, en z=+0.0972 (relativo al
+     centro del modelo). El pivote anterior se ponía en z=0 y la geometría
+     NO se compensaba: al rotar, cada hoja trazaba un arco alrededor de un
+     eje desplazado y la muralla contigua se deformaba (bug #1). Se pivota
+     sobre el z real de la bisagra y se compensa la geometría para que la
+     hoja cerrada siga en su sitio exacto. */
+  const hingeZ = 0.0972;
+  const hingeProbe = new THREE.Vector3();
+  sourceModel.updateMatrixWorld(true);
+  sourceModel.traverse((o) => {
+    if (o.name === 'Bisagra_Izquierda') {
+      o.getWorldPosition(hingeProbe);
+      hingeL = hingeProbe.x - rawCenter.x;
+    } else if (o.name === 'Bisagra_Derecha') {
+      o.getWorldPosition(hingeProbe);
+      hingeR = hingeProbe.x - rawCenter.x;
+    }
+  });
   const pivotL = new THREE.Object3D();
   const pivotR = new THREE.Object3D();
   pivotL.name = 'Puerta_bcch_LeftPivot';
   pivotR.name = 'Puerta_bcch_RightPivot';
-  pivotL.position.set(-hingeX, 0, 0);
-  pivotR.position.set(hingeX, 0, 0);
+  pivotL.position.set(hingeL, 0, hingeZ);
+  pivotR.position.set(hingeR, 0, hingeZ);
   pivotL.userData.openSign = 1;
   pivotR.userData.openSign = -1;
   const staticTris = [];
-  const apertureTris = [];
   const leftTris = [];
   const rightTris = [];
 
@@ -1394,7 +1395,12 @@ function buildOpenableBcchDoor(sourceModel, rawCenter) {
     const normal = geo.attributes.normal;
     if (!pos || !normal) return;
     const normalMatrix = new THREE.Matrix3().getNormalMatrix(object.matrixWorld);
-    const isGoldMesh = /Material\.002|Toroide/i.test(object.material?.name || '') || /Toroide/i.test(object.name || '');
+    /* v3: la hoja izquierda y la derecha ya son mallas independientes con su
+       propia bisagra. Todo lo demás (Cubo.015) es muro/marco y queda fijo. */
+    const isLeftLeaf = /Puerta_Izquierda/i.test(object.name);
+    const isRightLeaf = /Puerta_Derecha/i.test(object.name);
+    const isGoldMesh = isLeftLeaf || isRightLeaf
+      || /Material\.002|Toroide/i.test(object.material?.name || '');
     const index = geo.index;
     const triCount = index ? index.count / 3 : pos.count / 3;
     for (let t = 0; t < triCount; t++) {
@@ -1408,25 +1414,38 @@ function buildOpenableBcchDoor(sourceModel, rawCenter) {
         const mask = bcchColorAt(p, isGoldMesh, c);
         return { p, n, c, mask };
       });
-      const cx = (tri[0].p.x + tri[1].p.x + tri[2].p.x) / 3;
-      const cy = (tri[0].p.y + tri[1].p.y + tri[2].p.y) / 3;
-      const cz = (tri[0].p.z + tri[1].p.z + tri[2].p.z) / 3;
-      if (bcchDoorRegion(cx, cy, isGoldMesh, cz)) {
-        (cx < 0 ? leftTris : rightTris).push(tri);
-      } else if (bcchApertureRegion(cx, cy, isGoldMesh, cz)) {
-        apertureTris.push(tri);
-      } else {
-        staticTris.push(tri);
+      if (isLeftLeaf) leftTris.push(tri);
+      else if (isRightLeaf) rightTris.push(tri);
+      else {
+        /* Piedra/marco. La v3 trae un MURO detrás de la puerta: una cara
+           plana de piedra en z≈-0.14 que rellena el vano y tapa La Sala al
+           abrir. La quitamos por completo: solo se descartan las caras
+           PLANAS (normal ±z) que están detrás del plano de las hojas, dentro
+           del hueco. Las jambas/dintel/umbral son caras verticales (normal
+           ≈0 en z) y se conservan: el marco sigue intacto y el vano queda
+           abierto hacia la sala. */
+        const e1 = new THREE.Vector3().subVectors(tri[1].p, tri[0].p);
+        const e2 = new THREE.Vector3().subVectors(tri[2].p, tri[0].p);
+        const n = new THREE.Vector3().crossVectors(e1, e2).normalize();
+        const cx = (tri[0].p.x + tri[1].p.x + tri[2].p.x) / 3;
+        const cy = (tri[0].p.y + tri[1].p.y + tri[2].p.y) / 3;
+        const cz = (tri[0].p.z + tri[1].p.z + tri[2].p.z) / 3;
+        const isBackWall = cz < -0.05 && Math.abs(cx) < 0.6 && Math.abs(cy) < 0.95 && Math.abs(n.z) > 0.5;
+        /* Además la v3 trae una TABLA INTERIOR flotando detrás de las hojas:
+           un anillo rectangular hueco (solo cantos, sin caras frontales) en
+           x≈[-0.28,0.23], y≈[-0.46,0.40], z≈-0.24 con normales ±x/±y. Ese
+           marco fantasma era lo que se veía al abrir la puerta (bug #3); se
+           descarta entero. */
+        const isInnerBoard = Math.abs(cx) < 0.32 && Math.abs(cy) < 0.52 && cz < -0.15 && cz > -0.34 && Math.abs(n.z) < 0.5;
+        if (!isBackWall && !isInnerBoard) staticTris.push(tri);
       }
     }
   });
 
   const staticMesh = makeBcchMesh(buildGeometryFromTriangles(staticTris), 'Puerta_bcch_frame', 'frame');
-  const apertureMesh = makeBcchMesh(buildGeometryFromTriangles(apertureTris), 'Puerta_bcch_umbral_fijo', 'aperture');
-  const leftMesh = makeBcchMesh(buildGeometryFromTriangles(leftTris, -hingeX), 'Puerta_bcch_left_leaf', 'leaf');
-  const rightMesh = makeBcchMesh(buildGeometryFromTriangles(rightTris, hingeX), 'Puerta_bcch_right_leaf', 'leaf');
+  const leftMesh = makeBcchMesh(buildGeometryFromTriangles(leftTris, hingeL, hingeZ), 'Puerta_bcch_left_leaf', 'leaf');
+  const rightMesh = makeBcchMesh(buildGeometryFromTriangles(rightTris, hingeR, hingeZ), 'Puerta_bcch_right_leaf', 'leaf');
   if (staticMesh) group.add(staticMesh);
-  if (apertureMesh) group.add(apertureMesh);
   if (leftMesh) pivotL.add(leftMesh);
   if (rightMesh) pivotR.add(rightMesh);
   group.add(pivotL, pivotR);
@@ -1435,7 +1454,7 @@ function buildOpenableBcchDoor(sourceModel, rawCenter) {
   return group;
 }
 
-loader.load('Puerta_bcch (1).glb?v=15', (gltf) => {
+loader.load('Puerta_bcch_v3.glb?v=16', (gltf) => {
   const rawBox = new THREE.Box3().setFromObject(gltf.scene);
   const rawCenter = rawBox.getCenter(new THREE.Vector3());
   const model = buildOpenableBcchDoor(gltf.scene, rawCenter);
@@ -1444,7 +1463,7 @@ loader.load('Puerta_bcch (1).glb?v=15', (gltf) => {
   fitDoorModelToStage(model);
   doorModelGroup.add(model);
 }, undefined, (err) => {
-  console.warn('No se pudo cargar Puerta_bcch (1).glb; se usa la puerta procedural:', err);
+  console.warn('No se pudo cargar Puerta_bcch_v3.glb; se usa la puerta procedural:', err);
 });
 
 const clock = new THREE.Clock();
@@ -2485,8 +2504,11 @@ function animate() {
   }
   if (bcchPivotL && bcchPivotR) {
     /* El GLB subido por el usuario no traía pivotes, así que lo partimos en
-       marco + hoja izquierda + hoja derecha y abrimos SUS propias hojas. */
-    const openT = THREE.MathUtils.smoothstep(crossT, 0.10, 0.66);
+       marco + hoja izquierda + hoja derecha y abrimos SUS propias hojas.
+       La apertura arranca ANTES y termina ANTES que el dolly: si abría
+       lento (0.10→0.66) la puerta seguía casi cerrada al inicio y tapaba a
+       La Sala justo cuando el lector esperaba verla. */
+    const openT = THREE.MathUtils.smoothstep(crossT, 0.04, 0.42);
     const openRad = THREE.MathUtils.degToRad(78) * openT;
     bcchPivotL.rotation.y = openRad;
     bcchPivotR.rotation.y = -openRad;
@@ -2632,15 +2654,23 @@ function animate() {
     const bcchColorT = THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88);
     if (bcchDoorModel) bcchDoorModel.visible = doorVisOpacity > 0.001;
     if (proceduralDoorModel) proceduralDoorModel.visible = doorVisOpacity > 0.001 && proceduralVisualT > 0.001;
-    const apertureHold = 1 - THREE.MathUtils.smoothstep(crossT, 0.58, 0.80);
+    /* Las piezas 'aperture' son las JAMBAS del marco (|x|≈0.40–0.48, z 0.0–0.2),
+       NO un tapón central: desvanecerlas "deformaba" el marco al abrir la
+       puerta (perdía el canto interior). Se mantienen sólidas; La Sala se
+       despeja con la apertura + el fundido de las hojas (leafHold, abajo). */
+    const apertureHold = 1;
     for (let i = 0; i < bcchDoorMats.length; i++) {
       const m = bcchDoorMats[i];
       const kind = m.userData?.bcchKind || 'frame';
       const isLeaf = kind === 'leaf';
       const isAperture = kind === 'aperture';
       const lightT = THREE.MathUtils.smoothstep(bcchColorT, 0.10, 1.0);
+      /* Las hojas abren hacia DENTRO (z→−): al terminar quedan dentro de la
+         sala, frente a la cámara que ya entró. Se funden justo después de
+         abrir para que no se vean al final del cruce. */
+      const leafHold = isLeaf ? 1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75) : 1;
       m.transparent = true;
-      m.opacity = doorVisOpacity * bcchVisualT * (isAperture ? apertureHold : 1);
+      m.opacity = doorVisOpacity * bcchVisualT * (isAperture ? apertureHold : leafHold);
       m.color.copy(bcchHeroTint).lerp(bcchMeetTint, bcchColorT);
       m.envMapIntensity = isLeaf
         ? THREE.MathUtils.lerp(0.22, 0.58, lightT)
@@ -2652,7 +2682,9 @@ function animate() {
     }
     for (let i = 0; i < bcchEdgeMats.length; i++) {
       const rec = bcchEdgeMats[i];
-      const edgeHold = rec.kind === 'aperture' ? apertureHold : 1;
+      const edgeHold = rec.kind === 'aperture' ? apertureHold
+        : rec.kind === 'leaf' ? (1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75))
+        : 1;
       rec.m.opacity = rec.baseOpacity * doorVisOpacity * bcchVisualT * edgeHold * (0.55 + 0.45 * bcchColorT);
     }
     for (let i = 0; i < proceduralDoorMats.length; i++) {
@@ -2976,11 +3008,13 @@ function animate() {
     camera.lookAt(choreo.look);
   }
 
-  /* La Sala (b1): la luz del interior sube al entrar y se apaga al disolver
-     hacia El Método, sin reactivar el pórtico. */
+  /* La Sala (b1): la luz del interior sube AL ABRIR la puerta (0.10→0.45) y
+     se apaga al disolver hacia El Método, sin reactivar el pórtico. Antes
+     esperaba hasta 0.56 y, con el interior a oscuras, la estatua no se veía
+     cuando la puerta se abría: solo asomaba al estar entrando. */
   if (roomLight) {
     const lightT = DOOR_MODE === 'doorway'
-      ? THREE.MathUtils.smoothstep(roomPresence, 0.56, 0.92)
+      ? THREE.MathUtils.smoothstep(roomPresence, 0.10, 0.45)
       : 0;
     roomLight.intensity = lightT * (CONFIG.door?.roomLight?.intensity ?? 10);
   }
@@ -3041,9 +3075,14 @@ function animate() {
 
   /* Figuras de la sala: se muestran recién al cruzar el umbral, nunca en
      el hero (en la captura anterior los placeholders saturaban la portada).
-     Al rampar reveal entran suavemente y el script los sigue animando. */
+     Al rampar reveal entran suavemente y el script los sigue animando.
+
+     Ventana atada a `roomPresence` (crossT durante la entrada, y cae con
+     exitT al salir): así la estatua se revela EN PARALELO con la apertura de
+     las hojas (que abre en crossT 0.04→0.42) en vez de esperar al final del
+     dolly — antes recién asomaba ~0.29 y el lector veía el vano vacío. */
   const figureReveal = DOOR_MODE === 'doorway'
-    ? THREE.MathUtils.smoothstep((roomSwarmT - 0.08) / 0.55, 0, 1)
+    ? THREE.MathUtils.smoothstep((roomPresence - 0.04) / 0.30, 0, 1)
     : (currentStage !== 1 ? 1 : 0);
   if (figureSystem) {
     /* El bbox solo es válido cuando los GLB han cargado; por eso se resuelve

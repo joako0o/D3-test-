@@ -117,7 +117,8 @@ El tema es **política monetaria**, no un compositor. Meter música de Pendereck
 - [ ] `three.module.min.js`.
 - [ ] Lazy load puerta/D3 por stage.
 - [ ] `app.js` + `styles.css` separados y minificados.
-- [ ] Reducir `index.html` (hoy 341 KB inline).
+- [x] Reducir `index.html`: ya no hay CSS/JS inline (hoy 43 KB de marcado, el
+  CSS vive en `css/` y el JS en `js/`).
 - [ ] Lighthouse móvil/desktop; test en viewports chicos/grandes.
 - [ ] Accesibilidad final (ya buena).
 
