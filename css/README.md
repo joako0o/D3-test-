@@ -50,8 +50,9 @@ cambiar cómo se ve el sitio sin tocar una sola regla.
   texto. Ojo con `opacity`: se multiplica sobre el color y hunde el contraste.
   Con `--color-text-primary`, `opacity: 0.62` es el suelo; por debajo de 0.58
   ya no cumple.
-- **`!important` es deuda.** Quedan 62 heredados. No añadas más: si necesitas
-  uno, casi siempre significa que la regla está en el archivo equivocado (y
-  por tanto en el punto equivocado de la cascada).
+- **`!important` es deuda.** Quedan 68 heredados (42 solo en
+  `00-tokens-base.css`). No añadas más: si necesitas uno, casi siempre
+  significa que la regla está en el archivo equivocado (y por tanto en el
+  punto equivocado de la cascada).
 - **Nada de estilos nuevos en `index.html`.** Ni `<style>` ni `style="..."`.
   Los `style` inline que quedan son de la maqueta original y van saliendo.

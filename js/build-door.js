@@ -1,6 +1,5 @@
 /* Puerta del Banco Central de Chile (Agustinas 1180) — port a three.js del
-   generador paramétrico `build_door (2).py` (Blender) que vive en la raíz del
-   repo. Mismas dimensiones reales (metros): bronce de dos hojas de 6,2 × 3,5 m,
+   generador paramétrico `tools/build_door.py` (Blender). Mismas dimensiones reales (metros): bronce de dos hojas de 6,2 × 3,5 m,
    escalinata de 5 peldaños, jambas/pilastras de piedra y vestíbulo interior
    con luz cálida que asoma al abrir.
 
