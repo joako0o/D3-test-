@@ -2864,6 +2864,15 @@ function animate() {
        puerta (perdía el canto interior). Se mantienen sólidas; La Sala se
        despeja con la apertura + el fundido de las hojas (leafHold, abajo). */
     const apertureHold = 1;
+    /* Al terminar el dolly la cámara queda DE PIE sobre el peldaño superior
+       (roomCamZ −0.5 está ~0,5 delante del muro, que cae en z≈−1.0): la cara
+       alta de ese peldaño, encendida por la luz cálida de la sala, asomaba
+       como una franja beige al pie del cuadro durante toda La Sala. Desde
+       crossT≈0.86 (cámara en el plano del umbral) jambas, medallas y cornisa
+       ya están fuera de cuadro, así que el pórtico entero —marco, escalones,
+       medallas y aristas— se disuelve ahí, mientras la cámara todavía avanza
+       (el movimiento tapa el fundido). Simétrico al volver atrás. */
+    const porticoHold = 1 - THREE.MathUtils.smoothstep(crossT, 0.86, 0.96);
     for (let i = 0; i < bcchDoorMats.length; i++) {
       const m = bcchDoorMats[i];
       const kind = m.userData?.bcchKind || 'frame';
@@ -2877,8 +2886,9 @@ function animate() {
          sala, frente a la cámara que ya entró. Se funden justo después de
          abrir para que no se vean al final del cruce. */
       const leafHold = isLeaf ? 1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75) : 1;
+      const hold = isLeaf ? leafHold : (isAperture ? apertureHold : 1) * porticoHold;
       m.transparent = true;
-      m.opacity = doorVisOpacity * bcchVisualT * (isAperture ? apertureHold : leafHold);
+      m.opacity = doorVisOpacity * bcchVisualT * hold;
       m.color.copy(bcchHeroTint).lerp(bcchMeetTint, bcchColorT);
       m.envMapIntensity = isBronze
         ? THREE.MathUtils.lerp(0.22, 0.58, lightT)
@@ -2890,9 +2900,9 @@ function animate() {
     }
     for (let i = 0; i < bcchEdgeMats.length; i++) {
       const rec = bcchEdgeMats[i];
-      const edgeHold = rec.kind === 'aperture' ? apertureHold
-        : rec.kind === 'leaf' ? (1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75))
-        : 1;
+      const edgeHold = rec.kind === 'leaf'
+        ? (1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75))
+        : (rec.kind === 'aperture' ? apertureHold : 1) * porticoHold;
       rec.m.opacity = rec.baseOpacity * doorVisOpacity * bcchVisualT * edgeHold * (0.55 + 0.45 * bcchColorT);
     }
     for (let i = 0; i < proceduralDoorMats.length; i++) {
@@ -3713,7 +3723,7 @@ if (DEBUG_MODE) {
   };
   /* Bisectación visual de artefactos de render: permite ocultar objetos
      concretos desde herramientas externas (solo con ?debug). */
-  window.__objs = { doorGroup, doorFloor, swarm, orbitGroup, figureGroup: figureSystem ? figureSystem.group : null, scene };
+  window.__objs = { doorGroup, doorFloor, swarm, orbitGroup, figureGroup: figureSystem ? figureSystem.group : null, scene, camera };
 }
 
 const lenis = new Lenis({
