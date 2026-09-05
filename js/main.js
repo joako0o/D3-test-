@@ -1224,7 +1224,9 @@ function bcchDoorMaskAt(x, y, isGoldMesh = false, z = 0) {
      por x como con el GLB anterior (que traía el dorado fundido en una sola
      lámina continua bajo los pilares). */
   if (!isGoldMesh) return 0;
-  if (y < -0.86 || y > 0.84 || z < 0.015 || z > 0.24) return 0;
+  /* z: la hoja vive en [0.02,0.17]; las medallas, ya pegadas a la piedra,
+     en [-0.14,-0.04]. Ambas son bronce. */
+  if (y < -0.86 || y > 0.84 || z < -0.15 || z > 0.24) return 0;
   const doorY = bcchSmooth(-0.86, -0.72, y) * (1 - bcchSmooth(0.74, 0.86, y));
   return THREE.MathUtils.clamp(0.86 + 0.14 * doorY, 0, 1);
 }
@@ -1328,18 +1330,19 @@ function makeBcchMesh(geometry, name, kind = 'frame') {
   mesh.renderOrder = 5;
   mesh.userData.role = 'bcchDoor';
   if (geometry.attributes.position?.count > 0) {
+    const bronzeEdges = kind === 'leaf' || kind === 'medal';
     const edgeMat = new THREE.LineBasicMaterial({
-      color: kind === 'leaf' ? 0x120803 : 0x050403,
+      color: bronzeEdges ? 0x120803 : 0x050403,
       transparent: true,
       opacity: 0,
       depthTest: true,
       depthWrite: false,
     });
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, kind === 'leaf' ? 26 : 34), edgeMat);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, bronzeEdges ? 26 : 34), edgeMat);
     edges.name = `${name}_edgeLines`;
     edges.renderOrder = 6;
     mesh.add(edges);
-    bcchEdgeMats.push({ m: edgeMat, baseOpacity: kind === 'leaf' ? 0.22 : 0.15, kind });
+    bcchEdgeMats.push({ m: edgeMat, baseOpacity: bronzeEdges ? 0.22 : 0.15, kind });
   }
   doorMats.push(mat);
   bcchDoorMats.push(mat);
@@ -1377,13 +1380,22 @@ function makeBcchMesh(geometry, name, kind = 'frame') {
        esquina trasera barría 0.1 hacia la pilastra, atravesando la jamba.
        → Pivote en el canto exterior-TRASERO de cada hoja (lado de la sala,
          hacia donde abre), como una bisagra real: ningún punto de la hoja
-         cruza jamás el plano de su bisagra hacia la jamba. */
+         cruza jamás el plano de su bisagra hacia la jamba.
+
+   (d) Las MEDALLAS de bronce (los discos a la altura de las manillas) vienen
+       fusionadas en la malla de cada hoja, así que giraban con la puerta y
+       flotaban 0.21 por delante del muro. En el edificio real están fijas en
+       la piedra, a cada lado del vano.
+       → Se separan de las hojas (todo triángulo con vértices más allá del
+         canto) y se montan en el muro estático, en el paño entre la jamba y
+         la pilastra, apoyadas en la cara vista de la piedra. */
 const BCCH_V3 = {
   axisX: -0.0153,           // eje de simetría de las pilastras (x rel. a la caja)
   slabZ: [-0.34, -0.14],    // profundidad de la losa original (se conserva)
   slabY: [-0.9267, 0.8333], // base y coronación de la losa
   slabX: 1.0,               // media anchura del bloque
-  ballY: 0.0986,            // altura de la bola decorativa del canto (se excluye al medir el canto)
+  ballY: 0.0986,            // altura de la medalla (misma que las manillas); se excluye al medir el canto
+  pilasterInnerX: 0.5053,   // cara interior de las pilastras (|x|, tras centrar): límite del paño de la medalla
   gap: 0.02,                // holgura hoja ↔ jamba
   splay: 0.06,              // derrame de las jambas hacia la sala
 };
@@ -1470,7 +1482,87 @@ function buildOpenableBcchDoor(sourceModel, rawCenter) {
   };
   let edgeL = leafEdge(leftTris, -1);
   let edgeR = leafEdge(rightTris, +1);
+
+  /* (d) MEDALLAS. En el edificio real son dos discos de bronce FIJOS en la
+     piedra, a la altura de las manillas, uno a cada lado del vano. En el GLB
+     vienen fusionados dentro de la malla de cada hoja (un disco de r≈0.05 y
+     0.10 de grosor que sobresale del canto exterior), así que giraban con la
+     puerta y además flotaban 0.21 por delante de la pared. Se separan aquí:
+     todo triángulo de la hoja con algún vértice más allá del canto es
+     medalla (los 14–18 triángulos "puente" que la unían al canto también,
+     para que no quede una oreja en la hoja). */
+  const splitMedal = (tris, edge, sign) => {
+    const keep = [], medal = [];
+    for (const tri of tris) {
+      const beyond = tri.some((v) => (sign < 0 ? v.p.x < edge - 1e-4 : v.p.x > edge + 1e-4));
+      (beyond ? medal : keep).push(tri);
+    }
+    return { keep, medal };
+  };
+  const splitL = splitMedal(leftTris, edgeL, -1);
+  const splitR = splitMedal(rightTris, edgeR, +1);
+  leftTris.length = 0; leftTris.push(...splitL.keep);
+  rightTris.length = 0; rightTris.push(...splitR.keep);
+  const medalTris = [];
+  /* La geometría del GLB para el disco es de muy baja resolución y trae los
+     triángulos "puente" con el canto (una cara diagonal en el frente). En
+     lugar de recolocarla, se genera un disco limpio con SUS medidas (radio y
+     grosor medidos de la pieza original) y se monta en el paño de pared
+     entre la jamba y la pilastra, con la trasera apoyada en la cara vista
+     de la piedra (z = slabZ[1]) y a la altura original (la de las manillas). */
+  const medalBox = new THREE.Box3();
+  const placeMedal = (tris, side) => {
+    medalBox.makeEmpty();
+    for (const tri of tris) for (const v of tri) medalBox.expandByPoint(v.p);
+    if (medalBox.isEmpty()) return;
+    const size = medalBox.getSize(new THREE.Vector3());
+    const radius = Math.min(size.x, size.y) * 0.5;
+    const depth = Math.max(size.z, 0.02);
+    const cy = (medalBox.min.y + medalBox.max.y) * 0.5;
+    const paneInner = side < 0 ? (edgeL + shifts.leaves) - BCCH_V3.gap : (edgeR + shifts.leaves) + BCCH_V3.gap;
+    const paneOuter = side * BCCH_V3.pilasterInnerX;
+    const cx = (paneInner + paneOuter) * 0.5;
+    const zBack = BCCH_V3.slabZ[1];
+    const zFront = zBack + depth;
+    const N = 28;
+    const ring = (z) => Array.from({ length: N }, (_, i) => {
+      const a = (i / N) * Math.PI * 2;
+      return new THREE.Vector3(cx + Math.cos(a) * radius, cy + Math.sin(a) * radius, z);
+    });
+    const front = ring(zFront), back = ring(zBack);
+    const cF = new THREE.Vector3(cx, cy, zFront), cB = new THREE.Vector3(cx, cy, zBack);
+    const nF = new THREE.Vector3(0, 0, 1), nB = new THREE.Vector3(0, 0, -1);
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N;
+      /* tapa frontal (mira a la cámara, +z) */
+      medalTris.push([mkVert(cF.clone(), nF.clone()), mkVert(front[i].clone(), nF.clone()), mkVert(front[j].clone(), nF.clone())]);
+      /* trasera (contra la piedra) */
+      medalTris.push([mkVert(cB.clone(), nB.clone()), mkVert(back[j].clone(), nB.clone()), mkVert(back[i].clone(), nB.clone())]);
+      /* canto */
+      const ni = new THREE.Vector3(front[i].x - cx, front[i].y - cy, 0).normalize();
+      const nj = new THREE.Vector3(front[j].x - cx, front[j].y - cy, 0).normalize();
+      medalTris.push([mkVert(back[i].clone(), ni.clone()), mkVert(front[j].clone(), nj.clone()), mkVert(front[i].clone(), ni.clone())]);
+      medalTris.push([mkVert(back[i].clone(), ni.clone()), mkVert(back[j].clone(), nj.clone()), mkVert(front[j].clone(), nj.clone())]);
+    }
+    /* Botón central en relieve (como la roseta de la referencia): un
+       disco menor sobre la tapa, para que el bronce lea volumen y no un
+       círculo plano. */
+    const z2 = zFront + depth * 0.35;
+    const front2 = ring(z2).map((v) => v.sub(new THREE.Vector3(cx, cy, 0)).multiplyScalar(0.55).add(new THREE.Vector3(cx, cy, 0)));
+    const c2 = new THREE.Vector3(cx, cy, z2);
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N;
+      medalTris.push([mkVert(c2.clone(), nF.clone()), mkVert(front2[i].clone(), nF.clone()), mkVert(front2[j].clone(), nF.clone())]);
+      const ni = new THREE.Vector3(front2[i].x - cx, front2[i].y - cy, 0).normalize();
+      const nj = new THREE.Vector3(front2[j].x - cx, front2[j].y - cy, 0).normalize();
+      const bi = new THREE.Vector3(front2[i].x, front2[i].y, zFront), bj = new THREE.Vector3(front2[j].x, front2[j].y, zFront);
+      medalTris.push([mkVert(bi, ni.clone()), mkVert(front2[j].clone(), nj.clone()), mkVert(front2[i].clone(), ni.clone())]);
+      medalTris.push([mkVert(bi.clone(), ni.clone()), mkVert(bj, nj.clone()), mkVert(front2[j].clone(), nj.clone())]);
+    }
+  };
   shifts.leaves = -(edgeL + edgeR) * 0.5;
+  placeMedal(splitL.medal, -1);
+  placeMedal(splitR.medal, +1);
   for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) v.p.x += shifts.leaves;
   edgeL += shifts.leaves;
   edgeR += shifts.leaves;
@@ -1547,10 +1639,17 @@ function buildOpenableBcchDoor(sourceModel, rawCenter) {
   for (const tri of staticTris) for (const v of tri) v.mask = bcchColorAt(v.p, false, v.c);
   for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) v.mask = bcchColorAt(v.p, true, v.c);
 
+  for (const tri of medalTris) for (const v of tri) v.mask = bcchColorAt(v.p, true, v.c);
+
   const staticMesh = makeBcchMesh(buildGeometryFromTriangles(staticTris), 'Puerta_bcch_frame', 'frame');
   const leftMesh = makeBcchMesh(buildGeometryFromTriangles(leftTris, hingeL, hingeZ), 'Puerta_bcch_left_leaf', 'leaf');
   const rightMesh = makeBcchMesh(buildGeometryFromTriangles(rightTris, hingeR, hingeZ), 'Puerta_bcch_right_leaf', 'leaf');
+  /* Medallas: malla propia, estática (no gira con las hojas) y con el
+     acabado de bronce de las hojas ('medal' hereda el material de 'leaf'
+     salvo el fundido: se quedan en la pared cuando las hojas se disuelven). */
+  const medalMesh = makeBcchMesh(buildGeometryFromTriangles(medalTris), 'Puerta_bcch_medals', 'medal');
   if (staticMesh) group.add(staticMesh);
+  if (medalMesh) group.add(medalMesh);
   if (leftMesh) pivotL.add(leftMesh);
   if (rightMesh) pivotR.add(rightMesh);
   group.add(pivotL, pivotR);
@@ -2769,6 +2868,9 @@ function animate() {
       const m = bcchDoorMats[i];
       const kind = m.userData?.bcchKind || 'frame';
       const isLeaf = kind === 'leaf';
+      /* 'medal' = discos de bronce fijos en la piedra: acabado de hoja
+         (bronce), fundido de marco (se quedan en la pared al cruzar). */
+      const isBronze = isLeaf || kind === 'medal';
       const isAperture = kind === 'aperture';
       const lightT = THREE.MathUtils.smoothstep(bcchColorT, 0.10, 1.0);
       /* Las hojas abren hacia DENTRO (z→−): al terminar quedan dentro de la
@@ -2778,12 +2880,12 @@ function animate() {
       m.transparent = true;
       m.opacity = doorVisOpacity * bcchVisualT * (isAperture ? apertureHold : leafHold);
       m.color.copy(bcchHeroTint).lerp(bcchMeetTint, bcchColorT);
-      m.envMapIntensity = isLeaf
+      m.envMapIntensity = isBronze
         ? THREE.MathUtils.lerp(0.22, 0.58, lightT)
         : THREE.MathUtils.lerp(0.10, 0.24, lightT);
       if (m.emissive) {
-        m.emissive.copy(isLeaf ? bcchLeafGlow : bcchFrameGlow);
-        m.emissiveIntensity = (isLeaf ? 0.006 : 0.0015) * lightT;
+        m.emissive.copy(isBronze ? bcchLeafGlow : bcchFrameGlow);
+        m.emissiveIntensity = (isBronze ? 0.006 : 0.0015) * lightT;
       }
     }
     for (let i = 0; i < bcchEdgeMats.length; i++) {

@@ -87,9 +87,11 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │                           (Puerta_Izquierda/Derecha). OJO: main.js NO usa el GLB tal
 │                           cual — buildOpenableBcchDoor() descarta el muro (una losa
 │                           maciza sin vano), lo reconstruye con vano y jambas, centra
-│                           el pórtico y pone las bisagras en el canto de cada hoja
-│                           (las del GLB están en la esquina de la caja). El porqué,
-│                           medido, está en el comentario BCCH_V3 de main.js.
+│                           el pórtico, pone las bisagras en el canto de cada hoja
+│                           (las del GLB están en la esquina de la caja) y separa las
+│                           medallas de bronce de las hojas para fijarlas en la pared,
+│                           como en el edificio real. El porqué, medido, está en el
+│                           comentario BCCH_V3 de main.js.
 ├── Puerta_bcch (1).glb    1,1 MB · puerta anterior (lámina dorada continua, legado)
 ├── puerta-nueva-draco.glb  650 KB · puerta Meshy; se ve con preview-puerta.html
 ├── puerta-draco.glb         76 KB · puerta anterior, ya no se carga (legado)
