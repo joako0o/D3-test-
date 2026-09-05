@@ -208,6 +208,7 @@ export const CONFIG = {
     roomLook: { x: 0, y: 0.55, z: -2.0 },  // punto de mira ya dentro de la sala (sube el encuadre: la estatua queda arriba y el copy abajo)
     roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
     veilFog: 0.06,     // pico del velo de niebla durante el cruce
+    exitFog: 0.16,     // pico de niebla al salir de la sala: la estatua se hunde en vez de apagarse
     fovKick: 4,        // grados extra de FOV durante el dolly (0 → 1 → 0)
     /* Nube de voces dentro de la sala: centro y escala con los que se
        recoloca el enjambre al cruzar el umbral. La nube queda DELANTE de

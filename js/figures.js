@@ -122,16 +122,18 @@ export const FIGURE_DEFS = [
  * Crea todos los grupos de figuras y devuelve un objeto para actualizarlas.
  * Se invoca con `scene` ya construida.
  */
-export function initFigureSystem(scene, { onReady = null, debug = false } = {}) {
+export function initFigureSystem(scene, { onReady = null, debug = false, dracoLoader = null } = {}) {
   const figures = new Map();
   const group = new THREE.Group();
   group.name = 'dioramas';
   scene.add(group);
 
-  const dracoLoader = new DRACOLoader();
-  dracoLoader.setDecoderPath('js/vendor/draco/');
+  /* Se comparte el decodificador Draco de main.js (un worker y una descarga
+     del wasm para todos los GLB). Solo se crea uno propio si nadie lo pasa
+     (p. ej. una prueba aislada del módulo). */
+  const draco = dracoLoader || (() => { const d = new DRACOLoader(); d.setDecoderPath('js/vendor/draco/'); return d; })();
   const loader = new GLTFLoader();
-  loader.setDRACOLoader(dracoLoader);
+  loader.setDRACOLoader(draco);
 
   const placeholderMat = new THREE.MeshStandardMaterial({
     color: 0x8a93a6,

@@ -14,9 +14,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { initFigureSystem } from './figures.js?v=2';
+import { initFigureSystem } from './figures.js?v=3';
 import { buildCentralBankDoor } from './build-door.js?v=14';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=10';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=11';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
@@ -78,15 +78,11 @@ if (!DEBUG_MODE) {
 
 /* ────────────────────────────────
    Detección de capacidades del dispositivo
+   (WebGL no se sondea aparte: la sonda pedía un contexto en un canvas
+   desechable y costaba 1,6 s de arranque en el perfil de CPU —crear un
+   contexto es lo caro, no el renderer—. El `new WebGLRenderer` de abajo ya
+   va en try/catch y deja `renderer = null` si no hay WebGL.)
 ──────────────────────────────── */
-const supportsWebGL = (() => {
-  try {
-    const c = document.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'));
-  } catch (e) {
-    return false;
-  }
-})();
 const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const animMul = reduceMotion ? 0 : 1;
 
@@ -140,7 +136,7 @@ camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
 camera.lookAt(0, HERO_DOOR_LOCKUP ? 0.95 : 0.7, HERO_DOOR_LOCKUP ? -0.25 : 0);
 
 let renderer = null;
-if (supportsWebGL) {
+{
   try {
     /* Los ornamentos de la puerta viven en pocos píxeles; con antialias=false
        los filetes y aristas se rompen justo donde necesitamos legibilidad. */
@@ -372,6 +368,47 @@ scene.add(key, fill, rim, front);
 const mouseLight = new THREE.PointLight(0xfff1c8, 0.4, 8);
 scene.add(mouseLight);
 
+/* ────────────────────────────────
+   Decodificador Draco (compartido por moneda, puerta y figuras)
+──────────────────────────────── */
+const dracoLoader = new DRACOLoader();
+/* Decodificador Draco LOCAL primero (js/vendor/draco/): el proyecto ya era
+   offline-first (three.js, GSAP y D3 se sirven de js/), pero el decoder seguía
+   saliendo al CDN de Google — si ese CDN era inalcanzable (red filtrada, sin
+   conexión, preview aislada) los GLB no decodificaban y el sitio se quedaba
+   sin moneda ni puerta. Cadena: local → gstatic → jsDelivr.
+
+   Un solo decodificador para TODO (moneda, puerta y figuras): antes
+   figures.js creaba el suyo, con su propio worker y su propia descarga del
+   wasm. */
+/* preload(): el decodificador (wrapper 57 KB + wasm 188 KB) se baja AHORA, en
+   paralelo con los GLB. Sin esto DRACOLoader lo pide perezosamente al primer
+   parse, o sea cuando la moneda ya llegó: medido, el GLB estaba en memoria a
+   los 0,2 s y el decoder no se pedía hasta los 6,4 s. La sonda HEAD que había
+   aquí sobraba —duplicaba la petición del wrapper y salía abortada en la
+   consola de red—; el respaldo al CDN se decide con el resultado real. */
+const DRACO_CDN = 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/';
+const DRACO_MIRROR = 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/';
+/* preload() devuelve el loader; la promesa de verdad es `decoderPending`.
+   Si falla, dispose() la limpia y el siguiente preload() reintenta con otra
+   ruta. Las cargas de GLB que ya estaban esperando reciben ese mismo
+   decodificador (GLTFLoader llama a _initDecoder de nuevo por parse). */
+const preloadDraco = (path) => {
+  /* dispose() cierra workers pero no olvida la promesa fallida; sin esto el
+     reintento devolvería el mismo rechazo. */
+  dracoLoader.dispose();
+  dracoLoader.decoderPending = null;
+  dracoLoader.setDecoderPath(path);
+  return dracoLoader.preload().decoderPending;
+};
+preloadDraco('js/vendor/draco/').catch(() => {
+  console.warn('Draco local no disponible — usando CDN gstatic');
+  return preloadDraco(DRACO_CDN);
+}).catch(() => {
+  console.warn('Draco CDN primario no disponible — usando mirror jsDelivr');
+  return preloadDraco(DRACO_MIRROR);
+}).catch((e) => console.warn('Ningún decodificador Draco disponible:', e));
+
 /* ═══════════════════════════════════════════════════════════
    FIGURAS DE LA SALA — tu trabajo en Blender, con placeholders.
    Si un .glb de figures/ todavía no existe, se dibuja un
@@ -385,6 +422,7 @@ scene.add(mouseLight);
    instante `doorLightGroup` —que se declara más abajo— todavía está en zona
    muerta temporal. Es el mismo fallo que documenta el README en el Paso 2. */
 let figureSystem = initFigureSystem(scene, {
+  dracoLoader,
   debug: DEBUG_MODE,
   onReady: () => setTimeout(warmUpScene, 0),
 });
@@ -643,29 +681,6 @@ setTimeout(() => {
   if (loadEl && !loadEl.classList.contains('hidden')) loadEl.classList.add('hidden');
 }, 30000);
 
-const dracoLoader = new DRACOLoader();
-/* Decodificador Draco LOCAL primero (js/vendor/draco/): el proyecto ya era
-   offline-first (three.js, GSAP y D3 se sirven de js/), pero el decoder seguía
-   saliendo al CDN de Google — si ese CDN era inalcanzable (red filtrada, sin
-   conexión, preview aislada) los GLB no decodificaban y el sitio se quedaba
-   sin moneda ni puerta. Cadena: local → gstatic → jsDelivr. */
-dracoLoader.setDecoderPath('js/vendor/draco/');
-try {
-  fetch('js/vendor/draco/draco_wasm_wrapper.js', { method: 'HEAD' }).then((r) => {
-    if (!r.ok) throw new Error('decoder local ausente');
-  }).catch(() => {
-    console.warn('Draco local no disponible — usando CDN gstatic');
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-    /* Segundo respaldo: si el CDN primario no responde, mirror de jsDelivr
-       (mismos decodificadores, versión three r160). */
-    fetch('https://www.gstatic.com/draco/versioned/decoders/1.5.6/draco_wasm_wrapper.js', {
-      method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout ? AbortSignal.timeout(3500) : undefined,
-    }).catch(() => {
-      console.warn('Draco CDN primario no disponible — usando mirror jsDelivr');
-      dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
-    });
-  });
-} catch (e) { /* navegador sin fetch moderno: intenta con el decoder local igualmente */ }
 
 const loader = new GLTFLoader(manager);
 loader.setDRACOLoader(dracoLoader);
@@ -3244,9 +3259,22 @@ function animate() {
   const veilShape = DOOR_MODE === 'doorway'
     ? Math.sin(Math.PI * THREE.MathUtils.clamp((crossEff - 0.6) / 0.4, 0, 1))
     : 0;
+  /* Salida hacia El Método: la sala no se apaga, se hunde. Una campana de
+     niebla (0 → pico en mitad del retroceso → 0) hace que la estatua se
+     desvanezca en profundidad mientras la cámara se aleja, en vez de
+     encogerse hasta desaparecer en 200 px como antes. Termina en 0 para
+     entregar El Método con la escena limpia. */
+  /* Forma asimétrica: sube en la primera mitad, se sostiene mientras la
+     estatua se apaga tapada por ella (0,85→0,95) y recién entonces se
+     despeja, para que la figura no reaparezca al limpiar. Solo afecta a las
+     mallas: las partículas y las órbitas tienen fog:false. */
+  const exitFogShape = DOOR_MODE === 'doorway'
+    ? THREE.MathUtils.smoothstep(roomExitT, 0.0, 0.5) * (1 - THREE.MathUtils.smoothstep(roomExitT, 0.9, 1.0))
+    : 0;
   if (scene.fog) {
     const veil = veilShape * (CONFIG.door?.veilFog ?? 0);
-    scene.fog.density = Math.max(scene.fog.density, veil);
+    const exitVeil = exitFogShape * (CONFIG.door?.exitFog ?? 0.16);
+    scene.fog.density = Math.max(scene.fog.density, veil, exitVeil);
   }
   /* Opacidad de la nube en tres factores:
      1) scatterProgress: al dispersarse, los 100 sprites se apilan en el
@@ -3287,9 +3315,19 @@ function animate() {
      exitT al salir): así la estatua se revela EN PARALELO con la apertura de
      las hojas (que abre en crossT 0.04→0.42) en vez de esperar al final del
      dolly — antes recién asomaba ~0.29 y el lector veía el vano vacío. */
+  /* Entrada: ligada a crossT (la apertura de hojas). Salida: NO se deshace
+     el reveal —eso encogía y hundía la estatua mientras la cámara retrocedía,
+     dos movimientos contrarios a la vez—; la figura se queda entera y es la
+     niebla de salida + la distancia lo que la disuelve. Solo al final del
+     retroceso (roomExitT > 0.9) se apaga, ya invisible tras la niebla. */
   const figureReveal = DOOR_MODE === 'doorway'
-    ? THREE.MathUtils.smoothstep((roomPresence - 0.04) / 0.30, 0, 1)
+    ? THREE.MathUtils.smoothstep((crossT - 0.04) / 0.30, 0, 1)
+      * (1 - THREE.MathUtils.smoothstep(roomExitT, 0.85, 0.95))
     : (currentStage !== 1 ? 1 : 0);
+  /* Luces de museo y órbitas durante la salida: se apagan con la niebla
+     (0,25→0,85), no de golpe con el reveal. Las órbitas no reciben niebla,
+     así que sin esto seguirían girando alrededor de una estatua ya oculta. */
+  const exitFade = 1 - THREE.MathUtils.smoothstep(roomExitT, 0.25, 0.85);
   if (figureSystem) {
     /* El bbox solo es válido cuando los GLB han cargado; por eso se resuelve
        aquí (una vez por resize) y no en syncViewportAndObjects(). */
@@ -3301,14 +3339,23 @@ function animate() {
        la estatua se enciende como pieza de museo al cruzar y el relleno
        frío por la izquierda le da volumen a la piedra. */
     let statueReady = false;
+    /* Los placeholders de las figuras aún sin modelar (inflación, brote…)
+       viven a ±4,8 de la estatua: fuera del encuadre mientras la cámara
+       está DENTRO, pero con la cámara afuera (acercamiento por el umbral) o
+       retrocediendo hacia El Método entraban en el FOV y se veían dos
+       icosaedros grises flotando a los lados del pórtico, justo en el plano
+       más cuidado de la pieza. Solo existen mientras la cámara ha cruzado
+       (crossT > 0,6 ≈ z < 1,5) y todavía no ha empezado a salir. */
+    const placeholdersOn = crossT > 0.6 && roomExitT < 0.001;
     figureSystem.figures.forEach((record) => {
       if (record.placeholder) {
+        record.placeholder.visible = placeholdersOn;
         record.placeholder.rotation.y = time * 0.18 * figureReveal;
         record.placeholder.position.y = Math.sin(time * 0.6 + record.def.x) * 0.04 * figureReveal;
       }
       if (record.model) statueReady = true;
     });
-    const statueT = statueReady ? figureReveal : 0;
+    const statueT = statueReady ? figureReveal * exitFade : 0;
     /* El foco apunta a la ESTATUA (0, ~0.9, -4.8), no al origen de la
        escena: antes el target se reescribía con la z del grupo (0) y el
        cono iluminaba el aire delante de la cámara. */
@@ -3551,24 +3598,29 @@ function initTextToParticlePOC() {
       scrub: 1
     }
   })
+    /* Con la salida de La Sala alargada a 50vh (top 80% → 30% de este
+       stage), el título entraba con la estatua todavía disolviéndose en la
+       niebla: dos protagonistas a la vez. Se retrasa el arranque de la
+       secuencia (0 → 0,08 ≈ 12vh) para que el título aparezca cuando la
+       sala ya se apagó (exitT ≈ 0,95) y el ritmo interno se conserva. */
     .fromTo('#stageHook h2[data-hook]',
       { opacity: 0, y: 16, filter: 'blur(8px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.10, ease: 'none' }, 0.00)
+      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.10, ease: 'none' }, 0.08)
     .fromTo('.hook-lead',
       { opacity: 0, y: 18, filter: 'blur(8px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.14, ease: 'none' }, 0.06)
+      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.14, ease: 'none' }, 0.14)
     .fromTo('.hook-caption',
       { opacity: 0, y: 12 },
-      { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.18)
+      { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.26)
     .fromTo(dividerSpan,
       { scaleX: 0 },
-      { scaleX: 1, duration: 0.14, ease: 'none' }, 0.32)
+      { scaleX: 1, duration: 0.14, ease: 'none' }, 0.38)
     .fromTo(rows,
       { opacity: 0, y: 28 },
-      { opacity: 1, y: 0, duration: 0.16, ease: 'none', stagger: 0.08 }, 0.42)
+      { opacity: 1, y: 0, duration: 0.16, ease: 'none', stagger: 0.08 }, 0.46)
     .fromTo(footnote,
       { opacity: 0, y: 14 },
-      { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.68)
+      { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.70)
     .to(['#stageHook h2[data-hook]', hookContent],
       { opacity: 0, y: -18, duration: 0.12, ease: 'none' }, 0.86);
 }
@@ -3612,10 +3664,10 @@ const tsSection = document.getElementById('tsSection');
 
 const sections = [
   { label: 'hero', start: 0 },
-  { label: 'door', start: 0.08 },
-  ...(DOOR_MODE === 'doorway' ? [{ label: 'sala', start: 0.16 }] : []),
-  { label: 'hook', start: 0.24 },
-  { label: 'axes', start: 0.40 },
+  { label: 'door', start: 0.04 },
+  ...(DOOR_MODE === 'doorway' ? [{ label: 'sala', start: 0.13 }] : []),
+  { label: 'hook', start: 0.27 },
+  { label: 'axes', start: 0.36 },
   { label: 'voices', start: 0.49 },
   { label: 'acts', start: 0.59 },
   { label: 'counters', start: 0.68 },
@@ -3705,6 +3757,8 @@ if (DEBUG_MODE) {
         coinVisible: coin.visible,
         coinChildren: coin.children.length,
         coinFade: Number(coinFade.toFixed(3)),
+        crossT: Number(crossT.toFixed(3)),
+        exitT: Number(exitT.toFixed(3)),
         y: Math.round(window.scrollY),
       };
     },
@@ -3839,24 +3893,38 @@ ScrollTrigger.create({
    (solo en modo 'doorway'; en 'classic' no se crea nada)
 ──────────────────────────────── */
 if (DOOR_MODE === 'doorway') {
-  /* El cruce: dolly + disolución de la puerta + velo. Se completa en los
-     primeros ~80vh del stage (el resto del stage es "dwell" interactivo). */
+  /* El cruce: dolly + apertura de hojas + disolución del pórtico + velo.
+     PRESUPUESTO DE SCROLL (la sección mide 320vh; el sticky fija 220vh):
+       −85vh … +100vh  cruce (185vh). Antes eran 80vh: el viaje entero cabía
+                       en ~7 muescas de rueda y la disolución del pórtico
+                       (crossT 0,86→0,96) ocurría en 72 px, una sola muesca.
+                       Es el plano más importante de la pieza y se lo pasaba
+                       de largo. Con 185vh todas las fases se estiran ×2,3 sin
+                       cambiar la coreografía (crossT sigue siendo 0→1).
+       +100 … +115vh   silencio: la estatua encuadrada, sin texto (que la
+                       imagen aterrice antes de leer).
+       +115 … +220vh   beats de texto (línea de tiempo de más abajo).
+       +220 … +320vh   el sticky se suelta; la estatua sigue sola e
+                       interactiva hasta la salida (trigger de #stageHook). */
   ScrollTrigger.create({
     trigger: '#stageRoom',
     start: 'top 85%',
-    end: '+=80%',
+    end: '+=185%',
     scrub: true,
     onUpdate: (self) => { crossT = self.progress; },
   });
 
-  /* SALIDA DE LA SALA: transición directa y muy corta hacia El Método.
-     Se dispara con #stageHook, no con #stageRoom: así la estatua permanece
-     hasta que el siguiente acto ya está entrando, y desaparece en ~22vh sin
-     volver por la puerta ni dejar una cola vacía. */
+  /* SALIDA DE LA SALA: transición directa hacia El Método, sin volver por
+     la puerta. Se dispara con #stageHook, no con #stageRoom: así la estatua
+     permanece hasta que el siguiente acto ya está entrando. Dura 50vh (antes
+     22vh: la cámara retrocedía 6,6 unidades en 198 px y la estatua se
+     apagaba de golpe). El título de El Método entra en 'top 45%', o sea en
+     el último tercio de esta salida, igual que antes. La estatua no se
+     apaga: se hunde en la niebla (ver exitFog en animate). */
   ScrollTrigger.create({
     trigger: '#stageHook',
-    start: 'top 56%',
-    end: 'top 34%',
+    start: 'top 80%',
+    end: 'top 30%',
     scrub: true,
     onUpdate: (self) => { exitT = self.progress; },
     onLeave: () => { exitT = 1; },
@@ -3919,6 +3987,9 @@ if (DOOR_MODE === 'doorway') {
        se puede animar directo desde JS: se anima la variable --room-scrim. */
     const scrim = { v: 0 };
     const applyScrim = () => { if (roomContainer) roomContainer.style.setProperty('--room-scrim', scrim.v.toFixed(3)); };
+    /* 1vh de scroll en unidades de la línea de tiempo. Debe coincidir con
+       el alto del sticky: sección de 320vh − contenedor de 100vh = 220vh. */
+    const V = 1 / 220;
     gsap.timeline({
       scrollTrigger: {
         trigger: '#stageRoom',
@@ -3934,29 +4005,38 @@ if (DOOR_MODE === 'doorway') {
            0,53 y las cuatro entradas terminan en 0,51.
 
            `top top` → `bottom bottom` mapea la línea de tiempo EXACTAMENTE
-           sobre el tramo en que el sticky está fijo, que es justo cuando el
-           texto se ve. No confundir con el trigger del cruce del umbral, que
-           unas líneas más arriba sí usa `top 85%` a propósito: el dolly a
-           través de la puerta tiene que haber terminado antes de fijarse. */
+           sobre el tramo en que el sticky está fijo (220vh), que es justo
+           cuando el texto se ve. No confundir con el trigger del cruce del
+           umbral, que unas líneas más arriba usa `top 85%` a propósito: el
+           dolly arranca antes de fijarse y termina en +100vh, y los beats
+           de abajo empiezan después de eso. */
         start: 'top top',
         end: 'bottom bottom',
         scrub: true,
       },
     })
-      .fromTo(scrim, { v: 0 }, { v: 1, duration: 0.10, ease: 'none', onUpdate: applyScrim }, 0.18)
-      .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.22)
-      .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.30)
-      .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.38)
-      .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.46)
-      .to(roomTitle, { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.68)
-      .to(roomLead,  { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.74)
-      .to(roomSub,   { opacity: 0, y: -12, duration: 0.05, ease: 'none' }, 0.80)
+      /* Posiciones y duraciones en vh DE SCROLL (V = 1vh): el sticky mide
+         220vh, así que la línea de tiempo 0→1 son 220vh. El cruce termina en
+         +100vh; se dejan 15vh de silencio y recién entra el título. Cada
+         entrada dura 16vh (≈145 px): antes eran 0,06 de un sticky de 100vh,
+         o sea 54 px, medio golpe de rueda — un pop, no un fundido. El bloque
+         completo queda compuesto 30vh (160→190) y después se retira en el
+         mismo orden en que entró; el hint es el último en irse (214→220),
+         junto con la sombra, justo antes de soltar el sticky. */
+      .fromTo(scrim, { v: 0 }, { v: 1, duration: 16 * V, ease: 'none', onUpdate: applyScrim }, 115 * V)
+      .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 118 * V)
+      .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 128 * V)
+      .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 14 * V, ease: 'none' }, 138 * V)
+      .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 12 * V, ease: 'none' }, 148 * V)
+      .to(roomTitle, { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 190 * V)
+      .to(roomLead,  { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 194 * V)
+      .to(roomSub,   { opacity: 0, y: -12, duration: 10 * V, ease: 'none' }, 198 * V)
       /* La sombra baja a la mitad cuando ya solo queda el hint (menos texto,
-         menos base) y se apaga del todo con él: termina en 0.98, antes de
-         que la sección suelte el sticky (1.0). */
-      .to(scrim, { v: 0.5, duration: 0.06, ease: 'none', onUpdate: applyScrim }, 0.80)
-      .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.94)
-      .to(scrim, { v: 0, duration: 0.04, ease: 'none', onUpdate: applyScrim }, 0.94);
+         menos base) y se apaga del todo con él, antes de que la sección
+         suelte el sticky (220vh = 1.0). */
+      .to(scrim, { v: 0.5, duration: 10 * V, ease: 'none', onUpdate: applyScrim }, 198 * V)
+      .to(roomHint,  { opacity: 0, y: -10, duration: 6 * V, ease: 'none' }, 214 * V)
+      .to(scrim, { v: 0, duration: 6 * V, ease: 'none', onUpdate: applyScrim }, 214 * V);
   }
 }
 
@@ -3996,15 +4076,23 @@ const objTimeline = gsap.timeline({
     scrub: true,
   }
 });
+/* Línea de tiempo = los 100vh del sticky. Antes el texto entraba en
+   0,05→0,29 y se iba en 0,60→0,85: quedaba compuesto solo 31vh (≈280 px,
+   tres muescas de rueda) y se apagaba con la puerta todavía cerrada y
+   quieta, 15vh antes de que empiece el cruce. Ahora entra igual de pronto,
+   se sostiene 45vh y sale en los últimos 20vh, o sea mientras el cruce ya
+   está arrancando (el trigger de crossT parte en −85vh de #stageRoom =
+   0,15 de este sticky): el lector ve el copy irse y la puerta abrirse como
+   un mismo gesto, no como dos escenas con un hueco en medio. */
 objTimeline
   .fromTo('[data-objective]', 
     { opacity: 0, y: 30 }, 
-    { opacity: 1, y: 0, duration: 0.20, ease: 'cinematicOut', stagger: 0.04 }, 
-    0.05
+    { opacity: 1, y: 0, duration: 0.22, ease: 'cinematicOut', stagger: 0.05 }, 
+    0.06
   )
   .to('[data-objective]', 
-    { opacity: 0, y: -25, duration: 0.25, ease: 'cinematicIn' }, 
-    0.60
+    { opacity: 0, y: -25, duration: 0.20, ease: 'cinematicIn' }, 
+    0.80
   );
 
 /* ────────────────────────────────
