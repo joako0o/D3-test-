@@ -1346,46 +1346,61 @@ function makeBcchMesh(geometry, name, kind = 'frame') {
   if (kind === 'aperture') bcchApertureMats.push(mat);
   return mesh;
 }
+/* ── Geometría de referencia de Puerta_bcch_v3.glb ────────────────────
+   Medida sobre el archivo (unidades del modelo, relativas al centro de su
+   caja). Lo que el GLB trae mal y aquí se corrige, en orden de lo que se ve:
+
+   (a) El MURO trasero es una losa maciza x[-1,1] × y[-0.93,0.83] × z[-0.34,-0.14]
+       SIN vano, triangulada con triángulos larguísimos (de x=-1 a x=0.23).
+       El recorte anterior descartaba triángulos por su CENTROIDE (|cx|<0.6):
+       de esos triángulos unos se iban y otros se quedaban, y lo que quedaba
+       eran cuñas diagonales entre las pilastras y las hojas (la "pajarita"
+       negra a cada lado en el hero) y alas cortadas en diagonal. Al abrir,
+       las cuñas aparecían como alas doradas flotando junto a las hojas.
+       → La losa (y la tabla interior fantasma que flota detrás de las hojas)
+         se descartan enteras y el muro se reconstruye limpio: dos alas con
+         el vano exacto de las hojas y jambas con derrame hacia la sala. No
+         lleva dintel: las hojas llegan a 0.822 y la losa termina en 0.833;
+         el dintel visual es la cornisa, que ya está en el modelo.
+
+   (b) El pórtico NO está centrado en la caja del modelo (la caja la domina
+       la losa, simétrica): pilastras -0.015, hojas -0.023, cornisa -0.011,
+       escalinata -0.017, capiteles -0.006. La ranura junto a la hoja
+       izquierda medía 0.108 y la derecha 0.123 (28 vs 33 px en el hero).
+       → Todo se centra en el eje real de las pilastras; cada pieza suelta
+         (hojas, cornisa, escalinata, capiteles) se recentra por separado.
+
+   (c) Las bisagras del GLB (empties Bisagra_*) están en la ESQUINA de la
+       caja de cada hoja: x en el extremo exterior de la bola decorativa
+       (0.098 fuera del canto real) y z a media profundidad. Al girar, la
+       hoja orbitaba ese eje en vez de girar sobre su canto: pasados ~60° la
+       esquina trasera barría 0.1 hacia la pilastra, atravesando la jamba.
+       → Pivote en el canto exterior-TRASERO de cada hoja (lado de la sala,
+         hacia donde abre), como una bisagra real: ningún punto de la hoja
+         cruza jamás el plano de su bisagra hacia la jamba. */
+const BCCH_V3 = {
+  axisX: -0.0153,           // eje de simetría de las pilastras (x rel. a la caja)
+  slabZ: [-0.34, -0.14],    // profundidad de la losa original (se conserva)
+  slabY: [-0.9267, 0.8333], // base y coronación de la losa
+  slabX: 1.0,               // media anchura del bloque
+  ballY: 0.0986,            // altura de la bola decorativa del canto (se excluye al medir el canto)
+  gap: 0.02,                // holgura hoja ↔ jamba
+  splay: 0.06,              // derrame de las jambas hacia la sala
+};
+
 function buildOpenableBcchDoor(sourceModel, rawCenter) {
   const group = new THREE.Group();
   group.name = 'Puerta_bcch_Openable';
-  /* Puerta v3 (Puerta_bcch_v3.glb): ya trae las hojas separadas
-     (Puerta_Izquierda / Puerta_Derecha) y sus BISAGRAS como nodos
-     (Bisagra_Izquierda / Bisagra_Derecha). Usamos esas bisagras como pivotes
-     reales de giro, en vez de recortar la lámina dorada por x como con el
-     GLB anterior (donde la bisagra se adivinaba y caía en la muralla). */
-  let hingeL = -0.511;
-  let hingeR = 0.459;
-  /* Bisagras reales del GLB v3: no están en el plano de la fachada (z=0),
-     sino hundidas en el grosor de la puerta, en z=+0.0972 (relativo al
-     centro del modelo). El pivote anterior se ponía en z=0 y la geometría
-     NO se compensaba: al rotar, cada hoja trazaba un arco alrededor de un
-     eje desplazado y la muralla contigua se deformaba (bug #1). Se pivota
-     sobre el z real de la bisagra y se compensa la geometría para que la
-     hoja cerrada siga en su sitio exacto. */
-  const hingeZ = 0.0972;
-  const hingeProbe = new THREE.Vector3();
-  sourceModel.updateMatrixWorld(true);
-  sourceModel.traverse((o) => {
-    if (o.name === 'Bisagra_Izquierda') {
-      o.getWorldPosition(hingeProbe);
-      hingeL = hingeProbe.x - rawCenter.x;
-    } else if (o.name === 'Bisagra_Derecha') {
-      o.getWorldPosition(hingeProbe);
-      hingeR = hingeProbe.x - rawCenter.x;
-    }
-  });
-  const pivotL = new THREE.Object3D();
-  const pivotR = new THREE.Object3D();
-  pivotL.name = 'Puerta_bcch_LeftPivot';
-  pivotR.name = 'Puerta_bcch_RightPivot';
-  pivotL.position.set(hingeL, 0, hingeZ);
-  pivotR.position.set(hingeR, 0, hingeZ);
-  pivotL.userData.openSign = 1;
-  pivotR.userData.openSign = -1;
+
+  /* (b) Centro visual real del pórtico: el eje de las pilastras. */
+  const center = rawCenter.clone();
+  center.x += BCCH_V3.axisX;
+
   const staticTris = [];
   const leftTris = [];
   const rightTris = [];
+  const mkVert = (p, n) => ({ p, n, c: new THREE.Color(), mask: 0 });
+  const isSlabZ = (z) => Math.abs(z - BCCH_V3.slabZ[0]) < 3e-3 || Math.abs(z - BCCH_V3.slabZ[1]) < 3e-3;
 
   sourceModel.updateMatrixWorld(true);
   sourceModel.traverse((object) => {
@@ -1395,52 +1410,142 @@ function buildOpenableBcchDoor(sourceModel, rawCenter) {
     const normal = geo.attributes.normal;
     if (!pos || !normal) return;
     const normalMatrix = new THREE.Matrix3().getNormalMatrix(object.matrixWorld);
-    /* v3: la hoja izquierda y la derecha ya son mallas independientes con su
-       propia bisagra. Todo lo demás (Cubo.015) es muro/marco y queda fijo. */
     const isLeftLeaf = /Puerta_Izquierda/i.test(object.name);
     const isRightLeaf = /Puerta_Derecha/i.test(object.name);
-    const isGoldMesh = isLeftLeaf || isRightLeaf
-      || /Material\.002|Toroide/i.test(object.material?.name || '');
     const index = geo.index;
     const triCount = index ? index.count / 3 : pos.count / 3;
     for (let t = 0; t < triCount; t++) {
       const ids = index
         ? [index.getX(t * 3), index.getX(t * 3 + 1), index.getX(t * 3 + 2)]
         : [t * 3, t * 3 + 1, t * 3 + 2];
-      const tri = ids.map((id) => {
-        const p = new THREE.Vector3().fromBufferAttribute(pos, id).applyMatrix4(object.matrixWorld).sub(rawCenter);
-        const n = new THREE.Vector3().fromBufferAttribute(normal, id).applyMatrix3(normalMatrix).normalize();
-        const c = new THREE.Color();
-        const mask = bcchColorAt(p, isGoldMesh, c);
-        return { p, n, c, mask };
-      });
-      if (isLeftLeaf) leftTris.push(tri);
-      else if (isRightLeaf) rightTris.push(tri);
-      else {
-        /* Piedra/marco. La v3 trae un MURO detrás de la puerta: una cara
-           plana de piedra en z≈-0.14 que rellena el vano y tapa La Sala al
-           abrir. La quitamos por completo: solo se descartan las caras
-           PLANAS (normal ±z) que están detrás del plano de las hojas, dentro
-           del hueco. Las jambas/dintel/umbral son caras verticales (normal
-           ≈0 en z) y se conservan: el marco sigue intacto y el vano queda
-           abierto hacia la sala. */
-        const e1 = new THREE.Vector3().subVectors(tri[1].p, tri[0].p);
-        const e2 = new THREE.Vector3().subVectors(tri[2].p, tri[0].p);
-        const n = new THREE.Vector3().crossVectors(e1, e2).normalize();
-        const cx = (tri[0].p.x + tri[1].p.x + tri[2].p.x) / 3;
-        const cy = (tri[0].p.y + tri[1].p.y + tri[2].p.y) / 3;
-        const cz = (tri[0].p.z + tri[1].p.z + tri[2].p.z) / 3;
-        const isBackWall = cz < -0.05 && Math.abs(cx) < 0.6 && Math.abs(cy) < 0.95 && Math.abs(n.z) > 0.5;
-        /* Además la v3 trae una TABLA INTERIOR flotando detrás de las hojas:
-           un anillo rectangular hueco (solo cantos, sin caras frontales) en
-           x≈[-0.28,0.23], y≈[-0.46,0.40], z≈-0.24 con normales ±x/±y. Ese
-           marco fantasma era lo que se veía al abrir la puerta (bug #3); se
-           descarta entero. */
-        const isInnerBoard = Math.abs(cx) < 0.32 && Math.abs(cy) < 0.52 && cz < -0.15 && cz > -0.34 && Math.abs(n.z) < 0.5;
-        if (!isBackWall && !isInnerBoard) staticTris.push(tri);
-      }
+      const tri = ids.map((id) => mkVert(
+        new THREE.Vector3().fromBufferAttribute(pos, id).applyMatrix4(object.matrixWorld).sub(center),
+        new THREE.Vector3().fromBufferAttribute(normal, id).applyMatrix3(normalMatrix).normalize()
+      ));
+      if (isLeftLeaf) { leftTris.push(tri); continue; }
+      if (isRightLeaf) { rightTris.push(tri); continue; }
+      /* (a) Losa y tabla interior: son las ÚNICAS piezas cuyos vértices viven
+         todos en los planos z=-0.34 / z=-0.14. Se van enteras. */
+      if (tri.every((v) => isSlabZ(v.p.z))) continue;
+      staticTris.push(tri);
     }
   });
+
+  /* (b) Recentrado pieza a pieza. Cada pieza se identifica por su banda
+     vertical (y sus extensiones, para no confundirla con las pilastras). */
+  const extentOf = (tri, axis) => {
+    const vals = tri.map((v) => v.p[axis]);
+    return Math.max(...vals) - Math.min(...vals);
+  };
+  const recenterPiece = (tris, pred) => {
+    let min = Infinity, max = -Infinity;
+    const picked = [];
+    for (const tri of tris) {
+      if (!pred(tri)) continue;
+      picked.push(tri);
+      for (const v of tri) { min = Math.min(min, v.p.x); max = Math.max(max, v.p.x); }
+    }
+    if (!picked.length) return 0;
+    const dx = -(min + max) * 0.5;
+    if (Math.abs(dx) > 1e-4) for (const tri of picked) for (const v of tri) v.p.x += dx;
+    return dx;
+  };
+  const shifts = {
+    cornice: recenterPiece(staticTris, (tri) =>
+      tri.every((v) => v.p.y >= BCCH_V3.slabY[1] + 2e-3) && (extentOf(tri, 'x') > 0.5 || extentOf(tri, 'z') > 0.5)),
+    capitals: recenterPiece(staticTris, (tri) =>
+      tri.every((v) => v.p.y >= 0.63 - 1e-3 && v.p.y <= 0.845 && Math.abs(v.p.x) < 0.53)),
+    steps: recenterPiece(staticTris, (tri) =>
+      tri.every((v) => v.p.y <= -0.7038 + 1e-3 && v.p.z >= -0.27)),
+  };
+  /* Hojas: se recentran como PAR por sus cantos reales (sin la bola), para
+     conservar la ranura central original entre ambas. */
+  const leafEdge = (tris, sign) => {
+    let edge = sign < 0 ? Infinity : -Infinity;
+    for (const tri of tris) for (const v of tri) {
+      if (Math.abs(v.p.y - BCCH_V3.ballY) < 0.07) continue;
+      edge = sign < 0 ? Math.min(edge, v.p.x) : Math.max(edge, v.p.x);
+    }
+    return edge;
+  };
+  let edgeL = leafEdge(leftTris, -1);
+  let edgeR = leafEdge(rightTris, +1);
+  shifts.leaves = -(edgeL + edgeR) * 0.5;
+  for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) v.p.x += shifts.leaves;
+  edgeL += shifts.leaves;
+  edgeR += shifts.leaves;
+  /* Plano posterior de las hojas (el que mira a la sala; la cámara está en +z). */
+  let leafBackZ = Infinity;
+  let leafTop = -Infinity;
+  for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) {
+    leafBackZ = Math.min(leafBackZ, v.p.z);
+    leafTop = Math.max(leafTop, v.p.y);
+  }
+
+  /* (c) Bisagras en el canto exterior-trasero. */
+  const hingeZ = leafBackZ;
+  const hingeL = edgeL;
+  const hingeR = edgeR;
+  const pivotL = new THREE.Object3D();
+  const pivotR = new THREE.Object3D();
+  pivotL.name = 'Puerta_bcch_LeftPivot';
+  pivotR.name = 'Puerta_bcch_RightPivot';
+  pivotL.position.set(hingeL, 0, hingeZ);
+  pivotR.position.set(hingeR, 0, hingeZ);
+  pivotL.userData.openSign = 1;
+  pivotR.userData.openSign = -1;
+
+  /* (a) Muro reconstruido. Dos alas prismáticas (planta en trapecio: el
+     vano se ensancha hacia la sala = derrame) a toda la altura de la losa,
+     más el umbral que cierra el suelo del vano. Sin dintel (ver arriba). */
+  const G = BCCH_V3.gap;
+  const S = BCCH_V3.splay;
+  const openL = edgeL - G;
+  const openR = edgeR + G;
+  const [zB, zF] = BCCH_V3.slabZ;     // zB = cara hacia la sala · zF = cara vista
+  const [yB, yT] = BCCH_V3.slabY;
+  const X = BCCH_V3.slabX;
+  const quad = (a, b, c, d) => {        // antihorario visto desde fuera del sólido
+    const P = [a, b, c, d].map((p) => new THREE.Vector3(...p));
+    const n = new THREE.Vector3().crossVectors(
+      new THREE.Vector3().subVectors(P[1], P[0]),
+      new THREE.Vector3().subVectors(P[2], P[0])
+    ).normalize();
+    staticTris.push(
+      [mkVert(P[0].clone(), n.clone()), mkVert(P[1].clone(), n.clone()), mkVert(P[2].clone(), n.clone())],
+      [mkVert(P[0].clone(), n.clone()), mkVert(P[2].clone(), n.clone()), mkVert(P[3].clone(), n.clone())]
+    );
+  };
+  /* Ala: planta A(front-ext) B(front-int) C(back-int) D(back-ext). */
+  const wing = (side) => {
+    const xo = side * X;                                  // extremo exterior
+    const xf = side < 0 ? openL : openR;                  // canto del vano en la cara vista
+    const xb = xf + side * S;                             // canto del vano en la cara de la sala (derrame)
+    const A = [xo, zF], B = [xf, zF], C = [xb, zB], D = [xo, zB];
+    const face = (p, q) => (side < 0
+      ? quad([p[0], yB, p[1]], [q[0], yB, q[1]], [q[0], yT, q[1]], [p[0], yT, p[1]])
+      : quad([q[0], yB, q[1]], [p[0], yB, p[1]], [p[0], yT, p[1]], [q[0], yT, q[1]]));
+    face(A, B);   // cara vista
+    face(B, C);   // jamba con derrame
+    face(C, D);   // cara hacia la sala
+    face(D, A);   // testero exterior
+    /* Tapa (se ve desde arriba con la inclinación del hero) y base. */
+    if (side < 0) {
+      quad([A[0], yT, A[1]], [B[0], yT, B[1]], [C[0], yT, C[1]], [D[0], yT, D[1]]);
+      quad([D[0], yB, D[1]], [C[0], yB, C[1]], [B[0], yB, B[1]], [A[0], yB, A[1]]);
+    } else {
+      quad([B[0], yT, B[1]], [A[0], yT, A[1]], [D[0], yT, D[1]], [C[0], yT, C[1]]);
+      quad([C[0], yB, C[1]], [D[0], yB, D[1]], [A[0], yB, A[1]], [B[0], yB, B[1]]);
+    }
+  };
+  wing(-1);
+  wing(+1);
+  /* Umbral: suelo del vano, entre las jambas. */
+  quad([openL - S, yB, zB], [openR + S, yB, zB], [openR, yB, zF], [openL, yB, zF]);
+
+  /* Color y máscara por vértice, ya en coordenadas definitivas. */
+  for (const tri of staticTris) for (const v of tri) v.mask = bcchColorAt(v.p, false, v.c);
+  for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) v.mask = bcchColorAt(v.p, true, v.c);
 
   const staticMesh = makeBcchMesh(buildGeometryFromTriangles(staticTris), 'Puerta_bcch_frame', 'frame');
   const leftMesh = makeBcchMesh(buildGeometryFromTriangles(leftTris, hingeL, hingeZ), 'Puerta_bcch_left_leaf', 'leaf');
@@ -1451,6 +1556,7 @@ function buildOpenableBcchDoor(sourceModel, rawCenter) {
   group.add(pivotL, pivotR);
   bcchPivotL = pivotL;
   bcchPivotR = pivotR;
+  group.userData.bcchDoor = { hingeL, hingeR, hingeZ, edgeL, edgeR, leafTop, openL, openR, shifts };
   return group;
 }
 
