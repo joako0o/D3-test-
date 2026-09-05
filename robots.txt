@@ -1,0 +1,5 @@
+# Sitio público de una sola página: todo indexable.
+User-agent: *
+Allow: /
+
+Sitemap: https://joako0o.github.io/D3-test-/sitemap.xml

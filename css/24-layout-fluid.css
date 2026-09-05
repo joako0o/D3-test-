@@ -299,12 +299,12 @@ html, body {
   }
   #stageQuotes .quotes-shell { gap: 8px; }
   #stageQuotes .quotes-title { font-size: 24px; line-height: 1.12; }
-  #stageQuotes .quotes-lead { margin-bottom: 4px; font-size: 11px; line-height: 1.35; }
+  #stageQuotes .quotes-lead { margin-bottom: 4px; font-size: 12px; line-height: 1.35; }
   #stageQuotes .quotes-grid { gap: 8px; }
   #stageQuotes .quote-card { padding: 14px; }
   #stageQuotes .quote-tag { margin-bottom: 8px; font-size: 10px; letter-spacing: 2px; }
   #stageQuotes .quote-text { font-size: 16px; line-height: 1.4; margin-bottom: 8px; }
-  #stageQuotes .quote-author { margin-top: 6px; font-size: 9px; }
+  #stageQuotes .quote-author { margin-top: 6px; font-size: 11px; }
 
   #stageTimeline .timeline-title {
     font-size: clamp(20px, 3vw, 30px);
@@ -314,7 +314,7 @@ html, body {
 
   #stageTimeline .timeline-note {
     margin: -2px auto 12px;
-    font-size: 10px;
+    font-size: 11px;
     line-height: 1.35;
   }
 }
@@ -331,7 +331,7 @@ html, body {
   #stageQuotes .quote-card { padding: 14px; }
   #stageQuotes .quote-tag { margin-bottom: 8px; font-size: 10px; letter-spacing: 2px; }
   #stageQuotes .quote-text { font-size: 16px; line-height: 1.45; margin-bottom: 8px; }
-  #stageQuotes .quote-author { margin-top: 6px; font-size: 10px; }
+  #stageQuotes .quote-author { margin-top: 6px; font-size: 11px; }
 }
 
 /* Un teléfono en paisaje tiene un ancho de tablet pero una altura de

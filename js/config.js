@@ -209,6 +209,7 @@ export const CONFIG = {
     roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
     veilFog: 0.06,     // pico del velo de niebla durante el cruce
     exitFog: 0.16,     // pico de niebla al salir de la sala: la estatua se hunde en vez de apagarse
+    exitFogSink: 0.14, // espesor extra al final de la salida (0,55→0,90): la estatua termina de hundirse ANTES de apagarse
     fovKick: 4,        // grados extra de FOV durante el dolly (0 → 1 → 0)
     /* Nube de voces dentro de la sala: centro y escala con los que se
        recoloca el enjambre al cruzar el umbral. La nube queda DELANTE de
@@ -250,6 +251,11 @@ export const CONFIG = {
                 cruzar la nube con el mouse. */
     hoverRadius: 0.075,
     hoverDelayMs: 90,
+    /* touchRadiusMul: multiplicador del radio de acierto cuando el gesto es
+       un toque (pointerType 'touch'). Un dedo cubre ~7–9 mm; con 2,2× el
+       área pasa de ~15 px a ~33 px y sigue eligiendo la partícula más
+       cercana al punto de contacto, así que no se vuelve impreciso. */
+    touchRadiusMul: 2.2,
   },
   /* ── LA SALA — retablo central (pedestal + estatua + órbitas) ─────────
      La pieza central de la sala es un RETABLO: la estatua de la Justicia

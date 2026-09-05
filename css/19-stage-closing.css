@@ -55,7 +55,9 @@
   padding: 40px 10%;
   text-align: center;
   font-size: var(--fs-small);
-  opacity: 0.3;
+  /* Antes opacity:0.3 (2,5:1, no legible). Mismo tono discreto vía color:
+     el tenue del sistema ya garantiza 5:1 sobre el fondo. */
+  color: var(--color-text-faint);
   border-top: 1px solid var(--color-surface-border);
   letter-spacing: 0.02em;
 }

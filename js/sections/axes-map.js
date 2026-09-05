@@ -9,7 +9,9 @@
  * dárselas. Nada de leer variables de otro archivo por la puerta de atrás.
  */
 import { pinQuote, axesState, focusReturn } from '../interaction-state.js';
-import { getViewportSize } from '../viewport.js';
+/* Misma URL (query incluida) que en main.js: con specifiers distintos el
+   navegador instancia DOS módulos viewport.js, cada uno con su snapshot. */
+import { getViewportSize } from '../viewport.js?v=2';
 /* clamp llega de utils.js: se usaba THREE.MathUtils.clamp por costumbre, pero
    una sección de D3 no tiene por qué arrastrar Three.js para acotar un número. */
 import { clamp, getQuoteAxisSentiment } from '../utils.js';
@@ -101,6 +103,11 @@ export function initD3Axes({ quotes, openQuote }) {
     .data(axisQuotes, (d) => d.index)
     .join((enter) => {
       const group = enter.append('g').attr('class', 'axes-data-mark');
+      /* Zona de toque invisible: el punto visible mide 6–10 px y en un
+         teléfono un dedo no acierta. El círculo transparente recibe el
+         evento sin cambiar el dibujo (pointer-events: all lo hace sensible
+         aunque no tenga relleno). */
+      group.append('circle').attr('class', 'axes-data-hit').attr('r', 14).attr('fill', 'transparent').attr('pointer-events', 'all');
       group.append('circle').attr('class', 'axes-data-halo');
       group.append('circle').attr('class', 'axes-data-point');
       return group;

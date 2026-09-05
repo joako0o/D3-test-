@@ -12,7 +12,7 @@
   --color-text-primary: #f1f5f9;
   --color-text-secondary: #cbd5e1;
   --color-text-muted: rgba(255, 255, 255, 0.55);
-  --color-text-faint: rgba(255, 255, 255, 0.45);
+  --color-text-faint: rgba(255, 255, 255, 0.48); /* 5,0:1 sobre --color-bg; con 0,45 daba 4,49 y no pasaba AA */
   --color-surface: rgba(255, 255, 255, 0.03);
   --color-surface-border: rgba(255, 255, 255, 0.06);
   --color-bg: #0a0e1a;

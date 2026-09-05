@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "description": "Exploración interactiva de 16 años de reuniones de política monetaria en Chile (2000-2015). Scrollytelling con Three.js, GSAP ScrollTrigger y D3.js.",
   "scripts": {
-    "start": "python3 -m http.server 8000",
-    "dev": "python3 -m http.server 8000",
+    "start": "python3 scripts/serve.py 8000",
+    "dev": "python3 scripts/serve.py 8000",
     "check": "node tools/smoke-test.mjs",
     "shots": "node scripts/screenshots/capture.mjs",
     "hero:check": "node scripts/screenshots/hero-check.mjs",
-    "perf": "node scripts/perf/measure.mjs"
+    "perf": "node scripts/perf/measure.mjs",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "format": "prettier --write ."
   },
   "keywords": [
     "scrollytelling",
@@ -23,7 +26,10 @@
   "license": "ISC",
   "devDependencies": {
     "@sparticuz/chromium": "^133.0.0",
+    "eslint": "^9.39.5",
+    "globals": "^16.5.0",
     "jsdom": "^26.1.0",
+    "prettier": "^3.9.6",
     "puppeteer-core": "^24.0.0"
   }
 }

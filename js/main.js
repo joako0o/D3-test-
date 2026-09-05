@@ -14,20 +14,19 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { initFigureSystem } from './figures.js?v=3';
+import { initFigureSystem } from './figures.js?v=4';
 import { buildCentralBankDoor } from './build-door.js?v=14';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=11';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=15';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
   voiceFocus, axesState, focusReturn, particleFocus,
 } from './interaction-state.js';
 import { initWordEvolution } from './sections/word-evolution.js';
-import { initVoiceExplorer } from './sections/voice-explorer.js';
+import { initVoiceExplorer } from './sections/voice-explorer.js?v=2';
 import { initActBrowser } from './sections/act-browser.js';
-import { initD3Axes } from './sections/axes-map.js';
-import { initTimeline } from './sections/timeline.js';
-import { TOPIC_DEFINITIONS, normalizeTopicText, topicHasTerm } from './topics.js';
+import { initD3Axes } from './sections/axes-map.js?v=3';
+import { initTimeline } from './sections/timeline.js?v=3';
 import { particleRandom, getQuoteAxisSentiment } from './utils.js';
 
 /* Los timelines de la escena se crean durante la inicialización de los
@@ -421,7 +420,7 @@ preloadDraco('js/vendor/draco/').catch(() => {
    que aún no tienen GLB se resuelven como placeholder ahí mismo), y en ese
    instante `doorLightGroup` —que se declara más abajo— todavía está en zona
    muerta temporal. Es el mismo fallo que documenta el README en el Paso 2. */
-let figureSystem = initFigureSystem(scene, {
+const figureSystem = initFigureSystem(scene, {
   dracoLoader,
   debug: DEBUG_MODE,
   onReady: () => setTimeout(warmUpScene, 0),
@@ -471,7 +470,7 @@ function buildDoorSpots() {
   doorLights.visible = false;
   return doorLights;
 }
-let doorLightGroup = buildDoorSpots();
+const doorLightGroup = buildDoorSpots();
 
 /* Sombra de contacto suave (radial gradient) para la base de la puerta */
 const shadowCanvas = document.createElement('canvas');
@@ -1068,7 +1067,7 @@ let doorLocalHeight = 0;
   }
   model.traverse((object) => {
     if (!object.isMesh || !object.material) return;
-    let m = object.material;
+    const m = object.material;
     if (!('metalness' in m)) return;
     const role = object.userData.role;
     const isDoorLeaf = role === 'leaf';
@@ -1710,13 +1709,34 @@ window.addEventListener('pointermove', (e) => {
   lastPointerY = e.clientY;
   onPointerMove(e.clientX, e.clientY);
 });
+/* Táctil: `pointerdown` llega en cuanto el dedo toca la pantalla, antes de
+   saber si va a desplazar la página o a tocar una partícula. Elegir la cita
+   ahí abría (y fijaba) el panel cada vez que un desplazamiento arrancaba
+   sobre la nube, y cerraba el panel fijado al empezar a leerlo. La decisión
+   se toma en `pointerup`: si el navegador convirtió el gesto en scroll llega
+   `pointercancel` y no pasa nada; si el dedo soltó cerca de donde tocó
+   (< 10 px) y rápido, es un toque. El ratón conserva el comportamiento
+   inmediato de siempre. */
+let pendingTap = null;
 window.addEventListener('pointerdown', (e) => {
   /* No robar el click de tarjetas, botones, links ni del panel abierto. */
   if (isInteractiveTarget(e)) return;
+  if (e.pointerType === 'touch') {
+    pendingTap = { id: e.pointerId, x: e.clientX, y: e.clientY, at: performance.now() };
+    return;
+  }
   onPointerDown(e.clientX, e.clientY, e);
 });
-window.addEventListener('pointerup', onPointerUp);
-window.addEventListener('pointercancel', onPointerUp);
+window.addEventListener('pointerup', (e) => {
+  if (pendingTap && e.pointerType === 'touch' && e.pointerId === pendingTap.id) {
+    const dx = e.clientX - pendingTap.x, dy = e.clientY - pendingTap.y;
+    const isTap = (dx * dx + dy * dy) < 100 && (performance.now() - pendingTap.at) < 600;
+    pendingTap = null;
+    if (isTap && !isInteractiveTarget(e)) onPointerDown(e.clientX, e.clientY, e);
+  }
+  onPointerUp();
+});
+window.addEventListener('pointercancel', () => { pendingTap = null; onPointerUp(); });
 window.addEventListener('blur', onPointerUp);
 document.addEventListener('visibilitychange', onPointerUp);
 
@@ -2191,16 +2211,19 @@ const _pickProjected = new THREE.Vector3();
    escalado con swarm.scale (igual que el tamaño visual del enjambre).
    Ver https://github.com/mrdoob/three.js/issues/26235 y
    https://discourse.threejs.org/t/hover-functionality-with-three-points-and-raycaster/53978 */
-function setPickThreshold() {
+function setPickThreshold(radiusMul = 1) {
   const base = CONFIG.interaction?.hoverRadius ?? 0.075;
   const s = swarm.scale?.x || 1;
-  raycaster.params.Points.threshold = base * s;
+  raycaster.params.Points.threshold = base * s * radiusMul;
 }
 
-function pickPoint(cx, cy) {
+/* `radiusMul` ensancha el área de acierto: un dedo cubre bastante más que
+   los ~15 px del cursor, así que el toque usa un radio mayor y la partícula
+   más cercana al punto de contacto se lleva el acierto. */
+function pickPoint(cx, cy, radiusMul = 1) {
   if (!QUOTES_N) return -1;
   const vp = getViewportSize();
-  setPickThreshold();
+  setPickThreshold(radiusMul);
   ndc.x = (cx / vp.width) * 2 - 1;
   ndc.y = -(cy / vp.height) * 2 + 1;
   raycaster.setFromCamera(ndc, camera);
@@ -2377,8 +2400,8 @@ onPointerMove = function(cx, cy) {
 };
 
 const origOnPointerDown = onPointerDown;
-onPointerDown = function(cx, cy) {
-  const hit = pickPoint(cx, cy);
+onPointerDown = function(cx, cy, e) {
+  const hit = pickPoint(cx, cy, e?.pointerType === 'touch' ? (CONFIG.interaction?.touchRadiusMul ?? 2.2) : 1);
   if (hit >= 0) {
     pinQuote(hit);            // click sobre una partícula fija el panel (✕/Escape lo cierra)
     openQuote(hit);
@@ -2427,7 +2450,6 @@ let crossT = 0;      // 0 = afuera de la puerta · 1 = dentro de la sala
    la cámara a la coreografía general para que los overlays posteriores queden
    alineados. */
 let exitT = 0;
-let inRoom = false;  // estamos en el stage #stageRoom (habilita el hover→cita)
 /* Foco editorial de Las voces: la selección atenúa las intervenciones de
    otras voces sin borrar su huella. Así el directorio conecta la lectura
    nominal con la misma nube que el lector acaba de explorar. */
@@ -3264,16 +3286,28 @@ function animate() {
      desvanezca en profundidad mientras la cámara se aleja, en vez de
      encogerse hasta desaparecer en 200 px como antes. Termina en 0 para
      entregar El Método con la escena limpia. */
-  /* Forma asimétrica: sube en la primera mitad, se sostiene mientras la
-     estatua se apaga tapada por ella (0,85→0,95) y recién entonces se
-     despeja, para que la figura no reaparezca al limpiar. Solo afecta a las
-     mallas: las partículas y las órbitas tienen fog:false. */
+  /* Forma asimétrica en dos tramos, medida contra la distancia real de la
+     cámara a la estatua (5 m al empezar → 10,7 m al final):
+       1) sube a `exitFog` en la primera mitad (a 7,6 m deja ver un 23 %);
+       2) `exitSink` la espesa otro `exitFogSink` entre 0,55 y 0,90: a 9,4 m
+          la estatua queda al 2 % y a 10 m por debajo del 0,1 %, es decir,
+          se hunde del todo ANTES de que `exitHide` la apague (0,85→0,95);
+       3) recién con la figura ya oculta (0,95→1,0) la niebla se despeja.
+     Antes la niebla empezaba a limpiarse en 0,90 con la estatua aún
+     encendida hasta 0,94: en ese hueco (≈65 px de scroll con la salida
+     larga) la figura volvía a verse nítida y luego desaparecía de golpe.
+     Solo afecta a las mallas: partículas y órbitas tienen fog:false. */
+  const exitClear = 1 - THREE.MathUtils.smoothstep(roomExitT, 0.95, 1.0);
   const exitFogShape = DOOR_MODE === 'doorway'
-    ? THREE.MathUtils.smoothstep(roomExitT, 0.0, 0.5) * (1 - THREE.MathUtils.smoothstep(roomExitT, 0.9, 1.0))
+    ? THREE.MathUtils.smoothstep(roomExitT, 0.0, 0.5) * exitClear
+    : 0;
+  const exitSink = DOOR_MODE === 'doorway'
+    ? THREE.MathUtils.smoothstep(roomExitT, 0.55, 0.90) * exitClear
     : 0;
   if (scene.fog) {
     const veil = veilShape * (CONFIG.door?.veilFog ?? 0);
-    const exitVeil = exitFogShape * (CONFIG.door?.exitFog ?? 0.16);
+    const exitVeil = exitFogShape * (CONFIG.door?.exitFog ?? 0.16)
+      + exitSink * (CONFIG.door?.exitFogSink ?? 0.14);
     scene.fog.density = Math.max(scene.fog.density, veil, exitVeil);
   }
   /* Opacidad de la nube en tres factores:
@@ -3317,13 +3351,19 @@ function animate() {
      dolly — antes recién asomaba ~0.29 y el lector veía el vano vacío. */
   /* Entrada: ligada a crossT (la apertura de hojas). Salida: NO se deshace
      el reveal —eso encogía y hundía la estatua mientras la cámara retrocedía,
-     dos movimientos contrarios a la vez—; la figura se queda entera y es la
-     niebla de salida + la distancia lo que la disuelve. Solo al final del
-     retroceso (roomExitT > 0.9) se apaga, ya invisible tras la niebla. */
+     dos movimientos contrarios a la vez—; la figura se queda entera, quieta
+     y a escala 1, y es la niebla de salida + la distancia lo que la disuelve.
+     `exitHide` solo decide cuándo dejar de dibujarla (0,85→0,95), cuando la
+     niebla ya la tapó por completo (ver exitSink). Antes este factor se
+     multiplicaba dentro de figureReveal y volvía a encoger/levantar la
+     estatua en el último tramo: dos movimientos que el lector alcanzaba a
+     ver si la niebla no la cubría. */
   const figureReveal = DOOR_MODE === 'doorway'
     ? THREE.MathUtils.smoothstep((crossT - 0.04) / 0.30, 0, 1)
-      * (1 - THREE.MathUtils.smoothstep(roomExitT, 0.85, 0.95))
     : (currentStage !== 1 ? 1 : 0);
+  const exitHide = DOOR_MODE === 'doorway'
+    ? THREE.MathUtils.smoothstep(roomExitT, 0.85, 0.95)
+    : 0;
   /* Luces de museo y órbitas durante la salida: se apagan con la niebla
      (0,25→0,85), no de golpe con el reveal. Las órbitas no reciben niebla,
      así que sin esto seguirían girando alrededor de una estatua ya oculta. */
@@ -3332,7 +3372,7 @@ function animate() {
     /* El bbox solo es válido cuando los GLB han cargado; por eso se resuelve
        aquí (una vez por resize) y no en syncViewportAndObjects(). */
     if (roomAimDirty) refreshRoomAim();
-    figureSystem.group.visible = figureReveal > 0.01;
+    figureSystem.group.visible = figureReveal > 0.01 && exitHide < 0.99;
     figureSystem.group.scale.setScalar(0.86 + 0.14 * figureReveal);
     figureSystem.group.position.y = (1 - figureReveal) * 0.5;
     /* Sigue la iluminación de las figuras (placeholder no enciende nada):
@@ -3355,7 +3395,7 @@ function animate() {
       }
       if (record.model) statueReady = true;
     });
-    const statueT = statueReady ? figureReveal * exitFade : 0;
+    const statueT = statueReady ? figureReveal * exitFade * (1 - exitHide) : 0;
     /* El foco apunta a la ESTATUA (0, ~0.9, -4.8), no al origen de la
        escena: antes el target se reescribía con la z del grupo (0) y el
        cono iluminaba el aire delante de la cámara. */
@@ -3666,11 +3706,11 @@ const sections = [
   { label: 'hero', start: 0 },
   { label: 'door', start: 0.04 },
   ...(DOOR_MODE === 'doorway' ? [{ label: 'sala', start: 0.13 }] : []),
-  { label: 'hook', start: 0.27 },
-  { label: 'axes', start: 0.36 },
-  { label: 'voices', start: 0.49 },
-  { label: 'acts', start: 0.59 },
-  { label: 'counters', start: 0.68 },
+  { label: 'hook', start: 0.29 },
+  { label: 'axes', start: 0.38 },
+  { label: 'voices', start: 0.52 },
+  { label: 'acts', start: 0.61 },
+  { label: 'counters', start: 0.69 },
   { label: 'pipeline', start: 0.75 },
   { label: 'timeline', start: 0.83 },
   { label: 'quotes', start: 0.91 },
@@ -3909,7 +3949,7 @@ if (DOOR_MODE === 'doorway') {
   ScrollTrigger.create({
     trigger: '#stageRoom',
     start: 'top 85%',
-    end: '+=185%',
+    end: '+=250%',
     scrub: true,
     onUpdate: (self) => { crossT = self.progress; },
   });
@@ -3946,20 +3986,16 @@ if (DOOR_MODE === 'doorway') {
     onEnterBack: () => { if (HERO_DOOR_LOCKUP) doorTarget = 1; },
   });
 
-  /* Presencia en la sala: habilita el hover→cita y limpia el panel al salir */
+  /* Al salir de la sala (en cualquier sentido) se limpia la selección y el panel de cita. */
   ScrollTrigger.create({
     trigger: '#stageRoom',
     start: 'top 100%',
     end: 'bottom 0%',
-    onEnter: () => { inRoom = true; },
-    onEnterBack: () => { inRoom = true; },
     onLeave: () => {
-      inRoom = false;
       clearSelection();
       syncQuotePanel();
     },
     onLeaveBack: () => {
-      inRoom = false;
       clearSelection();
       syncQuotePanel();
     },
@@ -3975,7 +4011,12 @@ if (DOOR_MODE === 'doorway') {
   const roomHint = document.getElementById('roomHint');
   /* En pantallas táctiles no hay "cursor": el hint explica el tap directo. */
   if (roomHint && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
-    roomHint.textContent = 'Toca una voz para leer lo que dijo · tócala de nuevo para fijarla';
+    /* En táctil el primer toque ya fija el panel (no hay hover previo);
+       lo que hay que explicar es cómo se cierra. */
+    roomHint.textContent = 'Toca una voz para leer lo que dijo · toca el fondo para cerrar';
+    /* La leyenda del mapa de intervenciones habla de "clic". */
+    const axesTrace = document.querySelector('.axes-reading-trace');
+    if (axesTrace) axesTrace.textContent = 'toca un punto → fecha · voz · fragmento';
   }
   const roomContainer = document.getElementById('stageRoomContainer');
   if (roomTitle && roomLead && roomSub && roomHint) {
@@ -3988,8 +4029,8 @@ if (DOOR_MODE === 'doorway') {
     const scrim = { v: 0 };
     const applyScrim = () => { if (roomContainer) roomContainer.style.setProperty('--room-scrim', scrim.v.toFixed(3)); };
     /* 1vh de scroll en unidades de la línea de tiempo. Debe coincidir con
-       el alto del sticky: sección de 320vh − contenedor de 100vh = 220vh. */
-    const V = 1 / 220;
+       el alto del sticky: sección de 385vh − contenedor de 100vh = 285vh. */
+    const V = 1 / 285;
     gsap.timeline({
       scrollTrigger: {
         trigger: '#stageRoom',
@@ -4016,27 +4057,29 @@ if (DOOR_MODE === 'doorway') {
       },
     })
       /* Posiciones y duraciones en vh DE SCROLL (V = 1vh): el sticky mide
-         220vh, así que la línea de tiempo 0→1 son 220vh. El cruce termina en
-         +100vh; se dejan 15vh de silencio y recién entra el título. Cada
-         entrada dura 16vh (≈145 px): antes eran 0,06 de un sticky de 100vh,
-         o sea 54 px, medio golpe de rueda — un pop, no un fundido. El bloque
-         completo queda compuesto 30vh (160→190) y después se retira en el
-         mismo orden en que entró; el hint es el último en irse (214→220),
-         junto con la sombra, justo antes de soltar el sticky. */
-      .fromTo(scrim, { v: 0 }, { v: 1, duration: 16 * V, ease: 'none', onUpdate: applyScrim }, 115 * V)
-      .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 118 * V)
-      .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 128 * V)
-      .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 14 * V, ease: 'none' }, 138 * V)
-      .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 12 * V, ease: 'none' }, 148 * V)
-      .to(roomTitle, { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 190 * V)
-      .to(roomLead,  { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 194 * V)
-      .to(roomSub,   { opacity: 0, y: -12, duration: 10 * V, ease: 'none' }, 198 * V)
+         285vh, así que la línea de tiempo 0→1 son 285vh. El cruce (`+=250%`
+         desde `top 85%`) termina en +165vh; se dejan 15vh de silencio y
+         recién entra el título. Cada entrada dura 16vh (≈145 px): antes eran
+         0,06 de un sticky de 100vh, o sea 54 px, medio golpe de rueda — un
+         pop, no un fundido. El bloque completo queda compuesto 30vh
+         (225→255) y después se retira en el mismo orden en que entró; el
+         hint es el último en irse (279→285), junto con la sombra, justo
+         antes de soltar el sticky. Si se vuelve a cambiar `+=250%` o el
+         alto de la sección, hay que mover TODOS estos offsets a la vez. */
+      .fromTo(scrim, { v: 0 }, { v: 1, duration: 16 * V, ease: 'none', onUpdate: applyScrim }, 180 * V)
+      .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 183 * V)
+      .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 193 * V)
+      .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 14 * V, ease: 'none' }, 203 * V)
+      .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 12 * V, ease: 'none' }, 213 * V)
+      .to(roomTitle, { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 255 * V)
+      .to(roomLead,  { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 259 * V)
+      .to(roomSub,   { opacity: 0, y: -12, duration: 10 * V, ease: 'none' }, 263 * V)
       /* La sombra baja a la mitad cuando ya solo queda el hint (menos texto,
          menos base) y se apaga del todo con él, antes de que la sección
-         suelte el sticky (220vh = 1.0). */
-      .to(scrim, { v: 0.5, duration: 10 * V, ease: 'none', onUpdate: applyScrim }, 198 * V)
-      .to(roomHint,  { opacity: 0, y: -10, duration: 6 * V, ease: 'none' }, 214 * V)
-      .to(scrim, { v: 0, duration: 6 * V, ease: 'none', onUpdate: applyScrim }, 214 * V);
+         suelte el sticky (285vh = 1.0). */
+      .to(scrim, { v: 0.5, duration: 10 * V, ease: 'none', onUpdate: applyScrim }, 263 * V)
+      .to(roomHint,  { opacity: 0, y: -10, duration: 6 * V, ease: 'none' }, 279 * V)
+      .to(scrim, { v: 0, duration: 6 * V, ease: 'none', onUpdate: applyScrim }, 279 * V);
   }
 }
 
@@ -4256,7 +4299,6 @@ counterEls.forEach((el) => {
     return clamp01((p - a) / span);
   };
   const easeOut3 = (t) => 1 - Math.pow(1 - t, 3);
-  const easeInOut = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   const fmt      = (n) => Math.round(n).toLocaleString('es-CL');
   const sampleWordCount = quotes.reduce((total, q) => total + String(q.text || '').trim().split(/\s+/).filter(Boolean).length, 0);
   const pipelineExample = quotes.find((q) => q.label === 'hawkish') || quotes[0];
@@ -4364,7 +4406,7 @@ counterEls.forEach((el) => {
   }
 
   /* GSAP Official Pattern: Pin parent, animate child */
-  const scrollTween = gsap.to(track, {
+  gsap.to(track, {
     x: () => -(track.scrollWidth - viewport.clientWidth),
     ease: 'none',
     scrollTrigger: {
@@ -4471,7 +4513,18 @@ quoteEls.forEach((el) => {
    Stage 7 — Closing
 ──────────────────────────────── */
 document.querySelectorAll('[data-closing]').forEach((el) => {
-  const split = new SplitText(el, { type: 'chars,words', charsClass: 'char-reveal', wordsClass: 'word-reveal' });
+  /* SplitText (aria:'auto') resume el texto en un aria-label sobre el propio
+     elemento; en un <p> ese atributo está prohibido (Lighthouse:
+     aria-prohibited-attr) y los lectores de pantalla lo ignoran. Aquí se
+     hace a mano: los fragmentos animados quedan aria-hidden y una copia
+     íntegra, solo para tecnología asistiva, conserva la lectura corrida. */
+  const plainText = el.textContent.replace(/\s+/g, ' ').trim();
+  const split = new SplitText(el, { type: 'chars,words', charsClass: 'char-reveal', wordsClass: 'word-reveal', aria: 'none' });
+  split.words.forEach((w) => w.setAttribute('aria-hidden', 'true'));
+  const sr = document.createElement('span');
+  sr.className = 'sr-only';
+  sr.textContent = plainText;
+  el.appendChild(sr);
   gsap.fromTo(split.chars,
     { opacity: 0, y: 15, rotationX: -30 },
     {

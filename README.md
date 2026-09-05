@@ -18,11 +18,54 @@ npm run check        # arranca el sitio fuera del navegador y avisa si algo revi
 npm run shots        # capturas reales de cada sección (necesita npm start)
 npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
 npm run perf         # mide la fluidez del hilo principal haciendo scroll (ver § Fluidez)
+npm run lint         # ESLint sobre el código propio: variables sin definir, imports sin usar…
+npm run format:check # Prettier sobre scripts/, tools/ y los JSON (format → los reescribe)
 ```
 
 `npm run check` necesita las dependencias de desarrollo una sola vez
 (`npm install`). No hay paso de build: lo que hay en el repo es lo que se
 publica.
+
+### Calidad de código y SEO
+
+- **ESLint** (`eslint.config.mjs`): solo reglas que cazan errores reales; las
+  bibliotecas copiadas (three.js, loaders, `js/vendor/`) quedan fuera. Debe
+  terminar en `0 problems` antes de subir.
+- **Prettier** (`.prettierrc.json`, `.prettierignore`): formatea `scripts/`,
+  `tools/` y los JSON. Los fuentes de `js/` y `css/` están excluidos a
+  propósito: tienen comentarios alineados a mano y un reformateo masivo solo
+  ensuciaría el historial. `.editorconfig` fija sangría/EOL para cualquier editor.
+- **Lighthouse** (Chrome → F12 → pestaña *Lighthouse*): la referencia es
+  accesibilidad 100 · buenas prácticas 100 · SEO 100. El puntaje de
+  rendimiento solo vale medido en un navegador real (no en el sandbox por
+  software).
+- **SEO**: `robots.txt`, `sitemap.xml`, `<link rel=canonical>`, Open Graph +
+  Twitter Card con `og-image.jpg` (1200×630) y datos estructurados JSON-LD
+  (`WebPage` + `Dataset`) en `index.html`. Tras publicar, verificar la
+  propiedad en Google Search Console y enviar `sitemap.xml` una vez.
+
+### Móvil
+
+- Las reglas de teléfono viven en `css/20-breakpoints.css` (`≤768`, `≤600`,
+  `≤430`, y `≤430 × alto ≤620`). Contrato que hay que conservar:
+  - Los contenedores fijados con `overflow-y:auto` (`.word-evolution-pin-wrapper`,
+    `.voices-pin-wrapper`, `.acts-pin-wrapper`) llevan `overscroll-behavior:
+    auto` en móvil. Con `contain` el dedo desplaza el interior hasta el tope
+    y la página deja de avanzar (trampa de scroll); en escritorio la rueda
+    encadena igual, por eso no se notaba.
+  - Pipeline horizontal: cada panel mide `84vw` y el relleno lateral es
+    `8vw`, así que a 0, ⅓, ⅔ y 1 del recorrido hay exactamente un panel
+    centrado; `.pipe-viewport` reserva bandas para la cabecera y el riel.
+  - Objetivos táctiles ≥ 32 px (chips, selector de año, filas de evidencia)
+    y texto de contenido ≥ 11 px; los kickers decorativos no cuentan.
+  - Táctil en el lienzo: el toque se decide en `pointerup` (un deslizamiento
+    que arranca sobre la nube no abre el panel) y el radio de acierto es
+    `CONFIG.interaction.touchRadiusMul` veces el del ratón. Los puntos del
+    mapa de intervenciones llevan un círculo de toque invisible de 28 px.
+- Para comprobarlo sin teléfono: Chrome → F12 → icono de dispositivo
+  (Ctrl+Shift+M), elegir *iPhone 12/13* o *Pixel 7* y recorrer la pieza con
+  el ratón como si fuera un dedo. Los puntajes reales de PageSpeed Insights
+  solo valen sobre la URL publicada.
 
 ## Estructura del proyecto
 

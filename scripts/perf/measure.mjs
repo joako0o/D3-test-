@@ -51,8 +51,8 @@ const W = Number(args.w || 1440);
 const H = Number(args.h || 900);
 const ORIGIN = args.origin || 'http://localhost:8000';
 const CPU = Number(args.cpu || 1);
-const STEP_MS = Number(args.stepMs || 85);       // cadencia de los impulsos de rueda
-const STEP_PX = Number(args.stepPx || 0);        // 0 = medio viewport por impulso
+const STEP_MS = Number(args.stepMs || 85); // cadencia de los impulsos de rueda
+const STEP_PX = Number(args.stepPx || 0); // 0 = medio viewport por impulso
 const IDLE_MS = Number(args.idleMs || 3000);
 /* `--quick` recorre el documento solo de bajada y acorta el reposo: la mitad
    de tiempo para iterar. El informe definitivo se hace sin él. */
@@ -68,9 +68,9 @@ const BUDGET = {
      (1440x900, Chromium + SwiftShader, recorrido completo de ida y vuelta).
      Si cambia la máquina o el viewport hay que volver a mirarlos, no
      copiarlos: son el suelo medido, no un deseo. */
-  scriptMsPerSec: Number(args.maxScriptMsPerSec || 120),  // medido: 63 ms/s
-  styleMsPerSec: Number(args.maxStyleMsPerSec || 60),     // medido: 22 ms/s
-  layoutMsPerSec: Number(args.maxLayoutMsPerSec || 45),   // medido: 1,3 ms/s
+  scriptMsPerSec: Number(args.maxScriptMsPerSec || 120), // medido: 63 ms/s
+  styleMsPerSec: Number(args.maxStyleMsPerSec || 60), // medido: 22 ms/s
+  layoutMsPerSec: Number(args.maxLayoutMsPerSec || 45), // medido: 1,3 ms/s
   /* Medido: 2.584. No son de nuestro código (el perfil no encuentra ni una
      lectura de layout propia): vienen del window.scrollTo de Lenis en cada
      frame y del style+layout que Blink fuerza al componer. Es el suelo de
@@ -82,7 +82,7 @@ const BUDGET = {
      pone en 1 s: tolera la varianza del entorno y sigue cazando cualquier
      regresión de compilación-en-el-scroll. */
   longTaskMs: Number(args.maxLongTaskMs || 1000),
-  curtainMs: Number(args.maxCurtainMs || 15000),          // medido: 7.328 ms
+  curtainMs: Number(args.maxCurtainMs || 15000), // medido: 7.328 ms
 };
 
 const { browser, page, errors } = await launchChromium({ width: W, height: H });
@@ -108,16 +108,36 @@ await page.evaluateOnNewDocument(() => {
      Y solo se parchean las propiedades PROPIAS: las que WebGL2RenderingContext
      hereda ya quedan cubiertas por el parche del padre. */
   const COUNTED = {
-    drawArrays: () => { window.__gl.draws++; },
-    drawElements: () => { window.__gl.draws++; },
-    drawArraysInstanced: () => { window.__gl.draws++; },
-    drawElementsInstanced: () => { window.__gl.draws++; },
-    drawRangeElements: () => { window.__gl.draws++; },
-    linkProgram: () => { window.__gl.links++; },
-    createProgram: () => { window.__gl.creates++; },
-    deleteProgram: () => { window.__gl.deletes++; },
-    getShaderInfoLog: () => { window.__gl.infoLogs++; },
-    getProgramInfoLog: () => { window.__gl.infoLogs++; },
+    drawArrays: () => {
+      window.__gl.draws++;
+    },
+    drawElements: () => {
+      window.__gl.draws++;
+    },
+    drawArraysInstanced: () => {
+      window.__gl.draws++;
+    },
+    drawElementsInstanced: () => {
+      window.__gl.draws++;
+    },
+    drawRangeElements: () => {
+      window.__gl.draws++;
+    },
+    linkProgram: () => {
+      window.__gl.links++;
+    },
+    createProgram: () => {
+      window.__gl.creates++;
+    },
+    deleteProgram: () => {
+      window.__gl.deletes++;
+    },
+    getShaderInfoLog: () => {
+      window.__gl.infoLogs++;
+    },
+    getProgramInfoLog: () => {
+      window.__gl.infoLogs++;
+    },
   };
   function tryPatchGL() {
     if (window.__gl.patched) return true;
@@ -130,16 +150,27 @@ await page.evaluateOnNewDocument(() => {
         const d = Object.getOwnPropertyDescriptor(proto, m);
         const orig = d.value;
         if (typeof orig !== 'function' || orig.__counted) continue;
-        const wrapped = function (...a) { COUNTED[m](); return orig.apply(this, a); };
+        const wrapped = function (...a) {
+          COUNTED[m]();
+          return orig.apply(this, a);
+        };
         wrapped.__counted = true;
-        Object.defineProperty(proto, m, { value: wrapped, writable: true, configurable: true, enumerable: d.enumerable });
+        Object.defineProperty(proto, m, {
+          value: wrapped,
+          writable: true,
+          configurable: true,
+          enumerable: d.enumerable,
+        });
         done++;
       }
     }
     /* Solo se da por parcheado cuando el contador de draws está dentro:
        sin eso, un 0 en el informe no se distinguiría de un parche fallido. */
-    if (window.WebGLRenderingContext && Object.prototype.hasOwnProperty.call(window.WebGLRenderingContext.prototype, 'drawArrays')
-      && window.WebGLRenderingContext.prototype.drawArrays.__counted) {
+    if (
+      window.WebGLRenderingContext &&
+      Object.prototype.hasOwnProperty.call(window.WebGLRenderingContext.prototype, 'drawArrays') &&
+      window.WebGLRenderingContext.prototype.drawArrays.__counted
+    ) {
       window.__gl.patched = true;
       window.__gl.wrapped = done;
       return true;
@@ -149,9 +180,12 @@ await page.evaluateOnNewDocument(() => {
 
   try {
     new PerformanceObserver((list) => {
-      for (const e of list.getEntries()) window.__perf.tasks.push([e.startTime, e.duration, (e.attribution || [])[0]?.name || '']);
+      for (const e of list.getEntries())
+        window.__perf.tasks.push([e.startTime, e.duration, (e.attribution || [])[0]?.name || '']);
     }).observe({ entryTypes: ['longtask'] });
-  } catch { /* longtask no está en todos los navegadores */ }
+  } catch {
+    /* longtask no está en todos los navegadores */
+  }
 
   let last = performance.now();
   (function loop() {
@@ -183,23 +217,35 @@ await openSite(page, ORIGIN, { settleMs: 0 });
 
 /* ¿Cuándo se levanta la cortina de carga? Mover trabajo del scroll al
    arranque solo es un trato honesto si se enseña lo que cuesta el arranque. */
-const curtainMs = await page.evaluate(() => new Promise((resolve) => {
-  const el = document.getElementById('load');
-  if (!el || el.classList.contains('hidden')) return resolve(Math.round(performance.now()));
-  const iv = setInterval(() => {
-    if (el.classList.contains('hidden')) { clearInterval(iv); resolve(Math.round(performance.now())); }
-  }, 50);
-  setTimeout(() => { clearInterval(iv); resolve(-1); }, 120000);
-}));
+const curtainMs = await page.evaluate(
+  () =>
+    new Promise((resolve) => {
+      const el = document.getElementById('load');
+      if (!el || el.classList.contains('hidden')) return resolve(Math.round(performance.now()));
+      const iv = setInterval(() => {
+        if (el.classList.contains('hidden')) {
+          clearInterval(iv);
+          resolve(Math.round(performance.now()));
+        }
+      }, 50);
+      setTimeout(() => {
+        clearInterval(iv);
+        resolve(-1);
+      }, 120000);
+    })
+);
 const nav = await page.evaluate(() => {
   const n = performance.getEntriesByType('navigation')[0] || {};
   return { domReady: Math.round(n.domContentLoadedEventEnd || 0), load: Math.round(n.loadEventEnd || 0) };
 });
-console.log(`Arranque: DOM en ${nav.domReady} ms · load en ${nav.load} ms · cortina arriba a los ${curtainMs < 0 ? '—(no llegó)' : curtainMs + ' ms'}.`);
+console.log(
+  `Arranque: DOM en ${nav.domReady} ms · load en ${nav.load} ms · cortina arriba a los ${curtainMs < 0 ? '—(no llegó)' : curtainMs + ' ms'}.`
+);
 await sleep(3000);
 
 const glDiag = await page.evaluate(() => window.__perf.glTotals());
-if (!glDiag.patched) console.log('  ⚠ el contador de WebGL no se instaló: los draw calls saldrán a 0 y no significan nada.');
+if (!glDiag.patched)
+  console.log('  ⚠ el contador de WebGL no se instaló: los draw calls saldrán a 0 y no significan nada.');
 const doc = await page.evaluate(() => ({
   max: document.documentElement.scrollHeight - window.innerHeight,
   sections: [...document.querySelectorAll('.hero, main#mainContent section[id]')].map((el) => {
@@ -238,9 +284,10 @@ async function measuredPhase(name, fn) {
   /* Ojo con los nombres: `dev.timeline` no existe, la categoría buena es
      `devtools.timeline`, y Layout/UpdateLayoutTree viven en `blink`. Con los
      nombres mal puestos la traza sale vacía y el informe dice 0 ms de todo. */
-  await page.tracing.start({ path: traceFile, categories: [
-    'blink', 'devtools.timeline', 'disabled-by-default-devtools.timeline', 'v8.execute',
-  ] });
+  await page.tracing.start({
+    path: traceFile,
+    categories: ['blink', 'devtools.timeline', 'disabled-by-default-devtools.timeline', 'v8.execute'],
+  });
   await cdp.send('Profiler.start');
   const startedAt = Date.now();
   await fn();
@@ -248,14 +295,30 @@ async function measuredPhase(name, fn) {
   const { profile } = await cdp.send('Profiler.stop');
   await page.tracing.stop();
   await sleep(300);
-  const perf = await page.evaluate(() => ({ frames: window.__perf.frames, tasks: window.__perf.tasks, gl: window.__perf.glTotals() }));
-  return { name, wallMs, pageStart, pageEnd: await page.evaluate(() => performance.now()), perf, profile, trace: readTrace(traceFile) };
+  const perf = await page.evaluate(() => ({
+    frames: window.__perf.frames,
+    tasks: window.__perf.tasks,
+    gl: window.__perf.glTotals(),
+  }));
+  return {
+    name,
+    wallMs,
+    pageStart,
+    pageEnd: await page.evaluate(() => performance.now()),
+    perf,
+    profile,
+    trace: readTrace(traceFile),
+  };
 }
 
 function readTrace(file) {
   const raw = fs.readFileSync(file, 'utf8');
   let parsed;
-  try { parsed = JSON.parse(raw); } catch { parsed = JSON.parse(`{"traceEvents":${raw}`); }
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = JSON.parse(`{"traceEvents":${raw}`);
+  }
   return Array.isArray(parsed) ? parsed : parsed.traceEvents || [];
 }
 
@@ -270,7 +333,10 @@ console.log('\n Midiendo el scroll completo (ida y vuelta)…');
 const scrollPhase = await measuredPhase('scroll', async () => {
   await scrollPass(1);
   await sleep(600);
-  if (!QUICK) { await scrollPass(-1); await sleep(400); }
+  if (!QUICK) {
+    await scrollPass(-1);
+    await sleep(400);
+  }
 });
 
 console.log(' Midiendo el coste en reposo (la escena se anima sola)…');
@@ -280,9 +346,12 @@ const idlePhase = await measuredPhase('idle', () => sleep(QUICK ? 1500 : IDLE_MS
 
 /* Con el navegador todavía abierto: después de close() la página está
    desconectada y esto revienta (pasó). */
-const warmUps = await page.evaluate(() => performance.getEntriesByType('measure')
-  .filter((m) => m.name === 'warmUpScene')
-  .map((m) => ({ at: Math.round(m.startTime), ms: Math.round(m.duration) })));
+const warmUps = await page.evaluate(() =>
+  performance
+    .getEntriesByType('measure')
+    .filter((m) => m.name === 'warmUpScene')
+    .map((m) => ({ at: Math.round(m.startTime), ms: Math.round(m.duration) }))
+);
 
 await browser.close();
 
@@ -303,7 +372,7 @@ function sectionAt(y) {
 }
 
 function analyzeFrames(frames) {
-  const deltas = frames.slice(1).map((f) => f[1]);          // el primer frame no tiene anterior
+  const deltas = frames.slice(1).map((f) => f[1]); // el primer frame no tiene anterior
   const jank = deltas.filter((d) => d > 50).length;
   const bySection = new Map();
   for (const f of frames.slice(1)) {
@@ -314,9 +383,13 @@ function analyzeFrames(frames) {
   const draws = frames.map((f) => f[3]).filter((d) => d > 0);
   return {
     count: deltas.length,
-    p50: pct(deltas, 50), p95: pct(deltas, 95), max: deltas.length ? Math.max(...deltas) : 0,
-    jank, jankRate: deltas.length ? (jank / deltas.length) * 100 : 0,
-    bySection, draws,
+    p50: pct(deltas, 50),
+    p95: pct(deltas, 95),
+    max: deltas.length ? Math.max(...deltas) : 0,
+    jank,
+    jankRate: deltas.length ? (jank / deltas.length) * 100 : 0,
+    bySection,
+    draws,
   };
 }
 
@@ -346,8 +419,16 @@ function analyzeTrace(events) {
      Layout), así que no se pueden sumar entre sí: cada fila del informe es una
      medida independiente de un tipo de trabajo. */
   const BUCKETS = {
-    script: new Set(['FunctionCall', 'EvaluateScript', 'v8.run', 'TimerFire', 'EventDispatch',
-      'FireAnimationFrame', 'MicrotaskRun', 'v8.compile']),
+    script: new Set([
+      'FunctionCall',
+      'EvaluateScript',
+      'v8.run',
+      'TimerFire',
+      'EventDispatch',
+      'FireAnimationFrame',
+      'MicrotaskRun',
+      'v8.compile',
+    ]),
     raf: new Set(['FrameRequestCallbackCollection::ExecuteFrameCallbacks']),
     style: new Set(['UpdateLayoutTree']),
     layout: new Set(['Layout']),
@@ -359,14 +440,19 @@ function analyzeTrace(events) {
   let forced = 0;
   const forcedStacks = new Map();
   let span = 0;
-  let first = Infinity, last = 0;
+  let first = Infinity,
+    last = 0;
 
   for (const e of events) {
     if (e.ph !== 'X' || !isMain(e) || !e.dur) continue;
     if (e.ts < first) first = e.ts;
     if (e.ts + e.dur > last) last = e.ts + e.dur;
     let bucket = 'other';
-    for (const [name, set] of Object.entries(BUCKETS)) if (set.has(e.name)) { bucket = name; break; }
+    for (const [name, set] of Object.entries(BUCKETS))
+      if (set.has(e.name)) {
+        bucket = name;
+        break;
+      }
     totals[bucket] += e.dur / 1000;
     counts[bucket]++;
     const trace0 = e.args?.beginData?.stackTrace;
@@ -378,7 +464,13 @@ function analyzeTrace(events) {
     }
   }
   span = first === Infinity ? 0 : (last - first) / 1000;
-  return { totals, counts, forced, forcedStacks: [...forcedStacks.entries()].sort((a, b) => b[1] - a[1]), spanMs: span };
+  return {
+    totals,
+    counts,
+    forced,
+    forcedStacks: [...forcedStacks.entries()].sort((a, b) => b[1] - a[1]),
+    spanMs: span,
+  };
 }
 
 /* Perfil de CPU: tiempo propio por función (no tiempo total, que contabiliza
@@ -392,7 +484,7 @@ function analyzeProfile(profile) {
   let total = 0;
   for (let i = 0; i < profile.samples.length; i++) {
     const dt = profile.timeDeltas[i] || 0;
-    if (dt <= 0 || dt > 50000) continue;          // el primer delta y las pausas no son trabajo
+    if (dt <= 0 || dt > 50000) continue; // el primer delta y las pausas no son trabajo
     total += dt;
     self.set(profile.samples[i], (self.get(profile.samples[i]) || 0) + dt);
   }
@@ -403,8 +495,14 @@ function analyzeProfile(profile) {
     const url = cf.url || '';
     const isOwn = /\/(js|css)\//.test(url) && !/vendor|three\.module/.test(url);
     if (isOwn) own += us;
-    const key = `${cf.functionName || '(anónimo)'}|${(url.split('/').pop() || '(nativo)')}|${cf.lineNumber ?? -1}`;
-    const rec = grouped.get(key) || { us: 0, fn: cf.functionName || '(anónimo)', file: url.split('/').pop() || '(nativo)', line: cf.lineNumber ?? -1, own: isOwn };
+    const key = `${cf.functionName || '(anónimo)'}|${url.split('/').pop() || '(nativo)'}|${cf.lineNumber ?? -1}`;
+    const rec = grouped.get(key) || {
+      us: 0,
+      fn: cf.functionName || '(anónimo)',
+      file: url.split('/').pop() || '(nativo)',
+      line: cf.lineNumber ?? -1,
+      own: isOwn,
+    };
     rec.us += us;
     grouped.set(key, rec);
   }
@@ -412,22 +510,27 @@ function analyzeProfile(profile) {
     rows: [...grouped.values()].sort((a, b) => b.us - a.us),
     totalUs: total,
     ownUs: own,
-    byId, parentOf, selfById: self,
+    byId,
+    parentOf,
+    selfById: self,
   };
 }
 
 /* De quién viene el tiempo: sube por el árbol del perfil hasta la raíz. Sin
    esto sabemos que `getShaderInfoLog` es caro, pero no quién lo pide. */
 function stackOf(prof, fnName) {
-  const node = [...prof.byId.values()].find((n) => (n.callFrame?.functionName || '(anónimo)') === fnName
-    && (prof.selfById.get(n.id) || 0) > 0);
+  const node = [...prof.byId.values()].find(
+    (n) => (n.callFrame?.functionName || '(anónimo)') === fnName && (prof.selfById.get(n.id) || 0) > 0
+  );
   if (!node) return [];
   const out = [];
   let id = node.id;
   while (id != null && out.length < 8) {
     const n = prof.byId.get(id);
     const cf = n?.callFrame || {};
-    out.push(`${cf.functionName || '(anónimo)'} @ ${(cf.url || '').split('/').pop() || 'nativo'}:${(cf.lineNumber ?? -1) + 1}`);
+    out.push(
+      `${cf.functionName || '(anónimo)'} @ ${(cf.url || '').split('/').pop() || 'nativo'}:${(cf.lineNumber ?? -1) + 1}`
+    );
     id = prof.parentOf.get(id);
   }
   return out;
@@ -447,7 +550,8 @@ const rate = (ms) => ms / Math.max(scrollSec, 0.001);
    la traza con su pila (Chrome solo la adjunta con DevTools enganchado), pero
    en el perfil de CPU sí están, con su función llamadora: es la forma de
    saber QUIÉN las hace. */
-const LAYOUT_READS = /^(getBoundingClientRect|getComputedStyle|offsetTop|offsetLeft|offsetWidth|offsetHeight|offsetHeight|clientWidth|clientHeight|clientTop|scrollTop|scrollHeight|scrollWidth|scrollTo|scrollBy|scrollY|scrollX|innerWidth|innerHeight|getClientRects|focus|innerText)$/;
+const LAYOUT_READS =
+  /^(getBoundingClientRect|getComputedStyle|offsetTop|offsetLeft|offsetWidth|offsetHeight|offsetHeight|clientWidth|clientHeight|clientTop|scrollTop|scrollHeight|scrollWidth|scrollTo|scrollBy|scrollY|scrollX|innerWidth|innerHeight|getClientRects|focus|innerText)$/;
 
 function layoutReads(prof) {
   const out = [];
@@ -459,7 +563,9 @@ function layoutReads(prof) {
     const callers = [];
     while (id != null && callers.length < 4) {
       const cf = prof.byId.get(id)?.callFrame || {};
-      callers.push(`${cf.functionName || '(anónimo)'} @ ${(cf.url || '').split('/').pop() || 'nativo'}:${(cf.lineNumber ?? -1) + 1}`);
+      callers.push(
+        `${cf.functionName || '(anónimo)'} @ ${(cf.url || '').split('/').pop() || 'nativo'}:${(cf.lineNumber ?? -1) + 1}`
+      );
       id = prof.parentOf.get(id);
     }
     out.push({ name, us, callers: callers.join(' ← ') });
@@ -471,48 +577,80 @@ function layoutReads(prof) {
 
 const ms = (v) => (v >= 100 ? v.toFixed(0) : v.toFixed(1));
 console.log('');
-console.log(`  SCROLL${QUICK ? ' (solo bajada)' : ' · ida y vuelta'} · ${W}x${H} · ${scrollSec.toFixed(1)} s de recorrido · ${scrollFrames.count} frames`);
+console.log(
+  `  SCROLL${QUICK ? ' (solo bajada)' : ' · ida y vuelta'} · ${W}x${H} · ${scrollSec.toFixed(1)} s de recorrido · ${scrollFrames.count} frames`
+);
 console.log('  ' + '─'.repeat(76));
 console.log('  sección                     frames   p50ms   p95ms   máxms  >50ms');
 for (const s of doc.sections) {
   const d = scrollFrames.bySection.get(s.id);
-  if (!d || !d.length) { console.log(`  ${s.id.padEnd(26)} ${'—'.padStart(6)}`); continue; }
+  if (!d || !d.length) {
+    console.log(`  ${s.id.padEnd(26)} ${'—'.padStart(6)}`);
+    continue;
+  }
   const jank = d.filter((x) => x > 50).length;
-  console.log(`  ${s.id.padEnd(26)} ${String(d.length).padStart(6)} ${ms(pct(d, 50)).padStart(7)} ${ms(pct(d, 95)).padStart(7)} ${ms(Math.max(...d)).padStart(7)} ${String(jank).padStart(6)}`);
+  console.log(
+    `  ${s.id.padEnd(26)} ${String(d.length).padStart(6)} ${ms(pct(d, 50)).padStart(7)} ${ms(pct(d, 95)).padStart(7)} ${ms(Math.max(...d)).padStart(7)} ${String(jank).padStart(6)}`
+  );
 }
 console.log('  ' + '─'.repeat(76));
-console.log(`  global: p50 ${ms(scrollFrames.p50)} ms · p95 ${ms(scrollFrames.p95)} ms · máx ${ms(scrollFrames.max)} ms`
-  + ` · frames >50 ms: ${scrollFrames.jank} (${scrollFrames.jankRate.toFixed(1)}%)`);
+console.log(
+  `  global: p50 ${ms(scrollFrames.p50)} ms · p95 ${ms(scrollFrames.p95)} ms · máx ${ms(scrollFrames.max)} ms` +
+    ` · frames >50 ms: ${scrollFrames.jank} (${scrollFrames.jankRate.toFixed(1)}%)`
+);
 console.log('  (frames en SwiftShader: informativos; una GPU real rinde más. Lo comparable es lo de abajo.)');
 
 const longTasks = [...scrollPhase.perf.tasks, ...idlePhase.perf.tasks].sort((a, b) => b[1] - a[1]);
 console.log('');
 console.log('  HILO PRINCIPAL · durante el scroll');
 console.log('  ' + '─'.repeat(76));
-console.log(`  scripting      ${ms(scrollTrace.totals.script).padStart(8)} ms   (${ms(rate(scrollTrace.totals.script))} ms por segundo de scroll)`);
-console.log(`  estilo         ${ms(scrollTrace.totals.style).padStart(8)} ms   (${ms(rate(scrollTrace.totals.style))} ms/s · ${scrollTrace.counts.style} recálculos)`);
-console.log(`  layout         ${ms(scrollTrace.totals.layout).padStart(8)} ms   (${ms(rate(scrollTrace.totals.layout))} ms/s · ${scrollTrace.counts.layout} layouts)`);
+console.log(
+  `  scripting      ${ms(scrollTrace.totals.script).padStart(8)} ms   (${ms(rate(scrollTrace.totals.script))} ms por segundo de scroll)`
+);
+console.log(
+  `  estilo         ${ms(scrollTrace.totals.style).padStart(8)} ms   (${ms(rate(scrollTrace.totals.style))} ms/s · ${scrollTrace.counts.style} recálculos)`
+);
+console.log(
+  `  layout         ${ms(scrollTrace.totals.layout).padStart(8)} ms   (${ms(rate(scrollTrace.totals.layout))} ms/s · ${scrollTrace.counts.layout} layouts)`
+);
 console.log(`  paint          ${ms(scrollTrace.totals.paint).padStart(8)} ms   (${scrollTrace.counts.paint} eventos)`);
-console.log(`  bucle rAF        ${ms(scrollTrace.totals.raf).padStart(8)} ms   (${ms(rate(scrollTrace.totals.raf))} ms/s · ${scrollTrace.counts.raf} frames: Lenis + GSAP + animate)`);
-console.log(`  reflujos forzados        ${String(scrollTrace.forced + scrollTrace.counts.forced).padStart(4)}   (style+layout que el JS provoca leyendo medidas con el estilo sucio)`);
-console.log(`      por traza: ${scrollTrace.counts.forced} × Blink.ForcedStyleAndLayout (${ms(scrollTrace.totals.forced)} ms) · con pila: ${scrollTrace.forced}`);
+console.log(
+  `  bucle rAF        ${ms(scrollTrace.totals.raf).padStart(8)} ms   (${ms(rate(scrollTrace.totals.raf))} ms/s · ${scrollTrace.counts.raf} frames: Lenis + GSAP + animate)`
+);
+console.log(
+  `  reflujos forzados        ${String(scrollTrace.forced + scrollTrace.counts.forced).padStart(4)}   (style+layout que el JS provoca leyendo medidas con el estilo sucio)`
+);
+console.log(
+  `      por traza: ${scrollTrace.counts.forced} × Blink.ForcedStyleAndLayout (${ms(scrollTrace.totals.forced)} ms) · con pila: ${scrollTrace.forced}`
+);
 for (const [stack, n] of scrollTrace.forcedStacks.slice(0, 5)) console.log(`      ${String(n).padStart(4)}×  ${stack}`);
-console.log(`  tareas largas (>50 ms)   ${String(longTasks.length).padStart(4)}   peor: ${longTasks.length ? ms(longTasks[0][1]) + ' ms' : '—'}`);
-for (const t of longTasks.slice(0, 5)) console.log(`      ${ms(t[1]).padStart(7)} ms  en ${sectionAt(scrollPhase.perf.frames.reduce((best, f) => (Math.abs(f[0] - t[0]) < Math.abs(best[0] - t[0]) ? f : best), [Infinity, 0, 0])[2])} · ${t[2] || 'self'}`);
-console.log(`  draw calls por frame     ${scrollFrames.draws.length ? (scrollFrames.draws.reduce((a, b) => a + b, 0) / scrollFrames.draws.length).toFixed(1) : '—'}`
-  + ` (máx ${scrollFrames.draws.length ? Math.max(...scrollFrames.draws) : 0})`);
+console.log(
+  `  tareas largas (>50 ms)   ${String(longTasks.length).padStart(4)}   peor: ${longTasks.length ? ms(longTasks[0][1]) + ' ms' : '—'}`
+);
+for (const t of longTasks.slice(0, 5))
+  console.log(
+    `      ${ms(t[1]).padStart(7)} ms  en ${sectionAt(scrollPhase.perf.frames.reduce((best, f) => (Math.abs(f[0] - t[0]) < Math.abs(best[0] - t[0]) ? f : best), [Infinity, 0, 0])[2])} · ${t[2] || 'self'}`
+  );
+console.log(
+  `  draw calls por frame     ${scrollFrames.draws.length ? (scrollFrames.draws.reduce((a, b) => a + b, 0) / scrollFrames.draws.length).toFixed(1) : '—'}` +
+    ` (máx ${scrollFrames.draws.length ? Math.max(...scrollFrames.draws) : 0})`
+);
 const gl = scrollPhase.perf.gl || {};
 const linkFrames = scrollPhase.perf.frames.filter((f) => f[4] > 0).length;
-console.log(`  programas compilados     ${String(gl.links ?? 0).padStart(4)}   (debería ser 0 tras el arranque; ${linkFrames} frames con compilación)`
-  + ` · createProgram ${gl.creates ?? 0} · deleteProgram ${gl.deletes ?? 0} · getShaderInfoLog ${gl.infoLogs ?? 0}`);
+console.log(
+  `  programas compilados     ${String(gl.links ?? 0).padStart(4)}   (debería ser 0 tras el arranque; ${linkFrames} frames con compilación)` +
+    ` · createProgram ${gl.creates ?? 0} · deleteProgram ${gl.deletes ?? 0} · getShaderInfoLog ${gl.infoLogs ?? 0}`
+);
 
 console.log('');
 console.log('  REPOSO · la escena animada sin tocar nada');
 console.log('  ' + '─'.repeat(76));
 const idleSec = Math.max(idlePhase.wallMs / 1000, 0.001);
-console.log(`  frames ${idleFrames.count} · p50 ${ms(idleFrames.p50)} ms · p95 ${ms(idleFrames.p95)} ms · máx ${ms(idleFrames.max)} ms`
-  + ` · scripting ${(idleTrace.totals.script / idleSec).toFixed(1)} ms/s · layout ${(idleTrace.totals.layout / idleSec).toFixed(1)} ms/s`
-  + ` · reflujos ${idleTrace.forced}`);
+console.log(
+  `  frames ${idleFrames.count} · p50 ${ms(idleFrames.p50)} ms · p95 ${ms(idleFrames.p95)} ms · máx ${ms(idleFrames.max)} ms` +
+    ` · scripting ${(idleTrace.totals.script / idleSec).toFixed(1)} ms/s · layout ${(idleTrace.totals.layout / idleSec).toFixed(1)} ms/s` +
+    ` · reflujos ${idleTrace.forced}`
+);
 
 function printProfile(title, prof) {
   if (!prof.rows.length) return;
@@ -522,10 +660,14 @@ function printProfile(title, prof) {
   for (const r of prof.rows.slice(0, 18)) {
     const share = ((r.us / prof.totalUs) * 100).toFixed(1);
     const where = r.line >= 0 ? `${r.file}:${r.line + 1}` : r.file;
-    console.log(`  ${(r.us / 1000).toFixed(1).padStart(8)} ms ${share.padStart(5)}%  ${r.fn.padEnd(28).slice(0, 28)} ${where}${r.own ? '  ← nuestro' : ''}`);
+    console.log(
+      `  ${(r.us / 1000).toFixed(1).padStart(8)} ms ${share.padStart(5)}%  ${r.fn.padEnd(28).slice(0, 28)} ${where}${r.own ? '  ← nuestro' : ''}`
+    );
   }
-  console.log(`  código propio (js/ y css/ sin vendor): ${((prof.ownUs / prof.totalUs) * 100).toFixed(1)}% del tiempo de JS`
-    + ` · hilo principal ocupado ${((prof.totalUs - (prof.rows.find((r) => r.fn === '(idle)')?.us || 0)) / 1000).toFixed(0)} ms`);
+  console.log(
+    `  código propio (js/ y css/ sin vendor): ${((prof.ownUs / prof.totalUs) * 100).toFixed(1)}% del tiempo de JS` +
+      ` · hilo principal ocupado ${((prof.totalUs - (prof.rows.find((r) => r.fn === '(idle)')?.us || 0)) / 1000).toFixed(0)} ms`
+  );
   const busy = prof.totalUs - (prof.rows.find((r) => r.fn === '(idle)')?.us || 0);
   const worst = prof.rows.find((r) => r.fn !== '(idle)');
   if (worst && busy > 0) {
@@ -540,7 +682,8 @@ if (reads.length) {
   console.log('');
   console.log('  LECTURAS DE LAYOUT DURANTE EL SCROLL (cada una puede forzar un reflujo)');
   console.log('  ' + '─'.repeat(76));
-  for (const r of reads.slice(0, 8)) console.log(`  ${(r.us / 1000).toFixed(1).padStart(8)} ms  ${r.name.padEnd(22)} ${r.callers}`);
+  for (const r of reads.slice(0, 8))
+    console.log(`  ${(r.us / 1000).toFixed(1).padStart(8)} ms  ${r.name.padEnd(22)} ${r.callers}`);
 }
 printProfile('FUNCIONES MÁS CARAS EN REPOSO', idleProfile);
 
@@ -553,7 +696,9 @@ const check = (label, value, max, unit = 'ms') => {
   if (!ok) failures.push(label);
 };
 console.log('');
-console.log(`  arranque: cortina arriba a los ${curtainMs < 0 ? '—' : curtainMs + ' ms'} (el precalentado paga aquí lo que antes se pagaba en el scroll)`);
+console.log(
+  `  arranque: cortina arriba a los ${curtainMs < 0 ? '—' : curtainMs + ' ms'} (el precalentado paga aquí lo que antes se pagaba en el scroll)`
+);
 console.log('');
 console.log('  PRESUPUESTOS');
 console.log('  ' + '─'.repeat(76));
@@ -565,7 +710,9 @@ check('peor tarea larga', longTasks.length ? longTasks[0][1] : 0, BUDGET.longTas
 /* Los frames por encima de 50 ms se INFORMAN pero no suspenden: en este
    entorno el raster es por software y el número lo domina SwiftShader, no el
    código de la página. En una GPU real no significa lo mismo. */
-console.log(`  · frames >50 ms por cada 100       ${scrollFrames.jankRate.toFixed(1)}   (informativo: raster por software)`);
+console.log(
+  `  · frames >50 ms por cada 100       ${scrollFrames.jankRate.toFixed(1)}   (informativo: raster por software)`
+);
 check('arranque hasta la cortina', curtainMs < 0 ? 1e9 : curtainMs, BUDGET.curtainMs);
 
 console.log('');
@@ -574,7 +721,9 @@ console.log('  ' + '─'.repeat(76));
 if (!warmUps.length) console.log('  ninguno (sin WebGL o la página no llegó a cargar)');
 for (const w of warmUps) {
   const inside = w.at >= scrollPhase.pageStart && w.at <= scrollPhase.pageEnd;
-  console.log(`  a los ${String(w.at).padStart(6)} ms · duró ${String(w.ms).padStart(6)} ms${inside ? '   ⚠ CAYÓ DENTRO DEL SCROLL: el lector lo paga como tirón' : ''}`);
+  console.log(
+    `  a los ${String(w.at).padStart(6)} ms · duró ${String(w.ms).padStart(6)} ms${inside ? '   ⚠ CAYÓ DENTRO DEL SCROLL: el lector lo paga como tirón' : ''}`
+  );
 }
 
 if (errors.length) {
@@ -583,8 +732,16 @@ if (errors.length) {
 }
 
 const result = {
-  viewport: `${W}x${H}`, scrollSeconds: Number(scrollSec.toFixed(2)), curtainMs,
-  frames: { p50: scrollFrames.p50, p95: scrollFrames.p95, max: scrollFrames.max, jank: scrollFrames.jank, jankRate: scrollFrames.jankRate },
+  viewport: `${W}x${H}`,
+  scrollSeconds: Number(scrollSec.toFixed(2)),
+  curtainMs,
+  frames: {
+    p50: scrollFrames.p50,
+    p95: scrollFrames.p95,
+    max: scrollFrames.max,
+    jank: scrollFrames.jank,
+    jankRate: scrollFrames.jankRate,
+  },
   mainThreadPerSec: {
     script: Number(rate(scrollTrace.totals.script).toFixed(1)),
     style: Number(rate(scrollTrace.totals.style).toFixed(1)),
@@ -592,8 +749,14 @@ const result = {
   },
   forcedReflows: scrollTrace.forced,
   worstLongTaskMs: longTasks.length ? longTasks[0][1] : 0,
-  idle: { p50: idleFrames.p50, p95: idleFrames.p95, scriptMsPerSec: Number((idleTrace.totals.script / idleSec).toFixed(1)) },
-  topFunctions: scrollProfile.rows.slice(0, 10).map((r) => ({ fn: r.fn, file: r.file, ms: Number((r.us / 1000).toFixed(1)) })),
+  idle: {
+    p50: idleFrames.p50,
+    p95: idleFrames.p95,
+    scriptMsPerSec: Number((idleTrace.totals.script / idleSec).toFixed(1)),
+  },
+  topFunctions: scrollProfile.rows
+    .slice(0, 10)
+    .map((r) => ({ fn: r.fn, file: r.file, ms: Number((r.us / 1000).toFixed(1)) })),
 };
 if (JSON_OUT) {
   fs.mkdirSync(path.dirname(JSON_OUT), { recursive: true });
@@ -601,7 +764,10 @@ if (JSON_OUT) {
   console.log(`\n  resultado en ${path.relative(ROOT, JSON_OUT)}`);
 }
 
-if (errors.length) { console.log('\n  ✗ hay errores de página.'); process.exit(1); }
+if (errors.length) {
+  console.log('\n  ✗ hay errores de página.');
+  process.exit(1);
+}
 if (CHECK_BUDGET && failures.length) {
   console.log(`\n  ✗ ${failures.length} presupuesto(s) superados: ${failures.join(', ')}`);
   process.exit(1);

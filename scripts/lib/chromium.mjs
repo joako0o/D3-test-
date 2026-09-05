@@ -28,9 +28,14 @@ const LIBS = path.join(ROOT, '.cache', 'chromium-libs');
 
 /* Los tres scripts leen `--w=1440` igual; antes cada uno tenía su copia. */
 export function parseArgs(argv = process.argv.slice(2)) {
-  return Object.fromEntries(argv
-    .filter((a) => a.startsWith('--'))
-    .map((a) => { const [k, v = 'true'] = a.slice(2).split('='); return [k, v]; }));
+  return Object.fromEntries(
+    argv
+      .filter((a) => a.startsWith('--'))
+      .map((a) => {
+        const [k, v = 'true'] = a.slice(2).split('=');
+        return [k, v];
+      })
+  );
 }
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -91,27 +96,39 @@ export async function launchChromium({ width = 1440, height = 900, extraArgs = [
   const browser = await puppeteer.launch({
     executablePath,
     headless: 'shell',
-    args: [...chromium.args,
-      '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
-      '--force-device-scale-factor=1', '--hide-scrollbars',
+    args: [
+      ...chromium.args,
+      '--use-gl=angle',
+      '--use-angle=swiftshader',
+      '--enable-unsafe-swiftshader',
+      '--force-device-scale-factor=1',
+      '--hide-scrollbars',
       /* Sin estos, Chromium aparca la pestaña y `requestAnimationFrame` deja
          de correr: se mediría una página congelada. */
-      '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows',
-      '--disable-renderer-backgrounding', ...extraArgs],
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      ...extraArgs,
+    ],
     env: {
       ...process.env,
       LD_LIBRARY_PATH: [path.join(LIBS, 'lib'), LIBS, path.dirname(executablePath), process.env.LD_LIBRARY_PATH]
-        .filter(Boolean).join(':'),
+        .filter(Boolean)
+        .join(':'),
     },
   });
 
   const page = await browser.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
-  page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 200)); });
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 200));
+  });
   /* Sin esto el navegador restaura el scroll anterior y la primera medida es
      de una sección cualquiera en vez del hero. */
-  await page.evaluateOnNewDocument(() => { history.scrollRestoration = 'manual'; });
+  await page.evaluateOnNewDocument(() => {
+    history.scrollRestoration = 'manual';
+  });
   await page.setViewport({ width, height, deviceScaleFactor: 1 });
 
   return { browser, page, errors };
