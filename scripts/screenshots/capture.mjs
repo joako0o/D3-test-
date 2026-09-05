@@ -66,7 +66,10 @@ if (args.scroll !== undefined) {
   });
   let i = 0;
   for (const s of sections) {
-    if (ONLY && !ONLY.includes(s.id)) { i++; continue; }
+    if (ONLY && !ONLY.includes(s.id)) {
+      i++;
+      continue;
+    }
     const y = s.id === 'hero' ? 0 : Math.max(0, s.top + s.h / 2 - H / 2);
     await shot(`${String(i).padStart(2, '0')}-${s.id}`, y);
     i++;

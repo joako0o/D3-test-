@@ -8,7 +8,7 @@
  * Las dependencias se declaran en la firma de init: quien la llame tiene que
  * dárselas. Nada de leer variables de otro archivo por la puerta de atrás.
  */
-import { voiceFocus, pinQuote, clearPeek, isPinned } from '../interaction-state.js';
+import { voiceFocus, pinQuote } from '../interaction-state.js';
 import { TOPIC_DEFINITIONS, normalizeTopicText, topicHasTerm } from '../topics.js';
 
 
@@ -155,7 +155,6 @@ export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
     gsap.fromTo(shape, { opacity: 0, scale: 0.92, transformOrigin: `${cx}px ${cy}px` }, { opacity: 1, scale: 1, duration: 0.55, ease: 'cinematicOut' });
   }
 
-  let profileVoice = null;
   let profileCloseTimer = null;
   let profileReturnFocus = null;
   function setProfileEvidence(voice, rows) {
@@ -167,7 +166,6 @@ export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
 
   function renderVoiceProfile(voice, activeTopicId = null) {
     if (!voice) return;
-    profileVoice = voice;
     const profiles = getTopicProfile(voice);
     profileTitle.textContent = voice.name;
     profileSubtitle.textContent = `${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'} · ${voice.minYear}–${voice.maxYear} · cada eje = proporción de fragmentos con mención directa`;
@@ -277,10 +275,16 @@ export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
   });
 
   voices.forEach((voice, index) => {
+    /* El rol `listitem` va en un envoltorio, no en el botón: un <button>
+       con role="listitem" pierde su semántica de botón y `aria-pressed` deja
+       de ser válido ahí (Lighthouse: aria-allowed-attr). Así la lista sigue
+       siendo lista y la tarjeta sigue siendo un botón conmutable. */
+    const item = document.createElement('div');
+    item.setAttribute('role', 'listitem');
+    item.className = 'voice-card-item';
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'voice-card';
-    card.setAttribute('role', 'listitem');
     card.setAttribute('aria-pressed', 'false');
     card.setAttribute('aria-label', `Seleccionar ${voice.name}: ${voice.count} ${voice.count === 1 ? 'intervención' : 'intervenciones'} entre ${voice.minYear} y ${voice.maxYear}.`);
     card.innerHTML = `
@@ -299,7 +303,8 @@ export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
       card.querySelector(`.voice-signal-bar .${tone}`).style.width = `${(voice.toneCounts[tone] / voice.count) * 100}%`;
     });
     card.addEventListener('click', () => selectVoice(voice.name));
-    rail.appendChild(card);
+    item.appendChild(card);
+    rail.appendChild(item);
     cards.push({ card, voice });
   });
 

@@ -1,0 +1,22 @@
+# Estilo compartido entre editores (VS Code lo lee con la extensión EditorConfig;
+# muchos otros lo traen de serie). Coincide con el código existente.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+# Dato generado con CRLF: no tocar
+[js/quotes.js]
+end_of_line = crlf
+insert_final_newline = false
+
+[*.bat]
+end_of_line = crlf

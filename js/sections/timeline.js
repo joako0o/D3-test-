@@ -9,7 +9,9 @@
  * initTimeline(): un módulo no debería hacer nada por el mero hecho de
  * importarse.
  */
-import { getViewportSize } from '../viewport.js';
+/* Misma URL (query incluida) que en main.js: con specifiers distintos el
+   navegador instancia DOS módulos viewport.js, cada uno con su snapshot. */
+import { getViewportSize } from '../viewport.js?v=2';
 
 let quotes = [];
 
@@ -115,7 +117,9 @@ export function initTimeline(quotesData = []) {
     g.append('g')
       .attr('transform', `translate(0,${innerH})`)
               .call(d3.axisBottom(x)
-        .ticks(d3.timeYear.every(shortViewport && width < 520 ? 4 : 2))
+        /* Un año cada 2 son 8 rótulos de 4 cifras: en 300 px de eje se
+           pisaban ("20002002200420062008…"). En estrecho, cada 4 años. */
+        .ticks(d3.timeYear.every(width < 520 ? 4 : 2))
         .tickFormat(d3.timeFormat('%Y')))
       .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(14px, 1.25vw, 16px)');
     g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');

@@ -9,7 +9,7 @@
  * lo que no se puede es reasignar la variable CONFIG entera.
  */
 
-/* Portada: la puerta GLB (Puerta_bcch (1).glb) entra desde el hero, detrás de
+/* Portada: la puerta GLB (Puerta_bcch_v3.glb) entra desde el hero, detrás de
    la moneda, y el scroll del acto 2 hace dolly hacia el umbral. */
 export const HERO_DOOR_LOCKUP = true;
 
@@ -159,14 +159,12 @@ export const CONFIG = {
        LOS VALORES SON LOS MISMOS QUE HABÍA. Se movieron aquí sin cambiarlos
        (equivalencia de píxeles verificada), para que se puedan ajustar.
 
-       Aviso para quien venga a subir el relieve por aquí: NO se puede.
-       El normal map de las hojas (textura_puerta_bcch, 2048x2048 dentro de
-       Puerta_bcch (1).glb; la versión comprimida puerta-draco.glb trae la
-       misma textura en WebP) es un color liso RGB(128,127,255) = relieve CERO,
-       un bake que salió vacío. Medido: mover el foco key no cambia un píxel, y
-       bajar la metalicidad tampoco saca los paneles. Los cuadrados que se ven
-       en Blender no están en el archivo exportado, ni en malla ni en textura.
-       Hay que rehacer el export, no la iluminación. */
+       Aviso para quien venga a subir el relieve por aquí: NO se puede con
+       luz. El GLB de la puerta no trae relieve en las hojas (el normal map
+       del export anterior, Puerta_bcch (1).glb, era un color liso
+       RGB(128,127,255) = relieve CERO; ese archivo ya se retiró del repo).
+       Medido: mover el foco key no cambia un píxel, y bajar la metalicidad
+       tampoco saca los paneles. Hay que rehacer el export, no la iluminación. */
     leaf: {
       hero: { metalness: 0.12, roughness: 0.92, envMapIntensity: 0.12 },
       /* Acto 2: bronce envejecido, como el generador y el GLB de referencia.
@@ -210,6 +208,8 @@ export const CONFIG = {
     roomLook: { x: 0, y: 0.55, z: -2.0 },  // punto de mira ya dentro de la sala (sube el encuadre: la estatua queda arriba y el copy abajo)
     roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
     veilFog: 0.06,     // pico del velo de niebla durante el cruce
+    exitFog: 0.16,     // pico de niebla al salir de la sala: la estatua se hunde en vez de apagarse
+    exitFogSink: 0.14, // espesor extra al final de la salida (0,55→0,90): la estatua termina de hundirse ANTES de apagarse
     fovKick: 4,        // grados extra de FOV durante el dolly (0 → 1 → 0)
     /* Nube de voces dentro de la sala: centro y escala con los que se
        recoloca el enjambre al cruzar el umbral. La nube queda DELANTE de
@@ -251,6 +251,11 @@ export const CONFIG = {
                 cruzar la nube con el mouse. */
     hoverRadius: 0.075,
     hoverDelayMs: 90,
+    /* touchRadiusMul: multiplicador del radio de acierto cuando el gesto es
+       un toque (pointerType 'touch'). Un dedo cubre ~7–9 mm; con 2,2× el
+       área pasa de ~15 px a ~33 px y sigue eligiendo la partícula más
+       cercana al punto de contacto, así que no se vuelve impreciso. */
+    touchRadiusMul: 2.2,
   },
   /* ── LA SALA — retablo central (pedestal + estatua + órbitas) ─────────
      La pieza central de la sala es un RETABLO: la estatua de la Justicia

@@ -110,7 +110,8 @@ El tema es **política monetaria**, no un compositor. Meter música de Pendereck
 
 ### Fase 6 — Rendimiento y acabado (2–3 semanas)
 - [x] **GLBs comprimidos (2026-08-31):** `monedav5-draco.glb` 4.38 MB → 434 KB
-  (−90%) y `puerta-draco.glb` 824 KB → 76 KB (−91%). Draco re-encode + texturas
+  (−90%) y la puerta de entonces 824 KB → 76 KB (−91%; ese GLB ya se retiró del
+  repo: hoy se carga `Puerta_bcch_v3.glb`, 282 KB). Draco re-encode + texturas
   WebP 4:4:4 (normales clave en near-lossless; alfa aplanada con bleed, que no
   usa el material OPAQUE). Mismos triángulos y bbox; calidad verificada con
   métricas sobre píxeles visibles (p95 error angular 0°, PSNR ≥ 40 dB).

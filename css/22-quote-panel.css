@@ -28,6 +28,14 @@
   transform: translateY(-50%) scale(1);
   box-shadow: 0 20px 70px rgba(0,0,0,0.8), 0 0 35px rgba(255, 215, 106, 0.12);
 }
+/* Móvil: el layout inferior vive en 20-breakpoints.css, pero ese archivo
+   carga ANTES que este y el `translateY(-50%)` de arriba lo pisaba: el panel,
+   anclado con bottom:20px, subía además media altura y quedaba flotando a
+   mitad de pantalla tapando el gráfico. Se reafirma aquí, después. */
+@media (max-width: 768px) {
+  #quotePanel { transform: translateY(16px) scale(0.96); }
+  #quotePanel.visible { transform: translateY(0) scale(1); }
+}
 #quotePanel .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 #quotePanel .who { font-weight: 600; font-size: var(--fs-body); color: var(--color-text-primary); }
 #quotePanel .when { font-size: var(--fs-small); opacity: 0.6; }

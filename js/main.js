@@ -14,20 +14,19 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { initFigureSystem } from './figures.js?v=2';
+import { initFigureSystem } from './figures.js?v=4';
 import { buildCentralBankDoor } from './build-door.js?v=14';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=10';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=15';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
   voiceFocus, axesState, focusReturn, particleFocus,
 } from './interaction-state.js';
 import { initWordEvolution } from './sections/word-evolution.js';
-import { initVoiceExplorer } from './sections/voice-explorer.js';
+import { initVoiceExplorer } from './sections/voice-explorer.js?v=2';
 import { initActBrowser } from './sections/act-browser.js';
-import { initD3Axes } from './sections/axes-map.js';
-import { initTimeline } from './sections/timeline.js';
-import { TOPIC_DEFINITIONS, normalizeTopicText, topicHasTerm } from './topics.js';
+import { initD3Axes } from './sections/axes-map.js?v=3';
+import { initTimeline } from './sections/timeline.js?v=3';
 import { particleRandom, getQuoteAxisSentiment } from './utils.js';
 
 /* Los timelines de la escena se crean durante la inicialización de los
@@ -78,15 +77,11 @@ if (!DEBUG_MODE) {
 
 /* ────────────────────────────────
    Detección de capacidades del dispositivo
+   (WebGL no se sondea aparte: la sonda pedía un contexto en un canvas
+   desechable y costaba 1,6 s de arranque en el perfil de CPU —crear un
+   contexto es lo caro, no el renderer—. El `new WebGLRenderer` de abajo ya
+   va en try/catch y deja `renderer = null` si no hay WebGL.)
 ──────────────────────────────── */
-const supportsWebGL = (() => {
-  try {
-    const c = document.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'));
-  } catch (e) {
-    return false;
-  }
-})();
 const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const animMul = reduceMotion ? 0 : 1;
 
@@ -140,7 +135,7 @@ camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
 camera.lookAt(0, HERO_DOOR_LOCKUP ? 0.95 : 0.7, HERO_DOOR_LOCKUP ? -0.25 : 0);
 
 let renderer = null;
-if (supportsWebGL) {
+{
   try {
     /* Los ornamentos de la puerta viven en pocos píxeles; con antialias=false
        los filetes y aristas se rompen justo donde necesitamos legibilidad. */
@@ -372,6 +367,47 @@ scene.add(key, fill, rim, front);
 const mouseLight = new THREE.PointLight(0xfff1c8, 0.4, 8);
 scene.add(mouseLight);
 
+/* ────────────────────────────────
+   Decodificador Draco (compartido por moneda, puerta y figuras)
+──────────────────────────────── */
+const dracoLoader = new DRACOLoader();
+/* Decodificador Draco LOCAL primero (js/vendor/draco/): el proyecto ya era
+   offline-first (three.js, GSAP y D3 se sirven de js/), pero el decoder seguía
+   saliendo al CDN de Google — si ese CDN era inalcanzable (red filtrada, sin
+   conexión, preview aislada) los GLB no decodificaban y el sitio se quedaba
+   sin moneda ni puerta. Cadena: local → gstatic → jsDelivr.
+
+   Un solo decodificador para TODO (moneda, puerta y figuras): antes
+   figures.js creaba el suyo, con su propio worker y su propia descarga del
+   wasm. */
+/* preload(): el decodificador (wrapper 57 KB + wasm 188 KB) se baja AHORA, en
+   paralelo con los GLB. Sin esto DRACOLoader lo pide perezosamente al primer
+   parse, o sea cuando la moneda ya llegó: medido, el GLB estaba en memoria a
+   los 0,2 s y el decoder no se pedía hasta los 6,4 s. La sonda HEAD que había
+   aquí sobraba —duplicaba la petición del wrapper y salía abortada en la
+   consola de red—; el respaldo al CDN se decide con el resultado real. */
+const DRACO_CDN = 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/';
+const DRACO_MIRROR = 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/';
+/* preload() devuelve el loader; la promesa de verdad es `decoderPending`.
+   Si falla, dispose() la limpia y el siguiente preload() reintenta con otra
+   ruta. Las cargas de GLB que ya estaban esperando reciben ese mismo
+   decodificador (GLTFLoader llama a _initDecoder de nuevo por parse). */
+const preloadDraco = (path) => {
+  /* dispose() cierra workers pero no olvida la promesa fallida; sin esto el
+     reintento devolvería el mismo rechazo. */
+  dracoLoader.dispose();
+  dracoLoader.decoderPending = null;
+  dracoLoader.setDecoderPath(path);
+  return dracoLoader.preload().decoderPending;
+};
+preloadDraco('js/vendor/draco/').catch(() => {
+  console.warn('Draco local no disponible — usando CDN gstatic');
+  return preloadDraco(DRACO_CDN);
+}).catch(() => {
+  console.warn('Draco CDN primario no disponible — usando mirror jsDelivr');
+  return preloadDraco(DRACO_MIRROR);
+}).catch((e) => console.warn('Ningún decodificador Draco disponible:', e));
+
 /* ═══════════════════════════════════════════════════════════
    FIGURAS DE LA SALA — tu trabajo en Blender, con placeholders.
    Si un .glb de figures/ todavía no existe, se dibuja un
@@ -384,7 +420,8 @@ scene.add(mouseLight);
    que aún no tienen GLB se resuelven como placeholder ahí mismo), y en ese
    instante `doorLightGroup` —que se declara más abajo— todavía está en zona
    muerta temporal. Es el mismo fallo que documenta el README en el Paso 2. */
-let figureSystem = initFigureSystem(scene, {
+const figureSystem = initFigureSystem(scene, {
+  dracoLoader,
   debug: DEBUG_MODE,
   onReady: () => setTimeout(warmUpScene, 0),
 });
@@ -433,7 +470,7 @@ function buildDoorSpots() {
   doorLights.visible = false;
   return doorLights;
 }
-let doorLightGroup = buildDoorSpots();
+const doorLightGroup = buildDoorSpots();
 
 /* Sombra de contacto suave (radial gradient) para la base de la puerta */
 const shadowCanvas = document.createElement('canvas');
@@ -643,29 +680,6 @@ setTimeout(() => {
   if (loadEl && !loadEl.classList.contains('hidden')) loadEl.classList.add('hidden');
 }, 30000);
 
-const dracoLoader = new DRACOLoader();
-/* Decodificador Draco LOCAL primero (js/vendor/draco/): el proyecto ya era
-   offline-first (three.js, GSAP y D3 se sirven de js/), pero el decoder seguía
-   saliendo al CDN de Google — si ese CDN era inalcanzable (red filtrada, sin
-   conexión, preview aislada) los GLB no decodificaban y el sitio se quedaba
-   sin moneda ni puerta. Cadena: local → gstatic → jsDelivr. */
-dracoLoader.setDecoderPath('js/vendor/draco/');
-try {
-  fetch('js/vendor/draco/draco_wasm_wrapper.js', { method: 'HEAD' }).then((r) => {
-    if (!r.ok) throw new Error('decoder local ausente');
-  }).catch(() => {
-    console.warn('Draco local no disponible — usando CDN gstatic');
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-    /* Segundo respaldo: si el CDN primario no responde, mirror de jsDelivr
-       (mismos decodificadores, versión three r160). */
-    fetch('https://www.gstatic.com/draco/versioned/decoders/1.5.6/draco_wasm_wrapper.js', {
-      method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout ? AbortSignal.timeout(3500) : undefined,
-    }).catch(() => {
-      console.warn('Draco CDN primario no disponible — usando mirror jsDelivr');
-      dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
-    });
-  });
-} catch (e) { /* navegador sin fetch moderno: intenta con el decoder local igualmente */ }
 
 const loader = new GLTFLoader(manager);
 loader.setDRACOLoader(dracoLoader);
@@ -1053,7 +1067,7 @@ let doorLocalHeight = 0;
   }
   model.traverse((object) => {
     if (!object.isMesh || !object.material) return;
-    let m = object.material;
+    const m = object.material;
     if (!('metalness' in m)) return;
     const role = object.userData.role;
     const isDoorLeaf = role === 'leaf';
@@ -1197,8 +1211,6 @@ let doorLocalHeight = 0;
   doorModelGroup.add(model);
 }
 
-const bcchScratch = new THREE.Vector3();
-const bcchNormalScratch = new THREE.Vector3();
 const bcchStoneLow = new THREE.Color('#2e3741');
 const bcchStoneHigh = new THREE.Color('#5c6874');
 const bcchStep = new THREE.Color('#232a32');
@@ -1207,10 +1219,8 @@ const bcchBronzeHigh = new THREE.Color('#d9a23a');
 const bcchGold = new THREE.Color('#f2d16a');
 const bcchDoorLight = new THREE.Color('#d6a030');
 const bcchLineDark = new THREE.Color('#090502');
-const bcchTmp = new THREE.Color();
 const bcchHeroTint = new THREE.Color('#24251e');
 const bcchMeetTint = new THREE.Color('#f1f0e7');
-const bcchLeafMeetTint = new THREE.Color('#f1f0e7');
 const bcchLeafGlow = new THREE.Color('#211706');
 const bcchFrameGlow = new THREE.Color('#05070a');
 const bcchObsidianLeaf = new THREE.Color('#39434e');
@@ -1224,7 +1234,9 @@ function bcchDoorMaskAt(x, y, isGoldMesh = false, z = 0) {
      por x como con el GLB anterior (que traía el dorado fundido en una sola
      lámina continua bajo los pilares). */
   if (!isGoldMesh) return 0;
-  if (y < -0.86 || y > 0.84 || z < 0.015 || z > 0.24) return 0;
+  /* z: la hoja vive en [0.02,0.17]; las medallas, ya pegadas a la piedra,
+     en [-0.14,-0.04]. Ambas son bronce. */
+  if (y < -0.86 || y > 0.84 || z < -0.15 || z > 0.24) return 0;
   const doorY = bcchSmooth(-0.86, -0.72, y) * (1 - bcchSmooth(0.74, 0.86, y));
   return THREE.MathUtils.clamp(0.86 + 0.14 * doorY, 0, 1);
 }
@@ -1328,64 +1340,89 @@ function makeBcchMesh(geometry, name, kind = 'frame') {
   mesh.renderOrder = 5;
   mesh.userData.role = 'bcchDoor';
   if (geometry.attributes.position?.count > 0) {
+    const bronzeEdges = kind === 'leaf' || kind === 'medal';
     const edgeMat = new THREE.LineBasicMaterial({
-      color: kind === 'leaf' ? 0x120803 : 0x050403,
+      color: bronzeEdges ? 0x120803 : 0x050403,
       transparent: true,
       opacity: 0,
       depthTest: true,
       depthWrite: false,
     });
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, kind === 'leaf' ? 26 : 34), edgeMat);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, bronzeEdges ? 26 : 34), edgeMat);
     edges.name = `${name}_edgeLines`;
     edges.renderOrder = 6;
     mesh.add(edges);
-    bcchEdgeMats.push({ m: edgeMat, baseOpacity: kind === 'leaf' ? 0.22 : 0.15, kind });
+    bcchEdgeMats.push({ m: edgeMat, baseOpacity: bronzeEdges ? 0.22 : 0.15, kind });
   }
   doorMats.push(mat);
   bcchDoorMats.push(mat);
   if (kind === 'aperture') bcchApertureMats.push(mat);
   return mesh;
 }
+/* ── Geometría de referencia de Puerta_bcch_v3.glb ────────────────────
+   Medida sobre el archivo (unidades del modelo, relativas al centro de su
+   caja). Lo que el GLB trae mal y aquí se corrige, en orden de lo que se ve:
+
+   (a) El MURO trasero es una losa maciza x[-1,1] × y[-0.93,0.83] × z[-0.34,-0.14]
+       SIN vano, triangulada con triángulos larguísimos (de x=-1 a x=0.23).
+       El recorte anterior descartaba triángulos por su CENTROIDE (|cx|<0.6):
+       de esos triángulos unos se iban y otros se quedaban, y lo que quedaba
+       eran cuñas diagonales entre las pilastras y las hojas (la "pajarita"
+       negra a cada lado en el hero) y alas cortadas en diagonal. Al abrir,
+       las cuñas aparecían como alas doradas flotando junto a las hojas.
+       → La losa (y la tabla interior fantasma que flota detrás de las hojas)
+         se descartan enteras y el muro se reconstruye limpio: dos alas con
+         el vano exacto de las hojas y jambas con derrame hacia la sala. No
+         lleva dintel: las hojas llegan a 0.822 y la losa termina en 0.833;
+         el dintel visual es la cornisa, que ya está en el modelo.
+
+   (b) El pórtico NO está centrado en la caja del modelo (la caja la domina
+       la losa, simétrica): pilastras -0.015, hojas -0.023, cornisa -0.011,
+       escalinata -0.017, capiteles -0.006. La ranura junto a la hoja
+       izquierda medía 0.108 y la derecha 0.123 (28 vs 33 px en el hero).
+       → Todo se centra en el eje real de las pilastras; cada pieza suelta
+         (hojas, cornisa, escalinata, capiteles) se recentra por separado.
+
+   (c) Las bisagras del GLB (empties Bisagra_*) están en la ESQUINA de la
+       caja de cada hoja: x en el extremo exterior de la bola decorativa
+       (0.098 fuera del canto real) y z a media profundidad. Al girar, la
+       hoja orbitaba ese eje en vez de girar sobre su canto: pasados ~60° la
+       esquina trasera barría 0.1 hacia la pilastra, atravesando la jamba.
+       → Pivote en el canto exterior-TRASERO de cada hoja (lado de la sala,
+         hacia donde abre), como una bisagra real: ningún punto de la hoja
+         cruza jamás el plano de su bisagra hacia la jamba.
+
+   (d) Las MEDALLAS de bronce (los discos a la altura de las manillas) vienen
+       fusionadas en la malla de cada hoja, así que giraban con la puerta y
+       flotaban 0.21 por delante del muro. En el edificio real están fijas en
+       la piedra, a cada lado del vano.
+       → Se separan de las hojas (todo triángulo con vértices más allá del
+         canto) y se montan en el muro estático, en el paño entre la jamba y
+         la pilastra, apoyadas en la cara vista de la piedra. */
+const BCCH_V3 = {
+  axisX: -0.0153,           // eje de simetría de las pilastras (x rel. a la caja)
+  slabZ: [-0.34, -0.14],    // profundidad de la losa original (se conserva)
+  slabY: [-0.9267, 0.8333], // base y coronación de la losa
+  slabX: 1.0,               // media anchura del bloque
+  ballY: 0.0986,            // altura de la medalla (misma que las manillas); se excluye al medir el canto
+  pilasterInnerX: 0.5053,   // cara interior de las pilastras (|x|, tras centrar): límite del paño de la medalla
+  gap: 0.02,                // holgura hoja ↔ jamba
+  splay: 0.06,              // derrame de las jambas hacia la sala
+};
+
 function buildOpenableBcchDoor(sourceModel, rawCenter) {
   const group = new THREE.Group();
   group.name = 'Puerta_bcch_Openable';
-  /* Puerta v3 (Puerta_bcch_v3.glb): ya trae las hojas separadas
-     (Puerta_Izquierda / Puerta_Derecha) y sus BISAGRAS como nodos
-     (Bisagra_Izquierda / Bisagra_Derecha). Usamos esas bisagras como pivotes
-     reales de giro, en vez de recortar la lámina dorada por x como con el
-     GLB anterior (donde la bisagra se adivinaba y caía en la muralla). */
-  let hingeL = -0.511;
-  let hingeR = 0.459;
-  /* Bisagras reales del GLB v3: no están en el plano de la fachada (z=0),
-     sino hundidas en el grosor de la puerta, en z=+0.0972 (relativo al
-     centro del modelo). El pivote anterior se ponía en z=0 y la geometría
-     NO se compensaba: al rotar, cada hoja trazaba un arco alrededor de un
-     eje desplazado y la muralla contigua se deformaba (bug #1). Se pivota
-     sobre el z real de la bisagra y se compensa la geometría para que la
-     hoja cerrada siga en su sitio exacto. */
-  const hingeZ = 0.0972;
-  const hingeProbe = new THREE.Vector3();
-  sourceModel.updateMatrixWorld(true);
-  sourceModel.traverse((o) => {
-    if (o.name === 'Bisagra_Izquierda') {
-      o.getWorldPosition(hingeProbe);
-      hingeL = hingeProbe.x - rawCenter.x;
-    } else if (o.name === 'Bisagra_Derecha') {
-      o.getWorldPosition(hingeProbe);
-      hingeR = hingeProbe.x - rawCenter.x;
-    }
-  });
-  const pivotL = new THREE.Object3D();
-  const pivotR = new THREE.Object3D();
-  pivotL.name = 'Puerta_bcch_LeftPivot';
-  pivotR.name = 'Puerta_bcch_RightPivot';
-  pivotL.position.set(hingeL, 0, hingeZ);
-  pivotR.position.set(hingeR, 0, hingeZ);
-  pivotL.userData.openSign = 1;
-  pivotR.userData.openSign = -1;
+
+  /* (b) Centro visual real del pórtico: el eje de las pilastras. */
+  const center = rawCenter.clone();
+  center.x += BCCH_V3.axisX;
+
   const staticTris = [];
   const leftTris = [];
   const rightTris = [];
+  const mkVert = (p, n) => ({ p, n, c: new THREE.Color(), mask: 0 });
+  const isSlabZ = (z) => Math.abs(z - BCCH_V3.slabZ[0]) < 3e-3 || Math.abs(z - BCCH_V3.slabZ[1]) < 3e-3;
 
   sourceModel.updateMatrixWorld(true);
   sourceModel.traverse((object) => {
@@ -1395,62 +1432,240 @@ function buildOpenableBcchDoor(sourceModel, rawCenter) {
     const normal = geo.attributes.normal;
     if (!pos || !normal) return;
     const normalMatrix = new THREE.Matrix3().getNormalMatrix(object.matrixWorld);
-    /* v3: la hoja izquierda y la derecha ya son mallas independientes con su
-       propia bisagra. Todo lo demás (Cubo.015) es muro/marco y queda fijo. */
     const isLeftLeaf = /Puerta_Izquierda/i.test(object.name);
     const isRightLeaf = /Puerta_Derecha/i.test(object.name);
-    const isGoldMesh = isLeftLeaf || isRightLeaf
-      || /Material\.002|Toroide/i.test(object.material?.name || '');
     const index = geo.index;
     const triCount = index ? index.count / 3 : pos.count / 3;
     for (let t = 0; t < triCount; t++) {
       const ids = index
         ? [index.getX(t * 3), index.getX(t * 3 + 1), index.getX(t * 3 + 2)]
         : [t * 3, t * 3 + 1, t * 3 + 2];
-      const tri = ids.map((id) => {
-        const p = new THREE.Vector3().fromBufferAttribute(pos, id).applyMatrix4(object.matrixWorld).sub(rawCenter);
-        const n = new THREE.Vector3().fromBufferAttribute(normal, id).applyMatrix3(normalMatrix).normalize();
-        const c = new THREE.Color();
-        const mask = bcchColorAt(p, isGoldMesh, c);
-        return { p, n, c, mask };
-      });
-      if (isLeftLeaf) leftTris.push(tri);
-      else if (isRightLeaf) rightTris.push(tri);
-      else {
-        /* Piedra/marco. La v3 trae un MURO detrás de la puerta: una cara
-           plana de piedra en z≈-0.14 que rellena el vano y tapa La Sala al
-           abrir. La quitamos por completo: solo se descartan las caras
-           PLANAS (normal ±z) que están detrás del plano de las hojas, dentro
-           del hueco. Las jambas/dintel/umbral son caras verticales (normal
-           ≈0 en z) y se conservan: el marco sigue intacto y el vano queda
-           abierto hacia la sala. */
-        const e1 = new THREE.Vector3().subVectors(tri[1].p, tri[0].p);
-        const e2 = new THREE.Vector3().subVectors(tri[2].p, tri[0].p);
-        const n = new THREE.Vector3().crossVectors(e1, e2).normalize();
-        const cx = (tri[0].p.x + tri[1].p.x + tri[2].p.x) / 3;
-        const cy = (tri[0].p.y + tri[1].p.y + tri[2].p.y) / 3;
-        const cz = (tri[0].p.z + tri[1].p.z + tri[2].p.z) / 3;
-        const isBackWall = cz < -0.05 && Math.abs(cx) < 0.6 && Math.abs(cy) < 0.95 && Math.abs(n.z) > 0.5;
-        /* Además la v3 trae una TABLA INTERIOR flotando detrás de las hojas:
-           un anillo rectangular hueco (solo cantos, sin caras frontales) en
-           x≈[-0.28,0.23], y≈[-0.46,0.40], z≈-0.24 con normales ±x/±y. Ese
-           marco fantasma era lo que se veía al abrir la puerta (bug #3); se
-           descarta entero. */
-        const isInnerBoard = Math.abs(cx) < 0.32 && Math.abs(cy) < 0.52 && cz < -0.15 && cz > -0.34 && Math.abs(n.z) < 0.5;
-        if (!isBackWall && !isInnerBoard) staticTris.push(tri);
-      }
+      const tri = ids.map((id) => mkVert(
+        new THREE.Vector3().fromBufferAttribute(pos, id).applyMatrix4(object.matrixWorld).sub(center),
+        new THREE.Vector3().fromBufferAttribute(normal, id).applyMatrix3(normalMatrix).normalize()
+      ));
+      if (isLeftLeaf) { leftTris.push(tri); continue; }
+      if (isRightLeaf) { rightTris.push(tri); continue; }
+      /* (a) Losa y tabla interior: son las ÚNICAS piezas cuyos vértices viven
+         todos en los planos z=-0.34 / z=-0.14. Se van enteras. */
+      if (tri.every((v) => isSlabZ(v.p.z))) continue;
+      staticTris.push(tri);
     }
   });
+
+  /* (b) Recentrado pieza a pieza. Cada pieza se identifica por su banda
+     vertical (y sus extensiones, para no confundirla con las pilastras). */
+  const extentOf = (tri, axis) => {
+    const vals = tri.map((v) => v.p[axis]);
+    return Math.max(...vals) - Math.min(...vals);
+  };
+  const recenterPiece = (tris, pred) => {
+    let min = Infinity, max = -Infinity;
+    const picked = [];
+    for (const tri of tris) {
+      if (!pred(tri)) continue;
+      picked.push(tri);
+      for (const v of tri) { min = Math.min(min, v.p.x); max = Math.max(max, v.p.x); }
+    }
+    if (!picked.length) return 0;
+    const dx = -(min + max) * 0.5;
+    if (Math.abs(dx) > 1e-4) for (const tri of picked) for (const v of tri) v.p.x += dx;
+    return dx;
+  };
+  const shifts = {
+    cornice: recenterPiece(staticTris, (tri) =>
+      tri.every((v) => v.p.y >= BCCH_V3.slabY[1] + 2e-3) && (extentOf(tri, 'x') > 0.5 || extentOf(tri, 'z') > 0.5)),
+    capitals: recenterPiece(staticTris, (tri) =>
+      tri.every((v) => v.p.y >= 0.63 - 1e-3 && v.p.y <= 0.845 && Math.abs(v.p.x) < 0.53)),
+    steps: recenterPiece(staticTris, (tri) =>
+      tri.every((v) => v.p.y <= -0.7038 + 1e-3 && v.p.z >= -0.27)),
+  };
+  /* Hojas: se recentran como PAR por sus cantos reales (sin la bola), para
+     conservar la ranura central original entre ambas. */
+  const leafEdge = (tris, sign) => {
+    let edge = sign < 0 ? Infinity : -Infinity;
+    for (const tri of tris) for (const v of tri) {
+      if (Math.abs(v.p.y - BCCH_V3.ballY) < 0.07) continue;
+      edge = sign < 0 ? Math.min(edge, v.p.x) : Math.max(edge, v.p.x);
+    }
+    return edge;
+  };
+  let edgeL = leafEdge(leftTris, -1);
+  let edgeR = leafEdge(rightTris, +1);
+
+  /* (d) MEDALLAS. En el edificio real son dos discos de bronce FIJOS en la
+     piedra, a la altura de las manillas, uno a cada lado del vano. En el GLB
+     vienen fusionados dentro de la malla de cada hoja (un disco de r≈0.05 y
+     0.10 de grosor que sobresale del canto exterior), así que giraban con la
+     puerta y además flotaban 0.21 por delante de la pared. Se separan aquí:
+     todo triángulo de la hoja con algún vértice más allá del canto es
+     medalla (los 14–18 triángulos "puente" que la unían al canto también,
+     para que no quede una oreja en la hoja). */
+  const splitMedal = (tris, edge, sign) => {
+    const keep = [], medal = [];
+    for (const tri of tris) {
+      const beyond = tri.some((v) => (sign < 0 ? v.p.x < edge - 1e-4 : v.p.x > edge + 1e-4));
+      (beyond ? medal : keep).push(tri);
+    }
+    return { keep, medal };
+  };
+  const splitL = splitMedal(leftTris, edgeL, -1);
+  const splitR = splitMedal(rightTris, edgeR, +1);
+  leftTris.length = 0; leftTris.push(...splitL.keep);
+  rightTris.length = 0; rightTris.push(...splitR.keep);
+  const medalTris = [];
+  /* La geometría del GLB para el disco es de muy baja resolución y trae los
+     triángulos "puente" con el canto (una cara diagonal en el frente). En
+     lugar de recolocarla, se genera un disco limpio con SUS medidas (radio y
+     grosor medidos de la pieza original) y se monta en el paño de pared
+     entre la jamba y la pilastra, con la trasera apoyada en la cara vista
+     de la piedra (z = slabZ[1]) y a la altura original (la de las manillas). */
+  const medalBox = new THREE.Box3();
+  const placeMedal = (tris, side) => {
+    medalBox.makeEmpty();
+    for (const tri of tris) for (const v of tri) medalBox.expandByPoint(v.p);
+    if (medalBox.isEmpty()) return;
+    const size = medalBox.getSize(new THREE.Vector3());
+    const radius = Math.min(size.x, size.y) * 0.5;
+    const depth = Math.max(size.z, 0.02);
+    const cy = (medalBox.min.y + medalBox.max.y) * 0.5;
+    const paneInner = side < 0 ? (edgeL + shifts.leaves) - BCCH_V3.gap : (edgeR + shifts.leaves) + BCCH_V3.gap;
+    const paneOuter = side * BCCH_V3.pilasterInnerX;
+    const cx = (paneInner + paneOuter) * 0.5;
+    const zBack = BCCH_V3.slabZ[1];
+    const zFront = zBack + depth;
+    const N = 28;
+    const ring = (z) => Array.from({ length: N }, (_, i) => {
+      const a = (i / N) * Math.PI * 2;
+      return new THREE.Vector3(cx + Math.cos(a) * radius, cy + Math.sin(a) * radius, z);
+    });
+    const front = ring(zFront), back = ring(zBack);
+    const cF = new THREE.Vector3(cx, cy, zFront), cB = new THREE.Vector3(cx, cy, zBack);
+    const nF = new THREE.Vector3(0, 0, 1), nB = new THREE.Vector3(0, 0, -1);
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N;
+      /* tapa frontal (mira a la cámara, +z) */
+      medalTris.push([mkVert(cF.clone(), nF.clone()), mkVert(front[i].clone(), nF.clone()), mkVert(front[j].clone(), nF.clone())]);
+      /* trasera (contra la piedra) */
+      medalTris.push([mkVert(cB.clone(), nB.clone()), mkVert(back[j].clone(), nB.clone()), mkVert(back[i].clone(), nB.clone())]);
+      /* canto */
+      const ni = new THREE.Vector3(front[i].x - cx, front[i].y - cy, 0).normalize();
+      const nj = new THREE.Vector3(front[j].x - cx, front[j].y - cy, 0).normalize();
+      medalTris.push([mkVert(back[i].clone(), ni.clone()), mkVert(front[j].clone(), nj.clone()), mkVert(front[i].clone(), ni.clone())]);
+      medalTris.push([mkVert(back[i].clone(), ni.clone()), mkVert(back[j].clone(), nj.clone()), mkVert(front[j].clone(), nj.clone())]);
+    }
+    /* Botón central en relieve (como la roseta de la referencia): un
+       disco menor sobre la tapa, para que el bronce lea volumen y no un
+       círculo plano. */
+    const z2 = zFront + depth * 0.35;
+    const front2 = ring(z2).map((v) => v.sub(new THREE.Vector3(cx, cy, 0)).multiplyScalar(0.55).add(new THREE.Vector3(cx, cy, 0)));
+    const c2 = new THREE.Vector3(cx, cy, z2);
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N;
+      medalTris.push([mkVert(c2.clone(), nF.clone()), mkVert(front2[i].clone(), nF.clone()), mkVert(front2[j].clone(), nF.clone())]);
+      const ni = new THREE.Vector3(front2[i].x - cx, front2[i].y - cy, 0).normalize();
+      const nj = new THREE.Vector3(front2[j].x - cx, front2[j].y - cy, 0).normalize();
+      const bi = new THREE.Vector3(front2[i].x, front2[i].y, zFront), bj = new THREE.Vector3(front2[j].x, front2[j].y, zFront);
+      medalTris.push([mkVert(bi, ni.clone()), mkVert(front2[j].clone(), nj.clone()), mkVert(front2[i].clone(), ni.clone())]);
+      medalTris.push([mkVert(bi.clone(), ni.clone()), mkVert(bj, nj.clone()), mkVert(front2[j].clone(), nj.clone())]);
+    }
+  };
+  shifts.leaves = -(edgeL + edgeR) * 0.5;
+  placeMedal(splitL.medal, -1);
+  placeMedal(splitR.medal, +1);
+  for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) v.p.x += shifts.leaves;
+  edgeL += shifts.leaves;
+  edgeR += shifts.leaves;
+  /* Plano posterior de las hojas (el que mira a la sala; la cámara está en +z). */
+  let leafBackZ = Infinity;
+  let leafTop = -Infinity;
+  for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) {
+    leafBackZ = Math.min(leafBackZ, v.p.z);
+    leafTop = Math.max(leafTop, v.p.y);
+  }
+
+  /* (c) Bisagras en el canto exterior-trasero. */
+  const hingeZ = leafBackZ;
+  const hingeL = edgeL;
+  const hingeR = edgeR;
+  const pivotL = new THREE.Object3D();
+  const pivotR = new THREE.Object3D();
+  pivotL.name = 'Puerta_bcch_LeftPivot';
+  pivotR.name = 'Puerta_bcch_RightPivot';
+  pivotL.position.set(hingeL, 0, hingeZ);
+  pivotR.position.set(hingeR, 0, hingeZ);
+  pivotL.userData.openSign = 1;
+  pivotR.userData.openSign = -1;
+
+  /* (a) Muro reconstruido. Dos alas prismáticas (planta en trapecio: el
+     vano se ensancha hacia la sala = derrame) a toda la altura de la losa,
+     más el umbral que cierra el suelo del vano. Sin dintel (ver arriba). */
+  const G = BCCH_V3.gap;
+  const S = BCCH_V3.splay;
+  const openL = edgeL - G;
+  const openR = edgeR + G;
+  const [zB, zF] = BCCH_V3.slabZ;     // zB = cara hacia la sala · zF = cara vista
+  const [yB, yT] = BCCH_V3.slabY;
+  const X = BCCH_V3.slabX;
+  const quad = (a, b, c, d) => {        // antihorario visto desde fuera del sólido
+    const P = [a, b, c, d].map((p) => new THREE.Vector3(...p));
+    const n = new THREE.Vector3().crossVectors(
+      new THREE.Vector3().subVectors(P[1], P[0]),
+      new THREE.Vector3().subVectors(P[2], P[0])
+    ).normalize();
+    staticTris.push(
+      [mkVert(P[0].clone(), n.clone()), mkVert(P[1].clone(), n.clone()), mkVert(P[2].clone(), n.clone())],
+      [mkVert(P[0].clone(), n.clone()), mkVert(P[2].clone(), n.clone()), mkVert(P[3].clone(), n.clone())]
+    );
+  };
+  /* Ala: planta A(front-ext) B(front-int) C(back-int) D(back-ext). */
+  const wing = (side) => {
+    const xo = side * X;                                  // extremo exterior
+    const xf = side < 0 ? openL : openR;                  // canto del vano en la cara vista
+    const xb = xf + side * S;                             // canto del vano en la cara de la sala (derrame)
+    const A = [xo, zF], B = [xf, zF], C = [xb, zB], D = [xo, zB];
+    const face = (p, q) => (side < 0
+      ? quad([p[0], yB, p[1]], [q[0], yB, q[1]], [q[0], yT, q[1]], [p[0], yT, p[1]])
+      : quad([q[0], yB, q[1]], [p[0], yB, p[1]], [p[0], yT, p[1]], [q[0], yT, q[1]]));
+    face(A, B);   // cara vista
+    face(B, C);   // jamba con derrame
+    face(C, D);   // cara hacia la sala
+    face(D, A);   // testero exterior
+    /* Tapa (se ve desde arriba con la inclinación del hero) y base. */
+    if (side < 0) {
+      quad([A[0], yT, A[1]], [B[0], yT, B[1]], [C[0], yT, C[1]], [D[0], yT, D[1]]);
+      quad([D[0], yB, D[1]], [C[0], yB, C[1]], [B[0], yB, B[1]], [A[0], yB, A[1]]);
+    } else {
+      quad([B[0], yT, B[1]], [A[0], yT, A[1]], [D[0], yT, D[1]], [C[0], yT, C[1]]);
+      quad([C[0], yB, C[1]], [D[0], yB, D[1]], [A[0], yB, A[1]], [B[0], yB, B[1]]);
+    }
+  };
+  wing(-1);
+  wing(+1);
+  /* Umbral: suelo del vano, entre las jambas. */
+  quad([openL - S, yB, zB], [openR + S, yB, zB], [openR, yB, zF], [openL, yB, zF]);
+
+  /* Color y máscara por vértice, ya en coordenadas definitivas. */
+  for (const tri of staticTris) for (const v of tri) v.mask = bcchColorAt(v.p, false, v.c);
+  for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) v.mask = bcchColorAt(v.p, true, v.c);
+
+  for (const tri of medalTris) for (const v of tri) v.mask = bcchColorAt(v.p, true, v.c);
 
   const staticMesh = makeBcchMesh(buildGeometryFromTriangles(staticTris), 'Puerta_bcch_frame', 'frame');
   const leftMesh = makeBcchMesh(buildGeometryFromTriangles(leftTris, hingeL, hingeZ), 'Puerta_bcch_left_leaf', 'leaf');
   const rightMesh = makeBcchMesh(buildGeometryFromTriangles(rightTris, hingeR, hingeZ), 'Puerta_bcch_right_leaf', 'leaf');
+  /* Medallas: malla propia, estática (no gira con las hojas) y con el
+     acabado de bronce de las hojas ('medal' hereda el material de 'leaf'
+     salvo el fundido: se quedan en la pared cuando las hojas se disuelven). */
+  const medalMesh = makeBcchMesh(buildGeometryFromTriangles(medalTris), 'Puerta_bcch_medals', 'medal');
   if (staticMesh) group.add(staticMesh);
+  if (medalMesh) group.add(medalMesh);
   if (leftMesh) pivotL.add(leftMesh);
   if (rightMesh) pivotR.add(rightMesh);
   group.add(pivotL, pivotR);
   bcchPivotL = pivotL;
   bcchPivotR = pivotR;
+  group.userData.bcchDoor = { hingeL, hingeR, hingeZ, edgeL, edgeR, leafTop, openL, openR, shifts };
   return group;
 }
 
@@ -1494,13 +1709,34 @@ window.addEventListener('pointermove', (e) => {
   lastPointerY = e.clientY;
   onPointerMove(e.clientX, e.clientY);
 });
+/* Táctil: `pointerdown` llega en cuanto el dedo toca la pantalla, antes de
+   saber si va a desplazar la página o a tocar una partícula. Elegir la cita
+   ahí abría (y fijaba) el panel cada vez que un desplazamiento arrancaba
+   sobre la nube, y cerraba el panel fijado al empezar a leerlo. La decisión
+   se toma en `pointerup`: si el navegador convirtió el gesto en scroll llega
+   `pointercancel` y no pasa nada; si el dedo soltó cerca de donde tocó
+   (< 10 px) y rápido, es un toque. El ratón conserva el comportamiento
+   inmediato de siempre. */
+let pendingTap = null;
 window.addEventListener('pointerdown', (e) => {
   /* No robar el click de tarjetas, botones, links ni del panel abierto. */
   if (isInteractiveTarget(e)) return;
+  if (e.pointerType === 'touch') {
+    pendingTap = { id: e.pointerId, x: e.clientX, y: e.clientY, at: performance.now() };
+    return;
+  }
   onPointerDown(e.clientX, e.clientY, e);
 });
-window.addEventListener('pointerup', onPointerUp);
-window.addEventListener('pointercancel', onPointerUp);
+window.addEventListener('pointerup', (e) => {
+  if (pendingTap && e.pointerType === 'touch' && e.pointerId === pendingTap.id) {
+    const dx = e.clientX - pendingTap.x, dy = e.clientY - pendingTap.y;
+    const isTap = (dx * dx + dy * dy) < 100 && (performance.now() - pendingTap.at) < 600;
+    pendingTap = null;
+    if (isTap && !isInteractiveTarget(e)) onPointerDown(e.clientX, e.clientY, e);
+  }
+  onPointerUp();
+});
+window.addEventListener('pointercancel', () => { pendingTap = null; onPointerUp(); });
 window.addEventListener('blur', onPointerUp);
 document.addEventListener('visibilitychange', onPointerUp);
 
@@ -1583,14 +1819,6 @@ for (let i = 0; i < PCOUNT; i++) {
 
 const totalQuotes = quotes.length;
 const uniqueParticipants = new Set(quotes.map(q => q.participant)).size;
-/* Reparto por tono. La leyenda de La Sala (35 hawkish / 35 dovish / …) se
-   quitó para dejar la sección más limpia; el reparto se conserva porque lo
-   usan otras lecturas del proyecto. */
-const particleToneCounts = quotes.reduce((counts, q) => {
-  const tone = ['hawkish', 'dovish', 'neutral'].includes(q?.label) ? q.label : 'neutral';
-  counts[tone] += 1;
-  return counts;
-}, { hawkish: 0, dovish: 0, neutral: 0 });
 const counterItems = document.querySelectorAll('[data-counter]');
 if (counterItems.length >= 4) {
   counterItems[2].querySelector('.counter-number').dataset.target = totalQuotes.toString();
@@ -1983,16 +2211,19 @@ const _pickProjected = new THREE.Vector3();
    escalado con swarm.scale (igual que el tamaño visual del enjambre).
    Ver https://github.com/mrdoob/three.js/issues/26235 y
    https://discourse.threejs.org/t/hover-functionality-with-three-points-and-raycaster/53978 */
-function setPickThreshold() {
+function setPickThreshold(radiusMul = 1) {
   const base = CONFIG.interaction?.hoverRadius ?? 0.075;
   const s = swarm.scale?.x || 1;
-  raycaster.params.Points.threshold = base * s;
+  raycaster.params.Points.threshold = base * s * radiusMul;
 }
 
-function pickPoint(cx, cy) {
+/* `radiusMul` ensancha el área de acierto: un dedo cubre bastante más que
+   los ~15 px del cursor, así que el toque usa un radio mayor y la partícula
+   más cercana al punto de contacto se lleva el acierto. */
+function pickPoint(cx, cy, radiusMul = 1) {
   if (!QUOTES_N) return -1;
   const vp = getViewportSize();
-  setPickThreshold();
+  setPickThreshold(radiusMul);
   ndc.x = (cx / vp.width) * 2 - 1;
   ndc.y = -(cy / vp.height) * 2 + 1;
   raycaster.setFromCamera(ndc, camera);
@@ -2065,9 +2296,9 @@ function syncAxesMarkFocus(index) {
 
 /* ═══════════════════════════════════════════════════════════
    AUDIO / MÚSICA: DESACTIVADO POR DECISIÓN DEL AUTOR (por ahora).
-   Se quita el motor de tonos y el botón de sonido. Si más adelante se
-   quiere retomar, la carpeta `js/audio/` y `PLAN_NIVEL_PREMIUM.md`
-   documentan cómo hacerlo sin música clásica.
+   Se quitó el motor de tonos y el botón de sonido. Si más adelante se
+   quiere retomar, `docs/PLAN_NIVEL_PREMIUM.md` (§1.D) documenta cómo
+   hacerlo sin música clásica.
 ═══════════════════════════════════════════════════════════ */
 
 function openQuote(i, anchor) {
@@ -2169,8 +2400,8 @@ onPointerMove = function(cx, cy) {
 };
 
 const origOnPointerDown = onPointerDown;
-onPointerDown = function(cx, cy) {
-  const hit = pickPoint(cx, cy);
+onPointerDown = function(cx, cy, e) {
+  const hit = pickPoint(cx, cy, e?.pointerType === 'touch' ? (CONFIG.interaction?.touchRadiusMul ?? 2.2) : 1);
   if (hit >= 0) {
     pinQuote(hit);            // click sobre una partícula fija el panel (✕/Escape lo cierra)
     openQuote(hit);
@@ -2219,7 +2450,6 @@ let crossT = 0;      // 0 = afuera de la puerta · 1 = dentro de la sala
    la cámara a la coreografía general para que los overlays posteriores queden
    alineados. */
 let exitT = 0;
-let inRoom = false;  // estamos en el stage #stageRoom (habilita el hover→cita)
 /* Foco editorial de Las voces: la selección atenúa las intervenciones de
    otras voces sin borrar su huella. Así el directorio conecta la lectura
    nominal con la misma nube que el lector acaba de explorar. */
@@ -2659,32 +2889,45 @@ function animate() {
        puerta (perdía el canto interior). Se mantienen sólidas; La Sala se
        despeja con la apertura + el fundido de las hojas (leafHold, abajo). */
     const apertureHold = 1;
+    /* Al terminar el dolly la cámara queda DE PIE sobre el peldaño superior
+       (roomCamZ −0.5 está ~0,5 delante del muro, que cae en z≈−1.0): la cara
+       alta de ese peldaño, encendida por la luz cálida de la sala, asomaba
+       como una franja beige al pie del cuadro durante toda La Sala. Desde
+       crossT≈0.86 (cámara en el plano del umbral) jambas, medallas y cornisa
+       ya están fuera de cuadro, así que el pórtico entero —marco, escalones,
+       medallas y aristas— se disuelve ahí, mientras la cámara todavía avanza
+       (el movimiento tapa el fundido). Simétrico al volver atrás. */
+    const porticoHold = 1 - THREE.MathUtils.smoothstep(crossT, 0.86, 0.96);
     for (let i = 0; i < bcchDoorMats.length; i++) {
       const m = bcchDoorMats[i];
       const kind = m.userData?.bcchKind || 'frame';
       const isLeaf = kind === 'leaf';
+      /* 'medal' = discos de bronce fijos en la piedra: acabado de hoja
+         (bronce), fundido de marco (se quedan en la pared al cruzar). */
+      const isBronze = isLeaf || kind === 'medal';
       const isAperture = kind === 'aperture';
       const lightT = THREE.MathUtils.smoothstep(bcchColorT, 0.10, 1.0);
       /* Las hojas abren hacia DENTRO (z→−): al terminar quedan dentro de la
          sala, frente a la cámara que ya entró. Se funden justo después de
          abrir para que no se vean al final del cruce. */
       const leafHold = isLeaf ? 1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75) : 1;
+      const hold = isLeaf ? leafHold : (isAperture ? apertureHold : 1) * porticoHold;
       m.transparent = true;
-      m.opacity = doorVisOpacity * bcchVisualT * (isAperture ? apertureHold : leafHold);
+      m.opacity = doorVisOpacity * bcchVisualT * hold;
       m.color.copy(bcchHeroTint).lerp(bcchMeetTint, bcchColorT);
-      m.envMapIntensity = isLeaf
+      m.envMapIntensity = isBronze
         ? THREE.MathUtils.lerp(0.22, 0.58, lightT)
         : THREE.MathUtils.lerp(0.10, 0.24, lightT);
       if (m.emissive) {
-        m.emissive.copy(isLeaf ? bcchLeafGlow : bcchFrameGlow);
-        m.emissiveIntensity = (isLeaf ? 0.006 : 0.0015) * lightT;
+        m.emissive.copy(isBronze ? bcchLeafGlow : bcchFrameGlow);
+        m.emissiveIntensity = (isBronze ? 0.006 : 0.0015) * lightT;
       }
     }
     for (let i = 0; i < bcchEdgeMats.length; i++) {
       const rec = bcchEdgeMats[i];
-      const edgeHold = rec.kind === 'aperture' ? apertureHold
-        : rec.kind === 'leaf' ? (1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75))
-        : 1;
+      const edgeHold = rec.kind === 'leaf'
+        ? (1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75))
+        : (rec.kind === 'aperture' ? apertureHold : 1) * porticoHold;
       rec.m.opacity = rec.baseOpacity * doorVisOpacity * bcchVisualT * edgeHold * (0.55 + 0.45 * bcchColorT);
     }
     for (let i = 0; i < proceduralDoorMats.length; i++) {
@@ -3038,9 +3281,34 @@ function animate() {
   const veilShape = DOOR_MODE === 'doorway'
     ? Math.sin(Math.PI * THREE.MathUtils.clamp((crossEff - 0.6) / 0.4, 0, 1))
     : 0;
+  /* Salida hacia El Método: la sala no se apaga, se hunde. Una campana de
+     niebla (0 → pico en mitad del retroceso → 0) hace que la estatua se
+     desvanezca en profundidad mientras la cámara se aleja, en vez de
+     encogerse hasta desaparecer en 200 px como antes. Termina en 0 para
+     entregar El Método con la escena limpia. */
+  /* Forma asimétrica en dos tramos, medida contra la distancia real de la
+     cámara a la estatua (5 m al empezar → 10,7 m al final):
+       1) sube a `exitFog` en la primera mitad (a 7,6 m deja ver un 23 %);
+       2) `exitSink` la espesa otro `exitFogSink` entre 0,55 y 0,90: a 9,4 m
+          la estatua queda al 2 % y a 10 m por debajo del 0,1 %, es decir,
+          se hunde del todo ANTES de que `exitHide` la apague (0,85→0,95);
+       3) recién con la figura ya oculta (0,95→1,0) la niebla se despeja.
+     Antes la niebla empezaba a limpiarse en 0,90 con la estatua aún
+     encendida hasta 0,94: en ese hueco (≈65 px de scroll con la salida
+     larga) la figura volvía a verse nítida y luego desaparecía de golpe.
+     Solo afecta a las mallas: partículas y órbitas tienen fog:false. */
+  const exitClear = 1 - THREE.MathUtils.smoothstep(roomExitT, 0.95, 1.0);
+  const exitFogShape = DOOR_MODE === 'doorway'
+    ? THREE.MathUtils.smoothstep(roomExitT, 0.0, 0.5) * exitClear
+    : 0;
+  const exitSink = DOOR_MODE === 'doorway'
+    ? THREE.MathUtils.smoothstep(roomExitT, 0.55, 0.90) * exitClear
+    : 0;
   if (scene.fog) {
     const veil = veilShape * (CONFIG.door?.veilFog ?? 0);
-    scene.fog.density = Math.max(scene.fog.density, veil);
+    const exitVeil = exitFogShape * (CONFIG.door?.exitFog ?? 0.16)
+      + exitSink * (CONFIG.door?.exitFogSink ?? 0.14);
+    scene.fog.density = Math.max(scene.fog.density, veil, exitVeil);
   }
   /* Opacidad de la nube en tres factores:
      1) scatterProgress: al dispersarse, los 100 sprites se apilan en el
@@ -3081,28 +3349,53 @@ function animate() {
      exitT al salir): así la estatua se revela EN PARALELO con la apertura de
      las hojas (que abre en crossT 0.04→0.42) en vez de esperar al final del
      dolly — antes recién asomaba ~0.29 y el lector veía el vano vacío. */
+  /* Entrada: ligada a crossT (la apertura de hojas). Salida: NO se deshace
+     el reveal —eso encogía y hundía la estatua mientras la cámara retrocedía,
+     dos movimientos contrarios a la vez—; la figura se queda entera, quieta
+     y a escala 1, y es la niebla de salida + la distancia lo que la disuelve.
+     `exitHide` solo decide cuándo dejar de dibujarla (0,85→0,95), cuando la
+     niebla ya la tapó por completo (ver exitSink). Antes este factor se
+     multiplicaba dentro de figureReveal y volvía a encoger/levantar la
+     estatua en el último tramo: dos movimientos que el lector alcanzaba a
+     ver si la niebla no la cubría. */
   const figureReveal = DOOR_MODE === 'doorway'
-    ? THREE.MathUtils.smoothstep((roomPresence - 0.04) / 0.30, 0, 1)
+    ? THREE.MathUtils.smoothstep((crossT - 0.04) / 0.30, 0, 1)
     : (currentStage !== 1 ? 1 : 0);
+  const exitHide = DOOR_MODE === 'doorway'
+    ? THREE.MathUtils.smoothstep(roomExitT, 0.85, 0.95)
+    : 0;
+  /* Luces de museo y órbitas durante la salida: se apagan con la niebla
+     (0,25→0,85), no de golpe con el reveal. Las órbitas no reciben niebla,
+     así que sin esto seguirían girando alrededor de una estatua ya oculta. */
+  const exitFade = 1 - THREE.MathUtils.smoothstep(roomExitT, 0.25, 0.85);
   if (figureSystem) {
     /* El bbox solo es válido cuando los GLB han cargado; por eso se resuelve
        aquí (una vez por resize) y no en syncViewportAndObjects(). */
     if (roomAimDirty) refreshRoomAim();
-    figureSystem.group.visible = figureReveal > 0.01;
+    figureSystem.group.visible = figureReveal > 0.01 && exitHide < 0.99;
     figureSystem.group.scale.setScalar(0.86 + 0.14 * figureReveal);
     figureSystem.group.position.y = (1 - figureReveal) * 0.5;
     /* Sigue la iluminación de las figuras (placeholder no enciende nada):
        la estatua se enciende como pieza de museo al cruzar y el relleno
        frío por la izquierda le da volumen a la piedra. */
     let statueReady = false;
+    /* Los placeholders de las figuras aún sin modelar (inflación, brote…)
+       viven a ±4,8 de la estatua: fuera del encuadre mientras la cámara
+       está DENTRO, pero con la cámara afuera (acercamiento por el umbral) o
+       retrocediendo hacia El Método entraban en el FOV y se veían dos
+       icosaedros grises flotando a los lados del pórtico, justo en el plano
+       más cuidado de la pieza. Solo existen mientras la cámara ha cruzado
+       (crossT > 0,6 ≈ z < 1,5) y todavía no ha empezado a salir. */
+    const placeholdersOn = crossT > 0.6 && roomExitT < 0.001;
     figureSystem.figures.forEach((record) => {
       if (record.placeholder) {
+        record.placeholder.visible = placeholdersOn;
         record.placeholder.rotation.y = time * 0.18 * figureReveal;
         record.placeholder.position.y = Math.sin(time * 0.6 + record.def.x) * 0.04 * figureReveal;
       }
       if (record.model) statueReady = true;
     });
-    const statueT = statueReady ? figureReveal : 0;
+    const statueT = statueReady ? figureReveal * exitFade * (1 - exitHide) : 0;
     /* El foco apunta a la ESTATUA (0, ~0.9, -4.8), no al origen de la
        escena: antes el target se reescribía con la z del grupo (0) y el
        cono iluminaba el aire delante de la cámara. */
@@ -3345,24 +3638,29 @@ function initTextToParticlePOC() {
       scrub: 1
     }
   })
+    /* Con la salida de La Sala alargada a 50vh (top 80% → 30% de este
+       stage), el título entraba con la estatua todavía disolviéndose en la
+       niebla: dos protagonistas a la vez. Se retrasa el arranque de la
+       secuencia (0 → 0,08 ≈ 12vh) para que el título aparezca cuando la
+       sala ya se apagó (exitT ≈ 0,95) y el ritmo interno se conserva. */
     .fromTo('#stageHook h2[data-hook]',
       { opacity: 0, y: 16, filter: 'blur(8px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.10, ease: 'none' }, 0.00)
+      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.10, ease: 'none' }, 0.08)
     .fromTo('.hook-lead',
       { opacity: 0, y: 18, filter: 'blur(8px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.14, ease: 'none' }, 0.06)
+      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.14, ease: 'none' }, 0.14)
     .fromTo('.hook-caption',
       { opacity: 0, y: 12 },
-      { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.18)
+      { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.26)
     .fromTo(dividerSpan,
       { scaleX: 0 },
-      { scaleX: 1, duration: 0.14, ease: 'none' }, 0.32)
+      { scaleX: 1, duration: 0.14, ease: 'none' }, 0.38)
     .fromTo(rows,
       { opacity: 0, y: 28 },
-      { opacity: 1, y: 0, duration: 0.16, ease: 'none', stagger: 0.08 }, 0.42)
+      { opacity: 1, y: 0, duration: 0.16, ease: 'none', stagger: 0.08 }, 0.46)
     .fromTo(footnote,
       { opacity: 0, y: 14 },
-      { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.68)
+      { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.70)
     .to(['#stageHook h2[data-hook]', hookContent],
       { opacity: 0, y: -18, duration: 0.12, ease: 'none' }, 0.86);
 }
@@ -3406,13 +3704,13 @@ const tsSection = document.getElementById('tsSection');
 
 const sections = [
   { label: 'hero', start: 0 },
-  { label: 'door', start: 0.08 },
-  ...(DOOR_MODE === 'doorway' ? [{ label: 'sala', start: 0.16 }] : []),
-  { label: 'hook', start: 0.24 },
-  { label: 'axes', start: 0.40 },
-  { label: 'voices', start: 0.49 },
-  { label: 'acts', start: 0.59 },
-  { label: 'counters', start: 0.68 },
+  { label: 'door', start: 0.04 },
+  ...(DOOR_MODE === 'doorway' ? [{ label: 'sala', start: 0.13 }] : []),
+  { label: 'hook', start: 0.29 },
+  { label: 'axes', start: 0.38 },
+  { label: 'voices', start: 0.52 },
+  { label: 'acts', start: 0.61 },
+  { label: 'counters', start: 0.69 },
   { label: 'pipeline', start: 0.75 },
   { label: 'timeline', start: 0.83 },
   { label: 'quotes', start: 0.91 },
@@ -3499,13 +3797,15 @@ if (DEBUG_MODE) {
         coinVisible: coin.visible,
         coinChildren: coin.children.length,
         coinFade: Number(coinFade.toFixed(3)),
+        crossT: Number(crossT.toFixed(3)),
+        exitT: Number(exitT.toFixed(3)),
         y: Math.round(window.scrollY),
       };
     },
   };
   /* Bisectación visual de artefactos de render: permite ocultar objetos
      concretos desde herramientas externas (solo con ?debug). */
-  window.__objs = { doorGroup, doorFloor, swarm, orbitGroup, figureGroup: figureSystem ? figureSystem.group : null, scene };
+  window.__objs = { doorGroup, doorFloor, swarm, orbitGroup, figureGroup: figureSystem ? figureSystem.group : null, scene, camera };
 }
 
 const lenis = new Lenis({
@@ -3633,24 +3933,38 @@ ScrollTrigger.create({
    (solo en modo 'doorway'; en 'classic' no se crea nada)
 ──────────────────────────────── */
 if (DOOR_MODE === 'doorway') {
-  /* El cruce: dolly + disolución de la puerta + velo. Se completa en los
-     primeros ~80vh del stage (el resto del stage es "dwell" interactivo). */
+  /* El cruce: dolly + apertura de hojas + disolución del pórtico + velo.
+     PRESUPUESTO DE SCROLL (la sección mide 320vh; el sticky fija 220vh):
+       −85vh … +100vh  cruce (185vh). Antes eran 80vh: el viaje entero cabía
+                       en ~7 muescas de rueda y la disolución del pórtico
+                       (crossT 0,86→0,96) ocurría en 72 px, una sola muesca.
+                       Es el plano más importante de la pieza y se lo pasaba
+                       de largo. Con 185vh todas las fases se estiran ×2,3 sin
+                       cambiar la coreografía (crossT sigue siendo 0→1).
+       +100 … +115vh   silencio: la estatua encuadrada, sin texto (que la
+                       imagen aterrice antes de leer).
+       +115 … +220vh   beats de texto (línea de tiempo de más abajo).
+       +220 … +320vh   el sticky se suelta; la estatua sigue sola e
+                       interactiva hasta la salida (trigger de #stageHook). */
   ScrollTrigger.create({
     trigger: '#stageRoom',
     start: 'top 85%',
-    end: '+=80%',
+    end: '+=250%',
     scrub: true,
     onUpdate: (self) => { crossT = self.progress; },
   });
 
-  /* SALIDA DE LA SALA: transición directa y muy corta hacia El Método.
-     Se dispara con #stageHook, no con #stageRoom: así la estatua permanece
-     hasta que el siguiente acto ya está entrando, y desaparece en ~22vh sin
-     volver por la puerta ni dejar una cola vacía. */
+  /* SALIDA DE LA SALA: transición directa hacia El Método, sin volver por
+     la puerta. Se dispara con #stageHook, no con #stageRoom: así la estatua
+     permanece hasta que el siguiente acto ya está entrando. Dura 50vh (antes
+     22vh: la cámara retrocedía 6,6 unidades en 198 px y la estatua se
+     apagaba de golpe). El título de El Método entra en 'top 45%', o sea en
+     el último tercio de esta salida, igual que antes. La estatua no se
+     apaga: se hunde en la niebla (ver exitFog en animate). */
   ScrollTrigger.create({
     trigger: '#stageHook',
-    start: 'top 56%',
-    end: 'top 34%',
+    start: 'top 80%',
+    end: 'top 30%',
     scrub: true,
     onUpdate: (self) => { exitT = self.progress; },
     onLeave: () => { exitT = 1; },
@@ -3672,20 +3986,16 @@ if (DOOR_MODE === 'doorway') {
     onEnterBack: () => { if (HERO_DOOR_LOCKUP) doorTarget = 1; },
   });
 
-  /* Presencia en la sala: habilita el hover→cita y limpia el panel al salir */
+  /* Al salir de la sala (en cualquier sentido) se limpia la selección y el panel de cita. */
   ScrollTrigger.create({
     trigger: '#stageRoom',
     start: 'top 100%',
     end: 'bottom 0%',
-    onEnter: () => { inRoom = true; },
-    onEnterBack: () => { inRoom = true; },
     onLeave: () => {
-      inRoom = false;
       clearSelection();
       syncQuotePanel();
     },
     onLeaveBack: () => {
-      inRoom = false;
       clearSelection();
       syncQuotePanel();
     },
@@ -3701,9 +4011,26 @@ if (DOOR_MODE === 'doorway') {
   const roomHint = document.getElementById('roomHint');
   /* En pantallas táctiles no hay "cursor": el hint explica el tap directo. */
   if (roomHint && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
-    roomHint.textContent = 'Toca una voz para leer lo que dijo · tócala de nuevo para fijarla';
+    /* En táctil el primer toque ya fija el panel (no hay hover previo);
+       lo que hay que explicar es cómo se cierra. */
+    roomHint.textContent = 'Toca una voz para leer lo que dijo · toca el fondo para cerrar';
+    /* La leyenda del mapa de intervenciones habla de "clic". */
+    const axesTrace = document.querySelector('.axes-reading-trace');
+    if (axesTrace) axesTrace.textContent = 'toca un punto → fecha · voz · fragmento';
   }
+  const roomContainer = document.getElementById('stageRoomContainer');
   if (roomTitle && roomLead && roomSub && roomHint) {
+    /* La banda de sombra tras el copy (#stageRoomContainer::before) vive en
+       la MISMA línea de tiempo que el texto: aparece con el título y se
+       apaga con el hint, que es el último en irse. Así, cuando el sticky se
+       suelta al final de la sección y el contenedor sube con el scroll, ya
+       no hay sombra que arrastrar por encima de la estatua. Un ::before no
+       se puede animar directo desde JS: se anima la variable --room-scrim. */
+    const scrim = { v: 0 };
+    const applyScrim = () => { if (roomContainer) roomContainer.style.setProperty('--room-scrim', scrim.v.toFixed(3)); };
+    /* 1vh de scroll en unidades de la línea de tiempo. Debe coincidir con
+       el alto del sticky: sección de 385vh − contenedor de 100vh = 285vh. */
+    const V = 1 / 285;
     gsap.timeline({
       scrollTrigger: {
         trigger: '#stageRoom',
@@ -3719,23 +4046,40 @@ if (DOOR_MODE === 'doorway') {
            0,53 y las cuatro entradas terminan en 0,51.
 
            `top top` → `bottom bottom` mapea la línea de tiempo EXACTAMENTE
-           sobre el tramo en que el sticky está fijo, que es justo cuando el
-           texto se ve. No confundir con el trigger del cruce del umbral, que
-           unas líneas más arriba sí usa `top 85%` a propósito: el dolly a
-           través de la puerta tiene que haber terminado antes de fijarse. */
+           sobre el tramo en que el sticky está fijo (220vh), que es justo
+           cuando el texto se ve. No confundir con el trigger del cruce del
+           umbral, que unas líneas más arriba usa `top 85%` a propósito: el
+           dolly arranca antes de fijarse y termina en +100vh, y los beats
+           de abajo empiezan después de eso. */
         start: 'top top',
         end: 'bottom bottom',
         scrub: true,
       },
     })
-      .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.22)
-      .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.30)
-      .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.38)
-      .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.46)
-      .to(roomTitle, { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.68)
-      .to(roomLead,  { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.74)
-      .to(roomSub,   { opacity: 0, y: -12, duration: 0.05, ease: 'none' }, 0.80)
-      .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.94);
+      /* Posiciones y duraciones en vh DE SCROLL (V = 1vh): el sticky mide
+         285vh, así que la línea de tiempo 0→1 son 285vh. El cruce (`+=250%`
+         desde `top 85%`) termina en +165vh; se dejan 15vh de silencio y
+         recién entra el título. Cada entrada dura 16vh (≈145 px): antes eran
+         0,06 de un sticky de 100vh, o sea 54 px, medio golpe de rueda — un
+         pop, no un fundido. El bloque completo queda compuesto 30vh
+         (225→255) y después se retira en el mismo orden en que entró; el
+         hint es el último en irse (279→285), junto con la sombra, justo
+         antes de soltar el sticky. Si se vuelve a cambiar `+=250%` o el
+         alto de la sección, hay que mover TODOS estos offsets a la vez. */
+      .fromTo(scrim, { v: 0 }, { v: 1, duration: 16 * V, ease: 'none', onUpdate: applyScrim }, 180 * V)
+      .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 183 * V)
+      .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 193 * V)
+      .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 14 * V, ease: 'none' }, 203 * V)
+      .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 12 * V, ease: 'none' }, 213 * V)
+      .to(roomTitle, { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 255 * V)
+      .to(roomLead,  { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 259 * V)
+      .to(roomSub,   { opacity: 0, y: -12, duration: 10 * V, ease: 'none' }, 263 * V)
+      /* La sombra baja a la mitad cuando ya solo queda el hint (menos texto,
+         menos base) y se apaga del todo con él, antes de que la sección
+         suelte el sticky (285vh = 1.0). */
+      .to(scrim, { v: 0.5, duration: 10 * V, ease: 'none', onUpdate: applyScrim }, 263 * V)
+      .to(roomHint,  { opacity: 0, y: -10, duration: 6 * V, ease: 'none' }, 279 * V)
+      .to(scrim, { v: 0, duration: 6 * V, ease: 'none', onUpdate: applyScrim }, 279 * V);
   }
 }
 
@@ -3775,15 +4119,23 @@ const objTimeline = gsap.timeline({
     scrub: true,
   }
 });
+/* Línea de tiempo = los 100vh del sticky. Antes el texto entraba en
+   0,05→0,29 y se iba en 0,60→0,85: quedaba compuesto solo 31vh (≈280 px,
+   tres muescas de rueda) y se apagaba con la puerta todavía cerrada y
+   quieta, 15vh antes de que empiece el cruce. Ahora entra igual de pronto,
+   se sostiene 45vh y sale en los últimos 20vh, o sea mientras el cruce ya
+   está arrancando (el trigger de crossT parte en −85vh de #stageRoom =
+   0,15 de este sticky): el lector ve el copy irse y la puerta abrirse como
+   un mismo gesto, no como dos escenas con un hueco en medio. */
 objTimeline
   .fromTo('[data-objective]', 
     { opacity: 0, y: 30 }, 
-    { opacity: 1, y: 0, duration: 0.20, ease: 'cinematicOut', stagger: 0.04 }, 
-    0.05
+    { opacity: 1, y: 0, duration: 0.22, ease: 'cinematicOut', stagger: 0.05 }, 
+    0.06
   )
   .to('[data-objective]', 
-    { opacity: 0, y: -25, duration: 0.25, ease: 'cinematicIn' }, 
-    0.60
+    { opacity: 0, y: -25, duration: 0.20, ease: 'cinematicIn' }, 
+    0.80
   );
 
 /* ────────────────────────────────
@@ -3947,7 +4299,6 @@ counterEls.forEach((el) => {
     return clamp01((p - a) / span);
   };
   const easeOut3 = (t) => 1 - Math.pow(1 - t, 3);
-  const easeInOut = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   const fmt      = (n) => Math.round(n).toLocaleString('es-CL');
   const sampleWordCount = quotes.reduce((total, q) => total + String(q.text || '').trim().split(/\s+/).filter(Boolean).length, 0);
   const pipelineExample = quotes.find((q) => q.label === 'hawkish') || quotes[0];
@@ -4055,7 +4406,7 @@ counterEls.forEach((el) => {
   }
 
   /* GSAP Official Pattern: Pin parent, animate child */
-  const scrollTween = gsap.to(track, {
+  gsap.to(track, {
     x: () => -(track.scrollWidth - viewport.clientWidth),
     ease: 'none',
     scrollTrigger: {
@@ -4162,7 +4513,18 @@ quoteEls.forEach((el) => {
    Stage 7 — Closing
 ──────────────────────────────── */
 document.querySelectorAll('[data-closing]').forEach((el) => {
-  const split = new SplitText(el, { type: 'chars,words', charsClass: 'char-reveal', wordsClass: 'word-reveal' });
+  /* SplitText (aria:'auto') resume el texto en un aria-label sobre el propio
+     elemento; en un <p> ese atributo está prohibido (Lighthouse:
+     aria-prohibited-attr) y los lectores de pantalla lo ignoran. Aquí se
+     hace a mano: los fragmentos animados quedan aria-hidden y una copia
+     íntegra, solo para tecnología asistiva, conserva la lectura corrida. */
+  const plainText = el.textContent.replace(/\s+/g, ' ').trim();
+  const split = new SplitText(el, { type: 'chars,words', charsClass: 'char-reveal', wordsClass: 'word-reveal', aria: 'none' });
+  split.words.forEach((w) => w.setAttribute('aria-hidden', 'true'));
+  const sr = document.createElement('span');
+  sr.className = 'sr-only';
+  sr.textContent = plainText;
+  el.appendChild(sr);
   gsap.fromTo(split.chars,
     { opacity: 0, y: 15, rotationX: -30 },
     {

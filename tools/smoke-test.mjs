@@ -37,10 +37,17 @@ try {
 
 /* ── 1. Servidor estático ────────────────────────────────────────────── */
 const MIME = {
-  '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript',
-  '.css': 'text/css', '.json': 'application/json', '.glb': 'model/gltf-binary',
-  '.woff2': 'font/woff2', '.jpg': 'image/jpeg', '.png': 'image/png',
-  '.svg': 'image/svg+xml', '.wasm': 'application/wasm',
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.mjs': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.glb': 'model/gltf-binary',
+  '.woff2': 'font/woff2',
+  '.jpg': 'image/jpeg',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.wasm': 'application/wasm',
 };
 const server = http.createServer((req, res) => {
   const rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html';
@@ -63,8 +70,10 @@ const ORIGIN = `http://127.0.0.1:${server.address().port}`;
 const shim = path.join(ROOT, 'node_modules', 'three');
 if (!fs.existsSync(path.join(shim, 'index.mjs'))) {
   fs.mkdirSync(shim, { recursive: true });
-  fs.writeFileSync(path.join(shim, 'package.json'),
-    JSON.stringify({ name: 'three', version: '0.0.0-local-shim', type: 'module', main: 'index.mjs' }, null, 2));
+  fs.writeFileSync(
+    path.join(shim, 'package.json'),
+    JSON.stringify({ name: 'three', version: '0.0.0-local-shim', type: 'module', main: 'index.mjs' }, null, 2)
+  );
   fs.writeFileSync(path.join(shim, 'index.mjs'), "export * from '../../js/three.module.js';\n");
 }
 
@@ -94,18 +103,35 @@ const dom = new JSDOM(html, {
   pretendToBeVisual: true,
   beforeParse(window) {
     const grad = { addColorStop() {} };
-    const ctx2d = new Proxy({
-      createRadialGradient: () => grad,
-      createLinearGradient: () => grad,
-      measureText: () => ({ width: 10 }),
-      getImageData: (x, y, w, h) => ({ data: new Uint8ClampedArray(Math.max(1, w * h * 4)), width: w, height: h }),
-    }, {
-      get(t, k) { return k in t ? t[k] : (typeof k === 'string' ? () => {} : undefined); },
-      set() { return true; },
-    });
+    const ctx2d = new Proxy(
+      {
+        createRadialGradient: () => grad,
+        createLinearGradient: () => grad,
+        measureText: () => ({ width: 10 }),
+        getImageData: (x, y, w, h) => ({ data: new Uint8ClampedArray(Math.max(1, w * h * 4)), width: w, height: h }),
+      },
+      {
+        get(t, k) {
+          return k in t ? t[k] : typeof k === 'string' ? () => {} : undefined;
+        },
+        set() {
+          return true;
+        },
+      }
+    );
     window.HTMLCanvasElement.prototype.getContext = (type) => (type === '2d' ? ctx2d : null);
     window.scrollTo = () => {};
-    class Observer { constructor(cb) { this.cb = cb; } observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } }
+    class Observer {
+      constructor(cb) {
+        this.cb = cb;
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    }
     if (!window.IntersectionObserver) window.IntersectionObserver = Observer;
     if (!window.ResizeObserver) window.ResizeObserver = Observer;
     if (!window.ProgressEvent) window.ProgressEvent = window.Event;
@@ -121,32 +147,88 @@ const dom = new JSDOM(html, {
     }
     if (typeof window.matchMedia !== 'function') {
       window.matchMedia = (q) => ({
-        matches: false, media: q, onchange: null,
-        addListener() {}, removeListener() {},
-        addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; },
+        matches: false,
+        media: q,
+        onchange: null,
+        addListener() {},
+        removeListener() {},
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent() {
+          return false;
+        },
       });
     }
     window.addEventListener('error', (e) => errors.push('window error: ' + (e.error?.stack || e.message)));
   },
 });
 const w = dom.window;
-await new Promise((r) => setTimeout(r, 3500));   // que carguen los vendor
+await new Promise((r) => setTimeout(r, 3500)); // que carguen los vendor
 
 /* Los módulos se importan en el ámbito de Node, no en el de jsdom: hay que
    exponerle las globales del navegador. OJO: no copiar performance, setTimeout
    ni clearTimeout — se recursionan contra los de Node. */
-const BRIDGE = ['ProgressEvent', 'SVGElement', 'window', 'document', 'navigator', 'location', 'HTMLElement',
-  'Element', 'Node', 'Image', 'CustomEvent', 'Event', 'getComputedStyle', 'matchMedia', 'requestAnimationFrame',
-  'cancelAnimationFrame', 'devicePixelRatio', 'innerWidth', 'innerHeight', 'IntersectionObserver', 'ResizeObserver',
-  'MutationObserver', 'gsap', 'ScrollTrigger', 'CustomEase', 'SplitText', 'd3', 'Lenis', 'history', 'screen',
-  'visualViewport', 'XMLHttpRequest', 'fetch', 'URL', 'Blob', 'FileReader', 'TextDecoder', 'self', 'top',
-  'DOMParser', 'addEventListener', 'removeEventListener', 'localStorage'];
-const BIND = new Set(['addEventListener', 'removeEventListener', 'getComputedStyle', 'matchMedia',
-  'requestAnimationFrame', 'cancelAnimationFrame', 'fetch', 'scrollTo']);
+const BRIDGE = [
+  'ProgressEvent',
+  'SVGElement',
+  'window',
+  'document',
+  'navigator',
+  'location',
+  'HTMLElement',
+  'Element',
+  'Node',
+  'Image',
+  'CustomEvent',
+  'Event',
+  'getComputedStyle',
+  'matchMedia',
+  'requestAnimationFrame',
+  'cancelAnimationFrame',
+  'devicePixelRatio',
+  'innerWidth',
+  'innerHeight',
+  'IntersectionObserver',
+  'ResizeObserver',
+  'MutationObserver',
+  'gsap',
+  'ScrollTrigger',
+  'CustomEase',
+  'SplitText',
+  'd3',
+  'Lenis',
+  'history',
+  'screen',
+  'visualViewport',
+  'XMLHttpRequest',
+  'fetch',
+  'URL',
+  'Blob',
+  'FileReader',
+  'TextDecoder',
+  'self',
+  'top',
+  'DOMParser',
+  'addEventListener',
+  'removeEventListener',
+  'localStorage',
+];
+const BIND = new Set([
+  'addEventListener',
+  'removeEventListener',
+  'getComputedStyle',
+  'matchMedia',
+  'requestAnimationFrame',
+  'cancelAnimationFrame',
+  'fetch',
+  'scrollTo',
+]);
 for (const k of BRIDGE) {
   if (w[k] === undefined) continue;
   const value = typeof w[k] === 'function' && BIND.has(k) ? w[k].bind(w) : w[k];
-  try { Object.defineProperty(globalThis, k, { value, configurable: true, writable: true }); } catch {}
+  try {
+    Object.defineProperty(globalThis, k, { value, configurable: true, writable: true });
+  } catch {}
 }
 const vendors = ['gsap', 'ScrollTrigger', 'd3', 'Lenis', 'SplitText', 'CustomEase'];
 const missing = vendors.filter((k) => !w[k]);
@@ -157,7 +239,9 @@ globalThis.URL.createObjectURL ||= () => 'blob:fake';
 globalThis.URL.revokeObjectURL ||= () => {};
 const NodeRequest = globalThis.Request;
 class BaseRequest extends NodeRequest {
-  constructor(input, init) { super(typeof input === 'string' ? new URL(input, `${ORIGIN}/`) : input, init); }
+  constructor(input, init) {
+    super(typeof input === 'string' ? new URL(input, `${ORIGIN}/`) : input, init);
+  }
 }
 Object.defineProperty(globalThis, 'Request', { value: BaseRequest, configurable: true, writable: true });
 const nodeFetch = globalThis.fetch;
@@ -185,10 +269,15 @@ const noscript = [...w.document.querySelectorAll('noscript')].map((n) => n.textC
 checks.push(['fallback <noscript>', noscript.includes('noscript.css')]);
 const navBtns = w.document.querySelectorAll('#roomVoiceNavList button').length;
 checks.push([`La Sala: ${navBtns} voces navegables con teclado`, navBtns > 0]);
-const orphanIds = [...new Set([...w.document.querySelectorAll('[aria-labelledby],[aria-describedby]')]
-  .flatMap((el) => ['aria-labelledby', 'aria-describedby']
-    .flatMap((a) => (el.getAttribute(a) || '').split(/\s+/).filter(Boolean)))
-  .filter((id) => !w.document.getElementById(id)))];
+const orphanIds = [
+  ...new Set(
+    [...w.document.querySelectorAll('[aria-labelledby],[aria-describedby]')]
+      .flatMap((el) =>
+        ['aria-labelledby', 'aria-describedby'].flatMap((a) => (el.getAttribute(a) || '').split(/\s+/).filter(Boolean))
+      )
+      .filter((id) => !w.document.getElementById(id))
+  ),
+];
 checks.push([`aria-labelledby/describedby sin destino: ${orphanIds.join(', ') || 'ninguno'}`, orphanIds.length === 0]);
 
 for (const [label, ok] of checks) {

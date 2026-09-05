@@ -49,18 +49,18 @@ const SAVE_DIR = path.join(ROOT, '.shots', 'hero');
    monitores, tablets, teléfonos y —el caso que siempre se olvida— un
    teléfono en horizontal, que es el más apretado de todos. */
 const DEFAULT_VPS = [
-  '1920x1080',  // monitor 1080p
+  '1920x1080', // monitor 1080p
   '1600x900',
-  '1512x945',   // MacBook Pro 14"
-  '1440x764',   // MacBook Air con barra + dock
-  '1366x768',   // el portátil más común del mundo
+  '1512x945', // MacBook Pro 14"
+  '1440x764', // MacBook Air con barra + dock
+  '1366x768', // el portátil más común del mundo
   '1280x720',
-  '1084x684',   // ventana no maximizada
+  '1084x684', // ventana no maximizada
   '1024x768',
-  '834x1112',   // iPad vertical
+  '834x1112', // iPad vertical
   '768x1024',
-  '390x844',    // iPhone vertical
-  '844x390',    // iPhone HORIZONTAL
+  '390x844', // iPhone vertical
+  '844x390', // iPhone HORIZONTAL
 ];
 const VPS = (args.vps ? args.vps.split(',') : DEFAULT_VPS).map((s) => s.trim());
 
@@ -68,7 +68,10 @@ const VPS = (args.vps ? args.vps.split(',') : DEFAULT_VPS).map((s) => s.trim());
    Chrome entrega PNG de 8 bits sin entrelazar, RGB (tipo 2) cuando la
    captura es opaca y RGBA (tipo 6) cuando lleva transparencia. */
 function decodePNG(buf) {
-  let off = 8, width = 0, height = 0, channels = 4;
+  let off = 8,
+    width = 0,
+    height = 0,
+    channels = 4;
   const idat = [];
   while (off < buf.length) {
     const len = buf.readUInt32BE(off);
@@ -86,25 +89,29 @@ function decodePNG(buf) {
     off += 12 + len;
   }
   const raw = zlib.inflateSync(Buffer.concat(idat));
-  const bpp = channels, stride = width * bpp;
+  const bpp = channels,
+    stride = width * bpp;
   const out = Buffer.alloc(height * stride);
   let p = 0;
   for (let y = 0; y < height; y++) {
     const filter = raw[p++];
-    const row = y * stride, prev = row - stride;
+    const row = y * stride,
+      prev = row - stride;
     for (let x = 0; x < stride; x++) {
       const rawv = raw[p + x];
       const a = x >= bpp ? out[row + x - bpp] : 0;
       const b = y > 0 ? out[prev + x] : 0;
-      const c = (x >= bpp && y > 0) ? out[prev + x - bpp] : 0;
+      const c = x >= bpp && y > 0 ? out[prev + x - bpp] : 0;
       let v;
       if (filter === 0) v = rawv;
       else if (filter === 1) v = rawv + a;
       else if (filter === 2) v = rawv + b;
       else if (filter === 3) v = rawv + ((a + b) >> 1);
       else {
-        const pa = Math.abs(b - c), pb = Math.abs(a - c), pc = Math.abs(a + b - 2 * c);
-        v = rawv + ((pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c));
+        const pa = Math.abs(b - c),
+          pb = Math.abs(a - c),
+          pc = Math.abs(a + b - 2 * c);
+        v = rawv + (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
       }
       out[row + x] = v & 0xff;
     }
@@ -117,16 +124,22 @@ function decodePNG(buf) {
    Umbral estricto a propósito: el bloom, las partículas y las estrellas son
    mucho más tenues, y el texto dorado queda fuera por el recorte. */
 function goldSpan(img, yFrom, yTo) {
-  let top = -1, bottom = -1;
+  let top = -1,
+    bottom = -1;
   for (let y = Math.max(0, yFrom); y < Math.min(img.height, yTo); y++) {
     const row = y * img.width * img.channels;
     let hits = 0;
     for (let x = 0; x < img.width; x++) {
       const i = row + x * img.channels;
-      const r = img.data[i], g = img.data[i + 1], b = img.data[i + 2];
+      const r = img.data[i],
+        g = img.data[i + 1],
+        b = img.data[i + 2];
       if (r > 140 && g > 95 && r - b > 75) hits++;
     }
-    if (hits >= 6) { if (top < 0) top = y; bottom = y; }
+    if (hits >= 6) {
+      if (top < 0) top = y;
+      bottom = y;
+    }
   }
   return { top, bottom };
 }
@@ -182,10 +195,12 @@ console.log('');
 console.log('  viewport    líneas  titleTop   moneda↑  moneda↓   Ø    centro   hueco');
 console.log('  ' + '─'.repeat(70));
 for (const r of rows) {
-  const mark = (r.gap === null || r.gap < MIN_GAP || r.intoBar) ? ' ✗' : ' ·';
+  const mark = r.gap === null || r.gap < MIN_GAP || r.intoBar ? ' ✗' : ' ·';
   const centre = r.top < 0 ? '  —' : `${pad(Math.round(((r.top + r.bottom) / 2 / r.h) * 100), 4)}%`;
-  console.log(`${mark} ${r.vp.padEnd(10)} ${pad(r.lines, 4)}   ${pad(r.titleTop, 7)}   ${pad(r.top, 6)}   ${pad(r.bottom, 6)} ${pad(r.bottom - r.top, 5)}  ${centre}  ${pad(r.gap === null ? '—' : r.gap + 'px', 7)}`
-    + (r.intoBar ? '   ← invade la barra de marca' : ''));
+  console.log(
+    `${mark} ${r.vp.padEnd(10)} ${pad(r.lines, 4)}   ${pad(r.titleTop, 7)}   ${pad(r.top, 6)}   ${pad(r.bottom, 6)} ${pad(r.bottom - r.top, 5)}  ${centre}  ${pad(r.gap === null ? '—' : r.gap + 'px', 7)}` +
+      (r.intoBar ? '   ← invade la barra de marca' : '')
+  );
 }
 
 const gaps = rows.map((r) => r.gap).filter((g) => g !== null);
@@ -198,8 +213,10 @@ if (gaps.length) {
   const centres = rows.filter((r) => r.top >= 0).map((r) => ((r.top + r.bottom) / 2 / r.h) * 100);
   const mean = centres.reduce((a, b) => a + b, 0) / centres.length;
   const sd = Math.sqrt(centres.reduce((a, b) => a + (b - mean) ** 2, 0) / centres.length);
-  console.log(`  centro óptico: ${Math.min(...centres).toFixed(0)}%–${Math.max(...centres).toFixed(0)}% del alto`
-    + ` · media ${mean.toFixed(0)}% · desviación ${sd.toFixed(1)} puntos`);
+  console.log(
+    `  centro óptico: ${Math.min(...centres).toFixed(0)}%–${Math.max(...centres).toFixed(0)}% del alto` +
+      ` · media ${mean.toFixed(0)}% · desviación ${sd.toFixed(1)} puntos`
+  );
   console.log('  (desviación baja = la portada es la misma composición en todas las pantallas)');
 }
 
@@ -208,7 +225,9 @@ if (errors.length) {
   [...new Set(errors)].slice(0, 6).forEach((e) => console.log('   ', e));
 }
 if (bad.length) {
-  console.log(`\n  ✗ ${bad.length}/${rows.length} viewports por debajo del mínimo (${MIN_GAP}px): ${bad.map((b) => b.vp).join(', ')}`);
+  console.log(
+    `\n  ✗ ${bad.length}/${rows.length} viewports por debajo del mínimo (${MIN_GAP}px): ${bad.map((b) => b.vp).join(', ')}`
+  );
   process.exit(1);
 }
 console.log(`\n  ✓ ${rows.length}/${rows.length} viewports con al menos ${MIN_GAP}px de aire.`);

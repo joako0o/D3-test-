@@ -28,6 +28,19 @@
   outline: 2px solid var(--color-gold);
   outline-offset: 2px;
 }
+/* Texto solo para tecnología asistiva (patrón estándar). Lo usa el cierre:
+   los caracteres animados por SplitText van aria-hidden y esta copia íntegra
+   es la que se lee de corrido. */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 .skip-link {
   position: absolute;
   left: -10000px;

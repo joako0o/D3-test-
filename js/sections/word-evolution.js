@@ -25,7 +25,7 @@ let quotes = [];
    de evolución se vuelve a dibujar. Antes tomaba el tamaño UNA sola vez y
    usaba preserveAspectRatio:none, así que al cambiar el viewport el texto
    y el trazo se estiraban (problema típico entre local y GitHub Pages). */
-let wordEvolutionDisposers = [];
+const wordEvolutionDisposers = [];
 function disposeWordEvolution() {
   wordEvolutionDisposers.forEach((dispose) => { try { dispose(); } catch (e) { /* noop */ } });
   wordEvolutionDisposers.length = 0;
