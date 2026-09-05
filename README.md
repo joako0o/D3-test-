@@ -94,6 +94,8 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 ├── puerta-nueva-draco.glb  650 KB · puerta Meshy; se ve con preview-puerta.html
 ├── puerta-draco.glb         76 KB · puerta anterior, ya no se carga (legado)
 ├── preview-puerta.html       visor del GLB puerta-nueva-draco.glb (OrbitControls)
+├── tools/door-diag.html      visor de diagnóstico de la puerta BCCh: silueta con luz
+│                           plana, apertura por URL, corte en planta (ver cabecera)
 ├── servidor.bat             doble clic para `python -m http.server` en Windows
 ├── NARRATIVA.md            el arco narrativo: qué cuenta hoy y qué debería contar
 └── PLAN_NIVEL_PREMIUM.md

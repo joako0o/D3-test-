@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Diagnóstico — Puerta_bcch_v3.glb</title>
+<!--
+  Visor de diagnóstico de la puerta BCCh (geometría, sin luces de la escena).
+
+  POR QUÉ EXISTE
+    La puerta del sitio no es el GLB tal cual: buildOpenableBcchDoor() en
+    js/main.js descarta el muro de la losa, lo reconstruye con vano y jambas,
+    centra el pórtico y coloca las bisagras en el canto. Este visor replica
+    ese recorte con luz plana y aristas negras, para ver la SILUETA sin que
+    la iluminación del hero la disimule. Es como se cazaron los tres bugs
+    (pajaritas negras, pórtico descentrado, hojas que atravesaban la jamba).
+
+  USO  (npm start → http://localhost:8000/tools/door-diag.html?…)
+    variant=raw|filtered   GLB crudo | recorte de main.js (por defecto raw)
+    view=front|quarter|side|top|back|low
+    mode=flat|normal|wire
+    open=0..90            grados de apertura de las hojas (solo filtered)
+    tilt=-0.12            inclinación X del grupo (la del hero)
+    zoom=2&ox=-0.5&oy=0   acercar / desplazar el encuadre
+    section=0.3           corte horizontal (planta): oculta todo lo que esté
+                          por encima de y=0.3 — con view=top&open=78 se ve
+                          si alguna hoja invade la jamba
+    showRemoved=1         pinta en rojo los triángulos descartados
+
+  Verdes = ejes de bisagra · magenta = eje de simetría del pórtico.
+  OJO: si cambia buildOpenableBcchDoor(), hay que replicar el cambio aquí
+  (el bloque "Réplica de la NUEVA buildOpenableBcchDoor()").
+-->
+<script type="importmap">{"imports":{"three":"../js/three.module.js","three/addons/":"../js/"}}</script>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b101d; }
+  #app { position: fixed; inset: 0; }
+  #hud { position: fixed; top: 8px; left: 8px; color: #cfd6e4; font: 12px monospace; white-space: pre; background: rgba(0,0,0,.5); padding: 6px 8px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud">cargando…</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from '../js/loaders/GLTFLoader.js';
+
+const q = new URLSearchParams(location.search);
+const variant = q.get('variant') || 'raw';      // raw | filtered | filteredOpen
+const view = q.get('view') || 'front';           // front | quarter | top | back | side
+const mode = q.get('mode') || 'normal';          // normal | flat | wire | mesh
+const openDeg = parseFloat(q.get('open') || '0');
+const tilt = parseFloat(q.get('tilt') || '0');   // rotación X del grupo (el hero usa -0.12)
+const hud = document.getElementById('hud');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.localClippingEnabled = true;
+if (q.get('section')) { renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(0, -1, 0), parseFloat(q.get('section')))]; }
+renderer.setPixelRatio(1);
+renderer.setSize(innerWidth, innerHeight);
+document.getElementById('app').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b101d);
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(2, 4, 5); scene.add(key);
+const fill = new THREE.DirectionalLight(0x8ab4f8, 0.8); fill.position.set(-3, 1, -2); scene.add(fill);
+
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.01, 100);
+const D = 6.0 / parseFloat(q.get('zoom') || '1');
+const ox = parseFloat(q.get('ox') || '0'), oy = parseFloat(q.get('oy') || '0');
+const views = {
+  front:   { pos: [0, 0, D],        look: [0, 0, 0] },
+  quarter: { pos: [D*0.62, D*0.35, D*0.7], look: [0, 0, 0] },
+  side:    { pos: [D, 0, 0.001],    look: [0, 0, 0] },
+  top:     { pos: [0, D, 0.001],    look: [0, 0, 0] },
+  back:    { pos: [0, 0, -D],       look: [0, 0, 0] },
+  low:     { pos: [0, -D*0.35, D*0.9], look: [0, 0, 0] },
+};
+const v = views[view] || views.front;
+camera.position.set(v.pos[0] + ox, v.pos[1] + oy, v.pos[2]); camera.lookAt(v.look[0] + ox, v.look[1] + oy, v.look[2]);
+
+const meshColors = { 'Cubo.015': 0x7f8ea3, 'Puerta_Izquierda': 0xd9a94f, 'Puerta_Derecha': 0xb8862f };
+function matFor(name, kind) {
+  if (mode === 'normal') return new THREE.MeshNormalMaterial({ side: THREE.DoubleSide });
+  if (mode === 'wire') return new THREE.MeshBasicMaterial({ color: 0xffd76a, wireframe: true });
+  const color = kind ? ({ frame: 0x7f8ea3, leaf: 0xd9a94f }[kind]) : (meshColors[name] || 0xffffff);
+  return new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.05, side: THREE.DoubleSide });
+}
+
+const group = new THREE.Group();
+scene.add(group);
+group.rotation.x = tilt;
+
+const loader = new GLTFLoader();
+loader.load('../Puerta_bcch_v3.glb', (gltf) => {
+  const rawBox = new THREE.Box3().setFromObject(gltf.scene);
+  const rawCenter = rawBox.getCenter(new THREE.Vector3());
+  let info = `variant=${variant} view=${view} mode=${mode} open=${openDeg} tilt=${tilt}\n`;
+  if (variant === 'raw') {
+    gltf.scene.traverse((o) => { if (o.isMesh) { o.material = matFor(o.name); if (mode !== 'wire') { const e = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 30), new THREE.LineBasicMaterial({ color: 0x000000 })); o.add(e); } } });
+    gltf.scene.position.sub(rawCenter);
+    group.add(gltf.scene);
+  } else {
+    /* Réplica de la NUEVA buildOpenableBcchDoor() (v2: recentrado por piezas, alas trapezoidales, sin dintel) */
+    const center = rawCenter.clone(); center.x += -0.0153;
+    const staticTris = [], leftTris = [], rightTris = [];
+    const removedTris = [];
+    const isSlabZ = (z) => Math.abs(z + 0.34) < 3e-3 || Math.abs(z + 0.14) < 3e-3;
+    gltf.scene.updateMatrixWorld(true);
+    gltf.scene.traverse((object) => {
+      if (!object.isMesh) return;
+      const geo = object.geometry, pos = geo.attributes.position, index = geo.index;
+      const isL = /Puerta_Izquierda/i.test(object.name), isR = /Puerta_Derecha/i.test(object.name);
+      const triCount = index ? index.count / 3 : pos.count / 3;
+      for (let t = 0; t < triCount; t++) {
+        const ids = index ? [index.getX(t*3), index.getX(t*3+1), index.getX(t*3+2)] : [t*3, t*3+1, t*3+2];
+        const tri = ids.map((id) => new THREE.Vector3().fromBufferAttribute(pos, id).applyMatrix4(object.matrixWorld).sub(center));
+        if (isL) { leftTris.push(tri); continue; }
+        if (isR) { rightTris.push(tri); continue; }
+        if (tri.every((v) => isSlabZ(v.z))) { removedTris.push(tri); continue; }
+        staticTris.push(tri);
+      }
+    });
+    const extentOf = (tri, axis) => { const vals = tri.map((v) => v[axis]); return Math.max(...vals) - Math.min(...vals); };
+    const recenterPiece = (tris, pred) => {
+      let min = Infinity, max = -Infinity; const picked = [];
+      for (const tri of tris) { if (!pred(tri)) continue; picked.push(tri); for (const v of tri) { min = Math.min(min, v.x); max = Math.max(max, v.x); } }
+      if (!picked.length) return 0;
+      const dx = -(min + max) * 0.5; if (Math.abs(dx) > 1e-4) for (const tri of picked) for (const v of tri) v.x += dx; return dx;
+    };
+    const shifts = {
+      cornice: recenterPiece(staticTris, (tri) => tri.every((v) => v.y >= 0.8333 + 2e-3) && (extentOf(tri, 'x') > 0.5 || extentOf(tri, 'z') > 0.5)),
+      capitals: recenterPiece(staticTris, (tri) => tri.every((v) => v.y >= 0.63 - 1e-3 && v.y <= 0.845 && Math.abs(v.x) < 0.53)),
+      steps: recenterPiece(staticTris, (tri) => tri.every((v) => v.y <= -0.7038 + 1e-3 && v.z >= -0.27)),
+    };
+    const leafEdge = (tris, sign) => { let e = sign < 0 ? Infinity : -Infinity; for (const tri of tris) for (const v of tri) { if (Math.abs(v.y - 0.0986) < 0.07) continue; e = sign < 0 ? Math.min(e, v.x) : Math.max(e, v.x); } return e; };
+    let edgeL = leafEdge(leftTris, -1), edgeR = leafEdge(rightTris, +1);
+    shifts.leaves = -(edgeL + edgeR) * 0.5;
+    for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) v.x += shifts.leaves;
+    edgeL += shifts.leaves; edgeR += shifts.leaves;
+    let leafBackZ = Infinity; for (const tris of [leftTris, rightTris]) for (const tri of tris) for (const v of tri) leafBackZ = Math.min(leafBackZ, v.z);
+    const hingeZ = leafBackZ, hingeL = edgeL, hingeR = edgeR;
+    const G = 0.02, S = 0.06, openL = edgeL - G, openR = edgeR + G;
+    const zB = -0.34, zF = -0.14, yB = -0.9267, yT = 0.8333, X = 1.0;
+    const quad = (a, b, c, d) => { const P = [a, b, c, d].map((p) => new THREE.Vector3(...p)); staticTris.push([P[0], P[1], P[2]], [P[0], P[2], P[3]]); };
+    const wing = (side) => {
+      const xo = side * X, xf = side < 0 ? openL : openR, xb = xf + side * S;
+      const A = [xo, zF], B = [xf, zF], C = [xb, zB], D = [xo, zB];
+      const face = (p, q) => (side < 0 ? quad([p[0], yB, p[1]], [q[0], yB, q[1]], [q[0], yT, q[1]], [p[0], yT, p[1]]) : quad([q[0], yB, q[1]], [p[0], yB, p[1]], [p[0], yT, p[1]], [q[0], yT, q[1]]));
+      face(A, B); face(B, C); face(C, D); face(D, A);
+      if (side < 0) { quad([A[0], yT, A[1]], [B[0], yT, B[1]], [C[0], yT, C[1]], [D[0], yT, D[1]]); quad([D[0], yB, D[1]], [C[0], yB, C[1]], [B[0], yB, B[1]], [A[0], yB, A[1]]); }
+      else { quad([B[0], yT, B[1]], [A[0], yT, A[1]], [D[0], yT, D[1]], [C[0], yT, C[1]]); quad([C[0], yB, C[1]], [D[0], yB, D[1]], [A[0], yB, A[1]], [B[0], yB, B[1]]); }
+    };
+    wing(-1); wing(+1);
+    quad([openL - S, yB, zB], [openR + S, yB, zB], [openR, yB, zF], [openL, yB, zF]);
+    info += `hingeL=${hingeL.toFixed(4)} hingeR=${hingeR.toFixed(4)} hingeZ=${hingeZ.toFixed(4)} shifts=${JSON.stringify(Object.fromEntries(Object.entries(shifts).map(([k,v])=>[k,+v.toFixed(4)])))}\n`;
+    info += `static=${staticTris.length} removed=${removedTris.length} left=${leftTris.length} right=${rightTris.length} open=[${openL.toFixed(3)},${openR.toFixed(3)}]\n`;
+    function geoFrom(tris, px = 0, pz = 0) {
+      const arr = new Float32Array(tris.length * 9); let i = 0;
+      for (const tri of tris) for (const p of tri) { arr[i++] = p.x - px; arr[i++] = p.y; arr[i++] = p.z - pz; }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(arr, 3)); g.computeVertexNormals(); return g;
+    }
+    const mk = (tris, kind, px = 0, pz = 0) => {
+      const m = new THREE.Mesh(geoFrom(tris, px, pz), matFor(null, kind));
+      if (mode !== 'wire') m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 30), new THREE.LineBasicMaterial({ color: 0x000000 })));
+      return m;
+    };
+    group.add(mk(staticTris, 'frame'));
+    if (q.get('showRemoved') === '1') group.add(new THREE.Mesh(geoFrom(removedTris), new THREE.MeshBasicMaterial({ color: 0xff2255, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })));
+    const pivL = new THREE.Object3D(); pivL.position.set(hingeL, 0, hingeZ); pivL.add(mk(leftTris, 'leaf', hingeL, hingeZ));
+    const pivR = new THREE.Object3D(); pivR.position.set(hingeR, 0, hingeZ); pivR.add(mk(rightTris, 'leaf', hingeR, hingeZ));
+    const rad = THREE.MathUtils.degToRad(openDeg); pivL.rotation.y = rad; pivR.rotation.y = -rad;
+    group.add(pivL, pivR);
+    for (const x of [hingeL, hingeR]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 2.2, 8), new THREE.MeshBasicMaterial({ color: 0x00ff88 })); c.position.set(x, 0, hingeZ); group.add(c); }
+    const ax = new THREE.Mesh(new THREE.BoxGeometry(0.004, 2.3, 0.004), new THREE.MeshBasicMaterial({ color: 0xff00ff })); ax.position.set(0, 0, 0.6); group.add(ax);
+  }
+  const box = new THREE.Box3().setFromObject(group);
+  info += `bbox min ${box.min.toArray().map((n) => n.toFixed(3))} max ${box.max.toArray().map((n) => n.toFixed(3))}`;
+  hud.textContent = info;
+  window.__ready = true;
+});
+(function loop() { requestAnimationFrame(loop); renderer.render(scene, camera); })();
+</script>
+</body>
+</html>
