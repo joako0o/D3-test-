@@ -47,9 +47,12 @@
   <link rel="modulepreload" href="js/figures.js?v=2" />
   <link rel="modulepreload" href="js/viewport.js?v=2" />
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
-       mientras el JS aún se está parseando, no después. -->
-  <link rel="preload" as="fetch" href="monedav5-draco.glb" />
-  <link rel="preload" as="fetch" href="Puerta_bcch%20(1).glb?v=15" />
+       mientras el JS aún se está parseando, no después. La URL (query
+       incluida) debe ser IDÉNTICA a la que pide el loader en main.js, o el
+       navegador descarta el preload y baja el archivo dos veces. `crossorigin`
+       porque fetch() en modo cors no reutiliza un preload sin ese atributo. -->
+  <link rel="preload" as="fetch" href="monedav5-draco.glb" crossorigin />
+  <link rel="preload" as="fetch" href="Puerta_bcch_v3.glb?v=16" crossorigin />
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23dfab42'/><text x='50' y='65' text-anchor='middle' font-size='36' font-weight='bold' fill='%230a0e1a'>RPM</text></svg>" />
 

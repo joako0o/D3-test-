@@ -9,7 +9,7 @@
  * lo que no se puede es reasignar la variable CONFIG entera.
  */
 
-/* Portada: la puerta GLB (Puerta_bcch (1).glb) entra desde el hero, detrás de
+/* Portada: la puerta GLB (Puerta_bcch_v3.glb) entra desde el hero, detrás de
    la moneda, y el scroll del acto 2 hace dolly hacia el umbral. */
 export const HERO_DOOR_LOCKUP = true;
 
@@ -159,14 +159,12 @@ export const CONFIG = {
        LOS VALORES SON LOS MISMOS QUE HABÍA. Se movieron aquí sin cambiarlos
        (equivalencia de píxeles verificada), para que se puedan ajustar.
 
-       Aviso para quien venga a subir el relieve por aquí: NO se puede.
-       El normal map de las hojas (textura_puerta_bcch, 2048x2048 dentro de
-       Puerta_bcch (1).glb; la versión comprimida puerta-draco.glb trae la
-       misma textura en WebP) es un color liso RGB(128,127,255) = relieve CERO,
-       un bake que salió vacío. Medido: mover el foco key no cambia un píxel, y
-       bajar la metalicidad tampoco saca los paneles. Los cuadrados que se ven
-       en Blender no están en el archivo exportado, ni en malla ni en textura.
-       Hay que rehacer el export, no la iluminación. */
+       Aviso para quien venga a subir el relieve por aquí: NO se puede con
+       luz. El GLB de la puerta no trae relieve en las hojas (el normal map
+       del export anterior, Puerta_bcch (1).glb, era un color liso
+       RGB(128,127,255) = relieve CERO; ese archivo ya se retiró del repo).
+       Medido: mover el foco key no cambia un píxel, y bajar la metalicidad
+       tampoco saca los paneles. Hay que rehacer el export, no la iluminación. */
     leaf: {
       hero: { metalness: 0.12, roughness: 0.92, envMapIntensity: 0.12 },
       /* Acto 2: bronce envejecido, como el generador y el GLB de referencia.

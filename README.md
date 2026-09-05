@@ -51,15 +51,15 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 
 ```
 ├── index.html              723 líneas · SOLO marcado: ni un <style>, ni un <script> con cuerpo
-├── css/                    22 hojas · 4.141 líneas · el prefijo numérico ES el orden de cascada
+├── css/                    22 hojas · 4.149 líneas · el prefijo numérico ES el orden de cascada
 │   └── README.md           qué hace cada hoja y por qué está en ese número
 ├── js/
-│   ├── main.js           4.285 líneas · escena 3D + bucle de render + scrollytelling
-│   ├── config.js           309 · cámara, luces, moneda, puerta, órbitas, La Sala, HERO
+│   ├── main.js           4.545 líneas · escena 3D + bucle de render + scrollytelling
+│   ├── config.js           308 · cámara, luces, moneda, puerta, órbitas, La Sala, HERO
 │   ├── interaction-state.js  82 · el ÚNICO puente entre las secciones DOM y la escena 3D
 │   ├── viewport.js          67 · getViewportSize() / isCompactWidth(), el tamaño del lienzo
 │   ├── figures.js          357 · sistema de figuras (carga GLB, apila sobre pedestal, placeholders)
-│   ├── build-door.js       364 · puerta BCCh procedural con pivotes reales (port del .py de Blender)
+│   ├── build-door.js       363 · puerta BCCh procedural: respaldo si el GLB no carga (port del .py de Blender)
 │   ├── sections/         1.392 · una sección de scrollytelling por archivo
 │   │   ├── act-browser.js     376 · "Navegador de actas"
 │   │   ├── voice-explorer.js  311 · "Las voces" — directorio editorial
@@ -71,7 +71,7 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │   ├── utils.js             33 · particleRandom, clamp, getQuoteAxisSentiment (puros)
 │   ├── three.module.js         Three.js r160
 │   ├── vendor/                 GSAP, ScrollTrigger, SplitText, CustomEase, D3, Lenis, Draco
-│   └── loaders/ utils/ controls/ environments/ objects/    addons de Three.js
+│   └── loaders/ utils/ environments/    addons de Three.js (GLTF+Draco, BufferGeometryUtils, RoomEnvironment)
 ├── tools/
 │   ├── smoke-test.mjs     204 · `npm run check`
 │   └── build_door.py         generador paramétrico de la puerta BCCh (Blender, Cycles/EEVEE)
@@ -92,16 +92,21 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │                           medallas de bronce de las hojas para fijarlas en la pared,
 │                           como en el edificio real. El porqué, medido, está en el
 │                           comentario BCCH_V3 de main.js.
-├── Puerta_bcch (1).glb    1,1 MB · puerta anterior (lámina dorada continua, legado)
-├── puerta-nueva-draco.glb  650 KB · puerta Meshy; se ve con preview-puerta.html
-├── puerta-draco.glb         76 KB · puerta anterior, ya no se carga (legado)
-├── preview-puerta.html       visor del GLB puerta-nueva-draco.glb (OrbitControls)
 ├── tools/door-diag.html      visor de diagnóstico de la puerta BCCh: silueta con luz
 │                           plana, apertura por URL, corte en planta (ver cabecera)
+├── og-image.jpg             imagen para las tarjetas de redes (meta og:image)
 ├── servidor.bat             doble clic para `python -m http.server` en Windows
-├── NARRATIVA.md            el arco narrativo: qué cuenta hoy y qué debería contar
-└── PLAN_NIVEL_PREMIUM.md
+└── docs/
+    ├── NARRATIVA.md          el arco narrativo: qué cuenta hoy y qué debería contar
+    └── PLAN_NIVEL_PREMIUM.md hoja de ruta "nivel pagado" (fases hechas y pendientes)
 ```
+
+> **Lo que ya no está (limpieza 2026-09-05).** Se retiraron del árbol las
+> puertas que no se cargaban —`Puerta_bcch (1).glb` (1,1 MB, export anterior),
+> `puerta-draco.glb` (76 KB, su versión Draco) y `puerta-nueva-draco.glb`
+> (650 KB, prueba de Meshy)—, su visor `preview-puerta.html` y los addons
+> que solo ese visor usaba (`OrbitControls.js`, `Reflector.js`). Todo sigue en
+> el historial de git si algún día hace falta (`git log --all -- puerta-draco.glb`).
 
 ### Mapa de `js/main.js`
 
@@ -109,18 +114,18 @@ Es el archivo que hay que saber recorrer. Va en este orden:
 
 | Líneas | Región |
 |---|---|
-| 1–375 | imports, constantes del DOM, escena, cámara, luces, estado de módulo, warmup |
-| 376–410 | figuras de La Sala + rig de luces de la puerta |
-| 411–714 | rig de luces de la puerta, moneda, composición del hero |
-| 715–1490 | la puerta (Acto 2): GLB `Puerta_bcch`, pivotes, hoja procedural de respaldo |
-| 1491–1648 | enjambre de partículas (memoria trazable) |
-| 1649–2319 | órbitas de La Sala + panel de cita + navegación por teclado |
-| 2320–2460 | coreografía de cámara (`cameraChoreographyStops`) |
-| **2461–3104** | **`animate()`** — el bucle de render |
-| 3105–3280 | panel de cita + hook de señales hawkish/dovish |
-| 3281–3534 | preparación de las secciones + objetivos de partículas |
-| 3535–4139 | todos los `ScrollTrigger`, sección por sección |
-| 4140–4285 | "técnicas premium": color de fondo, parallax, velocidad de scroll |
+| 1–385 | imports, constantes del DOM, escena, cámara, luces, estado de módulo, warmup |
+| 386–467 | figuras de La Sala + rig de luces de la puerta |
+| 468–716 | moneda, composición del hero |
+| 717–1716 | la puerta (Acto 2): respaldo procedural, GLB `Puerta_bcch_v3`, `BCCH_V3` + `buildOpenableBcchDoor()` (1388–1660) |
+| 1717–1903 | enjambre de partículas (memoria trazable) |
+| 1904–2544 | órbitas de La Sala + `openQuote()` + navegación por teclado |
+| 2545–2672 | coreografía de cámara (`cameraChoreographyStops`) |
+| **2673–3341** | **`animate()`** — el bucle de render |
+| 3342–3532 | panel de cita, layout/resize, objetivos de partículas |
+| 3533–3750 | hook de señales, scrubber, hooks `?debug`, Lenis |
+| 3751–4398 | todos los `ScrollTrigger`, sección por sección |
+| 4399–4545 | "técnicas premium": color de fondo, parallax, velocidad de scroll |
 
 Los números envejecen a cada commit. Para regenerar el mapa:
 
@@ -458,7 +463,7 @@ ISC
 
 ## Nivel premium (en progreso)
 
-Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
+Con el plan de `docs/PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
 "de oficio" en un solo mundo visual. Estado real verificado en la revisión
 2026-08-30:
 
@@ -491,34 +496,27 @@ Con el plan de `PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
   `prefers-reduced-motion` congela el sistema (las estelas quedan como arcos).
 - **Nube de partículas continua**: ya no se apaga entre capítulos. ✅ en el sitio.
 - **Coreografía de cámara** (`cameraChoreography` + `cameraStops`): deriva suave entre etapas después del cruce puerta → sala. ✅ en el sitio.
-- **Compresión de GLBs (2026-08-31):** moneda 4.38 MB → **434 KB** y puerta 824 KB → **76 KB**
-  con el mismo criterio que la balanza: re-encode Draco + texturas re-optimizadas
-  (WebP 4:4:4; el mapa normal de la moneda y la pared en near-lossless). Fidelidad
-  verificada por métricas (p95 del error angular 0°, PSNR ≥ 40 dB en píxeles
-  visibles) y estructura intacta (mismos triángulos/bbox). El alfa no usado del
-  color se aplanó con *bleed*: además mejora los mipmaps del borde de la moneda.
-  **Pendiente de recuperar:** la puerta activa es hoy `Puerta_bcch (1).glb`
-  (1,1 MB, export de Blender sin Draco), pero `puerta-draco.glb` (76 KB) es la
-  misma malla ya comprimida con la misma textura en WebP y no se carga. Volver
-  a apuntar el loader al GLB comprimido recupera ~1 MB; hay que validarlo con
-  `npm run shots` antes de darlo por bueno.
-- **Nueva puerta Meshy (`Puerta_nueva.glb` → `puerta-nueva-draco.glb`, 2026-08-31):**
-  20.2 MB → **650 KB** (−96.8%). Pipeline `@gltf-transform/cli` 4.4.2: `weld` +
-  `simplify` (341,532 → **44,392** triángulos, error p95 ≈ 1% del bbox) + texturas
-  2048 JPEG → **1024 WebP** (baseColor 108 KB / normal 33 KB / metalRough 49 KB,
-  q85/q90/q80) + Draco (posición 14, normal 10, uv 12). `validate`: 0 errores,
-  0 warnings; decode verificada con el SDK (36,768 vértices). Ya no se carga en
-  el relato: la puerta activa es `Puerta_bcch (1).glb` (pivotes reales para
-  abrir las hojas), y esta se revisa con `preview-puerta.html`.
+- **Compresión de GLBs (2026-08-31):** moneda 4.38 MB → **434 KB** con el mismo
+  criterio que la balanza: re-encode Draco + texturas re-optimizadas (WebP 4:4:4;
+  el mapa normal en near-lossless). Fidelidad verificada por métricas (p95 del
+  error angular 0°, PSNR ≥ 40 dB en píxeles visibles) y estructura intacta
+  (mismos triángulos/bbox). El alfa no usado del color se aplanó con *bleed*:
+  además mejora los mipmaps del borde de la moneda.
+  La puerta que se carga hoy es `Puerta_bcch_v3.glb` (282 KB, ya con Draco);
+  las puertas anteriores y la prueba de Meshy se retiraron del repo el
+  2026-09-05 (ver la nota bajo el árbol de archivos). Receta usada para la
+  Meshy, por si se repite: `@gltf-transform/cli` `weld` + `simplify` (341k →
+  44k triángulos, error p95 ≈ 1% del bbox) + texturas 1024 WebP + Draco
+  (posición 14, normal 10, uv 12).
 - **Fuentes self-hosted** (`fonts/*.woff2` + `@font-face`): ✅ completado el 2026-08-30 (ver `fonts/README.md`).
 - **HUD "La Sala de Deliberaciones"** (`#chapterHud`): pendiente (no implementado).
 - **Descubrimiento** (`Evidencia n/100` en localStorage): pendiente (no implementado).
 - **Recorrido guiado** (`#guidedTour`): pendiente (no implementado).
-- **Audio**: desactivado por decisión del autor (no se pondrá música por ahora). El mecanismo queda documentado en `PLAN_NIVEL_PREMIUM.md` por si se retoma.
+- **Audio**: desactivado por decisión del autor (no se pondrá música por ahora). El mecanismo queda documentado en `docs/PLAN_NIVEL_PREMIUM.md` por si se retoma.
 
 ### Tu lista de tareas (las que dependen de ti)
 
 1. **Modelar figuras Blender** → `figures/README.md`. ✅ Balanza lista; quedan
    `inflacion.glb`, `brote.glb`, `acta.glb`, `corpus.glb`, `campana.glb`.
 2. **Ajustar `js/figures.js`** si cambian posiciones/escalas de las figuras.
-3. **Definir moodboard** (el audio quedó desactivado; ver `PLAN_NIVEL_PREMIUM.md`).
+3. **Definir moodboard** (el audio quedó desactivado; ver `docs/PLAN_NIVEL_PREMIUM.md`).

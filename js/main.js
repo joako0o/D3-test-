@@ -1197,8 +1197,6 @@ let doorLocalHeight = 0;
   doorModelGroup.add(model);
 }
 
-const bcchScratch = new THREE.Vector3();
-const bcchNormalScratch = new THREE.Vector3();
 const bcchStoneLow = new THREE.Color('#2e3741');
 const bcchStoneHigh = new THREE.Color('#5c6874');
 const bcchStep = new THREE.Color('#232a32');
@@ -1207,10 +1205,8 @@ const bcchBronzeHigh = new THREE.Color('#d9a23a');
 const bcchGold = new THREE.Color('#f2d16a');
 const bcchDoorLight = new THREE.Color('#d6a030');
 const bcchLineDark = new THREE.Color('#090502');
-const bcchTmp = new THREE.Color();
 const bcchHeroTint = new THREE.Color('#24251e');
 const bcchMeetTint = new THREE.Color('#f1f0e7');
-const bcchLeafMeetTint = new THREE.Color('#f1f0e7');
 const bcchLeafGlow = new THREE.Color('#211706');
 const bcchFrameGlow = new THREE.Color('#05070a');
 const bcchObsidianLeaf = new THREE.Color('#39434e');
@@ -1788,14 +1784,6 @@ for (let i = 0; i < PCOUNT; i++) {
 
 const totalQuotes = quotes.length;
 const uniqueParticipants = new Set(quotes.map(q => q.participant)).size;
-/* Reparto por tono. La leyenda de La Sala (35 hawkish / 35 dovish / …) se
-   quitó para dejar la sección más limpia; el reparto se conserva porque lo
-   usan otras lecturas del proyecto. */
-const particleToneCounts = quotes.reduce((counts, q) => {
-  const tone = ['hawkish', 'dovish', 'neutral'].includes(q?.label) ? q.label : 'neutral';
-  counts[tone] += 1;
-  return counts;
-}, { hawkish: 0, dovish: 0, neutral: 0 });
 const counterItems = document.querySelectorAll('[data-counter]');
 if (counterItems.length >= 4) {
   counterItems[2].querySelector('.counter-number').dataset.target = totalQuotes.toString();
@@ -2270,9 +2258,9 @@ function syncAxesMarkFocus(index) {
 
 /* ═══════════════════════════════════════════════════════════
    AUDIO / MÚSICA: DESACTIVADO POR DECISIÓN DEL AUTOR (por ahora).
-   Se quita el motor de tonos y el botón de sonido. Si más adelante se
-   quiere retomar, la carpeta `js/audio/` y `PLAN_NIVEL_PREMIUM.md`
-   documentan cómo hacerlo sin música clásica.
+   Se quitó el motor de tonos y el botón de sonido. Si más adelante se
+   quiere retomar, `docs/PLAN_NIVEL_PREMIUM.md` (§1.D) documenta cómo
+   hacerlo sin música clásica.
 ═══════════════════════════════════════════════════════════ */
 
 function openQuote(i, anchor) {

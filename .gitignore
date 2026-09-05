@@ -1,20 +1,17 @@
-# Dependencies
+# Dependencias
 node_modules/
 
-# AI tool configuration
-.opencode/
-
-# OS files
+# Sistema operativo
 .DS_Store
 Thumbs.db
 
 # Logs
 *.log
 
-# Renders de referencia (no versionados)
-.preview/
-.smoke-tmp/
-
-# Capturas y binarios del arnes visual (pesan cientos de MB)
+# Salidas del arnés visual y de pruebas (pesan cientos de MB, se regeneran):
+# .shots  → capturas de npm run shots / hero:check / perf
+# .cache  → librerías de Chromium extraídas por scripts/lib/chromium.mjs
+# .smoke-tmp → temporales de npm run check
 .shots/
 .cache/
+.smoke-tmp/
