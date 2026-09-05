@@ -3911,7 +3911,16 @@ if (DOOR_MODE === 'doorway') {
   if (roomHint && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
     roomHint.textContent = 'Toca una voz para leer lo que dijo · tócala de nuevo para fijarla';
   }
+  const roomContainer = document.getElementById('stageRoomContainer');
   if (roomTitle && roomLead && roomSub && roomHint) {
+    /* La banda de sombra tras el copy (#stageRoomContainer::before) vive en
+       la MISMA línea de tiempo que el texto: aparece con el título y se
+       apaga con el hint, que es el último en irse. Así, cuando el sticky se
+       suelta al final de la sección y el contenedor sube con el scroll, ya
+       no hay sombra que arrastrar por encima de la estatua. Un ::before no
+       se puede animar directo desde JS: se anima la variable --room-scrim. */
+    const scrim = { v: 0 };
+    const applyScrim = () => { if (roomContainer) roomContainer.style.setProperty('--room-scrim', scrim.v.toFixed(3)); };
     gsap.timeline({
       scrollTrigger: {
         trigger: '#stageRoom',
@@ -3936,6 +3945,7 @@ if (DOOR_MODE === 'doorway') {
         scrub: true,
       },
     })
+      .fromTo(scrim, { v: 0 }, { v: 1, duration: 0.10, ease: 'none', onUpdate: applyScrim }, 0.18)
       .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.22)
       .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.06, ease: 'none' }, 0.30)
       .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.05, ease: 'none' }, 0.38)
@@ -3943,7 +3953,12 @@ if (DOOR_MODE === 'doorway') {
       .to(roomTitle, { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.68)
       .to(roomLead,  { opacity: 0, y: -14, duration: 0.05, ease: 'none' }, 0.74)
       .to(roomSub,   { opacity: 0, y: -12, duration: 0.05, ease: 'none' }, 0.80)
-      .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.94);
+      /* La sombra baja a la mitad cuando ya solo queda el hint (menos texto,
+         menos base) y se apaga del todo con él: termina en 0.98, antes de
+         que la sección suelte el sticky (1.0). */
+      .to(scrim, { v: 0.5, duration: 0.06, ease: 'none', onUpdate: applyScrim }, 0.80)
+      .to(roomHint,  { opacity: 0, y: -10, duration: 0.04, ease: 'none' }, 0.94)
+      .to(scrim, { v: 0, duration: 0.04, ease: 'none', onUpdate: applyScrim }, 0.94);
   }
 }
 

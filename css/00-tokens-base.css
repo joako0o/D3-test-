@@ -235,11 +235,19 @@ body::after {
    texto conserva contraste sin apagar la pieza. */
 #stageRoomContainer {
   position: relative;
+  /* Opacidad de la banda de sombra, gobernada desde la línea de tiempo del
+     copy de La Sala (main.js): la banda entra con el título y SE VA CON EL
+     ÚLTIMO TEXTO. Sin esto, al soltarse el sticky al final de la sección
+     el contenedor subía con el scroll arrastrando la sombra —a alpha
+     0.88— por encima del pedestal y la estatua, que son del canvas fijo
+     de detrás y no se mueven: se veía una banda oscura cruzando la pieza. */
+  --room-scrim: 0;
 }
 #stageRoomContainer::before {
   content: "";
   position: absolute;
   inset: 0;
+  opacity: var(--room-scrim);
   /* Banda de sombra tras el copy que vuelve a alpha 0 EXACTO en el borde
      inferior: el contenedor sticky ya no arrastra una "tapa" casi opaca al
      salir de la sala (esa tapa recortaba el brillo ambiental fijo de
