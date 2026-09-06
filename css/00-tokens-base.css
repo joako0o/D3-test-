@@ -17,6 +17,15 @@
   --color-surface-border: rgba(255, 255, 255, 0.06);
   --color-bg: #0a0e1a;
 
+  /* ── Glass "sólido" ──
+     Versión sin desenfoque de los paneles grandes (ver 20-breakpoints.css):
+     el velo blanco del vidrio (rgba(255,255,255,.055)→.018) ya mezclado sobre
+     --color-bg, listo para usarse cuando el dispositivo no desenfoca
+     (pantallas táctiles y transparencia reducida). Por eso el color no cambia
+     respecto del vidrio real: solo se elimina el trabajo de la GPU. */
+  --color-glass-solid-hi: #181b27;
+  --color-glass-solid-lo: #0e121e;
+
   /* ── Ambient light ──
      The large gold glow is intentional in the hero, but it should not
      flatten the hierarchy of every later stage. JavaScript lowers this
