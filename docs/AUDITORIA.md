@@ -30,6 +30,7 @@ Estado actual: **0 errores, 0 avisos** en 360, 390, 768 y 1440px.
 | 7 | El mapa tenía una parada de tabulador por punto (99, sin techo) | Roving tabindex: 1 parada + flechas | WCAG 2.4.3 |
 | 8 | `d3.min.js`: 90 KB gzip para 14 funciones | Subconjunto a medida → 19 KB gzip | Rendimiento |
 | 9 | `monedav5-draco.glb`: normal map casi plano guardado sin pérdida | Recomprimido a q90 → 176 KB | Rendimiento |
+| 10 | Sin cabeceras de seguridad | CSP estricta + `referrer` como `<meta>` | OWASP |
 
 Cada arreglo tiene su comprobación en `scripts/audit/audit.mjs`, validada en
 ambos sentidos: se revirtió el arreglo para confirmar que la auditoría falla con
@@ -69,13 +70,23 @@ hoy se abre `index.html` y funciona. Es un cambio de naturaleza distinta a los
 dos anteriores (que dejan artefactos prebuilt y versionados), y merece decidirse
 a propósito, no colarse en una tanda de optimizaciones.
 
-### 2. Verificación en navegadores reales
+### 2. Core Web Vitals de campo
+
+`npm run audit` los mide **en laboratorio** (LCP 1064 ms, CLS 0,007 — ambos
+dentro de umbral). Pero Google puntúa con datos de **usuarios reales** (CrUX,
+percentil 75): la puntuación de laboratorio no es la evaluación real. Con el
+sitio publicado, mirar PageSpeed Insights / Search Console.
+
+Ojo con el sentido de la comparación: aquí el WebGL va por software, así que el
+LCP sale PEOR que en una máquina real. Si pasa aquí, pasa fuera; al revés no.
+
+### 3. Verificación en navegadores reales
 
 Todo lo automático corre en Chromium con SwiftShader (software, sin GPU).
 **Safari/iOS es el hueco de mayor riesgo**: WebGL, `viewport-fit=cover` y las
 `.woff2` se comportan distinto. Necesita dispositivo real o servicio de testing.
 
-### 3. Lectores de pantalla reales
+### 4. Lectores de pantalla reales
 
 Se comprobó el orden de foco, los nombres accesibles, el confinamiento del
 diálogo y la navegación por flechas del mapa, que es lo verificable por máquina.
@@ -107,6 +118,19 @@ Cómo suena realmente en NVDA, VoiceOver o TalkBack no se automatiza.
   recomprimirla no ahorraba. El script la deja intacta a propósito.
 - **`hawkish` / `dovish` sin `lang`**: préstamos asentados en la jerga
   económica en español; marcarlos sería ruido.
+- **Landmarks**: un solo `<main>`, `<nav>` etiquetado, `<header>`/`<footer>`
+  correctos. Sin `autofocus` (que la A11Y Project desaconseja), sin listas mal
+  formadas y sin enlaces de mismo texto y distinto destino.
+- **Foco fantasma en `#quotePanel`**: parecía tener controles enfocables dentro
+  de `aria-hidden="true"`, pero el panel usa además el atributo `hidden`, que
+  lo saca del árbol; al abrirse pone `aria-hidden="false"`. Comprobado en
+  ejecución: cerrado no es alcanzable, abierto sí.
+- **Encabezados vacíos** (`#voiceProfileTitle`, `#voiceDetailName`): los rellena
+  el JS al seleccionar una voz. Falso positivo de un análisis estático.
+- **Zoom al 200% y 250%**: sin desbordamiento horizontal. Los ~79 elementos
+  detectados fuera del viewport son las secciones de scrollytelling, colocadas
+  con `transform` a propósito.
+- **Orientación horizontal en móvil** (844×390): sin desbordamiento.
 
 ---
 

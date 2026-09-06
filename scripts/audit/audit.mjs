@@ -289,6 +289,96 @@ async function documentChecks(page) {
   }
 }
 
+/* ── Zoom al 200% (WCAG 1.4.4) ─────────────────────────────────────────
+   Criterio AA: el texto debe poder ampliarse al 200% sin perder contenido ni
+   funcionalidad. Un zoom del 200% equivale a la mitad de ancho CSS, así que se
+   emula reduciendo el viewport en vez de tocar el zoom del navegador (que en
+   headless no es fiable).
+
+   Solo se acusa el desbordamiento horizontal, que es la pérdida real: obliga a
+   desplazarse en dos ejes para leer una línea. NO se cuentan los elementos
+   fuera de pantalla, porque en una pieza de scrollytelling las secciones se
+   colocan con transform y viven fuera del viewport a propósito. */
+async function zoomChecks(page) {
+  const before = page.viewport();
+  for (const [w, h, label] of [
+    [640, 450, 'zoom 200%'],
+    [512, 384, 'zoom 250%'],
+  ]) {
+    await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
+    await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+    await sleep(2000);
+    const r = await page.evaluate(() => ({
+      docW: document.documentElement.scrollWidth,
+      winW: window.innerWidth,
+    }));
+    if (r.docW > r.winW + 1) {
+      add(
+        'ERROR',
+        'accesibilidad',
+        label,
+        `desbordamiento horizontal al ampliar: ${r.docW}px en ${r.winW}px (WCAG 1.4.4)`
+      );
+    }
+  }
+  /* Horizontal en móvil: WCAG 1.3.4 pide que funcione en ambas orientaciones. */
+  await page.setViewport({ width: 844, height: 390, deviceScaleFactor: 1, isMobile: true });
+  await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+  await sleep(2000);
+  const land = await page.evaluate(() => ({ docW: document.documentElement.scrollWidth, winW: window.innerWidth }));
+  if (land.docW > land.winW + 1) {
+    add(
+      'ERROR',
+      'responsive',
+      'móvil horizontal',
+      `desbordamiento en orientación horizontal: ${land.docW}px en ${land.winW}px (WCAG 1.3.4)`
+    );
+  }
+  if (before) await page.setViewport(before);
+}
+
+/* ── Core Web Vitals ───────────────────────────────────────────────────
+   Umbrales de Google (percentil 75 de usuarios reales): LCP ≤ 2,5 s,
+   CLS ≤ 0,1. Aquí se miden en laboratorio y con WebGL por software, así que
+   el LCP sale PEOR que en una máquina real: si pasa aquí, pasa fuera. Al
+   revés no vale, y por eso un LCP alto se reporta como aviso y no como error.
+
+   CLS sí es comparable: el contenido que salta lo hace igual con o sin GPU, y
+   es de lo más fácil de romper sin darse cuenta (una imagen sin dimensiones,
+   una fuente que recoloca el texto al cargar). */
+async function vitalsChecks(origin) {
+  const { browser, page } = await launchChromium({ width: 390, height: 844 });
+  try {
+    await page.evaluateOnNewDocument(() => {
+      window.__cwv = { lcp: 0, cls: 0 };
+      new PerformanceObserver((l) => {
+        for (const e of l.getEntries()) window.__cwv.lcp = e.startTime;
+      }).observe({ type: 'largest-contentful-paint', buffered: true });
+      new PerformanceObserver((l) => {
+        for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cwv.cls += e.value;
+      }).observe({ type: 'layout-shift', buffered: true });
+    });
+    await page.goto(`${origin}/index.html`, { waitUntil: 'load', timeout: 90000 });
+    await sleep(9000);
+    const m = await page.evaluate(() => ({
+      lcp: Math.round(window.__cwv.lcp),
+      cls: +window.__cwv.cls.toFixed(4),
+    }));
+    if (m.cls > 0.1)
+      add('ERROR', 'rendimiento', 'móvil 390', `CLS de ${m.cls} (umbral 0,1): el contenido salta durante la carga`);
+    if (m.lcp > 2500)
+      add(
+        'WARN',
+        'rendimiento',
+        'móvil 390',
+        `LCP de ${m.lcp} ms en laboratorio (umbral 2500). Con GPU real será menor, pero conviene mirarlo`
+      );
+    console.log(`  vitals (laboratorio, móvil): LCP ${m.lcp} ms · CLS ${m.cls}`);
+  } finally {
+    await browser.close();
+  }
+}
+
 /* ── Política de seguridad de contenido ────────────────────────────────
    Dos riesgos opuestos y los dos silenciosos: una CSP ausente no protege, y
    una CSP demasiado estricta rompe la página sin que se note en una captura
@@ -609,9 +699,15 @@ for (const vp of VIEWPORTS) {
   await perViewport(page, `${vp.name} (a media página)`);
 }
 
+await zoomChecks(page);
+
 for (const e of new Set(errors)) add('ERROR', 'consola', 'runtime', e);
 
 await browser.close();
+
+/* Los vitals van en una pestaña limpia: medir LCP/CLS después de haber
+   redimensionado y recorrido la página daría números de otra sesión. */
+await vitalsChecks(ORIGIN);
 
 /* ── Informe ───────────────────────────────────────────────────────────── */
 const errs = findings.filter((f) => f.level === 'ERROR');
