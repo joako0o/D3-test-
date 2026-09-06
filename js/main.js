@@ -1841,9 +1841,15 @@ const FACADE_TARGET = (() => {
      para la puerta procedural, que era casi cuadrada. La fachada real mide
      37 x 22 m —cuatro veces más superficie— y con 7 000 puntos se veía como
      una gasa, no como un edificio. Esto ya no encarece las demás escenas:
-     dibujan 99 vía setDrawRange. */
+     dibujan 99 vía setDrawRange.
+
+     El tramo intermedio (700–1200 px) bajaba a 10 000 y era justo el ancho de
+     un portátil normal: la fachada llegaba deshilachada al tamaño de pantalla
+     más común, con las pilastras convertidas en polvo suelto. Los 6 000 puntos
+     que faltaban no compraban rendimiento —el coste real del arranque estaba
+     en otra parte, ver el commit de optimización— y sí costaban el edificio.
+     Ahora todo lo que no sea móvil dibuja la nube completa. */
   if (w < 700) return 11000;
-  if (w < 1200) return 10000;
   return 16000;
 })();
 const PCOUNT = Math.max(QUOTES_N, FACADE_TARGET) || 1;
@@ -3408,7 +3414,7 @@ function animate() {
   /* El punto se afina en el cierre: 0,14 está calibrado para 99 partículas
      sueltas, y con 16 000 formando un edificio los discos se solapan y tapan
      el texto. Se encoge a la mitad justo cuando la fachada aparece. */
-  pMat.size = THREE.MathUtils.lerp(0.14, 0.105, facadeShade);
+  pMat.size = THREE.MathUtils.lerp(0.14, 0.092, facadeShade);
   /* PROFUNDIDAD REAL SOLO EN LA FACHADA
      El resto de la pieza dibuja con `depthTest: false` a propósito: la nube
      narrativa es translúcida y se quiere ver entera, sin que unos fragmentos
