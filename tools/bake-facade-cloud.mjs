@@ -48,6 +48,18 @@ const SRC = path.resolve(ROOT, args.src || 'Puerta_particulas/entrada_v3.glb');
 const OUT = path.resolve(ROOT, args.out || 'data/facade-cloud.bin');
 const N = Number(args.n || 9000);
 
+/* RECORTE LATERAL
+   La fachada mide 37 m de ancho y en el cierre ya no se ve entera: el encuadre
+   se acerca hasta que el edificio desborda la pantalla, porque es lo que hace
+   sentir que uno está DELANTE del banco y no mirando su fotografía.
+
+   Sin recorte, los puntos se reparten por los 37 m —incluidos los extremos del
+   muro, que quedan fuera de cuadro— y dentro del encuadre no queda densidad:
+   la arquitectura se deshace en polvo. Descartando lo que no se ve, los puntos
+   caen donde importa. Medido en metros desde el eje de la puerta (X=0);
+   --halfx=0 lo desactiva. */
+const HALF_X = Number(args.halfx ?? 11.5);
+
 /* Proporción de puntos que caen sobre aristas en vez de sobre la superficie.
    Medido a ojo en el render: por debajo de ~0,5 el contorno se difumina y el
    edificio se lee como una mancha; por encima de ~0,85 desaparecen los planos
@@ -131,6 +143,7 @@ const nodeOf = new Map();
 
 const tris = [];
 let skipped = 0;
+let clipped = 0;
 gltf.meshes.forEach((mesh, mi) => {
   const info = nodeOf.get(mi);
   const name = info?.nd?.name || mesh.name || '?';
@@ -158,6 +171,10 @@ gltf.meshes.forEach((mesh, mi) => {
          relieve. El umbral es tolerante para conservar cantos y caras muy
          oblicuas, que sí aportan contorno. */
       if (nz / nl < -0.35) continue;
+      /* Fuera de cuadro: si el triángulo entero cae más allá del recorte, no
+         se hornea. Basta un vértice dentro para conservarlo, así los bordes no
+         quedan cortados a hachazos. */
+      if (HALF_X > 0 && Math.min(Math.abs(ax), Math.abs(bx), Math.abs(cx)) > HALF_X) { clipped++; continue; }
       tris.push({ ax, ay, az, bx, by, bz, cx, cy, cz, area: 0.5 * nl, mat });
     }
   }
@@ -249,7 +266,7 @@ fs.writeFileSync(OUT, Buffer.concat([head, Buffer.from(quant.buffer), Buffer.fro
 const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
 const gz = (await import('node:zlib')).gzipSync(fs.readFileSync(OUT)).length;
 console.log(`Fuente     ${path.relative(ROOT, SRC)}  (${kb(fs.statSync(SRC).size)})`);
-console.log(`Triángulos ${tris.length.toLocaleString('es')} usables · ${skipped} pieza(s) descartada(s)`);
+console.log(`Triángulos ${tris.length.toLocaleString('es')} usables · ${skipped} pieza(s) descartada(s) · ${clipped.toLocaleString('es')} fuera de cuadro`);
 console.log(`Caja       X ${mn[0].toFixed(2)}..${mx[0].toFixed(2)} · Y ${mn[1].toFixed(2)}..${mx[1].toFixed(2)} · Z ${mn[2].toFixed(2)}..${mx[2].toFixed(2)} (m)`);
 console.log(`Salida     ${path.relative(ROOT, OUT)}  ${N.toLocaleString('es')} puntos · ${kb(fs.statSync(OUT).size)} · ${kb(gz)} con gzip`);
 const paso = ((mx[0] - mn[0]) / 65535 * 1000).toFixed(2);

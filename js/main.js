@@ -1848,9 +1848,14 @@ const FACADE_TARGET = (() => {
      más común, con las pilastras convertidas en polvo suelto. Los 6 000 puntos
      que faltaban no compraban rendimiento —el coste real del arranque estaba
      en otra parte, ver el commit de optimización— y sí costaban el edificio.
-     Ahora todo lo que no sea móvil dibuja la nube completa. */
-  if (w < 700) return 11000;
-  return 16000;
+     Ahora todo lo que no sea móvil dibuja la nube completa.
+
+     Subido de nuevo a 60 000 al acercar el encuadre: con la cámara encima del
+     edificio los puntos se reparten sobre mucha más pantalla, y con 16 000 la
+     arquitectura se deshacía en polvo. La nube horneada trae exactamente esa
+     cantidad, ya recortada a la zona visible. */
+  if (w < 700) return 26000;
+  return 60000;
 })();
 const PCOUNT = Math.max(QUOTES_N, FACADE_TARGET) || 1;
 /* Índice de la cita que representa cada partícula. Con repetición, la
@@ -1903,7 +1908,7 @@ const pFacadeMat = new Uint8Array(PCOUNT);
    La carga es asíncrona y no bloquea nada: hasta que llega, `facadeCloudReady`
    es false y el cierre simplemente no arma el edificio. Como está al final del
    documento, hay minutos de margen. */
-fetch('data/facade-cloud.bin?v=1')
+fetch('data/facade-cloud.bin?v=2')
   .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`HTTP ${r.status}`))))
   .then((buf) => {
     const head = new DataView(buf, 0, 44);
@@ -1950,7 +1955,11 @@ fetch('data/facade-cloud.bin?v=1')
        Se calcula cuánto mundo abarca la cámara a la distancia de la nube y se
        ocupa una fracción de eso. Así el encuadre se adapta solo a cualquier
        proporción de pantalla. */
-    const camZ = 9.40;
+    /* Distancia REAL de la cámara a la nube. Aquí había un 9,40 copiado de la
+       parada `stageFacade`, pero esa parada nunca se aplica: `storyProgress`
+       es constante 0 y la cámara se queda en la pose del hero, a z = 7,70. El
+       encuadre se calculaba para una distancia inexistente. */
+    const camZ = 7.70;
     const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
     const worldH = 2 * tanHalf * camZ;
     const worldW = worldH * (window.innerWidth / window.innerHeight);
@@ -1958,14 +1967,37 @@ fetch('data/facade-cloud.bin?v=1')
        pantalla" pero con aire a los lados. Sin ese margen la fachada llega a
        los bordes, se pierde la silueta y deja de leerse como un edificio
        recortado contra el cielo — se vuelve una textura que cubre el marco. */
-    const FACADE_FIT_W = worldW * (window.innerWidth < 700 ? 0.98 : 0.62);
+    /* ESTAR DELANTE DEL EDIFICIO, NO MIRAR SU FOTO
+       Antes ocupaba el 62 % del ancho: cabía entero, con aire a los lados, y
+       por eso se leía como una maqueta sobre fondo negro. Un edificio de 37 m
+       no se ve así desde la vereda: desborda el campo visual. Ahora ocupa algo
+       más que la pantalla y se recorta a propósito. Lo que se pierde son los
+       extremos del muro —repetición—; lo que se gana es la escala. */
+    const FACADE_FIT_W = worldW * (window.innerWidth < 700 ? 1.15 : 1.02);
     /* Se sube sobre el centro porque el scroll se detiene con la sección
        asomando por abajo (el pie ocupa la franja inferior) y porque el botón
        vive abajo. Proporcional al alto visible, por lo mismo que el ancho: un
        número fijo se rompe en cuanto cambia la cámara. */
-    const FACADE_FIT_Y = worldH * (window.innerWidth < 700 ? 0.16 : 0.20);
+    /* LA PUERTA A LA ALTURA DE LOS OJOS
+       La nube se centra en el vano (ver `doorY`), así que basta con subirla al
+       plano al que mira la cámara —camBaseY— para que la entrada quede en el
+       eje óptico y las verticales salgan rectas en vez de en picado. El margen
+       extra levanta el vano por encima del botón "volver al comienzo", que
+       vive en la franja central-baja. */
+    const FACADE_FIT_Y = camBaseY + worldH * 0.13;
     const fitScale = FACADE_FIT_W / Math.max(0.001, maxX - minX);
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2;
+    /* Cota vertical de la PUERTA, leída de la nube en vez de escrita a mano:
+       el material 1 son las hojas de bronce. Si el modelo cambia, esto sigue
+       apuntando a la entrada sin tocar código. */
+    let dyMin = Infinity, dyMax = -Infinity;
+    for (let i = 0; i < n; i++) {
+      if (srcMats[i] !== 1) continue;
+      const v = pts[i * 3 + 1];
+      if (v < dyMin) dyMin = v;
+      if (v > dyMax) dyMax = v;
+    }
+    const doorY = Number.isFinite(dyMin) ? (dyMin + dyMax) / 2 : cy;
 
     /* Las repeticiones: hay PCOUNT partículas y n puntos horneados, y no tienen
        por qué coincidir. `i % n` reparte de forma cíclica sin dejar huecos. */
@@ -1973,7 +2005,11 @@ fetch('data/facade-cloud.bin?v=1')
       const src = (i % n) * 3;
       const idx = i * 3;
       pFacadePos[idx]     = (pts[src] - cx) * fitScale;
-      pFacadePos[idx + 1] = (pts[src + 1] - cy) * fitScale + FACADE_FIT_Y;
+      /* La Y se mide desde la PUERTA, no desde el centro del edificio. El
+         centro geométrico cae a Y=10,9 m —media altura del muro, entre las
+         ventanas del segundo piso— y encuadrar por ahí hundía la entrada en el
+         borde inferior. La puerta está a Y=3,9 m. */
+      pFacadePos[idx + 1] = (pts[src + 1] - doorY) * fitScale + FACADE_FIT_Y;
       /* La Z se conserva a escala: la escalinata avanza hacia la cámara, las
          jambas se hunden y las pilastras despegan del muro. Es lo que hace que
          esto se lea como un edificio y no como un cartel. */
@@ -3379,11 +3415,16 @@ function animate() {
     particleStoryMix.facade
   );
   /* ÁNGULO FIJO DE LA FACHADA
-     Un alzado perfectamente frontal desperdicia la profundidad: la escalinata,
-     las jambas y el resalte de las pilastras se proyectan unos sobre otros y
-     la nube vuelve a parecer plana. Un escorzo LEVE y CONSTANTE (~13°) separa
-     esos planos en pantalla. Es una pose fija, no una animación: no gira. */
-  const FACADE_YAW = -0.23;
+     Casi de frente: 3,4°, una cuarta parte de los 13° que había antes. Con la
+     nube centrada en el vano y la cámara a la altura de la puerta, aquel
+     escorzo sacaba la entrada del eje y el edificio se leía torcido.
+
+     Pero 0° exactos tampoco sirve —probado—: sin nada de ángulo las pilastras
+     se proyectan sobre el muro y sobre las columnas de detrás, todo se solapa
+     y la nube se lee como niebla. Este giro corto basta para despegar los
+     planos conservando la puerta de cara, centrada y con los dos faroles
+     simétricos. Es una pose fija, no una animación: no gira. */
+  const FACADE_YAW = -0.06;
   swarm.rotation.y = THREE.MathUtils.lerp(
     baseSwirl * (1 - roomSwarmT) * (1 - storyLock) + roomSway,
     FACADE_YAW,
@@ -3414,7 +3455,10 @@ function animate() {
   /* El punto se afina en el cierre: 0,14 está calibrado para 99 partículas
      sueltas, y con 16 000 formando un edificio los discos se solapan y tapan
      el texto. Se encoge a la mitad justo cuando la fachada aparece. */
-  pMat.size = THREE.MathUtils.lerp(0.14, 0.092, facadeShade);
+  /* El punto se afina en el cierre, pero menos que antes: con el encuadre
+     encima del edificio cada punto cubre menos superficie en metros, y
+     afinarlo tanto dejaba ver el fondo entre medio hasta evaporar el muro. */
+  pMat.size = THREE.MathUtils.lerp(0.14, 0.115, facadeShade);
   /* PROFUNDIDAD REAL SOLO EN LA FACHADA
      El resto de la pieza dibuja con `depthTest: false` a propósito: la nube
      narrativa es translúcida y se quiere ver entera, sin que unos fragmentos
