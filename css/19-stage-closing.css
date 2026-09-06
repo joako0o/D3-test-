@@ -37,8 +37,33 @@
   align-items: center;
   justify-content: flex-end;
   flex-direction: column;
-  padding: 0 10% 12vh;
+  /* El botón vivía a 12vh del pie y caía justo sobre la escalinata, tapando
+     la base de la puerta —el punto focal— con su rectángulo translúcido.
+     Bajarlo al borde inferior lo saca del edificio y deja la entrada limpia. */
+  padding: 0 10% 5vh;
   text-align: center;
+}
+
+/* VIÑETA
+   Sin ella las cuatro esquinas brillan igual que el centro y la imagen se
+   delata como un render: en una fotografía la luz siempre cae hacia los
+   bordes. Este degradado radial oscurece las esquinas y empuja la mirada al
+   vano central, que es el asunto.
+
+   `pointer-events: none` para que no intercepte el clic del botón ni el de la
+   nube, y `z-index` por debajo del contenido pero por encima del canvas. */
+.stage-facade::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse 78% 68% at 50% 46%,
+    rgba(0, 0, 0, 0) 42%,
+    rgba(0, 0, 0, 0.30) 74%,
+    rgba(0, 0, 0, 0.62) 100%
+  );
 }
 
 .closing-cta {

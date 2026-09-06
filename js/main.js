@@ -1973,7 +1973,17 @@ fetch('data/facade-cloud.bin?v=2')
        no se ve así desde la vereda: desborda el campo visual. Ahora ocupa algo
        más que la pantalla y se recorta a propósito. Lo que se pierde son los
        extremos del muro —repetición—; lo que se gana es la escala. */
-    const FACADE_FIT_W = worldW * (window.innerWidth < 700 ? 1.15 : 1.02);
+    /* SILUETA CONTRA EL CIELO
+       Al 102 % el edificio se salía por arriba y el muro se desvanecía en
+       polvo sin rematar: la imagen no tenía contorno y el ojo no encontraba
+       dónde terminaba el objeto. Un edificio nocturno se reconoce por su
+       recorte contra el vacío antes que por su detalle.
+
+       Se retrocede hasta que entra la cornisa. Se pierde algo de escala
+       —seguimos por encima del 80 %, así que sigue imponiendo— y se gana el
+       remate, que es lo que hace que esto se lea como arquitectura y no como
+       una textura que cubre el marco. */
+    const FACADE_FIT_W = worldW * (window.innerWidth < 700 ? 0.98 : 0.86);
     /* Se sube sobre el centro porque el scroll se detiene con la sección
        asomando por abajo (el pie ocupa la franja inferior) y porque el botón
        vive abajo. Proporcional al alto visible, por lo mismo que el ancho: un
@@ -1984,21 +1994,28 @@ fetch('data/facade-cloud.bin?v=2')
        eje óptico y las verticales salgan rectas en vez de en picado. El margen
        extra levanta el vano por encima del botón "volver al comienzo", que
        vive en la franja central-baja. */
-    const FACADE_FIT_Y = camBaseY + worldH * 0.13;
-    const fitScale = FACADE_FIT_W / Math.max(0.001, maxX - minX);
-    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2;
-    /* Cota vertical de la PUERTA, leída de la nube en vez de escrita a mano:
-       el material 1 son las hojas de bronce. Si el modelo cambia, esto sigue
-       apuntando a la entrada sin tocar código. */
-    let dyMin = Infinity, dyMax = -Infinity;
-    for (let i = 0; i < n; i++) {
-      if (srcMats[i] !== 1) continue;
-      const v = pts[i * 3 + 1];
-      if (v < dyMin) dyMin = v;
-      if (v > dyMax) dyMax = v;
-    }
-    const doorY = Number.isFinite(dyMin) ? (dyMin + dyMax) / 2 : cy;
+    /* Con la cornisa dentro del cuadro, la nube baja: el aire va ARRIBA, sobre
+       el remate, que es donde dibuja la silueta. */
+    /* El edificio entra entero, así que la referencia deja de ser la puerta y
+       pasa a ser el centro del volumen: lo que importa ahora es que la masa
+       quede equilibrada en el cuadro, con aire arriba para la silueta. */
+    const FACADE_FIT_Y = camBaseY + worldH * 0.20;
+    /* AJUSTE POR ANCHO **Y** POR ALTO
+       Escalar solo por el ancho venía de la fachada de 37 x 22 m, que era
+       mucho más ancha que alta. Pero el recorte lateral la dejó casi cuadrada
+       (23,5 x 22,15), así que el mismo cálculo la desbordaba por arriba y el
+       remate quedaba fuera de cuadro: sin cornisa no hay silueta.
 
+       Se toma el menor de los dos ajustes, que es lo que garantiza que el
+       edificio entero quepa. FACADE_FIT_H deja algo de aire sobre la cornisa
+       para que el contorno se recorte contra el negro en vez de tocar el
+       borde. */
+    const FACADE_FIT_H = worldH * (window.innerWidth < 700 ? 0.86 : 0.92);
+    const fitScale = Math.min(
+      FACADE_FIT_W / Math.max(0.001, maxX - minX),
+      FACADE_FIT_H / Math.max(0.001, maxY - minY)
+    );
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2;
     /* Las repeticiones: hay PCOUNT partículas y n puntos horneados, y no tienen
        por qué coincidir. `i % n` reparte de forma cíclica sin dejar huecos. */
     for (let i = 0; i < PCOUNT; i++) {
@@ -2009,7 +2026,7 @@ fetch('data/facade-cloud.bin?v=2')
          centro geométrico cae a Y=10,9 m —media altura del muro, entre las
          ventanas del segundo piso— y encuadrar por ahí hundía la entrada en el
          borde inferior. La puerta está a Y=3,9 m. */
-      pFacadePos[idx + 1] = (pts[src + 1] - doorY) * fitScale + FACADE_FIT_Y;
+      pFacadePos[idx + 1] = (pts[src + 1] - cy) * fitScale + FACADE_FIT_Y;
       /* La Z se conserva a escala: la escalinata avanza hacia la cámara, las
          jambas se hunden y las pilastras despegan del muro. Es lo que hace que
          esto se lea como un edificio y no como un cartel. */
@@ -3546,7 +3563,13 @@ function animate() {
          comía el texto del cierre. Se atenúa bastante más (hasta 0,80) y con
          raíz, que comprime la parte baja: los planos siguen ordenándose por
          profundidad pero el conjunto vuelve a ser un fondo, no el asunto. */
-      const dim = THREE.MathUtils.lerp(1, 0.80 + 0.60 * Math.sqrt(depth), facadeShade);
+      /* Rango ampliado de 0,80..1,40 (1,75x) a 0,32..1,30 (4,1x). Aquel margen
+         estrecho hacía que las columnas del fondo pesaran igual que las del
+         frente y la escena se aplanaba pese al escorzo. En un edificio real de
+         noche la caída entre el primer término y el fondo es de 4x o más: es
+         la atmósfera lo que separa los planos, y es lo que distingue una foto
+         de un render. */
+      const dim = THREE.MathUtils.lerp(1, 0.32 + 0.98 * Math.sqrt(depth), facadeShade);
       outR *= dim; outG *= dim; outB *= dim;
 
       /* EL COLOR DEL EDIFICIO, NO EL DE LA CITA
@@ -3570,11 +3593,15 @@ function animate() {
          cada partícula, como su posición. */
       const grain = particleRandom(i, 7);
       const mat = pFacadeMat[i];
-      let mr = 0.92, mg = 0.95, mb = 1.05;          // 0 piedra: casi blanca, es la masa
+      /* La piedra estaba casi blanca (0,92/0,95/1,05) y competía con los
+         acentos: muro, columnas y suelo pesaban lo mismo y no había jerarquía.
+         Bajarla deja los medios abajo y reserva la luz para el bronce y el
+         oro, que es de donde viene la sensación de material caro. */
+      let mr = 0.56, mg = 0.59, mb = 0.68;          // 0 piedra: la masa, en penumbra
       if (mat === 1) { mr = 1.25; mg = 0.72; mb = 0.30; }   // 1 bronce, las hojas
       else if (mat === 2) { mr = 1.45; mg = 1.15; mb = 0.50; } // 2 oro, inscripción y faroles
       else if (mat === 3) { mr = 0.09; mg = 0.11; mb = 0.17; } // 3 vanos: muy oscuros o no leen como huecos
-      else if (mat === 4) { mr = 0.70; mg = 0.76; mb = 0.92; } // 4 suelo: algo más frío y apagado que la piedra
+      else if (mat === 4) { mr = 0.40; mg = 0.44; mb = 0.55; } // 4 suelo: más frío y apagado; no debe anclar la vista abajo
       /* Los acentos y los vanos se aplican casi puros. Con una mezcla suave el
          bronce se perdía en la piedra y las ventanas dejaban de ser agujeros:
          el contraste entre lleno y hueco es lo que dibuja el edificio. */
