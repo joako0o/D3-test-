@@ -16,7 +16,6 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { initFigureSystem } from './figures.js?v=4';
 import { buildCentralBankDoor } from './build-door.js?v=14';
-import { sampleFacadeCloud } from './facade-cloud.js?v=1';
 import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=15';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
 import {
@@ -1808,9 +1807,14 @@ const QUOTES_N = Math.max(quotes.length, 0);
    animate() cuesta 0,25 ms/frame a 7000 (1,5% del presupuesto de 60fps). */
 const FACADE_TARGET = (() => {
   const w = getViewportSize().width;
-  if (w < 700) return 2600;
-  if (w < 1200) return 4200;
-  return 7000;
+  /* Subido respecto de los 2 600/4 200/7 000 iniciales: aquellos se calcularon
+     para la puerta procedural, que era casi cuadrada. La fachada real mide
+     37 x 22 m —cuatro veces más superficie— y con 7 000 puntos se veía como
+     una gasa, no como un edificio. Esto ya no encarece las demás escenas:
+     dibujan 99 vía setDrawRange. */
+  if (w < 700) return 6000;
+  if (w < 1200) return 10000;
+  return 16000;
 })();
 const PCOUNT = Math.max(QUOTES_N, FACADE_TARGET) || 1;
 /* Índice de la cita que representa cada partícula. Con repetición, la
@@ -1845,78 +1849,94 @@ const pFacadePos = new Float32Array(PCOUNT * 3);
 let facadeCloudReady = false;
 /* Rango de profundidad de la nube, para el sombreado aéreo del cierre. */
 let facadeZMin = 0, facadeZMax = 1;
-if (proceduralDoorModel) {
-  let seed = 0;
-  const rand = () => particleRandom(seed++, 31);
-  /* MUESTREO EN POSE NEUTRA
-     El muestreo trabaja en coordenadas de MUNDO, y en este momento el grupo
-     de la puerta lleva encima la pose del lockup de portada (rotación y
-     escala). Si se muestrea así, la nube hereda esa inclinación y el edificio
-     se ve torcido en el cierre. Se congela la pose: solo la rotación que
-     encara la fachada a la cámara (-90° en X, la del generador), sin escala
-     ni desplazamiento; después se restaura la matriz original. */
-  const savedQuat = proceduralDoorModel.quaternion.clone();
-  const savedPos = proceduralDoorModel.position.clone();
-  const savedScale = proceduralDoorModel.scale.clone();
-  const savedEuler = new THREE.Euler().setFromQuaternion(savedQuat, 'XYZ');
-  proceduralDoorModel.position.set(0, 0, 0);
-  proceduralDoorModel.scale.set(1, 1, 1);
-  /* Se conservan X y Z (son las que ENCARAN la fachada: sin ellas la nube sale
-     de canto, una tira vertical) y solo se anula el giro en Y, que es el
-     balanceo del lockup de portada — el que dejaba el edificio torcido. */
-  proceduralDoorModel.rotation.set(savedEuler.x, 0, savedEuler.z);
-  const sampled = sampleFacadeCloud(proceduralDoorModel, PCOUNT, rand);
-  proceduralDoorModel.position.copy(savedPos);
-  proceduralDoorModel.quaternion.copy(savedQuat);
-  proceduralDoorModel.scale.copy(savedScale);
-  proceduralDoorModel.updateMatrixWorld(true);
-  /* NORMALIZACIÓN AL ENCUADRE DEL CIERRE
-     El muestreo devuelve METROS del edificio real (la fachada mide ~10 m de
-     ancho por ~8 m de alto). La cámara del cierre está a 5,8 unidades: volcar
-     esas coordenadas tal cual esparce los puntos muy por fuera del viewport y
-     lo que se ve es ruido, no un edificio. Se ajusta la nube a una caja
-     conocida: alto FACADE_FIT_H centrado en FACADE_FIT_Y.
-     Se escala por el ALTO y no por el ancho porque el encuadre vertical es el
-     que manda aquí — el texto y el botón ocupan el centro. */
-  /* El ajuste depende del ANCHO del viewport, no solo del alto: la fachada es
-     casi tan ancha como alta, y en un móvil de 390 px un alto de 2,35 la
-     desborda por los lados (se salía del encuadre y solo se veía la
-     escalinata). Se encoge en pantallas estrechas. */
-  const FACADE_FIT_H = window.innerWidth < 700 ? 2.05
-    : window.innerWidth < 1200 ? 2.15
-    : 2.35;
-  /* Se sube respecto del centro geométrico: el cierre es la última sección y
-     el scroll se detiene con ella asomando por abajo, no centrada, así que una
-     nube centrada en el mundo se ve baja en pantalla y la escalinata se corta
-     contra el pie de página. */
-  const FACADE_FIT_Y = window.innerWidth < 700 ? 0.95 : 1.28;
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
-  for (let i = 0; i < sampled.length; i += 3) {
-    if (sampled[i] < minX) minX = sampled[i];
-    if (sampled[i] > maxX) maxX = sampled[i];
-    if (sampled[i+1] < minY) minY = sampled[i+1];
-    if (sampled[i+1] > maxY) maxY = sampled[i+1];
-    if (sampled[i+2] < minZ) minZ = sampled[i+2];
-    if (sampled[i+2] > maxZ) maxZ = sampled[i+2];
-  }
-  const fitScale = FACADE_FIT_H / Math.max(0.001, maxY - minY);
-  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2;
-  for (let i = 0; i < sampled.length; i += 3) {
-    pFacadePos[i]     = (sampled[i] - cx) * fitScale;
-    pFacadePos[i + 1] = (sampled[i+1] - cy) * fitScale + FACADE_FIT_Y;
-    /* PROFUNDIDAD REAL
-       La Z se conserva a escala: la escalinata avanza hacia la cámara, las
-       jambas se hunden y las pilastras despegan del muro. Antes estaba
-       aplastada a 0,22 porque el edificio se veía caído hacia delante, pero
-       la causa no era la profundidad sino el giro residual del enjambre; con
-       la nube ya bloqueada de frente, comprimir la Z solo quitaba el volumen
-       que hace que esto se lea como un edificio y no como un cartel. */
-    pFacadePos[i + 2] = (sampled[i+2] - cz) * fitScale;
-  }
-  facadeZMin = (minZ - cz) * fitScale;
-  facadeZMax = (maxZ - cz) * fitScale;
-  facadeCloudReady = true;
-}
+
+/* LA FACHADA DEL CIERRE SE CARGA HORNEADA
+   La fuente es Puerta_particulas/entrada_v3.glb: la entrada de Agustinas 1180
+   como geometría paramétrica en metros reales —37 m de ancho por 22 m de alto,
+   114 372 triángulos, con faroles, ventanas, capiteles y la inscripción en
+   relieve—. Ese GLB pesa 3,5 MB y NO se sirve nunca: de todo ese detalle la
+   escena solo necesita unos miles de puntos.
+
+   El muestreo se hace una vez, fuera de línea (tools/bake-facade-cloud.mjs), y
+   aquí solo llega el resultado: 9 000 posiciones cuantizadas a 16 bits, 53 KB.
+   Antes esto se muestreaba en el navegador desde la puerta procedural, que era
+   gratis en bytes pero solo tenía el portal —ni fachada completa, ni faroles.
+
+   La carga es asíncrona y no bloquea nada: hasta que llega, `facadeCloudReady`
+   es false y el cierre simplemente no arma el edificio. Como está al final del
+   documento, hay minutos de margen. */
+fetch('data/facade-cloud.bin?v=1')
+  .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`HTTP ${r.status}`))))
+  .then((buf) => {
+    const head = new DataView(buf, 0, 44);
+    if (String.fromCharCode(head.getUint8(0), head.getUint8(1), head.getUint8(2), head.getUint8(3)) !== 'FCLD') {
+      throw new Error('cabecera desconocida');
+    }
+    const n = head.getUint32(8, true);
+    const origin = [head.getFloat32(12, true), head.getFloat32(16, true), head.getFloat32(20, true)];
+    const span = [head.getFloat32(24, true), head.getFloat32(28, true), head.getFloat32(32, true)];
+    const q = new Uint16Array(buf, 44, n * 3);
+
+    /* Descuantizar a metros y, de paso, medir la caja real. */
+    const pts = new Float32Array(n * 3);
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (let i = 0; i < n * 3; i += 3) {
+      const x = origin[0] + (q[i] / 65535) * span[0];
+      const y = origin[1] + (q[i + 1] / 65535) * span[1];
+      const z = origin[2] + (q[i + 2] / 65535) * span[2];
+      pts[i] = x; pts[i + 1] = y; pts[i + 2] = z;
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+      if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+    }
+
+    /* ENCUADRE
+       Los puntos vienen en metros del edificio real. La cámara del cierre está
+       a ~6,9 unidades, así que volcarlos tal cual esparce la nube muy por fuera
+       del viewport y lo que se ve es ruido. Se ajusta a una caja conocida.
+
+       Se escala por el ANCHO y no por el alto: esta fachada mide 37 x 22 m, o
+       sea que es mucho más ancha que alta, y ajustando por el alto se saldría
+       de cuadro por los lados. (La puerta procedural anterior era casi
+       cuadrada y por eso allí mandaba el alto.) */
+    const FACADE_FIT_W = window.innerWidth < 700 ? 2.90
+      : window.innerWidth < 1200 ? 3.40
+      : 3.85;
+    /* Se sube respecto del centro geométrico: el cierre es la última sección y
+       el scroll se detiene con ella asomando por abajo, no centrada, así que
+       una nube centrada en el mundo se ve baja en pantalla. */
+    /* Baja bastante respecto del centro: el texto y el botón ocupan la franja
+       central de la pantalla, y con la fachada centrada las ventanas quedaban
+       justo detrás de las líneas de texto. Empujándola hacia abajo, el
+       edificio ocupa la mitad inferior —donde no compite con nada— y el
+       entablamento hace de horizonte por detrás del botón. */
+    const FACADE_FIT_Y = window.innerWidth < 700 ? -0.28 : -0.34;
+    const fitScale = FACADE_FIT_W / Math.max(0.001, maxX - minX);
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2;
+
+    /* Las repeticiones: hay PCOUNT partículas y n puntos horneados, y no tienen
+       por qué coincidir. `i % n` reparte de forma cíclica sin dejar huecos. */
+    for (let i = 0; i < PCOUNT; i++) {
+      const src = (i % n) * 3;
+      const idx = i * 3;
+      pFacadePos[idx]     = (pts[src] - cx) * fitScale;
+      pFacadePos[idx + 1] = (pts[src + 1] - cy) * fitScale + FACADE_FIT_Y;
+      /* La Z se conserva a escala: la escalinata avanza hacia la cámara, las
+         jambas se hunden y las pilastras despegan del muro. Es lo que hace que
+         esto se lea como un edificio y no como un cartel. */
+      pFacadePos[idx + 2] = (pts[src + 2] - cz) * fitScale;
+    }
+    facadeZMin = (minZ - cz) * fitScale;
+    facadeZMax = (maxZ - cz) * fitScale;
+    facadeCloudReady = true;
+  })
+  .catch((err) => {
+    /* Si falla, el cierre se queda sin edificio pero la pieza sigue entera: la
+       nube mantiene su última formación y el texto y el botón no dependen de
+       esto. Mejor eso que una pantalla rota. */
+    console.warn('No se pudo cargar la nube de la fachada:', err.message);
+  });
+
 const pColors = new Float32Array(PCOUNT * 3);
 const pParticipantRank = new Int16Array(PCOUNT);
 const pParticipantCount = new Int16Array(PCOUNT);
@@ -2776,7 +2796,7 @@ const cameraChoreographyStops = [
   { id: 'stagePipeline',      pos: [1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
   { id: 'stageTimeline',      pos: [-1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
   { id: 'stageQuotes',        pos: [0.00, 0.72, 5.40], look: [0.00, 0.70, 0.00] },
-  { id: 'stageClosing',       pos: [0.00, 0.72, 6.90], look: [0.00, 0.72, 0.00] },   // retrocedida: encuadra la fachada completa
+  { id: 'stageClosing',       pos: [0.00, 0.30, 9.40], look: [0.00, 0.30, 0.00] },   // retrocedida: la fachada real mide 37 x 22 m y no cabía
 ];
 
 let cameraStops = [];
@@ -3313,6 +3333,10 @@ function animate() {
   const quoteStageMix = particleStoryMix.quotes;
   const cols = pGeo.attributes.color.array;
   const facadeShade = facadeCloudReady ? particleStoryMix.facade : 0;
+  /* El punto se afina en el cierre: 0,14 está calibrado para 99 partículas
+     sueltas, y con 16 000 formando un edificio los discos se solapan y tapan
+     el texto. Se encoge a la mitad justo cuando la fachada aparece. */
+  pMat.size = THREE.MathUtils.lerp(0.14, 0.105, facadeShade);
 
   /* SALTAR EL BUCLE DE COLOR CUANDO NADA CAMBIÓ
      Este bucle recorre las 7 000 partículas y hace ~15 operaciones por cada
@@ -3376,11 +3400,12 @@ function animate() {
     if (facadeShade > 0) {
       const depth = THREE.MathUtils.clamp(
         (pFacadePos[idx + 2] - facadeZMin) / Math.max(0.001, facadeZMax - facadeZMin), 0, 1);
-      /* Curva suave: el muro ocupa el fondo del rango y con una rampa lineal
-         agresiva se iba a negro, borrando el cuerpo del edificio. Se atenúa
-         solo hasta 0,78 y con raíz, que comprime la parte baja: suficiente para
-         ordenar los planos sin que la escalinata se queme ni el muro se borre. */
-      const dim = THREE.MathUtils.lerp(1, 0.78 + 0.34 * Math.sqrt(depth), facadeShade);
+      /* La fachada nueva tiene cuatro veces más puntos que la puerta anterior
+         y con el brillo de antes se convertía en una mancha blanca que se
+         comía el texto del cierre. Se atenúa bastante más (hasta 0,80) y con
+         raíz, que comprime la parte baja: los planos siguen ordenándose por
+         profundidad pero el conjunto vuelve a ser un fondo, no el asunto. */
+      const dim = THREE.MathUtils.lerp(1, 0.80 + 0.60 * Math.sqrt(depth), facadeShade);
       outR *= dim; outG *= dim; outB *= dim;
     }
     cols[idx] = outR;
