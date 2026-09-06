@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "audit": "node scripts/audit/audit.mjs",
-    "build:d3": "node tools/build-d3-subset.mjs"
+    "build:d3": "node tools/build-d3-subset.mjs",
+    "opt:glb": "node tools/optimize-glb-textures.mjs"
   },
   "keywords": [
     "scrollytelling",
