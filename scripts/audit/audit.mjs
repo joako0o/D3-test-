@@ -181,6 +181,32 @@ async function documentChecks(page) {
     }
     out.h1 = document.querySelectorAll('h1').length;
 
+    /* Texto en otro idioma sin marcar (WCAG 3.1.2). Heurística deliberadamente
+       estrecha —solo encabezados y solo inglés— porque el objetivo es cazar el
+       titular importado, no auditar cada palabra: un lector de pantalla en
+       español pronuncia el inglés con fonética española y lo vuelve
+       ininteligible. Los préstamos ya asentados en la jerga económica
+       ("hawkish", "dovish") se excluyen: marcarlos sería ruido. */
+    const docLang = (document.documentElement.lang || '').slice(0, 2).toLowerCase();
+    out.foreignText = [];
+    if (docLang === 'es') {
+      const loanwords = /\b(hawkish|dovish|scroll|paper|dataset|machine learning|embedding)\b/gi;
+      const enOnly = /\b(the|of|from|where|happens|learning|years|and|with|between|through|about)\b/gi;
+      const esHint = /\b(el|la|los|las|de|que|con|para|una|del|por|en|se|su)\b/gi;
+      for (const el of document.querySelectorAll('h1, h2, h3, [role="heading"]')) {
+        if (el.closest('[lang]') && el.closest('[lang]') !== document.documentElement) continue;
+        const raw = (el.textContent || '').trim();
+        if (raw.length < 12) continue;
+        const text = raw.replace(loanwords, '');
+        const en = (text.match(enOnly) || []).length;
+        const es = (text.match(esHint) || []).length;
+        // Al menos tres marcadores ingleses y clara mayoría sobre los españoles.
+        if (en >= 3 && en > es * 2) {
+          out.foreignText.push({ el: el.tagName.toLowerCase(), text: raw.slice(0, 60) });
+        }
+      }
+    }
+
     const ids = new Set();
     for (const el of document.querySelectorAll('[id]')) {
       if (ids.has(el.id)) out.duplicateIds.push(el.id);
@@ -208,6 +234,9 @@ async function documentChecks(page) {
 
   const V = 'todos';
   if (res.langMissing) add('ERROR', 'accesibilidad', V, '<html> sin atributo lang');
+  for (const h of res.foreignText) {
+    add('WARN', 'accesibilidad', V, `${h.el} parece estar en otro idioma y no lleva lang= (WCAG 3.1.2): “${h.text}”`);
+  }
   for (const a of res.badAnchors) add('ERROR', 'enlaces', V, `enlace interno sin destino: ${a}`);
   for (const h of res.blankNoOpener) add('ERROR', 'seguridad', V, `target="_blank" sin rel="noopener": ${h}`);
   for (const c of res.namelessControls) add('ERROR', 'accesibilidad', V, `control sin nombre accesible: ${c}`);
