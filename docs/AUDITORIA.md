@@ -4,6 +4,8 @@ Revisión de responsive, accesibilidad, rendimiento, SEO, seguridad y experienci
 móvil. Este documento es la lista viva: lo arreglado queda como registro de por
 qué se tocó, y lo pendiente con su razón de no haberse hecho todavía.
 
+Listas de referencia del sector (front-end y trabajo con IA): `docs/CHECKLISTS.md`.
+
 Ejecutar la auditoría automática:
 
 ```bash
