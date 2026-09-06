@@ -5,7 +5,9 @@
 /* ─── STAGE 10 — Closing ─── */
 .stage-closing {
   position: relative; z-index: 4;
-  min-height: 80vh;
+  /* Pantalla completa: el texto ya no comparte sección con la fachada, así que
+     tiene el alto entero para él y llega centrado a la vista. */
+  min-height: 100vh;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   padding: var(--space-section) 10%;
@@ -19,10 +21,26 @@
      opacity:0 ADEMÁS en CSS dejaba el padre invisible para siempre: la
      animación revelaba los caracteres hijos, pero la opacidad se multiplica
      por la del padre → la sección final nunca se veía. */
-  margin-bottom: 40px;
+  /* Sin margen inferior: el botón se mudó a la sección siguiente. */
   font-weight: 300;
   letter-spacing: 0.01em;
 }
+/* ─── La fachada ───
+   Pantalla completa y el botón abajo: el edificio necesita el alto entero para
+   leerse, y el botón tiene que quedar donde no lo tape. `justify-content:
+   flex-end` lo empuja al pie; el resto de la sección queda libre para la nube
+   de partículas, que se dibuja en el canvas WebGL de fondo y no ocupa DOM. */
+.stage-facade {
+  position: relative; z-index: 4;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-direction: column;
+  padding: 0 10% 12vh;
+  text-align: center;
+}
+
 .closing-cta {
   display: inline-block;
   padding: 16px 40px;

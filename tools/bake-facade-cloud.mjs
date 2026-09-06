@@ -59,6 +59,23 @@ const EDGE_RATIO = 0.72;
    para dibujar suelo vacío. */
 const SKIP = new Set(['Vereda']);
 
+/* MATERIAL POR PIEZA
+   El GLB no trae materiales (0 en la cabecera), pero sí los nombres de las 50
+   piezas, y con eso alcanza: el edificio real no es de un solo color y pintar
+   la nube entera del mismo gris la dejaba plana. Cada punto se lleva un byte
+   con su material y el cliente le asigna el tono.
+
+     0 piedra   el muro, pilastras, cornisa, entablamento — el grueso
+     1 bronce   las hojas de la puerta: el foco cálido en el centro
+     2 oro      la inscripción y los faroles: los acentos que se encienden
+     3 sombra   los vanos de ventana, que deben leerse como huecos */
+function materialOf(name) {
+  if (/^Hoja_/.test(name)) return 1;
+  if (name === 'Inscripcion' || /^Farol_/.test(name)) return 2;
+  if (/^Ventana/.test(name) || /^Reja_/.test(name)) return 3;
+  return 0;
+}
+
 /* Generador determinista (mulberry32). Con Math.random la fachada cambiaría de
    forma en cada horneado y las capturas de regresión no valdrían nada. */
 function makeRandom(seed) {
@@ -114,6 +131,7 @@ gltf.meshes.forEach((mesh, mi) => {
   const name = info?.nd?.name || mesh.name || '?';
   if (SKIP.has(name)) { skipped++; return; }
   const t = info?.nd?.translation || [0, 0, 0];
+  const mat = materialOf(name);
   for (const prim of mesh.primitives) {
     const pos = readAccessor(prim.attributes.POSITION);
     const idx = prim.indices !== undefined ? readAccessor(prim.indices) : null;
@@ -135,7 +153,7 @@ gltf.meshes.forEach((mesh, mi) => {
          relieve. El umbral es tolerante para conservar cantos y caras muy
          oblicuas, que sí aportan contorno. */
       if (nz / nl < -0.35) continue;
-      tris.push({ ax, ay, az, bx, by, bz, cx, cy, cz, area: 0.5 * nl });
+      tris.push({ ax, ay, az, bx, by, bz, cx, cy, cz, area: 0.5 * nl, mat });
     }
   }
 });
@@ -158,6 +176,7 @@ const pick = (r) => {
 };
 
 const pts = new Float32Array(N * 3);
+const mats = new Uint8Array(N);
 for (let i = 0; i < N; i++) {
   const t = tris[pick(rand())];
   let x, y, z;
@@ -178,6 +197,7 @@ for (let i = 0; i < N; i++) {
     z = t.az * b0 + t.bz * b1 + t.cz * b2;
   }
   pts[i * 3] = x; pts[i * 3 + 1] = y; pts[i * 3 + 2] = z;
+  mats[i] = t.mat;
 }
 
 const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
@@ -196,7 +216,7 @@ for (let i = 0; i < pts.length; i += 3) {
 const HEAD = 44;
 const head = Buffer.alloc(HEAD);
 head.write('FCLD', 0, 'ascii');
-head.writeUInt32LE(1, 4);
+head.writeUInt32LE(2, 4);   // v2: añade un byte de material por punto
 head.writeUInt32LE(N, 8);
 for (let c = 0; c < 3; c++) {
   head.writeFloatLE(mn[c], 12 + c * 4);
@@ -212,7 +232,7 @@ for (let i = 0; i < N; i++) {
 }
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, Buffer.concat([head, Buffer.from(quant.buffer)]));
+fs.writeFileSync(OUT, Buffer.concat([head, Buffer.from(quant.buffer), Buffer.from(mats.buffer)]));
 
 const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
 const gz = (await import('node:zlib')).gzipSync(fs.readFileSync(OUT)).length;
@@ -222,3 +242,7 @@ console.log(`Caja       X ${mn[0].toFixed(2)}..${mx[0].toFixed(2)} · Y ${mn[1].
 console.log(`Salida     ${path.relative(ROOT, OUT)}  ${N.toLocaleString('es')} puntos · ${kb(fs.statSync(OUT).size)} · ${kb(gz)} con gzip`);
 const paso = ((mx[0] - mn[0]) / 65535 * 1000).toFixed(2);
 console.log(`Precisión  ${paso} mm por paso de cuantización`);
+const cuenta = [0, 0, 0, 0];
+for (const m of mats) cuenta[m]++;
+const pct = (v) => `${((v / N) * 100).toFixed(1)}%`;
+console.log(`Materiales piedra ${pct(cuenta[0])} · bronce ${pct(cuenta[1])} · oro ${pct(cuenta[2])} · vanos ${pct(cuenta[3])}`);

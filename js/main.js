@@ -1812,7 +1812,7 @@ const FACADE_TARGET = (() => {
      37 x 22 m —cuatro veces más superficie— y con 7 000 puntos se veía como
      una gasa, no como un edificio. Esto ya no encarece las demás escenas:
      dibujan 99 vía setDrawRange. */
-  if (w < 700) return 6000;
+  if (w < 700) return 11000;
   if (w < 1200) return 10000;
   return 16000;
 })();
@@ -1849,6 +1849,8 @@ const pFacadePos = new Float32Array(PCOUNT * 3);
 let facadeCloudReady = false;
 /* Rango de profundidad de la nube, para el sombreado aéreo del cierre. */
 let facadeZMin = 0, facadeZMax = 1;
+/* Material del edificio que le toca a cada partícula en el cierre. */
+const pFacadeMat = new Uint8Array(PCOUNT);
 
 /* LA FACHADA DEL CIERRE SE CARGA HORNEADA
    La fuente es Puerta_particulas/entrada_v3.glb: la entrada de Agustinas 1180
@@ -1876,6 +1878,10 @@ fetch('data/facade-cloud.bin?v=1')
     const origin = [head.getFloat32(12, true), head.getFloat32(16, true), head.getFloat32(20, true)];
     const span = [head.getFloat32(24, true), head.getFloat32(28, true), head.getFloat32(32, true)];
     const q = new Uint16Array(buf, 44, n * 3);
+    /* Un byte por punto con el material de la pieza de la que salió (ver
+       "MATERIAL POR PIEZA" en tools/bake-facade-cloud.mjs). Es lo que permite
+       que el edificio no sea todo del mismo gris. */
+    const srcMats = new Uint8Array(buf, 44 + n * 6, n);
 
     /* Descuantizar a metros y, de paso, medir la caja real. */
     const pts = new Float32Array(n * 3);
@@ -1899,18 +1905,29 @@ fetch('data/facade-cloud.bin?v=1')
        sea que es mucho más ancha que alta, y ajustando por el alto se saldría
        de cuadro por los lados. (La puerta procedural anterior era casi
        cuadrada y por eso allí mandaba el alto.) */
-    const FACADE_FIT_W = window.innerWidth < 700 ? 2.90
-      : window.innerWidth < 1200 ? 3.40
-      : 3.85;
-    /* Se sube respecto del centro geométrico: el cierre es la última sección y
-       el scroll se detiene con ella asomando por abajo, no centrada, así que
-       una nube centrada en el mundo se ve baja en pantalla. */
-    /* Baja bastante respecto del centro: el texto y el botón ocupan la franja
-       central de la pantalla, y con la fachada centrada las ventanas quedaban
-       justo detrás de las líneas de texto. Empujándola hacia abajo, el
-       edificio ocupa la mitad inferior —donde no compite con nada— y el
-       entablamento hace de horizonte por detrás del botón. */
-    const FACADE_FIT_Y = window.innerWidth < 700 ? -0.28 : -0.34;
+    /* ENCUADRE DERIVADO DE LA CÁMARA, NO A OJO
+       Antes esto eran números tanteados por rango de viewport y cada cambio de
+       cámara los invalidaba: en vertical la fachada se salía por los lados
+       porque 37 m de ancho no caben en una pantalla estrecha con la misma
+       distancia que en un monitor.
+
+       Se calcula cuánto mundo abarca la cámara a la distancia de la nube y se
+       ocupa una fracción de eso. Así el encuadre se adapta solo a cualquier
+       proporción de pantalla. */
+    const camZ = 9.40;
+    const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
+    const worldH = 2 * tanHalf * camZ;
+    const worldW = worldH * (window.innerWidth / window.innerHeight);
+    /* Fracción del ancho visible que ocupa el edificio: "casi toda la
+       pantalla" pero con aire a los lados. Sin ese margen la fachada llega a
+       los bordes, se pierde la silueta y deja de leerse como un edificio
+       recortado contra el cielo — se vuelve una textura que cubre el marco. */
+    const FACADE_FIT_W = worldW * (window.innerWidth < 700 ? 0.98 : 0.62);
+    /* Se sube sobre el centro porque el scroll se detiene con la sección
+       asomando por abajo (el pie ocupa la franja inferior) y porque el botón
+       vive abajo. Proporcional al alto visible, por lo mismo que el ancho: un
+       número fijo se rompe en cuanto cambia la cámara. */
+    const FACADE_FIT_Y = worldH * (window.innerWidth < 700 ? 0.16 : 0.20);
     const fitScale = FACADE_FIT_W / Math.max(0.001, maxX - minX);
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2;
 
@@ -1926,6 +1943,9 @@ fetch('data/facade-cloud.bin?v=1')
          esto se lea como un edificio y no como un cartel. */
       pFacadePos[idx + 2] = (pts[src + 2] - cz) * fitScale;
     }
+    /* El material se copia a un array por PARTÍCULA (no por punto horneado)
+       para que el bucle de color no tenga que hacer el módulo en cada frame. */
+    for (let i = 0; i < PCOUNT; i++) pFacadeMat[i] = srcMats[i % n];
     facadeZMin = (minZ - cz) * fitScale;
     facadeZMax = (maxZ - cz) * fitScale;
     facadeCloudReady = true;
@@ -2394,6 +2414,12 @@ function orbitFocusOwner() {
   return -1;
 }
 
+/* La fachada domina la escena: por encima de este mix el edificio ya está
+   armado y las partículas se leen como arquitectura, no como fragmentos. Por
+   debajo todavía se está formando y conviene que el hover siga vivo, porque la
+   nube aún es la nube del relato. */
+const facadeInteractionMuted = () => particleStoryMix.facade > 0.5;
+
 const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 const _pickProjected = new THREE.Vector3();
@@ -2564,6 +2590,21 @@ function updateHover(cx, cy) {
   const now = performance.now();
   if (now - lastHoverAt < 32) return;
   lastHoverAt = now;
+  /* EN LA FACHADA NO HAY HOVER
+     Durante todo el relato una partícula ES una cita, y pasar el cursor por
+     encima para asomarla es el gesto central de la pieza. En la escena final
+     esa lectura ya no se sostiene: las partículas dejan de representar
+     fragmentos y pasan a ser el material con el que está dibujado el edificio.
+     Con 16 000 puntos apretados, mover el ratón abría citas sin relación con
+     nada —el lector no está señalando una intervención, está mirando una
+     puerta— y el panel tapaba la escena que la sección existe para mostrar.
+
+     El clic se conserva: quien quiera sacar una cita del edificio puede, pero
+     es una decisión suya y no un accidente del cursor. */
+  if (facadeInteractionMuted()) {
+    if (hoveredPoint) { hoveredPoint = false; document.body.style.cursor = ''; }
+    return;
+  }
   const hitIdx = pickPoint(cx, cy);
   const hasHit = hitIdx >= 0;
   if (hasHit !== hoveredPoint) {
@@ -2626,9 +2667,9 @@ let lastColorState = '';
 /* La nube dejó de moverse de forma apreciable: ver "¿SE PUEDE DEJAR DE MOVER
    LA NUBE?" en animate(). */
 let particlesSettled = false;
-/* Sección del cierre, cacheada: la fachada se gobierna leyendo su posición en
-   pantalla desde animate(). Ver "LA FACHADA DEL CIERRE". */
-const closingSectionEl = document.querySelector('#stageClosing');
+/* Sección de la FACHADA (no la del texto), cacheada: el edificio se gobierna
+   leyendo su posición en pantalla desde animate(). Ver "LA FACHADA". */
+const closingSectionEl = document.querySelector('#stageFacade');
 let particleTargetsReady = false;
 
 const setParticleStoryTarget = (key, value) => {
@@ -2796,7 +2837,8 @@ const cameraChoreographyStops = [
   { id: 'stagePipeline',      pos: [1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
   { id: 'stageTimeline',      pos: [-1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
   { id: 'stageQuotes',        pos: [0.00, 0.72, 5.40], look: [0.00, 0.70, 0.00] },
-  { id: 'stageClosing',       pos: [0.00, 0.30, 9.40], look: [0.00, 0.30, 0.00] },   // retrocedida: la fachada real mide 37 x 22 m y no cabía
+  { id: 'stageClosing',       pos: [0.00, 0.30, 9.40], look: [0.00, 0.30, 0.00] },   // el texto del cierre: la nube queda de fondo, dispersa
+  { id: 'stageFacade',        pos: [0.00, 0.30, 9.40], look: [0.00, 0.30, 0.00] },
 ];
 
 let cameraStops = [];
@@ -3241,7 +3283,7 @@ function animate() {
     }
   }
 
-  /* ── LA FACHADA DEL CIERRE ──────────────────────────────────────────────
+  /* ── LA FACHADA ──────────────────────────────────────────────
      Esto NO usa un ScrollTrigger, y es a propósito. Se intentó con uno y
      falló de forma difícil de ver: el trigger se crea antes de que existan
      las secciones que se construyen por JS, así que memoriza los píxeles de
@@ -3337,6 +3379,20 @@ function animate() {
      sueltas, y con 16 000 formando un edificio los discos se solapan y tapan
      el texto. Se encoge a la mitad justo cuando la fachada aparece. */
   pMat.size = THREE.MathUtils.lerp(0.14, 0.105, facadeShade);
+  /* PROFUNDIDAD REAL SOLO EN LA FACHADA
+     El resto de la pieza dibuja con `depthTest: false` a propósito: la nube
+     narrativa es translúcida y se quiere ver entera, sin que unos fragmentos
+     tapen a otros. Pero un EDIFICIO no funciona así — con el test apagado se
+     veía el muro del fondo a través de las pilastras, y la escena se leía
+     como una gasa en vez de como algo sólido.
+     Se enciende cuando la fachada domina: entonces los puntos de delante
+     ocultan a los de atrás y aparece el volumen. */
+  const facadeSolid = facadeShade > 0.5;
+  if (pMat.depthTest !== facadeSolid) {
+    pMat.depthTest = facadeSolid;
+    pMat.depthWrite = facadeSolid;
+    pMat.needsUpdate = true;
+  }
 
   /* SALTAR EL BUCLE DE COLOR CUANDO NADA CAMBIÓ
      Este bucle recorre las 7 000 partículas y hace ~15 operaciones por cada
@@ -3407,6 +3463,29 @@ function animate() {
          profundidad pero el conjunto vuelve a ser un fondo, no el asunto. */
       const dim = THREE.MathUtils.lerp(1, 0.80 + 0.60 * Math.sqrt(depth), facadeShade);
       outR *= dim; outG *= dim; outB *= dim;
+
+      /* EL COLOR DEL EDIFICIO, NO EL DE LA CITA
+         Fuera del cierre el color de una partícula dice si la intervención fue
+         hawkish o dovish, y eso es el corazón de la pieza. Pero en la fachada
+         las partículas ya no representan intervenciones: son el material con
+         el que está dibujada una puerta. Mantener ahí la escala hawkish/dovish
+         pintaba el edificio de un gris azulado uniforme y sin lectura.
+
+         Se mezcla hacia el color de la PIEZA. La transición usa el mismo
+         facadeShade que todo lo demás, así que el enjambre llega con sus
+         colores del relato y el edificio se tiñe a medida que se arma. */
+      const mat = pFacadeMat[i];
+      let mr = 0.92, mg = 0.95, mb = 1.05;          // 0 piedra: casi blanca, es la masa
+      if (mat === 1) { mr = 1.25; mg = 0.72; mb = 0.30; }   // 1 bronce, las hojas
+      else if (mat === 2) { mr = 1.45; mg = 1.15; mb = 0.50; } // 2 oro, inscripción y faroles
+      else if (mat === 3) { mr = 0.09; mg = 0.11; mb = 0.17; } // 3 vanos: muy oscuros o no leen como huecos
+      /* Los acentos y los vanos se aplican casi puros. Con una mezcla suave el
+         bronce se perdía en la piedra y las ventanas dejaban de ser agujeros:
+         el contraste entre lleno y hueco es lo que dibuja el edificio. */
+      const matMix = facadeShade * (mat === 0 ? 0.85 : 1.0);
+      outR = THREE.MathUtils.lerp(outR, mr * dim, matMix);
+      outG = THREE.MathUtils.lerp(outG, mg * dim, matMix);
+      outB = THREE.MathUtils.lerp(outB, mb * dim, matMix);
     }
     cols[idx] = outR;
     cols[idx + 1] = outG;
@@ -4837,6 +4916,7 @@ const bgSections = [
   { trigger: '#stageTimeline', color: '#0a0e1a' },
   { trigger: '#stageQuotes', color: '#0d1225' },
   { trigger: '#stageClosing', color: '#0a0e1a' },
+  { trigger: '#stageFacade',  color: '#0a0e1a' },
 ];
 
 bgSections.forEach(({ trigger, color }) => {
@@ -4872,6 +4952,7 @@ const ambientStates = [
   { trigger: '#stageTimeline', alpha: 0.035 },
   { trigger: '#stageQuotes',   alpha: 0.018 },
   { trigger: '#stageClosing',  alpha: 0.08 },
+  { trigger: '#stageFacade',   alpha: 0.08 },
 ];
 
 function setAmbientAlpha(alpha, immediate = false) {
