@@ -415,6 +415,10 @@
   align-items: center;
   gap: 4px;
   padding: 4px 7px;
+  /* WCAG 2.2 AA (2.5.8, "Target Size (Minimum)"): 24x24 CSS px. La tipografía
+     de 10px dejaba el chip en 22px de alto — un objetivo que el pulgar falla.
+     `min-height` en vez de más `padding` para no ensanchar la fila de chips. */
+  min-height: 24px;
   border: 1px solid rgba(255,215,106,0.2);
   border-radius: 999px;
   color: var(--color-text-secondary);
@@ -546,6 +550,8 @@
   align-items: center;
   gap: 6px;
   padding: 5px 8px;
+  /* Igual que .act-term-chip: quedaba en 23px de alto. Ver WCAG 2.5.8. */
+  min-height: 24px;
   border: 1px solid rgba(255,215,106,0.34);
   border-radius: 6px;
   color: var(--color-gold);

@@ -11,7 +11,8 @@
     "perf": "node scripts/perf/measure.mjs",
     "lint": "eslint .",
     "format:check": "prettier --check .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "audit": "node scripts/audit/audit.mjs"
   },
   "keywords": [
     "scrollytelling",
@@ -30,6 +31,6 @@
     "globals": "^16.5.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.9.6",
-    "puppeteer-core": "^24.0.0"
+    "puppeteer-core": "^25.10.0"
   }
 }
