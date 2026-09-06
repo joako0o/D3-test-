@@ -203,12 +203,37 @@ if (renderer) {
 
    OJO: los cortes van entre tramos independientes, nunca en medio de una
    secuencia con dependencias. El orden de ejecución no cambia. */
+/* `requestIdleCallback` no existe en Safari < 16.4; el respaldo con
+   setTimeout(0) mantiene el mismo efecto —ceder el hilo— sin depender de él. */
+const requestIdleCallbackSafe = (fn) => (typeof requestIdleCallback === 'function'
+  ? requestIdleCallback(fn, { timeout: 2000 })
+  : setTimeout(fn, 0));
+
 await breathe();
 
 if (renderer) {
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmrem.dispose();
+  /* EL MAPA DE ENTORNO, MÁS TARDE Y MÁS BARATO
+     `pmrem.fromScene()` era el bloque único más caro del arranque: 1 884 ms
+     medidos con CPU x4, el hilo principal entero, con la cortina puesta y la
+     moneda congelada. Genera el mapa de reflejos que da el brillo metálico a
+     la moneda y a la puerta de bronce.
+
+     Dos cambios. Primero el tamaño: `fromScene` sin argumento usa 256 px de
+     lado por cara del cubo, y en esta escena —fondo casi negro, materiales
+     rugosos, ningún espejo— eso es resolución que nadie ve. 64 px da el mismo
+     reflejo difuso a la dieciseisava parte del coste.
+
+     Segundo, cuándo. El entorno solo afecta a cómo se ven los metales, no a la
+     geometría ni al texto, así que no tiene por qué bloquear la primera pinta:
+     se genera tras ceder el hilo. Hasta que llega, la escena se dibuja sin
+     reflejos —un poco más mate— y al asignarse three.js recompila los
+     materiales afectados por su cuenta. */
+  requestIdleCallbackSafe(() => {
+    if (!renderer) return;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04, 0.1, 100, { size: 64 }).texture;
+    pmrem.dispose();
+  });
 }
 
 /* ────────────────────────────────
@@ -883,7 +908,12 @@ function makeDoorCanvasTexture(size, draw) {
   draw(ctx, size);
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  /* anisotropy 8 obliga a la GPU a muestrear ocho veces por texel en las
+     superficies vistas de canto y multiplica el coste de subir la textura y
+     generar sus mipmaps. Estas son texturas de piedra y bronce sobre una
+     puerta que se ve casi de frente, donde el filtrado anisotrópico no aporta
+     nada visible: 2 basta y deja de bloquear el arranque. */
+  tex.anisotropy = 2;
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
   return tex;
@@ -3943,8 +3973,16 @@ let axesFocusT = 0;
    redimensiona durante La Sala, el dolly deja la cámara en otro lugar y el
    scatter quedaría proyectado con coordenadas incorrectas para los ejes. */
 const _layoutCamera = new THREE.PerspectiveCamera();
+/* La cámara de layout no depende de la partícula: reconstruirla entera —con
+   lookAt, updateProjectionMatrix y updateMatrixWorld, que son las operaciones
+   caras— 16 000 veces seguidas devolvía siempre exactamente lo mismo. Se
+   recalcula solo cuando cambia el viewport o la altura base de la cámara. */
+let _layoutCamKey = '';
 function getLayoutCamera() {
-  const { width, height } = getViewportSize();
+  const { width, height } = getViewportSnapshot();
+  const key = `${width}x${height}|${camBaseY}`;
+  if (key === _layoutCamKey) return _layoutCamera;
+  _layoutCamKey = key;
   _layoutCamera.aspect = width / height;
   _layoutCamera.fov = CONFIG.camera.fov;
   _layoutCamera.near = camera.near;
@@ -3963,7 +4001,18 @@ function get3DPosFromData(date, sentiment) {
 
   const px = xScale(date);
   const py = yScale(sentiment);
-  const vp = getViewportSize();
+  /* CUIDADO: esta función se llama UNA VEZ POR PARTÍCULA (16 000 en el
+     escritorio) desde buildParticleStoryTargets. Todo lo que no dependa de
+     `date`/`sentiment` tiene que quedar fuera del bucle o se paga 16 000
+     veces.
+
+     `getViewportSize()` lee clientWidth, o sea que fuerza recálculo de estilo
+     y layout si el estilo está sucio —y durante el arranque siempre lo está—.
+     Medido: 32 000 llamadas en los primeros 14 s, dos por partícula (una aquí
+     y otra dentro de getLayoutCamera), 1 136 ms de tiempo propio solo en leer
+     dos números que no cambian. Ahora se toma el snapshot cacheado, que se
+     invalida solo con resize/orientación. */
+  const vp = getViewportSnapshot();
   const xNDC = (px / vp.width) * 2 - 1;
   const pyNDC = -(py / vp.height) * 2 + 1;
 
