@@ -76,6 +76,19 @@ body.mode-classic #stageRoom { display: none; }
 #canvas.particle-hover { cursor: pointer; }
 
 
+/* Mismo criterio táctil / transparencia reducida que el bloque de
+   20-breakpoints.css, pero reafirmado aquí porque este archivo carga después
+   y el blur base de #quotePanel vive arriba. El desenfoque de 20 px corre
+   justo sobre La Sala, donde más trabaja la GPU; el panel ya era 88–92 %
+   opaco, así que se ve igual sin él (se sube ligeramente la opacidad). */
+@media (hover: none) and (pointer: coarse), (prefers-reduced-transparency: reduce) {
+  #quotePanel {
+    background: rgba(10, 14, 26, 0.95);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
   @supports (height: 100dvh) {
   .hero, .stage-hook,
   .pipeline-pin-wrapper, .timeline-pin-wrapper {
