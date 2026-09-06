@@ -29,6 +29,32 @@
   <meta name="twitter:image" content="https://joako0o.github.io/D3-test-/og-image.jpg" />
   <meta name="twitter:image:alt" content="La puerta de bronce del Banco Central de Chile entreabierta sobre una moneda dorada, portada de la pieza." />
   <meta name="robots" content="index, follow, max-image-preview:large" />
+
+  <!-- SEGURIDAD
+       GitHub Pages no deja fijar cabeceras HTTP, pero estas dos sí funcionan
+       como <meta http-equiv>. Es todo lo que se puede aplicar en un hosting
+       estático; el resto (X-Frame-Options, X-Content-Type-Options, HSTS) SOLO
+       vale como cabecera real y el navegador ignora su versión en <meta>, así
+       que ponerlas aquí sería decoración. Ver docs/AUDITORIA.md.
+
+       La CSP es lo más estricta que la pieza tolera: es 100% self-hosted, no
+       carga nada de terceros (ni Google Fonts ni CDN). Cada permiso de más
+       está aquí porque QUITARLO ROMPE ALGO, comprobado en navegador:
+
+         'unsafe-inline'  2 <style>, 27 atributos style= y el importmap, que es
+                          un <script> en línea sin hash estable entre cambios.
+         'unsafe-eval'    el decodificador Draco es WebAssembly, y sin esto el
+                          navegador se niega a instanciarlo: los dos GLB no
+                          cargan y el hero se queda vacío.
+         blob:            GLTFLoader crea las texturas del GLB como blobs y
+                          las pide con fetch(); sin blob: en connect-src e
+                          img-src, la moneda sale sin textura.
+
+       `object-src 'none'` y `base-uri 'self'` cierran dos vías clásicas de
+       inyección aunque hoy no haya <object> ni <base>. `frame-ancestors` NO se
+       pone: el navegador lo ignora en <meta> y avisa por consola. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <!-- Datos estructurados (schema.org): le dicen al buscador QUÉ es esta página
        —una visualización de datos sobre un corpus de actas— y de dónde salen
        los datos. Es lo que Google usa para los resultados enriquecidos. -->

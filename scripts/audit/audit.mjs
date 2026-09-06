@@ -289,6 +289,67 @@ async function documentChecks(page) {
   }
 }
 
+/* ── Política de seguridad de contenido ────────────────────────────────
+   Dos riesgos opuestos y los dos silenciosos: una CSP ausente no protege, y
+   una CSP demasiado estricta rompe la página sin que se note en una captura
+   (el hero sale vacío, pero el HTML "carga bien"). Aquí se comprueban ambos.
+
+   Las violaciones se recogen del propio navegador durante la carga, que es la
+   única forma fiable: leer la cadena de la CSP no dice si algo se bloqueó. */
+function watchCsp(page) {
+  const violations = [];
+  page.on('console', (m) => {
+    const t = m.text();
+    if (/Content Security Policy|Refused to (load|connect|execute|compile)/i.test(t)) violations.push(t.slice(0, 180));
+  });
+  return violations;
+}
+
+async function cspChecks(page, violations) {
+  const meta = await page.evaluate(() => {
+    const el = document.querySelector('meta[http-equiv="Content-Security-Policy" i]');
+    return {
+      csp: el ? el.getAttribute('content') : '',
+      referrer: document.querySelector('meta[name="referrer"]')?.getAttribute('content') || '',
+    };
+  });
+
+  const V = 'todos';
+  if (!meta.csp) {
+    add(
+      'WARN',
+      'seguridad',
+      V,
+      'sin Content-Security-Policy: en hosting estático se puede declarar con <meta http-equiv>'
+    );
+  } else {
+    /* Directivas que cierran vías de inyección clásicas y que casi nunca hacen
+       falta abrir: si están, mejor comprobarlo que suponerlo. */
+    for (const [dir, why] of [
+      ["object-src 'none'", 'permite incrustar plugins/<object> arbitrarios'],
+      ["base-uri 'self'", 'permite reescribir la base de todas las URLs relativas'],
+    ]) {
+      const name = dir.split(' ')[0];
+      if (!new RegExp(`${name}\\s`).test(meta.csp)) add('WARN', 'seguridad', V, `la CSP no declara ${name}: ${why}`);
+    }
+    /* frame-ancestors en <meta> lo ignora el navegador: tenerlo ahí da una
+       sensación de protección que no existe. */
+    if (/frame-ancestors/.test(meta.csp)) {
+      add(
+        'WARN',
+        'seguridad',
+        V,
+        'la CSP declara frame-ancestors en <meta>, donde el navegador lo ignora: solo funciona como cabecera HTTP real'
+      );
+    }
+  }
+  if (!meta.referrer) add('WARN', 'seguridad', V, 'sin política de referrer (<meta name="referrer">)');
+
+  for (const v of [...new Set(violations)].slice(0, 8)) {
+    add('ERROR', 'seguridad', V, `la CSP bloquea algo que la página necesita: ${v}`);
+  }
+}
+
 /* ── Paradas de tabulador acotadas ─────────────────────────────────────
    Una colección de datos que pone tabindex="0" en cada elemento convierte el
    recorrido del teclado en un túnel: con N puntos hacen falta N pulsaciones
@@ -519,7 +580,11 @@ async function modalFocusChecks(page) {
 const { browser, page, errors } = await launchChromium({ width: VIEWPORTS[0].width, height: VIEWPORTS[0].height });
 
 console.log(`Auditando ${ORIGIN}…\n`);
+/* Hay que escuchar ANTES de navegar: las violaciones de CSP se emiten durante
+   la carga y una suscripción posterior se las pierde. */
+const cspViolations = watchCsp(page);
 await openSite(page, ORIGIN);
+await cspChecks(page, cspViolations);
 await documentChecks(page);
 await tabStopChecks(page);
 await contrastChecks(page);
