@@ -117,8 +117,11 @@ export function initD3Axes({ quotes, openQuote }) {
     .attr('transform', ({ q, date }) => `translate(${xScale(date)}, ${yScale(getQuoteAxisSentiment(q))})`)
     .attr('data-quote-index', ({ index }) => index)
     .attr('class', ({ q }) => `axes-data-mark axes-data-mark--${q.label || 'neutral'}`)
-    .attr('tabindex', '0')
-    .attr('role', 'button')
+    /* tabindex móvil ("roving"): ver el bloque de navegación por flechas más
+       abajo. Solo UNA marca vale 0 en cada momento; el resto es -1, enfocable
+       por script pero fuera del recorrido del tabulador. */
+    .attr('tabindex', '-1')
+    .attr('role', 'gridcell')
     .attr('aria-label', ({ q }) => `Abrir intervención ${q.label || 'neutral'} de ${q.participant || 'participante anónimo'}, ${q.formatted_date || q.date || q.year || 'fecha no especificada'}`)
     .on('keydown', (event, d) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -144,6 +147,67 @@ export function initD3Axes({ quotes, openQuote }) {
         .attr('r', radius)
         .attr('class', `axes-data-point axes-data-point--${q.label || 'neutral'}`);
     });
+
+  /* ── Navegación por teclado: una sola parada de tabulador ──────────────
+     ANTES: cada marca llevaba tabindex="0". Con los 99 fragmentos de la
+     maqueta ya eran 99 paradas; con el corpus real (182 reuniones y sus
+     fragmentos) crece sin techo, y alcanzar lo que hay DESPUÉS del mapa
+     costaría cientos de pulsaciones. Quitar el acceso por teclado no era
+     opción: estas marcas son el equivalente deliberado de las partículas 3D,
+     que si no solo responden al puntero.
+
+     AHORA: el patrón "roving tabindex" de WAI-ARIA (el mismo de un grid o una
+     barra de herramientas). El grupo entero es UNA parada; dentro se navega
+     con flechas, y Inicio/Fin saltan al primer/último punto. Las marcas se
+     ordenan por fecha, así que las flechas recorren el eje temporal en el
+     orden en que se leen.
+
+     `role="grid"` con una fila de `gridcell` es lo que le dice al lector de
+     pantalla que aquí dentro se navega con flechas y no con tabulador. */
+  const marks = () => dataLayer.selectAll('.axes-data-mark').nodes();
+  let rovingIndex = 0;
+
+  dataLayer
+    .attr('role', 'grid')
+    .attr('aria-label', `Puntos del mapa: ${axisQuotes.length} intervenciones ordenadas por fecha. Use las flechas para recorrerlas y Enter para abrir la que esté enfocada.`)
+    .attr('aria-rowcount', 1)
+    .attr('aria-colcount', axisQuotes.length);
+
+  /* Un grid válido necesita una fila entre el grid y sus celdas. Se usa un <g>
+     normal —no `display:contents`, que en SVG no es fiable— porque un grupo
+     sin atributos de pintado no altera el dibujo: solo agrupa. */
+  const rowGroup = dataLayer.append('g').attr('role', 'row');
+  rowGroup.node().append(...marks());
+
+  function setRoving(next, { focus = true } = {}) {
+    const list = marks();
+    if (!list.length) return;
+    rovingIndex = clamp(next, 0, list.length - 1);
+    list.forEach((node, i) => node.setAttribute('tabindex', i === rovingIndex ? '0' : '-1'));
+    if (focus) list[rovingIndex].focus({ preventScroll: true });
+  }
+  setRoving(0, { focus: false });
+
+  dataLayer.on('keydown', (event) => {
+    const list = marks();
+    if (!list.length) return;
+    const current = list.indexOf(document.activeElement);
+    if (current === -1) return;
+    let next = null;
+    switch (event.key) {
+      case 'ArrowRight': case 'ArrowDown': next = current + 1; break;
+      case 'ArrowLeft': case 'ArrowUp': next = current - 1; break;
+      case 'Home': next = 0; break;
+      case 'End': next = list.length - 1; break;
+      /* Salto de 10 en 10: con cientos de puntos, recorrerlos de uno en uno
+         para llegar al otro extremo del periodo no es navegación, es castigo. */
+      case 'PageDown': next = current + 10; break;
+      case 'PageUp': next = current - 10; break;
+      default: return;
+    }
+    event.preventDefault();
+    setRoving(next);
+  });
 
   const xAxis = d3.axisBottom(xScale)
     .ticks(tickCount)

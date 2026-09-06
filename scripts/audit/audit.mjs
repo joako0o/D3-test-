@@ -289,6 +289,59 @@ async function documentChecks(page) {
   }
 }
 
+/* ── Paradas de tabulador acotadas ─────────────────────────────────────
+   Una colección de datos que pone tabindex="0" en cada elemento convierte el
+   recorrido del teclado en un túnel: con N puntos hacen falta N pulsaciones
+   para llegar a lo que viene después. El patrón correcto (WAI-ARIA composite:
+   grid, listbox, toolbar) es UNA parada y flechas por dentro.
+
+   Este chequeo NO cuenta controles sueltos —un formulario con 40 campos son
+   40 paradas legítimas—: mira grupos con `role` de composite y exige que
+   dentro haya como mucho un tabindex="0". Además pone un techo global, que es
+   lo que delata la regresión aunque nadie declare el rol. */
+async function tabStopChecks(page) {
+  const res = await page.evaluate(() => {
+    const composites = [];
+    for (const g of document.querySelectorAll(
+      '[role="grid"], [role="listbox"], [role="toolbar"], [role="tablist"], [role="tree"], [role="radiogroup"]'
+    )) {
+      const inner = g.querySelectorAll('[tabindex="0"]');
+      if (inner.length > 1) {
+        composites.push({ role: g.getAttribute('role'), id: g.id || g.tagName.toLowerCase(), count: inner.length });
+      }
+    }
+    const focusable = [...document.querySelectorAll('a[href], button, select, textarea, input, [tabindex]')].filter(
+      (el) => {
+        if (el.tabIndex < 0) return false;
+        const s = getComputedStyle(el);
+        if (s.display === 'none' || s.visibility === 'hidden') return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      }
+    );
+    return { composites, total: focusable.length };
+  });
+
+  for (const c of res.composites) {
+    add(
+      'ERROR',
+      'accesibilidad',
+      'todos',
+      `#${c.id} (role=${c.role}) tiene ${c.count} paradas de tabulador dentro; un composite debe exponer solo una y navegarse con flechas`
+    );
+  }
+  /* 120 es holgado para esta pieza (hoy ronda las 30) y sigue siendo mucho
+     menor que "una por dato", que es la regresión que interesa cazar. */
+  if (res.total > 120) {
+    add(
+      'ERROR',
+      'accesibilidad',
+      'todos',
+      `${res.total} paradas de tabulador en la página: recorrerla con teclado es impracticable. ¿Alguna colección de datos volvió a poner tabindex="0" por elemento?`
+    );
+  }
+}
+
 /* ── Contraste de texto (WCAG 1.4.3) ───────────────────────────────────
    Se calcula sobre el color YA COMPUESTO: casi todo el texto de la pieza usa
    rgba() con alfa sobre fondos oscuros, así que mirar el valor declarado
@@ -468,6 +521,7 @@ const { browser, page, errors } = await launchChromium({ width: VIEWPORTS[0].wid
 console.log(`Auditando ${ORIGIN}…\n`);
 await openSite(page, ORIGIN);
 await documentChecks(page);
+await tabStopChecks(page);
 await contrastChecks(page);
 await modalFocusChecks(page);
 await page.evaluate(() => window.scrollTo(0, 0));
