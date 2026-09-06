@@ -54,10 +54,13 @@ const N = Number(args.n || 9000);
    y queda un alambrado sin cuerpo. */
 const EDGE_RATIO = 0.72;
 
-/* Piezas que NO entran en la nube. La vereda es un plano enorme a los pies del
-   edificio: por área se llevaría una porción desproporcionada de los puntos
-   para dibujar suelo vacío. */
-const SKIP = new Set(['Vereda']);
+/* Ya no se descarta nada. La vereda estuvo fuera en la primera versión —un
+   plano enorme que por área se llevaba media nube para dibujar suelo vacío—
+   pero mirando cómo resuelve esto Penderecki's Garden queda claro que ese
+   plano es justamente lo que da la profundidad: su césped en primer término,
+   denso y en fuga hacia el horizonte, es lo que hace que la casa se lea lejos.
+   Sin suelo, un edificio flota en negro y no hay escala. */
+const SKIP = new Set();
 
 /* MATERIAL POR PIEZA
    El GLB no trae materiales (0 en la cabecera), pero sí los nombres de las 50
@@ -68,11 +71,13 @@ const SKIP = new Set(['Vereda']);
      0 piedra   el muro, pilastras, cornisa, entablamento — el grueso
      1 bronce   las hojas de la puerta: el foco cálido en el centro
      2 oro      la inscripción y los faroles: los acentos que se encienden
-     3 sombra   los vanos de ventana, que deben leerse como huecos */
+     3 sombra   los vanos de ventana, que deben leerse como huecos
+     4 suelo    vereda y escalinata: el primer término que da la profundidad */
 function materialOf(name) {
   if (/^Hoja_/.test(name)) return 1;
   if (name === 'Inscripcion' || /^Farol_/.test(name)) return 2;
   if (/^Ventana/.test(name) || /^Reja_/.test(name)) return 3;
+  if (name === 'Vereda' || name === 'Escalinata') return 4;   // el suelo en primer término
   return 0;
 }
 
@@ -163,9 +168,16 @@ if (!tris.length) throw new Error('no se recogió ningún triángulo');
 /* Suma acumulada de áreas + búsqueda binaria: un triángulo grande recibe
    proporcionalmente más puntos, que es lo que hace que la densidad se vea
    pareja en pantalla. */
+/* PESO POR MATERIAL
+   El reparto puro por área no da una imagen legible. El suelo en primer
+   término necesita bastante más densidad de la que le toca —es lo que sostiene
+   la perspectiva— y los acentos (bronce, oro) son piezas diminutas que con
+   reparto proporcional desaparecen. La piedra puede ceder: es el 66% de la
+   superficie y le sobra material para leerse. */
+const PESO = [1.0, 3.2, 3.6, 0.85, 1.9];
 const cum = new Float64Array(tris.length);
 let acc = 0;
-for (let i = 0; i < tris.length; i++) { acc += tris[i].area; cum[i] = acc; }
+for (let i = 0; i < tris.length; i++) { acc += tris[i].area * PESO[tris[i].mat]; cum[i] = acc; }
 
 const rand = makeRandom(0x5EED);
 const pick = (r) => {
@@ -242,7 +254,7 @@ console.log(`Caja       X ${mn[0].toFixed(2)}..${mx[0].toFixed(2)} · Y ${mn[1].
 console.log(`Salida     ${path.relative(ROOT, OUT)}  ${N.toLocaleString('es')} puntos · ${kb(fs.statSync(OUT).size)} · ${kb(gz)} con gzip`);
 const paso = ((mx[0] - mn[0]) / 65535 * 1000).toFixed(2);
 console.log(`Precisión  ${paso} mm por paso de cuantización`);
-const cuenta = [0, 0, 0, 0];
+const cuenta = [0, 0, 0, 0, 0];
 for (const m of mats) cuenta[m]++;
 const pct = (v) => `${((v / N) * 100).toFixed(1)}%`;
-console.log(`Materiales piedra ${pct(cuenta[0])} · bronce ${pct(cuenta[1])} · oro ${pct(cuenta[2])} · vanos ${pct(cuenta[3])}`);
+console.log(`Materiales piedra ${pct(cuenta[0])} · bronce ${pct(cuenta[1])} · oro ${pct(cuenta[2])} · vanos ${pct(cuenta[3])} · suelo ${pct(cuenta[4])}`);

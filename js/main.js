@@ -3474,18 +3474,35 @@ function animate() {
          Se mezcla hacia el color de la PIEZA. La transición usa el mismo
          facadeShade que todo lo demás, así que el enjambre llega con sus
          colores del relato y el edificio se tiñe a medida que se arma. */
+      /* VARIACIÓN POR PUNTO
+         En Penderecki's Garden ninguna zona es de un color plano: el follaje
+         tiene verdes, rosas y ocres mezclados punto a punto, y eso es lo que
+         hace que la nube parezca materia y no un degradado. Un color por
+         material lo dejaba todo demasiado limpio, con aspecto de render.
+
+         `particleRandom(i, 7)` es determinista por índice, así que el grano no
+         parpadea entre frames ni cambia entre recargas: es una propiedad de
+         cada partícula, como su posición. */
+      const grain = particleRandom(i, 7);
       const mat = pFacadeMat[i];
       let mr = 0.92, mg = 0.95, mb = 1.05;          // 0 piedra: casi blanca, es la masa
       if (mat === 1) { mr = 1.25; mg = 0.72; mb = 0.30; }   // 1 bronce, las hojas
       else if (mat === 2) { mr = 1.45; mg = 1.15; mb = 0.50; } // 2 oro, inscripción y faroles
       else if (mat === 3) { mr = 0.09; mg = 0.11; mb = 0.17; } // 3 vanos: muy oscuros o no leen como huecos
+      else if (mat === 4) { mr = 0.70; mg = 0.76; mb = 0.92; } // 4 suelo: algo más frío y apagado que la piedra
       /* Los acentos y los vanos se aplican casi puros. Con una mezcla suave el
          bronce se perdía en la piedra y las ventanas dejaban de ser agujeros:
          el contraste entre lleno y hueco es lo que dibuja el edificio. */
+      /* El grano hace dos cosas a la vez: cambia el brillo de cada punto
+         (±22%) y lo desplaza un poco hacia el cálido o hacia el frío. Sin ese
+         segundo desplazamiento la nube se ve gris sucia; con él aparecen los
+         reflejos de bronce sobre la piedra que tiene un edificio de verdad. */
+      const shade = 0.78 + grain * 0.44;
+      const tint = (grain - 0.5) * 0.16;
       const matMix = facadeShade * (mat === 0 ? 0.85 : 1.0);
-      outR = THREE.MathUtils.lerp(outR, mr * dim, matMix);
-      outG = THREE.MathUtils.lerp(outG, mg * dim, matMix);
-      outB = THREE.MathUtils.lerp(outB, mb * dim, matMix);
+      outR = THREE.MathUtils.lerp(outR, mr * dim * shade * (1 + tint), matMix);
+      outG = THREE.MathUtils.lerp(outG, mg * dim * shade, matMix);
+      outB = THREE.MathUtils.lerp(outB, mb * dim * shade * (1 - tint), matMix);
     }
     cols[idx] = outR;
     cols[idx + 1] = outG;
