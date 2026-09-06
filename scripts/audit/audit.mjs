@@ -260,12 +260,90 @@ async function documentChecks(page) {
   }
 }
 
+/* ── Diálogos modales: el foco no debe escaparse ───────────────────────
+   `aria-modal="true"` le promete al lector de pantalla que fuera del diálogo
+   no hay nada alcanzable. Si el foco se fuga, quien navega con teclado acaba
+   tabulando por controles que no puede ver y sin forma de volver. Se prueba
+   tabulando de verdad, que es la única manera de saberlo. */
+async function modalFocusChecks(page) {
+  const modals = await page.evaluate(() =>
+    [...document.querySelectorAll('[role="dialog"][aria-modal="true"], dialog[aria-modal="true"]')]
+      .map((d) => d.id)
+      .filter(Boolean)
+  );
+
+  for (const id of modals) {
+    /* Abrir el diálogo por su disparador declarado. Hoy solo hay uno
+       (#voiceProfilePanel); si aparecen más sin ruta conocida, se avisa en
+       vez de fingir que se comprobaron. */
+    const opened = await page.evaluate((mid) => {
+      if (mid !== 'voiceProfilePanel') return false;
+      document.getElementById('stageVoices')?.scrollIntoView();
+      const first = document.getElementById('voiceRail')?.querySelector('button,[role="button"]');
+      if (first) first.click();
+      const trigger = document.getElementById('voiceProfileOpen');
+      if (!trigger) return false;
+      trigger.focus();
+      trigger.click();
+      return true;
+    }, id);
+
+    if (!opened) {
+      add(
+        'WARN',
+        'accesibilidad',
+        'todos',
+        `#${id} es aria-modal="true" pero la auditoría no sabe abrirlo: confinamiento del foco sin verificar`
+      );
+      continue;
+    }
+    await sleep(1200);
+
+    // Suficientes tabulaciones para dar más de una vuelta al diálogo.
+    const escapes = [];
+    for (let i = 0; i < 16; i++) {
+      await page.keyboard.press('Tab');
+      const where = await page.evaluate((mid) => {
+        const a = document.activeElement;
+        if (!a || a === document.body) return 'body';
+        return a.closest(`#${mid}`) ? null : a.id || a.tagName.toLowerCase();
+      }, id);
+      if (where) escapes.push(where);
+    }
+    if (escapes.length) {
+      add(
+        'ERROR',
+        'accesibilidad',
+        'todos',
+        `#${id} declara aria-modal="true" pero el foco se escapa a: ${[...new Set(escapes)].slice(0, 4).join(', ')}`
+      );
+    }
+
+    // Escape debe cerrarlo y devolver el foco al disparador.
+    await page.keyboard.press('Escape');
+    await sleep(900);
+    const after = await page.evaluate(
+      (mid) => ({
+        closed: document.getElementById(mid).hidden,
+        focus: document.activeElement?.id || '',
+      }),
+      id
+    );
+    if (!after.closed) add('ERROR', 'accesibilidad', 'todos', `#${id} no se cierra con Escape`);
+    if (after.closed && !after.focus)
+      add('WARN', 'accesibilidad', 'todos', `#${id} se cierra pero no devuelve el foco al disparador`);
+  }
+}
+
 /* ── Ejecución ─────────────────────────────────────────────────────────── */
 const { browser, page, errors } = await launchChromium({ width: VIEWPORTS[0].width, height: VIEWPORTS[0].height });
 
 console.log(`Auditando ${ORIGIN}…\n`);
 await openSite(page, ORIGIN);
 await documentChecks(page);
+await modalFocusChecks(page);
+await page.evaluate(() => window.scrollTo(0, 0));
+await sleep(800);
 
 for (const vp of VIEWPORTS) {
   await page.setViewport({ width: vp.width, height: vp.height, deviceScaleFactor: 1 });

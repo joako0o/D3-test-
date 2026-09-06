@@ -225,6 +225,40 @@ export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
     if (event.key === 'Escape' && !profilePanel.hidden) {
       event.preventDefault();
       closeVoiceProfile();
+      return;
+    }
+
+    /* CONFINAMIENTO DEL FOCO
+       El panel se anuncia con aria-modal="true", que le promete al lector de
+       pantalla que fuera de él no hay nada alcanzable. Sin esta parte la
+       promesa era falsa: ocho tabulaciones recorrían las filas de temas y la
+       novena saltaba a las 99 marcas <g tabindex="0"> del mapa D3, que siguen
+       siendo tabulables detrás del panel. Quien navega con teclado quedaba
+       tabulando a ciegas por un gráfico que no puede ver, sin forma de volver.
+
+       Se resuelve en el evento en vez de con `inert` en el resto del documento
+       porque los hermanos del panel son media página de secciones y el canvas
+       WebGL: marcarlos y desmarcarlos en cada apertura es más superficie de la
+       que este arreglo necesita. */
+    if (event.key !== 'Tab' || profilePanel.hidden) return;
+    const focusables = [...profilePanel.querySelectorAll('a[href], button, select, textarea, input, [tabindex]')].filter(
+      (el) => !el.hasAttribute('disabled') && el.tabIndex !== -1 && el.offsetParent !== null
+    );
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    // El foco puede estar fuera del panel (p. ej. en <body>): se reconduce.
+    if (!profilePanel.contains(document.activeElement)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus({ preventScroll: true });
+      return;
+    }
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus({ preventScroll: true });
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus({ preventScroll: true });
     }
   });
 
