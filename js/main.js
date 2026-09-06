@@ -3415,7 +3415,12 @@ function animate() {
     particleStoryMix.facade
   );
   /* ÁNGULO FIJO DE LA FACHADA
-     Casi de frente: 3,4°, una cuarta parte de los 13° que había antes. Con la
+     Casi de frente: 9,2°. Se probaron cuatro ángulos con la nube ya centrada
+     en el vano (-0,06 / +0,06 / +0,16 / -0,16 rad). Los positivos giran el
+     edificio al lado contrario y aplastan la pilastra izquierda contra el
+     muro; -0,06 deja la fachada casi plana y las columnas se confunden con el
+     fondo. -0,16 es el que despega los seis intercolumnios sin sacar la puerta
+     del eje. Con la
      nube centrada en el vano y la cámara a la altura de la puerta, aquel
      escorzo sacaba la entrada del eje y el edificio se leía torcido.
 
@@ -3424,7 +3429,7 @@ function animate() {
      y la nube se lee como niebla. Este giro corto basta para despegar los
      planos conservando la puerta de cara, centrada y con los dos faroles
      simétricos. Es una pose fija, no una animación: no gira. */
-  const FACADE_YAW = -0.06;
+  const FACADE_YAW = -0.16;
   swarm.rotation.y = THREE.MathUtils.lerp(
     baseSwirl * (1 - roomSwarmT) * (1 - storyLock) + roomSway,
     FACADE_YAW,
