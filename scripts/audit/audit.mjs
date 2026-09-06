@@ -260,6 +260,104 @@ async function documentChecks(page) {
   }
 }
 
+/* ── Contraste de texto (WCAG 1.4.3) ───────────────────────────────────
+   Se calcula sobre el color YA COMPUESTO: casi todo el texto de la pieza usa
+   rgba() con alfa sobre fondos oscuros, así que mirar el valor declarado
+   miente. Se busca el primer ancestro con fondo opaco y se mezcla encima.
+
+   Tres exclusiones aprendidas a base de falsos positivos, no por comodidad:
+     · texto con `color: transparent` — son los números gigantes dibujados
+       solo con -webkit-text-stroke, decorativos por definición;
+     · lo que está dentro de un contenedor con opacity:0 — todavía no se ve;
+     · el patrón "skip link", que fuera de foco está sacado de pantalla con
+       los colores por defecto del navegador y solo se pinta al enfocarse. */
+async function contrastChecks(page) {
+  const bad = await page.evaluate(() => {
+    const srgb = (c) => {
+      c /= 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+    const lum = ([r, g, b]) => 0.2126 * srgb(r) + 0.7152 * srgb(g) + 0.0722 * srgb(b);
+    const parse = (s) => {
+      const m = s.match(/[\d.]+/g);
+      return m ? m.slice(0, 3).map(Number) : null;
+    };
+    const alphaOf = (s) => {
+      const m = s.match(/[\d.]+/g);
+      return m && m.length > 3 ? Number(m[3]) : 1;
+    };
+
+    const opaqueBg = (el) => {
+      let n = el.parentElement;
+      while (n) {
+        const s = getComputedStyle(n);
+        const c = parse(s.backgroundColor);
+        if (c && alphaOf(s.backgroundColor) >= 0.95) return c;
+        n = n.parentElement;
+      }
+      return parse(getComputedStyle(document.body).backgroundColor) || [255, 255, 255];
+    };
+    const hiddenByOpacity = (el) => {
+      let n = el;
+      while (n && n !== document.documentElement) {
+        if (Number(getComputedStyle(n).opacity) === 0) return true;
+        n = n.parentElement;
+      }
+      return false;
+    };
+
+    const out = [];
+    const seen = new Set();
+    for (const el of document.querySelectorAll('body *')) {
+      // Solo elementos con texto propio, para no medir el contenedor entero.
+      if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+      const s = getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') continue;
+      if (el.closest('.skip-link')) continue;
+      if (hiddenByOpacity(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+
+      const fg = parse(s.color);
+      const fa = alphaOf(s.color);
+      if (!fg || fa === 0) continue; // color:transparent ⇒ decorativo (text-stroke)
+
+      const bg = opaqueBg(el);
+      const eff = fg.map((c, i) => c * fa + bg[i] * (1 - fa));
+      const L1 = lum(eff),
+        L2 = lum(bg);
+      const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+
+      const fs = parseFloat(s.fontSize);
+      const fw = Number(s.fontWeight) || 400;
+      const large = fs >= 24 || (fs >= 18.66 && fw >= 700);
+      const need = large ? 3 : 4.5;
+      if (ratio >= need) continue;
+
+      const name = `${el.tagName.toLowerCase()}${typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/)[0] : ''}`;
+      if (seen.has(name)) continue;
+      seen.add(name);
+      out.push({
+        name,
+        ratio: Math.round(ratio * 100) / 100,
+        need,
+        fs: Math.round(fs),
+        text: (el.textContent || '').trim().slice(0, 40),
+      });
+    }
+    return out.sort((a, b) => a.ratio - b.ratio).slice(0, 25);
+  });
+
+  for (const b of bad) {
+    add(
+      'ERROR',
+      'contraste',
+      'todos',
+      `${b.name} tiene ${b.ratio}:1 y necesita ${b.need}:1 (texto de ${b.fs}px) — “${b.text}”`
+    );
+  }
+}
+
 /* ── Diálogos modales: el foco no debe escaparse ───────────────────────
    `aria-modal="true"` le promete al lector de pantalla que fuera del diálogo
    no hay nada alcanzable. Si el foco se fuga, quien navega con teclado acaba
@@ -341,6 +439,7 @@ const { browser, page, errors } = await launchChromium({ width: VIEWPORTS[0].wid
 console.log(`Auditando ${ORIGIN}…\n`);
 await openSite(page, ORIGIN);
 await documentChecks(page);
+await contrastChecks(page);
 await modalFocusChecks(page);
 await page.evaluate(() => window.scrollTo(0, 0));
 await sleep(800);

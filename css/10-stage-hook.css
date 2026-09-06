@@ -147,7 +147,10 @@
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: rgba(255,255,255,0.35);
+  /* Contraste: a 0.35 sobre #0a0e1a daba 3.18:1, bajo el 4.5:1 que pide
+     WCAG 1.4.3 para texto de 14px. El mínimo para pasar es 0.45; 0.52 deja
+     margen sin que el número deje de ser secundario frente a la frase. */
+  color: rgba(255,255,255,0.52);
 }
 .signal-caption {
   display: block;
@@ -155,7 +158,8 @@
   font-size: var(--fs-micro);
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.38);
+  /* Igual que .signal-num: 0.38 daba 3.54:1 a 13px. Ver WCAG 1.4.3. */
+  color: rgba(255,255,255,0.52);
 }
 .signal-phrase {
   font-family: var(--font-display);
