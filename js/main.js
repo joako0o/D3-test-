@@ -1882,10 +1882,14 @@ if (proceduralDoorModel) {
      casi tan ancha como alta, y en un móvil de 390 px un alto de 2,35 la
      desborda por los lados (se salía del encuadre y solo se veía la
      escalinata). Se encoge en pantallas estrechas. */
-  const FACADE_FIT_H = window.innerWidth < 700 ? 1.35
-    : window.innerWidth < 1200 ? 1.95
+  const FACADE_FIT_H = window.innerWidth < 700 ? 2.05
+    : window.innerWidth < 1200 ? 2.15
     : 2.35;
-  const FACADE_FIT_Y = 0.72;
+  /* Se sube respecto del centro geométrico: el cierre es la última sección y
+     el scroll se detiene con ella asomando por abajo, no centrada, así que una
+     nube centrada en el mundo se ve baja en pantalla y la escalinata se corta
+     contra el pie de página. */
+  const FACADE_FIT_Y = window.innerWidth < 700 ? 0.95 : 1.28;
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
   for (let i = 0; i < sampled.length; i += 3) {
     if (sampled[i] < minX) minX = sampled[i];
@@ -2043,6 +2047,22 @@ const pMat = new THREE.PointsMaterial({
 });
 const points = new THREE.Points(pGeo, pMat);
 swarm.add(points);
+
+/* CUÁNTAS PARTÍCULAS SE DIBUJAN
+   La nube tiene PCOUNT (hasta 7 000) porque la fachada del cierre necesita esa
+   densidad para dibujar molduras y contorno. Pero el RESTO de la pieza se
+   diseñó con una partícula por fragmento —99— y ahí la relación 1:1 es el
+   fondo del asunto: cada punto es una cita que se puede señalar y abrir.
+   Dibujar 7 000 en todas las escenas convertía esa nube legible en niebla.
+
+   La geometría se queda intacta y solo se recorta el RANGO que se dibuja: los
+   índices [0, QUOTES_N) son exactamente las 99 citas reales (quoteOf(i) es la
+   identidad en ese tramo), y las repeticiones viven de QUOTES_N en adelante.
+   Así el cierre gana densidad sin que las demás escenas la paguen, y no hace
+   falta ninguna geometría aparte. */
+const BASE_DRAW = Math.max(QUOTES_N, 1);
+pGeo.setDrawRange(0, BASE_DRAW);
+let drawRangeNow = BASE_DRAW;
 
 /* ═══════════════════════════════════════════════════════════
    ÓRBITAS DE LA SALA — fragmentos que giran sobre el eje de la figura
@@ -2568,7 +2588,7 @@ onPointerDown = function(cx, cy, e) {
 };
 
 let scatterProgress = 0;
-let storyProgress = 0;   // 0→1 a lo largo de todo el documento (para la coreografía)
+const storyProgress = 0;   // 0→1 a lo largo de todo el documento (para la coreografía)
 let coinFade = 1;
 let doorFade = HERO_DOOR_LOCKUP ? 1 : 0;
 let doorTarget = HERO_DOOR_LOCKUP ? 1 : 0;
@@ -2581,6 +2601,14 @@ const particleStoryTarget = { axes: 0, voices: 0, acts: 0, timeline: 0, quotes: 
 const particleStoryMix = { axes: 0, voices: 0, acts: 0, timeline: 0, quotes: 0, facade: 0 };
 let selectedActDate = null;
 let actFocusMix = 0;
+/* Huella del último estado de color: ver "SALTAR EL BUCLE DE COLOR" en animate(). */
+let lastColorState = '';
+/* La nube dejó de moverse de forma apreciable: ver "¿SE PUEDE DEJAR DE MOVER
+   LA NUBE?" en animate(). */
+let particlesSettled = false;
+/* Sección del cierre, cacheada: la fachada se gobierna leyendo su posición en
+   pantalla desde animate(). Ver "LA FACHADA DEL CIERRE". */
+const closingSectionEl = document.querySelector('#stageClosing');
 let particleTargetsReady = false;
 
 const setParticleStoryTarget = (key, value) => {
@@ -3193,6 +3221,36 @@ function animate() {
     }
   }
 
+  /* ── LA FACHADA DEL CIERRE ──────────────────────────────────────────────
+     Esto NO usa un ScrollTrigger, y es a propósito. Se intentó con uno y
+     falló de forma difícil de ver: el trigger se crea antes de que existan
+     las secciones que se construyen por JS, así que memoriza los píxeles de
+     un documento provisional —creía que el cierre empezaba en 16 803 cuando
+     está en 21 132, más de 4 000 px de desfase—. El resultado era que la
+     fachada se montaba encima del timeline y de las citas, llenándolas con
+     7 000 partículas. Ni `invalidateOnRefresh`, ni un rango en funciones, ni
+     llamar a `.refresh()` a mano lo arreglaron: medido, onUpdate llegó a
+     dispararse UNA sola vez en todo el recorrido.
+
+     Aquí se lee la posición real de la sección en cada frame. No hay nada
+     memorizado que pueda quedar desfasado, y animate() corre siempre —también
+     cuando el scroll está detenido al final del documento, que es justo donde
+     el trigger dejaba de avisar. */
+  if (closingSectionEl) {
+    const r = closingSectionEl.getBoundingClientRect();
+    /* 0 cuando el borde superior del cierre toca el borde inferior de la
+       pantalla; 1 cuando llega arriba del todo. */
+    const visible = THREE.MathUtils.clamp(1 - r.top / window.innerHeight, 0, 1);
+    /* La rampa va de 0,25 a 0,85. Los dos extremos están medidos:
+         · por debajo de 0,25 el cierre asoma apenas y el lector sigue en las
+           citas; montar el edificio ahí le roba la escena a esa sección;
+         · el techo es 0,85 y no 1 porque el cierre es la ÚLTIMA sección: su
+           borde superior nunca llega arriba del todo y al final del documento
+           `visible` vale 0,911. Con una rampa que exigiera 1, la fachada no
+           terminaba de armarse nunca. */
+    setParticleStoryTarget('facade', THREE.MathUtils.smoothstep((visible - 0.25) / 0.6, 0, 1));
+  }
+
   /* enjambre: orbita y se dispersa por la pantalla al hacer scroll.
      En La Sala la nube se recoloca delante de la cámara y se comprime;
      de lo contrario el giro continuo la pasa detrás de la cámara en
@@ -3255,7 +3313,26 @@ function animate() {
   const quoteStageMix = particleStoryMix.quotes;
   const cols = pGeo.attributes.color.array;
   const facadeShade = facadeCloudReady ? particleStoryMix.facade : 0;
-  for (let i = 0; i < PCOUNT; i++) {
+
+  /* SALTAR EL BUCLE DE COLOR CUANDO NADA CAMBIÓ
+     Este bucle recorre las 7 000 partículas y hace ~15 operaciones por cada
+     una, pero —a diferencia del bucle de posición— NO depende del tiempo: su
+     resultado sale por entero de la selección activa (voz, acta, cita) y de
+     los mixes narrativos. Mientras el lector no toca nada, calcula 7 000 veces
+     exactamente los mismos colores que ya están en el buffer y los vuelve a
+     subir a la GPU.
+
+     Los mixes se interpolan, así que cambian durante unos frames tras cada
+     interacción y luego se quedan quietos: comparar contra el estado anterior
+     deja pasar la transición entera y corta solo cuando de verdad se estabilizó.
+
+     Se comparan con `!==` sobre números y cadenas ya calculados; no se
+     reconstruye ningún objeto por frame. */
+  const colorState = `${focusName}|${selectedActDate}|${activeQuoteIndex}|${roomWarm.toFixed(4)}|${voiceStageMix.toFixed(4)}|${actStageMix.toFixed(4)}|${quoteStageMix.toFixed(4)}|${facadeShade.toFixed(4)}`;
+  const colorsDirty = colorState !== lastColorState;
+  lastColorState = colorState;
+
+  for (let i = 0; colorsDirty && i < drawRangeNow; i++) {
     const idx = i * 3;
     const q = quoteOf(i);
     const isVoiceFocus = !!(focusName && q && q.participant === focusName);
@@ -3310,7 +3387,9 @@ function animate() {
     cols[idx + 1] = outG;
     cols[idx + 2] = outB;
   }
-  pGeo.attributes.color.needsUpdate = true;
+  /* Solo se sube el buffer si algo cambió: marcar needsUpdate obliga a
+     retransmitir 84 KB de colores a la GPU aunque sean idénticos. */
+  if (colorsDirty) pGeo.attributes.color.needsUpdate = true;
 
   /* La misma nube cambia de gramática por acto. El plano y el timeline se
      alinean sin jitter; voz y acta solo convergen con la selección activa. */
@@ -3319,10 +3398,35 @@ function animate() {
   const axesMix = particleTargetsReady ? particleStoryMix.axes : 0;
   const timelineMix = particleTargetsReady ? particleStoryMix.timeline : 0;
   const facadeMix = facadeCloudReady ? particleStoryMix.facade : 0;
-  window.__m = { facadeMix, t: particleStoryTarget.facade };
   const particleEase = reduceMotion ? 1 : 0.16;
   const ambientLock = Math.max(axesMix, timelineMix, voiceStageMix, actStageMix, facadeMix);
-  for (let i = 0; i < PCOUNT; i++) {
+  /* Si la nube quedó asentada en el frame anterior y el bloqueo sigue puesto,
+     no hay nada que recalcular: el destino no cambió y las partículas ya están
+     en él. Cualquier movimiento de scroll altera los mixes y esto vuelve a
+     false solo. */
+  const skipParticleLoop = particlesSettled && ambientLock > 0.999;
+  let maxDelta2 = 0;
+
+  /* RANGO DE DIBUJO SEGÚN LA ESCENA
+     Solo el cierre necesita las 7 000: son las que dibujan la fachada. En el
+     resto de la pieza se dibujan las 99 citas reales y nada más (ver
+     "CUÁNTAS PARTÍCULAS SE DIBUJAN").
+
+     El umbral es bajo (0,02) y no 0,5 a propósito: las repeticiones tienen que
+     estar ya dibujándose ANTES de empezar a viajar hacia la fachada, o
+     aparecerían de golpe a mitad de la transición. Entran cuando aún están
+     confundidas con el enjambre y se separan de él a la vista. */
+  const wantDraw = particleStoryMix.facade > 0.02 ? PCOUNT : BASE_DRAW;
+  if (wantDraw !== drawRangeNow) {
+    drawRangeNow = wantDraw;
+    pGeo.setDrawRange(0, wantDraw);
+    /* Al ampliar el rango, las partículas que entran arrastran la posición y
+       el color del último frame en que se dibujaron. Se fuerza el recálculo de
+       ambos buffers para que no aparezcan con un estado viejo. */
+    particlesSettled = false;
+    lastColorState = '';
+  }
+  for (let i = 0; !skipParticleLoop && i < drawRangeNow; i++) {
     const idx = i * 3;
     const ox = pOriginalPos[idx], oy = pOriginalPos[idx+1], oz = pOriginalPos[idx+2];
     const sx = pScatterPos[idx], sy = pScatterPos[idx+1], sz = pScatterPos[idx+2];
@@ -3363,11 +3467,36 @@ function animate() {
       targetZ = THREE.MathUtils.lerp(targetZ, pActFocusPos[idx + 2], actStageMix);
     }
 
-    positions[idx] = THREE.MathUtils.lerp(positions[idx], targetX, particleEase);
-    positions[idx + 1] = THREE.MathUtils.lerp(positions[idx + 1], targetY, particleEase);
-    positions[idx + 2] = THREE.MathUtils.lerp(positions[idx + 2], targetZ, particleEase);
+    const nx = THREE.MathUtils.lerp(positions[idx], targetX, particleEase);
+    const ny = THREE.MathUtils.lerp(positions[idx + 1], targetY, particleEase);
+    const nz = THREE.MathUtils.lerp(positions[idx + 2], targetZ, particleEase);
+    /* Cuánto se movió la partícula que MÁS se movió en este frame. Sirve para
+       saber si la nube ya llegó a su sitio (ver más abajo). */
+    const dx = nx - positions[idx], dy = ny - positions[idx + 1], dz = nz - positions[idx + 2];
+    const d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 > maxDelta2) maxDelta2 = d2;
+    positions[idx] = nx;
+    positions[idx + 1] = ny;
+    positions[idx + 2] = nz;
   }
-  pGeo.attributes.position.needsUpdate = true;
+  if (!skipParticleLoop) pGeo.attributes.position.needsUpdate = true;
+
+  /* ¿SE PUEDE DEJAR DE MOVER LA NUBE?
+     El lerp es asintótico: nunca llega del todo al destino, así que sin un
+     corte explícito la nube sigue recalculando 7 000 posiciones por frame para
+     desplazarlas milésimas de milímetro que nadie ve.
+
+     Solo se considera asentada si además `ambientLock` está al máximo. Ese
+     valor anula la oscilación (`wave`), que es lo único del bucle que depende
+     del tiempo: con una formación bloqueada —plano, timeline, fachada— el
+     destino es fijo y la convergencia es real. Sin bloqueo la nube respira, y
+     ahí congelarla se vería como un fallo.
+
+     El umbral (1e-8 sobre la distancia al cuadrado, o sea 0,1 mm) está por
+     debajo de lo que ocupa un píxel a esta escala. Cualquier cambio de estado
+     vuelve a poner en marcha el bucle, porque `ambientLock` o los targets
+     cambian y la distancia deja de ser cero. */
+  particlesSettled = maxDelta2 < 1e-8 && ambientLock > 0.999;
 
   /* atenuar las luces genéricas de la moneda cuando la puerta domina.
      En doorway se usa la opacidad REAL de la puerta: cuando se disuelve en
@@ -3901,107 +4030,10 @@ function initParticleStoryScroll() {
   stageFor('#stageTimeline', 'timeline');
   stageFor('#stageQuotes', 'quotes');
 
-  /* El cierre NO usa stageFor: las demás secciones se desvanecen al salir
-     (`1 - leave`), pero la fachada es el último plano de la pieza y debe
-     quedarse montada mientras el cierre esté en pantalla. Si se desvaneciera,
-     el edificio se deshace justo cuando el lector llega al botón. */
-  if (document.querySelector('#stageClosing')) {
-    ScrollTrigger.create({
-      trigger: '#stageClosing',
-      start: 'top 92%',
-      end: 'bottom bottom',
-      scrub: true,
-      onUpdate: (self) => {
-        setParticleStoryTarget('facade', THREE.MathUtils.smoothstep(self.progress / 0.42, 0, 1));
-      },
-      onLeaveBack: () => setParticleStoryTarget('facade', 0),
-    });
-  }
+  /* El cierre NO se gobierna con un ScrollTrigger propio: ver
+     "LA FACHADA DEL CIERRE" en animate(). */
 }
 
-// Global scroll scrubber
-const tsProgress = document.getElementById('tsProgress');
-const tsBar = document.getElementById('tsBar');
-const tsMarker = document.getElementById('tsMarker');
-const tsSection = document.getElementById('tsSection');
-
-const sections = [
-  { label: 'hero', start: 0 },
-  { label: 'door', start: 0.04 },
-  ...(DOOR_MODE === 'doorway' ? [{ label: 'sala', start: 0.13 }] : []),
-  { label: 'hook', start: 0.29 },
-  { label: 'axes', start: 0.38 },
-  { label: 'voices', start: 0.52 },
-  { label: 'acts', start: 0.61 },
-  { label: 'counters', start: 0.69 },
-  { label: 'pipeline', start: 0.75 },
-  { label: 'timeline', start: 0.83 },
-  { label: 'quotes', start: 0.91 },
-  { label: 'closing', start: 0.98 }
-];
-
-const progressBar = document.getElementById('progressBar');
-const sectionIndicator = document.getElementById('sectionIndicator');
-let indicatorTimeout;
-
-/* El alto del documento NO se lee en cada evento de scroll. Leer
-   `scrollHeight` con el estilo sucio fuerza un style+layout completo, y con
-   Lenis el scroll dispara esto en cada frame: la medición de la línea base
-   contaba 3.668 reflujos forzados por pasada. El alto solo cambia cuando
-   cambia el viewport o cuando un `pin` de ScrollTrigger reparte espacio, así
-   que se cachea y se invalida en esos dos momentos. */
-let docScrollSpan = -1;
-function invalidateDocScrollSpan() { docScrollSpan = -1; }
-window.addEventListener('resize', invalidateDocScrollSpan);
-ScrollTrigger.addEventListener('refresh', invalidateDocScrollSpan);
-
-/* La barra de progreso tiene 2 px de alto y una transición de 0,1 s: moverla
-   en pasos de 1 % es indistinguible y se escribe 100 veces por recorrido en
-   vez de una por frame (cada escritura invalida estilo). */
-let lastProgressPct = -1;
-
-function updateScrubber() {
-  const scrollTop = window.scrollY || document.documentElement.scrollTop;
-  if (docScrollSpan < 0) docScrollSpan = document.documentElement.scrollHeight - getViewportSnapshot().height;
-  const p = docScrollSpan > 0 ? scrollTop / docScrollSpan : 0;
-  storyProgress = p;
-
-  const pct = Math.round(p * 100);
-  if (pct !== lastProgressPct) {
-    lastProgressPct = pct;
-    progressBar.style.width = pct + '%';
-    progressBar.setAttribute('aria-valuenow', String(pct));
-  }
-
-  /* El resto es el HUD de desarrollo, que está oculto sin `?debug`: escribir
-     en elementos que nadie ve ensuciaba el estilo igual. */
-  if (!DEBUG_MODE) return;
-
-  // Debug scrubber
-  tsProgress.textContent = pct + '%';
-  tsBar.style.height = pct + '%';
-  tsMarker.style.top = pct + '%';
-
-  // Section indicator
-  let sec = 'hero';
-  for (let i = sections.length - 1; i >= 0; i--) {
-    if (p >= sections[i].start) { sec = sections[i].label; break; }
-  }
-  tsSection.textContent = sec;
-  sectionIndicator.textContent = sec;
-  sectionIndicator.style.opacity = '0.6';
-  clearTimeout(indicatorTimeout);
-  indicatorTimeout = setTimeout(() => { sectionIndicator.style.opacity = '0'; }, 1500);
-}
-window.addEventListener('scroll', updateScrubber, { passive: true });
-updateScrubber();
-
-
-/* ────────────────────────────────
-   Lenis + GSAP ScrollTrigger
-──────────────────────────────── */
-/* El gráfico de evolución necesita que ScrollTrigger y las curvas estén
-   registradas; se inicializa aquí, después de construir el canvas D3. */
 initParticleStoryScroll();
 initWordEvolution(quotes);
 /* "De la señal a la fuente" vive en js/sections/act-browser.js. */
