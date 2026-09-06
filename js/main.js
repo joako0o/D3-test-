@@ -16,6 +16,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { initFigureSystem } from './figures.js?v=4';
 import { buildCentralBankDoor } from './build-door.js?v=14';
+import { sampleFacadeCloud } from './facade-cloud.js?v=1';
 import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=15';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
 import {
@@ -126,6 +127,16 @@ stageObserver.observe(heroEl);
 document.querySelectorAll('.stage-hook, .stage-voices, .stage-acts, .stage-counters, .stage-pipeline, .stage-timeline, .stage-quotes, .stage-closing, #stageObjective, #stageHook, #stageAxes, #stageRoomContainer')
   .forEach(el => stageObserver.observe(el));
 
+/* CEDER EL HILO
+   `setTimeout(0)` y no `requestAnimationFrame`: rAF se sirve al principio del
+   frame y encadenarlos mantiene el hilo ocupado; un timer deja que el
+   navegador pinte, atienda el scroll y procese los clics entre medio.
+
+   Se define aquí arriba (antes vivía junto al precalentado) porque el propio
+   cuerpo del módulo lo necesita para trocearse: ver el bloque de ARRANQUE
+   POR TRAMOS más abajo. */
+const breathe = () => new Promise((resolve) => setTimeout(resolve, 0));
+
 const scene = new THREE.Scene();
 const camBaseY = 0.7;
 scene.fog = new THREE.FogExp2(CONFIG.door?.fog ?? 0x0a0e1a, 0);
@@ -176,6 +187,25 @@ if (renderer) {
   }, false);
 }
 
+/* ═══ ARRANQUE POR TRAMOS ═══
+   Este módulo se evaluaba de una sola vez: 6,5 s de CPU seguidos en un equipo
+   de gama media (medido con `npm run boot --cpu=4`). Durante ese bloque la
+   pestaña no responde a NADA — ni scroll, ni clics — y el navegador puede
+   llegar a marcarla como colgada. Era el "se pega al abrirlo".
+
+   No es tiempo que se pueda eliminar: hay que crear el entorno de iluminación,
+   construir la fachada y armar las secciones igual. Lo que sí se puede es
+   dejar de hacerlo TODO junto. Al ser un módulo ES, aquí se puede usar `await`
+   en el nivel superior, y cada `await breathe()` parte la tarea en dos: el
+   navegador pinta, atiende el scroll y sigue.
+
+   El trabajo total es el mismo; lo que cambia es que deja de ser un
+   congelamiento y pasa a ser una carga progresiva detrás de la cortina.
+
+   OJO: los cortes van entre tramos independientes, nunca en medio de una
+   secuencia con dependencias. El orden de ejecución no cambia. */
+await breathe();
+
 if (renderer) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -215,7 +245,6 @@ let warmUpQueued = false;
    `setTimeout(0)` y no `requestAnimationFrame`: rAF se sirve al principio del
    siguiente frame, así que encadenar fases con rAF las deja todas dentro del
    mismo presupuesto y no garantiza un paint entre medias. */
-const breathe = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function warmUpScene() {
   if (!renderer) return Promise.resolve();
@@ -950,6 +979,10 @@ function makeDoorAuraMap() {
     ctx.fillRect(0, 0, s, s);
   });
 }
+/* Las cuatro texturas se dibujan en canvas: dos bucles de 5 200 y 4 200
+   iteraciones sobre lienzos de 512², todo síncrono. Se les da su propia tarea
+   para no sumarlas al tramo de la puerta. */
+await breathe();
 const doorStoneMap = makeCarvedStoneMap();
 doorStoneMap.repeat.set(2.4, 3.0);
 const doorBronzeMap = makeBronzePatinaMap();
@@ -1030,6 +1063,10 @@ let doorTopOffset = 1.15;
 /* Alto TOTAL del modelo en sus unidades (sin escala): con él animate limita
    el tamaño en pantalla del lockup para que el pórtico quepa en el viewport. */
 let doorLocalHeight = 0;
+/* Corte antes del tramo más caro del arranque: construir la fachada
+   (buildCentralBankDoor + fusión de geometrías + recorrido de materiales)
+   costaba 2 083 ms de una pieza. */
+await breathe();
 {
   /* La puerta ya no es un GLB estático: la genera js/build-door.js (port del
      Blender tools/build_door.py) con pivotes reales para abrir las hojas. */
@@ -1065,6 +1102,12 @@ let doorLocalHeight = 0;
     doorModel = model;
     applyDoorScale();
   }
+
+  /* El recorrido de materiales es la otra mitad cara de este tramo (744 ms
+     medidos): toca cada malla de la fachada y le ajusta metalness, mapas y
+     tono. Va en su propia tarea. */
+  await breathe();
+
   model.traverse((object) => {
     if (!object.isMesh || !object.material) return;
     const m = object.material;
@@ -1753,8 +1796,32 @@ const swarm = new THREE.Group();
 scene.add(swarm);
 const QUOTES_N = Math.max(quotes.length, 0);
 
-const PCOUNT = QUOTES_N || 1;
+/* CUÁNTAS PARTÍCULAS
+   Hasta el cierre, una por cita (el 1:1 que sostiene la pieza: cada punto es
+   un fragmento). Pero con 99 puntos no se dibuja una fachada — se ve ruido.
+   El cierre necesita densidad, así que la nube se REPITE: cada partícula
+   sigue apuntando a una cita real vía `quotes[i % QUOTES_N]`, de modo que
+   ninguna es decorativa; hay 99 fragmentos representados varias veces.
+
+   Se escala con el ancho: 7000 puntos sobre 390px es más densidad por píxel
+   de la que el ojo distingue, y el coste no se regala. Medido: el bucle de
+   animate() cuesta 0,25 ms/frame a 7000 (1,5% del presupuesto de 60fps). */
+const FACADE_TARGET = (() => {
+  const w = getViewportSize().width;
+  if (w < 700) return 2600;
+  if (w < 1200) return 4200;
+  return 7000;
+})();
+const PCOUNT = Math.max(QUOTES_N, FACADE_TARGET) || 1;
+/* Índice de la cita que representa cada partícula. Con repetición, la
+   partícula 3500 es el mismo fragmento que la 3500 % 99. Todo lo que
+   resuelva "qué cita es esta partícula" DEBE pasar por aquí. */
+const quoteOf = (i) => quotes[QUOTES_N ? i % QUOTES_N : 0];
 const pPos = new Float32Array(PCOUNT * 3);
+/* Corte antes del sistema de partículas: reservar los ocho Float32Array,
+   muestrear la nube de la fachada y calcular los targets narrativos es el
+   siguiente bloque grande. */
+await breathe();
 const pOriginalPos = new Float32Array(PCOUNT * 3);
 const pScatterPos = new Float32Array(PCOUNT * 3);
 /* Targets narrativos: una misma partícula puede pasar de memoria a plano,
@@ -1764,12 +1831,97 @@ const pAxisPos = new Float32Array(PCOUNT * 3);
 const pVoiceFocusPos = new Float32Array(PCOUNT * 3);
 const pActFocusPos = new Float32Array(PCOUNT * 3);
 const pTimelinePos = new Float32Array(PCOUNT * 3);
+const pFacadePos = new Float32Array(PCOUNT * 3);
+/* NUBE DE LA FACHADA (cierre)
+   Se muestrea el modelo YA construido, centrado y escalado: el muestreo
+   trabaja en coordenadas de mundo, y hacerlo antes daría una nube desplazada
+   respecto a lo que se ve. Va aquí y no junto a la construcción de la puerta
+   porque pFacadePos se declara en este bloque; allí arriba estaría en zona
+   muerta temporal.
+
+   El generador es determinista (particleRandom con semilla fija) para que la
+   fachada sea idéntica en cada carga: con Math.random el edificio cambiaría
+   de forma entre recargas y las capturas de regresión no valdrían nada. */
+let facadeCloudReady = false;
+/* Rango de profundidad de la nube, para el sombreado aéreo del cierre. */
+let facadeZMin = 0, facadeZMax = 1;
+if (proceduralDoorModel) {
+  let seed = 0;
+  const rand = () => particleRandom(seed++, 31);
+  /* MUESTREO EN POSE NEUTRA
+     El muestreo trabaja en coordenadas de MUNDO, y en este momento el grupo
+     de la puerta lleva encima la pose del lockup de portada (rotación y
+     escala). Si se muestrea así, la nube hereda esa inclinación y el edificio
+     se ve torcido en el cierre. Se congela la pose: solo la rotación que
+     encara la fachada a la cámara (-90° en X, la del generador), sin escala
+     ni desplazamiento; después se restaura la matriz original. */
+  const savedQuat = proceduralDoorModel.quaternion.clone();
+  const savedPos = proceduralDoorModel.position.clone();
+  const savedScale = proceduralDoorModel.scale.clone();
+  const savedEuler = new THREE.Euler().setFromQuaternion(savedQuat, 'XYZ');
+  proceduralDoorModel.position.set(0, 0, 0);
+  proceduralDoorModel.scale.set(1, 1, 1);
+  /* Se conservan X y Z (son las que ENCARAN la fachada: sin ellas la nube sale
+     de canto, una tira vertical) y solo se anula el giro en Y, que es el
+     balanceo del lockup de portada — el que dejaba el edificio torcido. */
+  proceduralDoorModel.rotation.set(savedEuler.x, 0, savedEuler.z);
+  const sampled = sampleFacadeCloud(proceduralDoorModel, PCOUNT, rand);
+  proceduralDoorModel.position.copy(savedPos);
+  proceduralDoorModel.quaternion.copy(savedQuat);
+  proceduralDoorModel.scale.copy(savedScale);
+  proceduralDoorModel.updateMatrixWorld(true);
+  /* NORMALIZACIÓN AL ENCUADRE DEL CIERRE
+     El muestreo devuelve METROS del edificio real (la fachada mide ~10 m de
+     ancho por ~8 m de alto). La cámara del cierre está a 5,8 unidades: volcar
+     esas coordenadas tal cual esparce los puntos muy por fuera del viewport y
+     lo que se ve es ruido, no un edificio. Se ajusta la nube a una caja
+     conocida: alto FACADE_FIT_H centrado en FACADE_FIT_Y.
+     Se escala por el ALTO y no por el ancho porque el encuadre vertical es el
+     que manda aquí — el texto y el botón ocupan el centro. */
+  /* El ajuste depende del ANCHO del viewport, no solo del alto: la fachada es
+     casi tan ancha como alta, y en un móvil de 390 px un alto de 2,35 la
+     desborda por los lados (se salía del encuadre y solo se veía la
+     escalinata). Se encoge en pantallas estrechas. */
+  const FACADE_FIT_H = window.innerWidth < 700 ? 1.35
+    : window.innerWidth < 1200 ? 1.95
+    : 2.35;
+  const FACADE_FIT_Y = 0.72;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (let i = 0; i < sampled.length; i += 3) {
+    if (sampled[i] < minX) minX = sampled[i];
+    if (sampled[i] > maxX) maxX = sampled[i];
+    if (sampled[i+1] < minY) minY = sampled[i+1];
+    if (sampled[i+1] > maxY) maxY = sampled[i+1];
+    if (sampled[i+2] < minZ) minZ = sampled[i+2];
+    if (sampled[i+2] > maxZ) maxZ = sampled[i+2];
+  }
+  const fitScale = FACADE_FIT_H / Math.max(0.001, maxY - minY);
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, cz = (minZ + maxZ) / 2;
+  for (let i = 0; i < sampled.length; i += 3) {
+    pFacadePos[i]     = (sampled[i] - cx) * fitScale;
+    pFacadePos[i + 1] = (sampled[i+1] - cy) * fitScale + FACADE_FIT_Y;
+    /* PROFUNDIDAD REAL
+       La Z se conserva a escala: la escalinata avanza hacia la cámara, las
+       jambas se hunden y las pilastras despegan del muro. Antes estaba
+       aplastada a 0,22 porque el edificio se veía caído hacia delante, pero
+       la causa no era la profundidad sino el giro residual del enjambre; con
+       la nube ya bloqueada de frente, comprimir la Z solo quitaba el volumen
+       que hace que esto se lea como un edificio y no como un cartel. */
+    pFacadePos[i + 2] = (sampled[i+2] - cz) * fitScale;
+  }
+  facadeZMin = (minZ - cz) * fitScale;
+  facadeZMax = (maxZ - cz) * fitScale;
+  facadeCloudReady = true;
+}
 const pColors = new Float32Array(PCOUNT * 3);
 const pParticipantRank = new Int16Array(PCOUNT);
 const pParticipantCount = new Int16Array(PCOUNT);
 const pActRank = new Int16Array(PCOUNT);
 const pActCount = new Int16Array(PCOUNT);
-const pActKeys = quotes.map((q) => {
+/* Una entrada por PARTÍCULA, no por cita: con repetición el índice llega a
+   PCOUNT y `pActKeys[3500]` sería undefined, rompiendo el resalte por acta. */
+const pActKeys = Array.from({ length: PCOUNT }, (_, i) => {
+  const q = QUOTES_N ? quotes[i % QUOTES_N] : null;
   const yearMatch = String(q?.date || '').match(/^(\d{4})/);
   const year = yearMatch ? Number(yearMatch[1]) : Number(q?.year);
   return /^\d{4}-\d{2}-\d{2}$/.test(String(q?.date || ''))
@@ -1782,7 +1934,7 @@ const colorDovish  = new THREE.Color(0x8ab4f8); // Azul suave / Dovish
 const colorNeutral = new THREE.Color(0xcfd6e4); // Plata / Neutral
 
 for (let i = 0; i < PCOUNT; i++) {
-  const q = quotes[i];
+  const q = quoteOf(i);
   const label = q ? q.label : 'neutral';
   let c = colorNeutral;
   if (label === 'hawkish') c = colorHawkish;
@@ -2302,7 +2454,10 @@ function syncAxesMarkFocus(index) {
 ═══════════════════════════════════════════════════════════ */
 
 function openQuote(i, anchor) {
-  const q = quotes[i];
+  /* `i` puede venir del raycast sobre la nube, que con repetición llega hasta
+     PCOUNT (miles) y no hasta QUOTES_N. Sin quoteOf, la fachada abriría
+     `quotes[3500]` === undefined y el panel saldría vacío. */
+  const q = quoteOf(i);
   if (!q) return;
   particleFocus.index = i;
   syncAxesMarkFocus(i);
@@ -2421,9 +2576,9 @@ let doorTarget = HERO_DOOR_LOCKUP ? 1 : 0;
 /* Máquina de estados visual: ScrollTrigger escribe los objetivos y el loop
    único de GSAP interpola. Así la nube puede volver atrás sin saltos y una
    sola geometría representa memoria, plano, voz, acta y timeline. */
-const particleStoryKeys = ['axes', 'voices', 'acts', 'timeline', 'quotes'];
-const particleStoryTarget = { axes: 0, voices: 0, acts: 0, timeline: 0, quotes: 0 };
-const particleStoryMix = { axes: 0, voices: 0, acts: 0, timeline: 0, quotes: 0 };
+const particleStoryKeys = ['axes', 'voices', 'acts', 'timeline', 'quotes', 'facade'];
+const particleStoryTarget = { axes: 0, voices: 0, acts: 0, timeline: 0, quotes: 0, facade: 0 };
+const particleStoryMix = { axes: 0, voices: 0, acts: 0, timeline: 0, quotes: 0, facade: 0 };
 let selectedActDate = null;
 let actFocusMix = 0;
 let particleTargetsReady = false;
@@ -2593,7 +2748,7 @@ const cameraChoreographyStops = [
   { id: 'stagePipeline',      pos: [1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
   { id: 'stageTimeline',      pos: [-1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
   { id: 'stageQuotes',        pos: [0.00, 0.72, 5.40], look: [0.00, 0.70, 0.00] },
-  { id: 'stageClosing',       pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // base
+  { id: 'stageClosing',       pos: [0.00, 0.72, 6.90], look: [0.00, 0.72, 0.00] },   // retrocedida: encuadra la fachada completa
 ];
 
 let cameraStops = [];
@@ -3061,9 +3216,23 @@ function animate() {
     particleStoryMix.axes,
     particleStoryMix.timeline,
     particleStoryMix.voices * voiceFocusMix,
-    particleStoryMix.acts * actFocusMix
+    particleStoryMix.acts * actFocusMix,
+    /* La fachada tiene que quedarse QUIETA y de frente: el giro residual del
+       enjambre la mostraba en escorzo, como un tablero inclinado, y las
+       molduras dejaban de leerse. */
+    particleStoryMix.facade
   );
-  swarm.rotation.y = baseSwirl * (1 - roomSwarmT) * (1 - storyLock) + roomSway;
+  /* ÁNGULO FIJO DE LA FACHADA
+     Un alzado perfectamente frontal desperdicia la profundidad: la escalinata,
+     las jambas y el resalte de las pilastras se proyectan unos sobre otros y
+     la nube vuelve a parecer plana. Un escorzo LEVE y CONSTANTE (~13°) separa
+     esos planos en pantalla. Es una pose fija, no una animación: no gira. */
+  const FACADE_YAW = -0.23;
+  swarm.rotation.y = THREE.MathUtils.lerp(
+    baseSwirl * (1 - roomSwarmT) * (1 - storyLock) + roomSway,
+    FACADE_YAW,
+    particleStoryMix.facade
+  );
 
   /* La Sala (b1): dentro de la sala la nube se tiñe de cálido (la "luz del
      interior"). Las partículas son unlit (PointsMaterial), así que la luz
@@ -3085,9 +3254,10 @@ function animate() {
   const actStageMix = particleStoryMix.acts * actFocusMix;
   const quoteStageMix = particleStoryMix.quotes;
   const cols = pGeo.attributes.color.array;
+  const facadeShade = facadeCloudReady ? particleStoryMix.facade : 0;
   for (let i = 0; i < PCOUNT; i++) {
     const idx = i * 3;
-    const q = quotes[i];
+    const q = quoteOf(i);
     const isVoiceFocus = !!(focusName && q && q.participant === focusName);
     const isActFocus = !!(selectedActDate && pActKeys[i] === selectedActDate);
     const isQuoteFocus = i === activeQuoteIndex;
@@ -3115,9 +3285,30 @@ function animate() {
     const safeR = Math.max(pColors[idx] * 0.34, 0.14);
     const safeG = Math.max(pColors[idx + 1] * 0.34, 0.16);
     const safeB = Math.max(pColors[idx + 2] * 0.34, 0.20);
-    cols[idx] = THREE.MathUtils.lerp(safeR, litR, visibleMix) * strength;
-    cols[idx + 1] = THREE.MathUtils.lerp(safeG, litG, visibleMix) * strength;
-    cols[idx + 2] = THREE.MathUtils.lerp(safeB, litB, visibleMix) * strength;
+    let outR = THREE.MathUtils.lerp(safeR, litR, visibleMix) * strength;
+    let outG = THREE.MathUtils.lerp(safeG, litG, visibleMix) * strength;
+    let outB = THREE.MathUtils.lerp(safeB, litB, visibleMix) * strength;
+    /* PERSPECTIVA AÉREA (solo en el cierre)
+       Una nube de puntos no tiene sombras ni oclusión: todos los puntos se
+       dibujan con la misma intensidad y el ojo no tiene con qué ordenar lo
+       que está delante de lo que está detrás — por eso la fachada se leía
+       plana aunque la geometría sí tuviera volumen. Se atenúa por
+       profundidad, que es lo que hace la atmósfera con un edificio real:
+       la escalinata y las pilastras que avanzan quedan nítidas, el fondo del
+       vano se apaga. Es lo que convierte el alzado en relieve. */
+    if (facadeShade > 0) {
+      const depth = THREE.MathUtils.clamp(
+        (pFacadePos[idx + 2] - facadeZMin) / Math.max(0.001, facadeZMax - facadeZMin), 0, 1);
+      /* Curva suave: el muro ocupa el fondo del rango y con una rampa lineal
+         agresiva se iba a negro, borrando el cuerpo del edificio. Se atenúa
+         solo hasta 0,78 y con raíz, que comprime la parte baja: suficiente para
+         ordenar los planos sin que la escalinata se queme ni el muro se borre. */
+      const dim = THREE.MathUtils.lerp(1, 0.78 + 0.34 * Math.sqrt(depth), facadeShade);
+      outR *= dim; outG *= dim; outB *= dim;
+    }
+    cols[idx] = outR;
+    cols[idx + 1] = outG;
+    cols[idx + 2] = outB;
   }
   pGeo.attributes.color.needsUpdate = true;
 
@@ -3127,8 +3318,10 @@ function animate() {
   const swarmScatter = THREE.MathUtils.lerp(scatterProgress, 0.06, roomSwarmT);
   const axesMix = particleTargetsReady ? particleStoryMix.axes : 0;
   const timelineMix = particleTargetsReady ? particleStoryMix.timeline : 0;
+  const facadeMix = facadeCloudReady ? particleStoryMix.facade : 0;
+  window.__m = { facadeMix, t: particleStoryTarget.facade };
   const particleEase = reduceMotion ? 1 : 0.16;
-  const ambientLock = Math.max(axesMix, timelineMix, voiceStageMix, actStageMix);
+  const ambientLock = Math.max(axesMix, timelineMix, voiceStageMix, actStageMix, facadeMix);
   for (let i = 0; i < PCOUNT; i++) {
     const idx = i * 3;
     const ox = pOriginalPos[idx], oy = pOriginalPos[idx+1], oz = pOriginalPos[idx+2];
@@ -3140,7 +3333,7 @@ function animate() {
     let targetX = baseX + wave;
     let targetY = baseY + wave;
     let targetZ = baseZ;
-    const q = quotes[i];
+    const q = quoteOf(i);
 
     if (axesMix > 0) {
       targetX = THREE.MathUtils.lerp(targetX, pAxisPos[idx], axesMix);
@@ -3151,6 +3344,13 @@ function animate() {
       targetX = THREE.MathUtils.lerp(targetX, pTimelinePos[idx], timelineMix);
       targetY = THREE.MathUtils.lerp(targetY, pTimelinePos[idx + 1], timelineMix);
       targetZ = THREE.MathUtils.lerp(targetZ, pTimelinePos[idx + 2], timelineMix);
+    }
+    /* La fachada va la ÚLTIMA y por eso gana a las demás formaciones: en el
+       cierre el edificio debe imponerse sobre plano, voz, acta y timeline. */
+    if (facadeMix > 0) {
+      targetX = THREE.MathUtils.lerp(targetX, pFacadePos[idx], facadeMix);
+      targetY = THREE.MathUtils.lerp(targetY, pFacadePos[idx + 1], facadeMix);
+      targetZ = THREE.MathUtils.lerp(targetZ, pFacadePos[idx + 2], facadeMix);
     }
     if (voiceStageMix > 0 && focusName && q?.participant === focusName) {
       targetX = THREE.MathUtils.lerp(targetX, pVoiceFocusPos[idx], voiceStageMix);
@@ -3532,14 +3732,19 @@ function buildParticleStoryTargets() {
 
   const participantGroups = new Map();
   const actGroups = new Map();
-  quotes.forEach((q, index) => {
+  /* Se recorren las PARTÍCULAS (PCOUNT), no las citas: con repetición hay
+     miles de puntos y cada uno necesita su destino en el plano, la voz, el
+     acta y la línea de tiempo. Recorriendo solo `quotes` las repetidas se
+     quedaban en el origen (0,0,0) y colapsaban al centro de la escena. */
+  for (let index = 0; index < PCOUNT; index++) {
+    const q = quoteOf(index);
     const participant = q?.participant || 'Participante anónimo';
     const actKey = pActKeys[index];
     if (!participantGroups.has(participant)) participantGroups.set(participant, []);
     if (!actGroups.has(actKey)) actGroups.set(actKey, []);
     participantGroups.get(participant).push(index);
     actGroups.get(actKey).push(index);
-  });
+  }
 
   participantGroups.forEach((indices) => {
     indices.forEach((index, rank) => {
@@ -3554,7 +3759,8 @@ function buildParticleStoryTargets() {
     });
   });
 
-  quotes.forEach((q, index) => {
+  for (let index = 0; index < PCOUNT; index++) {
+    const q = quoteOf(index);
     const idx = index * 3;
     const date = /^\d{4}-\d{2}-\d{2}$/.test(String(q?.date || ''))
       ? new Date(`${q.date}T00:00:00Z`)
@@ -3584,7 +3790,7 @@ function buildParticleStoryTargets() {
     pTimelinePos[idx] = -2.65 + yearT * 5.3 + (particleRandom(index, 17) - 0.5) * 0.11;
     pTimelinePos[idx + 1] = 0.66 + sentiment * 1.05 + (particleRandom(index, 18) - 0.5) * 0.12;
     pTimelinePos[idx + 2] = -0.32 + (particleRandom(index, 19) - 0.5) * 0.18;
-  });
+  }
   particleTargetsReady = true;
 }
 
@@ -3694,6 +3900,23 @@ function initParticleStoryScroll() {
   stageFor('#stageActs', 'acts');
   stageFor('#stageTimeline', 'timeline');
   stageFor('#stageQuotes', 'quotes');
+
+  /* El cierre NO usa stageFor: las demás secciones se desvanecen al salir
+     (`1 - leave`), pero la fachada es el último plano de la pieza y debe
+     quedarse montada mientras el cierre esté en pantalla. Si se desvaneciera,
+     el edificio se deshace justo cuando el lector llega al botón. */
+  if (document.querySelector('#stageClosing')) {
+    ScrollTrigger.create({
+      trigger: '#stageClosing',
+      start: 'top 92%',
+      end: 'bottom bottom',
+      scrub: true,
+      onUpdate: (self) => {
+        setParticleStoryTarget('facade', THREE.MathUtils.smoothstep(self.progress / 0.42, 0, 1));
+      },
+      onLeaveBack: () => setParticleStoryTarget('facade', 0),
+    });
+  }
 }
 
 // Global scroll scrubber
@@ -4512,6 +4735,10 @@ quoteEls.forEach((el) => {
 /* ────────────────────────────────
    Stage 7 — Closing
 ──────────────────────────────── */
+/* Corte antes de partir el texto del cierre: SplitText recorre carácter a
+   carácter y fuerza layout, y es de lo último que necesita el lector (está al
+   final del documento). */
+await breathe();
 document.querySelectorAll('[data-closing]').forEach((el) => {
   /* SplitText (aria:'auto') resume el texto en un aria-label sobre el propio
      elemento; en un <p> ese atributo está prohibido (Lighthouse:

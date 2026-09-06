@@ -9,6 +9,7 @@
     "shots": "node scripts/screenshots/capture.mjs",
     "hero:check": "node scripts/screenshots/hero-check.mjs",
     "perf": "node scripts/perf/measure.mjs",
+    "boot": "node scripts/perf/boot.mjs",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "format": "prettier --write .",

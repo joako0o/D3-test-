@@ -144,3 +144,107 @@ Para el normal map la validación fue contra las texturas extraídas del GLB
 (PSNR 44,3 dB, RMSE 0,6% — por encima de 40 dB es indistinguible a la vista) y
 contra tres renders en fases distintas del giro, mirando que el relieve, las
 letras y el brillo metálico siguieran ahí.
+
+---
+
+# Arranque: el congelamiento de 6,3 segundos
+
+## El síntoma
+
+> "siento que se pega en mi otro PC al abrirlo"
+
+Reportado sobre GitHub Pages. La sospecha inicial —la red, o el peso de los
+GLB— resultó equivocada.
+
+## El diagnóstico
+
+Ninguna herramienta del repo medía el arranque: `npm run perf` empieza cuando
+la página ya cargó, o sea justo *después* del problema. Se escribió
+`npm run boot` para cubrir ese hueco. Con la CPU frenada 4x (un portátil de
+gama media, no la máquina de desarrollo):
+
+| Métrica | Antes |
+|---|---|
+| Primer pixel (FCP) | 1 348 ms |
+| DOMContentLoaded | 7 085 ms |
+| Hilo bloqueado (TBT) | 16 030 ms |
+| **Peor tarea, de una vez** | **8 049 ms** |
+
+El recurso de red más lento tardaba 357 ms. **No era la red.**
+
+La traza de Chrome señaló un `v8.evaluateModule` de 5,7 s y el perfil por
+muestreo lo confirmó: **4 367 ms eran el cuerpo de `main.js` ejecutándose de
+arriba abajo en una sola tarea**. Instrumentando el nivel superior con marcas
+se localizó el reparto:
+
+| Tramo | Coste |
+|---|---|
+| Inicialización del renderer | 1 691 ms |
+| Entorno de iluminación (PMREM) | 655 ms |
+| Texturas de canvas | 178 ms |
+| **Construcción de la fachada** | **2 083 ms** |
+| Secciones + cierre | 303 ms |
+
+Una tarea de 8 s no es lentitud: es una pestaña que no responde a nada, ni a
+scroll ni a clics, y que el navegador puede llegar a marcar como colgada.
+
+Lo irónico: el precalentado (`warmUpScene`) ya estaba bien resuelto, cediendo
+el hilo con `breathe()`. Pero **no llegaba a correr** — se dispara desde
+`manager.onLoad`, y para entonces el módulo ya se había comido los segundos.
+
+## El arreglo
+
+`main.js` es un módulo ES, así que admite `await` en el nivel superior. Se
+insertaron seis cortes `await breathe()` entre tramos independientes:
+
+1. antes del entorno de iluminación (PMREM),
+2. antes de las texturas de canvas (dos bucles de 5 200 y 4 200 iteraciones),
+3. antes de construir la fachada,
+4. entre la construcción y el recorrido de materiales,
+5. antes del sistema de partículas,
+6. antes de partir el texto del cierre con SplitText.
+
+**El trabajo total es idéntico.** Lo que cambia es que deja de ser un bloque
+único y pasa a ser una carga progresiva, con el navegador pintando y
+atendiendo eventos entre tramo y tramo. El orden de ejecución no se alteró: los
+cortes van entre bloques sin dependencias, nunca dentro de una secuencia.
+
+## El resultado
+
+| Métrica | Antes | Después | |
+|---|---|---|---|
+| Primer pixel (FCP) | 1 348 ms | **452–600 ms** | −59% |
+| domInteractive | 548 ms | **471 ms** | |
+| DOMContentLoaded | 7 085 ms | **4 645 ms** | −34% |
+| Peor tarea | 8 049 ms | **3 798 ms** | −53% |
+
+Y lo más relevante, que no se ve en la tabla: la peor tarea que queda **ya no
+ocurre durante el arranque**, sino pasados los 12 s, dentro del precalentado y
+detrás de la cortina de carga. El lector ya no la sufre.
+
+En móvil (390×844) el bloqueo total bajó de 16 030 a 10 235 ms.
+
+## Lo que queda pendiente
+
+El TBT sigue muy por encima del presupuesto (15 700 ms contra 2 500). El resto
+es **compilación de programas de WebGL**: `il` y `St` en `three.module.min.js`
+suman ~4 600 ms de tiempo propio. Eso no se trocea con `await` — cada
+`compileShader` es atómico. Las salidas reales serían reducir el número de
+variantes de material, o `KHR_parallel_shader_compile`. Es un trabajo mayor,
+con su propia medición, y no se abordó aquí.
+
+Nota sobre el presupuesto de `npm run boot`: está fijado en la frontera entre
+"arranca" y "se pegó", no en lo que hoy se cumple. Falla a propósito.
+
+## Pendiente de verificar en GitHub Pages
+
+No se pudo comprobar desde el entorno de trabajo (sin salida a internet):
+
+- **Compresión**: si Pages sirve `three.module.min.js` (655 KB) con gzip/brotli.
+  Se comprueba con
+  `curl -sI -H "Accept-Encoding: br" <url>/js/three.module.min.js | grep -i content-encoding`.
+- **`Cache-Control`**: Pages suele mandar `max-age=600`, lo que significa que
+  una segunda visita al cabo de diez minutos vuelve a descargarlo todo.
+
+Ambas cosas afectan solo a la **primera** carga en red, no al congelamiento de
+CPU que documenta esta sección.
