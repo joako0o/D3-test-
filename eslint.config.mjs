@@ -13,12 +13,10 @@ import globals from 'globals';
 export default [
   {
     ignores: [
-      'js/three.module.js',
-      'js/three.module.min.js',
+      'js/lib/three/three.module.js',
+      'js/lib/three/three.module.min.js',
       'js/vendor/**',
-      'js/loaders/**',
-      'js/utils/BufferGeometryUtils.js',
-      'js/environments/**',
+      'js/lib/three/addons/**',
       'node_modules/**',
       '.cache/**',
       '.shots/**',
@@ -62,5 +60,5 @@ export default [
     },
   },
   /* quotes.js es un <script> clásico que define window.QUOTES. */
-  { files: ['js/quotes.js'], languageOptions: { sourceType: 'script' } },
+  { files: ['js/data/quotes.js'], languageOptions: { sourceType: 'script' } },
 ];

@@ -61,7 +61,7 @@ El tema es **política monetaria**, no un compositor. Meter música de Pendereck
 
 ## 2. Roadmap (con tiempo realista, 1 persona)
 
-> ✅ = implementado en `index.html` / `js/figures.js`
+> ✅ = implementado en `index.html` / `js/scene/figures.js`
 > 🫵 = TAREA TUYA (modelar Blender, subir fuentes, etc.)
 
 ### Fase 0 — Estabilidad (ya hecha)
@@ -73,7 +73,7 @@ El tema es **política monetaria**, no un compositor. Meter música de Pendereck
 ### Fase 1.5 — Ya implementado (Núcleo "una sola sala")
 - [ ] **HUD de La Sala de Deliberaciones** (`#chapterHud`): "La Sala de Deliberaciones · 16 años · un mismo espacio". — ⚠️ *Corregido en revisión 2026-08-30: NO existe en el código. Estaba marcado como hecho por error.*
 - [x] **Gabinete de figuras** (`#figureCabinet`): lista las 6 figuras planeadas y su estado `buscando / por modelar / listo`.
-- [x] **Sistema de figuras con placeholder** (`js/figures.js`): si el `.glb` no existe, dibuja un icosaedro + halo; si existe, lo carga y normaliza.
+- [x] **Sistema de figuras con placeholder** (`js/scene/figures.js`): si el `.glb` no existe, dibuja un icosaedro + halo; si existe, lo carga y normaliza.
 - [x] **Nube de partículas nunca se apaga**: mínimo de atmósfera en todos los capítulos (antes caía a casi cero en algunos stages).
 - [ ] **Audio interactivo** — DESACTIVADO POR AHORA (decisión del autor). El diseño sigue documentado aquí por si se retoma.
 - [ ] **Contador de descubrimiento** (`Evidencia n/100`) con `localStorage`. — ⚠️ *Corregido en revisión 2026-08-30: NO existe en el código. Estaba marcado como hecho por error.*

@@ -11,7 +11,7 @@
  */
 /* Misma URL (query incluida) que en main.js: con specifiers distintos el
    navegador instancia DOS módulos viewport.js, cada uno con su snapshot. */
-import { getViewportSize } from '../viewport.js?v=2';
+import { getViewportSize } from '../core/viewport.js?v=2';
 
 let quotes = [];
 

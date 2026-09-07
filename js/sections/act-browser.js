@@ -1,15 +1,15 @@
 /* act-browser.js — "De la señal a la fuente": navegador por acta.
  *
  * Sección de scrollytelling. Vive fuera de main.js porque su única relación
- * con la escena 3D pasa por `js/interaction-state.js` (qué cita está
+ * con la escena 3D pasa por `js/core/interaction-state.js` (qué cita está
  * señalada) y por las dos funciones del panel de cita, que llegan inyectadas.
  * No importa Three.js ni conoce la cámara.
  *
  * Las dependencias se declaran en la firma de init: quien la llame tiene que
  * dárselas. Nada de leer variables de otro archivo por la puerta de atrás.
  */
-import { pinQuote } from '../interaction-state.js';
-import { normalizeTopicText } from '../topics.js';
+import { pinQuote } from '../core/interaction-state.js';
+import { normalizeTopicText } from '../data/topics.js';
 
 export function initActBrowser({ quotes, openQuote }) {
   const list = document.getElementById('actsList');

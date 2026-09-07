@@ -31,7 +31,7 @@
   (el bloque "Réplica de la NUEVA buildOpenableBcchDoor()").
 -->
     <script type="importmap">
-      { "imports": { "three": "../js/three.module.js", "three/addons/": "../js/" } }
+      { "imports": { "three": "../js/lib/three/three.module.js", "three/addons/": "../js/lib/three/addons/" } }
     </script>
     <style>
       html,
@@ -62,7 +62,7 @@
     <div id="hud">cargando…</div>
     <script type="module">
       import * as THREE from 'three';
-      import { GLTFLoader } from '../js/loaders/GLTFLoader.js';
+      import { GLTFLoader } from '../js/lib/three/addons/loaders/GLTFLoader.js';
 
       const q = new URLSearchParams(location.search);
       const variant = q.get('variant') || 'raw'; // raw | filtered | filteredOpen

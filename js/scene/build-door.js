@@ -11,7 +11,7 @@
    por (material, rol, pivote) → ~15 draw calls; el perlado de los paneles va
    en InstancedMesh (una llamada por hoja). */
 import * as THREE from 'three';
-import { mergeGeometries } from './utils/BufferGeometryUtils.js';
+import { mergeGeometries } from '../lib/three/addons/utils/BufferGeometryUtils.js';
 
 const DOOR_W = 3.5;
 const DOOR_H = 6.2;

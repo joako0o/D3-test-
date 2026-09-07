@@ -143,7 +143,7 @@ sección y viaja con ella.
 
 ### Nota sobre los datos (afecta a lo que se puede prometer en Resultados)
 
-`js/quotes.js`: 99 citas, 17 participantes, 2001–2015 (faltan 2000, 2002, 2003
+`js/data/quotes.js`: 99 citas, 17 participantes, 2001–2015 (faltan 2000, 2002, 2003
 y 2004), 35 hawkish / 35 dovish / 29 neutral, **0 citas con campo `source`** y
 el `score` es maqueta. Cualquier titular de Resultados tiene que sostenerse
 sobre eso, o el badge de "PROTOTIPO · DATOS DE PRUEBA" deja de ser suficiente.

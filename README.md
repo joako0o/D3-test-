@@ -73,12 +73,12 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 
 | Capa | Dónde | Qué es |
 |---|---|---|
-| **Datos** | `js/quotes.js` | Las 99 citas. Script clásico, publica `window.QUOTES`. |
-| **Configuración** | `js/config.js` | Todos los números de la escena. Ni una línea de lógica. |
-| **Funciones puras** | `js/topics.js`, `js/utils.js` | Sin DOM, sin Three.js. Testables tal cual. |
-| **Entorno** | `js/viewport.js` | El tamaño del lienzo. Lee el DOM, nada más. |
-| **Estado compartido** | `js/interaction-state.js` | Lo único que las secciones y la escena 3D se dicen entre sí. |
-| **Sistemas** | `js/figures.js`, `js/build-door.js` | Figuras 3D (carga, apilado, placeholders) y la puerta BCCh procedural con pivotes. |
+| **Datos** | `js/data/quotes.js` | Las 99 citas. Script clásico, publica `window.QUOTES`. |
+| **Configuración** | `js/core/config.js` | Todos los números de la escena. Ni una línea de lógica. |
+| **Funciones puras** | `js/data/topics.js`, `js/core/utils.js` | Sin DOM, sin Three.js. Testables tal cual. |
+| **Entorno** | `js/core/viewport.js` | El tamaño del lienzo. Lee el DOM, nada más. |
+| **Estado compartido** | `js/core/interaction-state.js` | Lo único que las secciones y la escena 3D se dicen entre sí. |
+| **Sistemas** | `js/scene/figures.js`, `js/scene/build-door.js` | Figuras 3D (carga, apilado, placeholders) y la puerta BCCh procedural con pivotes. |
 | **Secciones** | `js/sections/*.js` | Una sección de scrollytelling cada uno. Reciben sus datos por parámetro. |
 | **Aplicación** | `js/main.js` | La escena, el bucle de render y el scrollytelling. |
 
@@ -88,7 +88,7 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
    aplicación —`quotes`, `openQuote`, `closeQuotePanel`— lo recibe en la firma
    de su `init`. Si mañana hay que probar una sección aislada, se le pasan
    datos falsos y funciona.
-2. **El único puente con el 3D es `js/interaction-state.js`.** Nada más.
+2. **El único puente con el 3D es `js/core/interaction-state.js`.** Nada más.
    Una sección puede querer saber qué cita está señalada; no puede tocar la
    cámara, ni las partículas, ni el renderer.
 
@@ -97,24 +97,28 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 ├── css/                    22 hojas · 4.149 líneas · el prefijo numérico ES el orden de cascada
 │   └── README.md           qué hace cada hoja y por qué está en ese número
 ├── js/
-│   ├── main.js           4.545 líneas · escena 3D + bucle de render + scrollytelling
-│   ├── config.js           308 · cámara, luces, moneda, puerta, órbitas, La Sala, HERO
-│   ├── interaction-state.js  82 · el ÚNICO puente entre las secciones DOM y la escena 3D
-│   ├── viewport.js          67 · getViewportSize() / isCompactWidth(), el tamaño del lienzo
-│   ├── figures.js          357 · sistema de figuras (carga GLB, apila sobre pedestal, placeholders)
-│   ├── build-door.js       363 · puerta BCCh procedural: respaldo si el GLB no carga (port del .py de Blender)
-│   ├── sections/         1.392 · una sección de scrollytelling por archivo
-│   │   ├── act-browser.js     376 · "Navegador de actas"
-│   │   ├── voice-explorer.js  311 · "Las voces" — directorio editorial
-│   │   ├── word-evolution.js  275 · "El lenguaje cambia"
-│   │   ├── timeline.js        252 · "Índice de orientación por año"
-│   │   └── axes-map.js        178 · "Mapa de intervenciones" (D3)
-│   ├── quotes.js           893 · las 99 citas (dato, no código)
-│   ├── topics.js            21 · taxonomía temática + normalización de texto (puro)
-│   ├── utils.js             33 · particleRandom, clamp, getQuoteAxisSentiment (puros)
-│   ├── three.module.js         Three.js r160
-│   ├── vendor/                 GSAP, ScrollTrigger, SplitText, CustomEase, D3, Lenis, Draco
-│   └── loaders/ utils/ environments/    addons de Three.js (GLTF+Draco, BufferGeometryUtils, RoomEnvironment)
+│   ├── main.js               · escena 3D + bucle de render + scrollytelling (entrada)
+│   ├── core/
+│   │   ├── config.js         · cámara, luces, moneda, puerta, órbitas, La Sala, HERO
+│   │   ├── interaction-state.js · el ÚNICO puente entre las secciones DOM y la escena 3D
+│   │   ├── viewport.js       · getViewportSize() / isCompactWidth(), el tamaño del lienzo
+│   │   └── utils.js          · particleRandom, clamp, getQuoteAxisSentiment (puros)
+│   ├── scene/
+│   │   ├── figures.js        · sistema de figuras (carga GLB, apila sobre pedestal, placeholders)
+│   │   └── build-door.js     · puerta BCCh procedural: respaldo si el GLB no carga (port del .py de Blender)
+│   ├── data/
+│   │   ├── quotes.js         · las 99 citas (dato, no código; <script> clásico)
+│   │   └── topics.js         · taxonomía temática + normalización de texto (puro)
+│   ├── sections/             · una sección de scrollytelling por archivo
+│   │   ├── act-browser.js      · "Navegador de actas"
+│   │   ├── voice-explorer.js   · "Las voces" — directorio editorial
+│   │   ├── word-evolution.js   · "El lenguaje cambia"
+│   │   ├── timeline.js         · "Índice de orientación por año"
+│   │   └── axes-map.js         · "Mapa de intervenciones" (D3)
+│   ├── lib/three/            · Three.js r160 + addons (GLTF+Draco, BufferGeometryUtils, RoomEnvironment)
+│   ├── vendor/               · GSAP, ScrollTrigger, SplitText, CustomEase, D3, Lenis, Draco
+│   └── legacy/               · código no importado hoy (p. ej. dissolve.js), se conserva para retomar
+└── js/README.md              · mapa y convenciones del código
 ├── tools/
 │   ├── smoke-test.mjs     204 · `npm run check`
 │   └── build_door.py         generador paramétrico de la puerta BCCh (Blender, Cycles/EEVEE)
@@ -178,21 +182,22 @@ grep -n "^   [A-ZÁÉÍÓÚÑa-z].*—\|^function animate" js/main.js
 
 ### Dónde va cada cosa nueva
 
-- **Un número que cambia cómo se ve algo** → `js/config.js`. Si estás escribiendo
+- **Un número que cambia cómo se ve algo** → `js/core/config.js`. Si estás escribiendo
   un literal numérico en `main.js`, casi seguro es un error.
 - **Una hoja de estilo nueva** → `css/NN-nombre.css` con el número que le toque
   por cascada, y anótala en `css/README.md`. El prefijo no es decorativo.
 - **Marcado** → `index.html`, y nada más que marcado.
-- **Una figura 3D** → `figures/` + una entrada en `FIGURE_DEFS` de `figures.js`.
+- **Una figura 3D** → `figures/` + una entrada en `FIGURE_DEFS` de `js/scene/figures.js`.
   El sistema dibuja un placeholder si el GLB aún no existe.
 
 ### Rutas: la trampa que cuesta una tarde
 
 Se resuelven contra dos bases distintas y no hay forma de saberlo mirando:
 
-- Los `import` de `js/main.js` se resuelven contra **`js/`** (`./config.js`).
-- El `importmap`, los GLB y el decodificador Draco se resuelven contra
-  **`index.html`**, o sea la raíz (`figures/soporte.glb`, no `../figures/...`).
+- Los `import` de `js/main.js` se resuelven contra **`js/`**, y dentro de cada
+  carpeta contra el archivo (`./core/config.js`, `./scene/figures.js`, …).
+- El `importmap` apunta a **`js/lib/three/`**; los GLB, el decodificador Draco y
+  las figuras se resuelven contra **`index.html`** (raíz: `figures/soporte.glb`).
 - El CSS se resuelve contra **la hoja**, por eso `fonts.css` dice `../fonts/`.
 
 ### Deuda estructural (medida, no impresiones)
@@ -202,14 +207,14 @@ Dónde estaba el proyecto y dónde está ahora:
 | Síntoma | Al empezar | Ahora |
 |---|---|---|
 | `main.js` acapara el código | 4.742 líneas = **88 %** del JS propio | 4.285 = **55 %** (de 7.803 líneas propias, sin three.js ni vendor) |
-| Estado global suelto | **52 `let` de módulo** | **51**, y el estado compartido agrupado en objetos de `interaction-state.js` |
+| Estado global suelto | **52 `let` de módulo** | **51**, y el estado compartido agrupado en objetos de `js/core/interaction-state.js` |
 | Una función hace demasiado | `animate()` = 485 líneas | `animate()` = **~640 líneas** — sin tocar, es el Paso 3 |
 | Secciones que no pertenecen ahí | 5 secciones dentro de `main.js` = **1.392 líneas** | **0** |
 | El archivo base del CSS es el que más pisa | `00-tokens-base.css`: **42 `!important`** de los 68 | igual, sin tocar |
 
 > Desde el paso 2, `main.js` volvió a crecer (3.395 → 4.285) con la puerta BCCh
 > (`Puerta_bcch_v3.glb`, con hojas y bisagras propias, + la hoja procedural de
-> `js/build-door.js`), su rig de luces y el precalentado de shaders. Las
+> `js/scene/build-door.js`), su rig de luces y el precalentado de shaders. Las
 > secciones siguen fuera: el crecimiento es de la escena, no del scrollytelling.
 
 Lo que queda es `animate()`, y es lo más delicado del archivo: ~640 líneas que
@@ -233,13 +238,13 @@ que queda por hacer, en el punto 5.
 
 | Si vas a tocar… | El archivo es… |
 |---|---|
-| Un número de la escena 3D (cámara, luz, velocidad, tamaño) | `js/config.js` |
+| Un número de la escena 3D (cámara, luz, velocidad, tamaño) | `js/core/config.js` |
 | Cómo se ve algo | el `css/*.css` de esa sección |
 | El marcado de una sección | `index.html` |
-| Una figura 3D, su pedestal o su escala | `js/figures.js` |
+| Una figura 3D, su pedestal o su escala | `js/scene/figures.js` |
 | Una sección de scrollytelling (DOM, D3, listas, filtros) | `js/sections/<sección>.js` |
-| Qué cita está señalada o fijada | `js/interaction-state.js` |
-| Una función pura sin DOM ni Three.js | `js/utils.js` o `js/topics.js` |
+| Qué cita está señalada o fijada | `js/core/interaction-state.js` |
+| Una función pura sin DOM ni Three.js | `js/core/utils.js` o `js/data/topics.js` |
 | La escena 3D, el bucle de render o los `ScrollTrigger` | `js/main.js` |
 | Una comprobación automática | `tools/` o `scripts/screenshots/` |
 
@@ -247,14 +252,14 @@ que queda por hacer, en el punto 5.
 código dentro, nada de `style="..."` nuevo. Si te descubres añadiendo CSS o JS
 ahí, es la señal de que estás repitiendo el problema.
 
-**`js/config.js` antes que un número mágico.** Un valor que ajusta cómo se ve
+**`js/core/config.js` antes que un número mágico.** Un valor que ajusta cómo se ve
 la escena va con nombre en CONFIG, no incrustado a 3.000 líneas de distancia.
 
 **Una sección nueva se escribe así**, y en este orden:
 
 ```js
 // js/sections/mi-seccion.js
-import { pinQuote } from '../interaction-state.js';   // si necesita la selección
+import { pinQuote } from '../core/interaction-state.js';   // si necesita la selección
 export function initMiSeccion({ quotes, openQuote }) { // TODO lo demás, por parámetro
   const root = document.getElementById('mi-seccion');
   if (!root) return;                                   // sin su DOM, no hace nada
@@ -286,7 +291,7 @@ lo maqueta el CSS. Son dos sistemas que no se ven el uno al otro, así que nada
 impide que se solapen — y durante un tiempo se solapaban en móvil apaisado.
 
 La regla, implementada en `getHeroBand()` / `getHeroCoinFrame()` de
-`js/main.js` y documentada con diagrama en `js/config.js` → `HERO`:
+`js/main.js` y documentada con diagrama en `js/core/config.js` → `HERO`:
 
 > La moneda vive dentro de la **banda libre**: el hueco entre la barra de
 > marca y el borde real del titular, medido del DOM (`offsetTop`) en cada
@@ -337,7 +342,7 @@ paso hace más seguro el siguiente:
 variable del 3D: eran DOM + D3 + `quotes`. Están en
 `js/sections/word-evolution.js` y `js/sections/timeline.js`, reciben `quotes`
 por parámetro y no hacen nada por el mero hecho de importarse. `getViewportSize()`
-e `isCompactWidth()` salieron con ellas a `js/viewport.js`.
+e `isCompactWidth()` salieron con ellas a `js/core/viewport.js`.
 **main.js: 4.742 → 4.241 líneas.**
 
 > **La lección del Paso 1, que vale para los demás.** Al mover la llamada a
@@ -352,7 +357,7 @@ Se hicieron juntos porque son el mismo problema. `initActBrowser()`,
 `initVoiceExplorer()` e `initD3Axes()` no dependían de la escena: dependían de
 saber *qué cita está señalada*. Eso es una selección, no un renderer.
 
-Primero salió `js/interaction-state.js`, que agrupa los ocho `let` sueltos que
+Primero salió `js/core/interaction-state.js`, que agrupa los ocho `let` sueltos que
 cruzaban la frontera —`hoverIndex`, `pinnedIndex`, `voiceFocusParticipant`,
 `d3Scales`, `focusReturnCard`…— en cuatro objetos con nombre (`selection`,
 `voiceFocus`, `axesState`, `particleFocus`) más los verbos que se hacían con
@@ -376,7 +381,7 @@ resistencia. **main.js: 4.241 → 3.395 líneas.**
 
 Efecto lateral que merece la pena: `getQuoteAxisSentiment()` —dónde cae una
 cita en el eje hawkish/dovish— la usaban el mapa SVG y la nube de partículas
-por separado. Ahora vive una sola vez en `js/utils.js`. Antes podían
+por separado. Ahora vive una sola vez en `js/core/utils.js`. Antes podían
 desincronizarse y nadie se habría enterado.
 
 **Paso 3 — partir `animate()`. ⬅ SIGUIENTE.**
@@ -433,7 +438,7 @@ Medido en 1440×900, recorrido completo, antes y después del trabajo del
 | programas compilados en pleno scroll | 5 | 0 | |
 | cortina de carga | — | ≈7,3 s | el coste se paga aquí |
 
-Lo que se hizo (todo en `js/main.js` y `js/viewport.js`):
+Lo que se hizo (todo en `js/main.js` y `js/core/viewport.js`):
 
 1. **Precalentado de la escena tras la cortina** (`warmUpScene()`). La primera
    pinta de un material compila su programa y sube sus texturas de forma
@@ -466,7 +471,7 @@ Lo que se hizo (todo en `js/main.js` y `js/viewport.js`):
   hay que `Object.defineProperty` y reintentar por frame. Sin esto, los
   contadores del arnés fallan en silencio.
 - **Pintar en un render target calienta otros programas**: three.js cambia el
-  `outputColorSpace` según el destino (`js/three.module.js:20753`), así que
+  `outputColorSpace` según el destino (`js/lib/three/three.module.js:20753`), así que
   una pinta de calentamiento calentaba variantes que nadie usaba (57 programas
   creados, 16 sin usar y 9 fríos). Hay que provocar `program.getUniforms()`
   sobre el programa que `compile()` deja en el material.
@@ -511,7 +516,7 @@ Con el plan de `docs/PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
 2026-08-30:
 
 - **Gabinete de figuras** (`#figureCabinet`): lista las figuras 3D y su estado. ✅ en el sitio.
-- **Sistema de figuras** (`js/figures.js`): intenta cargar cada `figures/*.glb`; si no existe aún, dibuja un placeholder. ✅ en el sitio.
+- **Sistema de figuras** (`js/scene/figures.js`): intenta cargar cada `figures/*.glb`; si no existe aún, dibuja un placeholder. ✅ en el sitio.
 - **Balanza** (`figures/balanza.glb`): La Justicia ciega (Lady Justice), símbolo del equilibrio hawkish/dovish. ✅ lista (177 KB, Draco, acabado piedra mate). Ver `figures/README.md`.
 - **Retablo de La Sala (2026-08-31)**: la estatua dejó de flotar. Ahora hay
   **pedestal** (`figures/soporte.glb`, 28 KB) + **estatua encima**
@@ -561,5 +566,5 @@ Con el plan de `docs/PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
 
 1. **Modelar figuras Blender** → `figures/README.md`. ✅ Balanza lista; quedan
    `inflacion.glb`, `brote.glb`, `acta.glb`, `corpus.glb`, `campana.glb`.
-2. **Ajustar `js/figures.js`** si cambian posiciones/escalas de las figuras.
+2. **Ajustar `js/scene/figures.js`** si cambian posiciones/escalas de las figuras.
 3. **Definir moodboard** (el audio quedó desactivado; ver `docs/PLAN_NIVEL_PREMIUM.md`).

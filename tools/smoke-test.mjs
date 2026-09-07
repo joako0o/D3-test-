@@ -63,7 +63,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const ORIGIN = `http://127.0.0.1:${server.address().port}`;
 
 /* ── 1b. Shim de 'three' para el resolvedor de Node ───────────────────
-   js/loaders/*.js importan el especificador desnudo 'three'. En el navegador
+   js/lib/three/addons/loaders/*.js importan el especificador desnudo 'three'. En el navegador
    lo resuelve el <script type="importmap"> de index.html; Node no lo lee y
    busca un paquete. Se planta uno mínimo dentro de node_modules (que está
    en .gitignore) que reexporta el three.module.js local. */
@@ -74,14 +74,14 @@ if (!fs.existsSync(path.join(shim, 'index.mjs'))) {
     path.join(shim, 'package.json'),
     JSON.stringify({ name: 'three', version: '0.0.0-local-shim', type: 'module', main: 'index.mjs' }, null, 2)
   );
-  fs.writeFileSync(path.join(shim, 'index.mjs'), "export * from '../../js/three.module.js';\n");
+  fs.writeFileSync(path.join(shim, 'index.mjs'), "export * from '../../js/lib/three/three.module.js';\n");
 }
 
 /* ── 2. Copia de main.js con los specifiers del importmap resueltos ───
    El navegador resuelve 'three' con el <script type="importmap"> de
    index.html; Node no lo lee, así que aquí se reescriben a rutas relativas. */
 fs.mkdirSync(TMP, { recursive: true });
-const IMPORTMAP = { 'three/addons/': '../js/', three: '../js/three.module.js' };
+const IMPORTMAP = { 'three/addons/': '../js/lib/three/addons/', three: '../js/lib/three/three.module.js' };
 let main = fs.readFileSync(path.join(ROOT, 'js/main.js'), 'utf8');
 for (const [bare, target] of Object.entries(IMPORTMAP)) {
   main = main.replaceAll(`'${bare}`, `'${target}`).replaceAll(`"${bare}`, `"${target}`);
