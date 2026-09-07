@@ -4,11 +4,11 @@ Aquí viven los GLB de las "figuras" del proyecto. La idea es que cada **dato**
 tenga un **objeto** propio (como ya tienes moneda y puerta), de modo que el
 lector "toque" la evidencia en vez de solo leerla.
 
-## Convención de export (la que usa `js/figures.js`)
+## Convención de export (la que usa `js/scene/figures.js`)
 
 - **Formato:** `.glb` + compresión **Draco** (igual que `monedav5-draco.glb`).
 - **Nombres:** minúsculas y sin espacios, exactamente estos (o actualiza la
-  lista en `js/figures.js`):
+  lista en `js/scene/figures.js`):
 
 | Archivo esperado | Figura | Dato que representa | Prioridad |
 |---|---|---|---|
@@ -23,7 +23,7 @@ lector "toque" la evidencia en vez de solo leerla.
 ## Convención de tamaño y material (para que se vea "una familia")
 
 - **Escala:** exporta pensando en que la figura se inserta en un mundo de
-  ~2–6 unidades de alto. En `js/figures.js` cada figura tiene su propio
+  ~2–6 unidades de alto. En `js/scene/figures.js` cada figura tiene su propio
   `scale`, así que no necesitas calibrarla con precisión.
 - **Materiales:** usa un solo lenguaje: **oro** (`#ffd76a`, metal, roughness
   ~0.22), **obsidiana** (`#0d0f16`, mate, roughness ~0.75), **azul dovish**
@@ -53,7 +53,7 @@ de a poco.
   el repo (misma convención que la puerta/moneda: solo se versiona el
   comprimido); si hace falta se recupera con
   `git show 2119432:Soporte.glb > Soporte.glb`.
-  En `js/figures.js` es `scale: 0.70` + `stretchY: 1.6` (el `scale` normaliza la
+  En `js/scene/figures.js` es `scale: 0.70` + `stretchY: 1.6` (el `scale` normaliza la
   dimensión mayor → aquí es el DIÁMETRO; con el estirado el alto sale 0.254) y
   acabado piedra azulada. El disco original es muy plano: sin `stretchY` se lee
   como una chapa oscura y no como pedestal.
@@ -62,7 +62,7 @@ de a poco.
   Se normalizó a la convención del proyecto: **Draco**, **38.5 k triángulos**,
   **177 KB** (<300 KB), **acabado PIEDRA mate** (limestone, metallic 0, rough 0.82,
   color `#c7b9a4`), normales recalculadas y **base apoyada en `y=0`**.
-  `available: true` en `js/figures.js` con `finish` propio en el def.
+  `available: true` en `js/scene/figures.js` con `finish` propio en el def.
   Va **apoyada sobre el pedestal** vía `standsOn: 'soporte'`: el sistema mide el
   alto real del pedestal al cargarlo y recoloca la estatua (`restack()`), así el
   alto no queda escrito a mano en dos sitios.
@@ -73,5 +73,5 @@ de a poco.
 1. ✅ **Balanza** y ✅ **pedestal** ya están (ver arriba).
 2. Exporta `figures/inflacion.glb` y `figures/brote.glb` con Draco y <300 KB.
 3. Repite con `acta.glb`, `corpus.glb` y `campana.glb`.
-4. Cuando tengas las demás, edita `js/figures.js` para ajustar posición/escala
+4. Cuando tengas las demás, edita `js/scene/figures.js` para ajustar posición/escala
    (si una figura va sobre otra, usa `standsOn: 'idDeLaBase'`).

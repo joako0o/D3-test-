@@ -5,11 +5,11 @@
  *
  * Dependencias:
  *   - `quotes` llega por parámetro (el dato no se importa, se inyecta).
- *   - `normalizeTopicText` de ../topics.js.
+ *   - `normalizeTopicText` de ../data/topics.js.
  *   - d3, gsap y ScrollTrigger son globales que index.html carga como
  *     scripts clásicos ANTES del módulo, así que están disponibles.
  */
-import { normalizeTopicText } from '../topics.js';
+import { normalizeTopicText } from '../data/topics.js';
 
 let quotes = [];
 

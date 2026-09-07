@@ -1,12 +1,8 @@
 # Bibliotecas copiadas al repo: no se reformatean
-js/three.module.js
-js/three.module.min.js
+js/lib/three/
 js/vendor/
-js/loaders/
-js/utils/BufferGeometryUtils.js
-js/environments/
 # Dato generado (CRLF, una línea por campo)
-js/quotes.js
+js/data/quotes.js
 # Salidas
 node_modules/
 .cache/
@@ -15,10 +11,10 @@ node_modules/
 # Los fuentes propios se formatean a mano por ahora (ver README > Herramientas):
 # Prettier reordenaría 4 600 líneas de main.js con comentarios alineados.
 js/main.js
-js/config.js
-js/build-door.js
-js/figures.js
-js/dissolve.js
+js/core/
+js/scene/
+js/data/topics.js
+js/legacy/
 js/sections/
 js/*.js
 css/

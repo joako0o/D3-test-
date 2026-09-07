@@ -4,8 +4,8 @@
  * Al moverlo aqui, OJO con las rutas:
  *   - los import relativos se resuelven contra ESTE archivo (js/),
  *   - fetch(), los GLB y el importmap se resuelven contra index.html (raiz).
- * Por eso './js/figures.js' paso a ser './figures.js' y fetch('js/vendor/...')
- * se queda como estaba.
+ * Por eso los módulos de escena viven en js/scene/, la lógica pura en
+ * js/core/ y el código no usado en js/legacy/.
  *
  * Ver README.md > "Como se trabaja en este repo" antes de anadir codigo.
  */
@@ -14,20 +14,20 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { initFigureSystem } from './figures.js?v=4';
-import { buildCentralBankDoor } from './build-door.js?v=14';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './config.js?v=15';
-import { getViewportSize, getViewportSnapshot, isCompactWidth } from './viewport.js?v=2';
+import { initFigureSystem } from './scene/figures.js?v=4';
+import { buildCentralBankDoor } from './scene/build-door.js?v=14';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './core/config.js?v=15';
+import { getViewportSize, getViewportSnapshot, isCompactWidth } from './core/viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
   voiceFocus, axesState, focusReturn, particleFocus,
-} from './interaction-state.js';
+} from './core/interaction-state.js';
 import { initWordEvolution } from './sections/word-evolution.js';
 import { initVoiceExplorer } from './sections/voice-explorer.js?v=2';
 import { initActBrowser } from './sections/act-browser.js';
 import { initD3Axes } from './sections/axes-map.js?v=3';
 import { initTimeline } from './sections/timeline.js?v=3';
-import { particleRandom, getQuoteAxisSentiment } from './utils.js';
+import { particleRandom, getQuoteAxisSentiment } from './core/utils.js';
 
 /* Los timelines de la escena se crean durante la inicialización de los
    gráficos. Registrar los plugins antes de construir cualquiera de ellos
@@ -135,12 +135,18 @@ camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
 camera.lookAt(0, HERO_DOOR_LOCKUP ? 0.95 : 0.7, HERO_DOOR_LOCKUP ? -0.25 : 0);
 
 let renderer = null;
+/* DPR adaptable: el máximo es 1,5 para ahorrar en pantallas retina. Si la
+   escena se queda por debajo de ~40 fps, se baja de a 0,25 y se vuelve a
+   subir si la carga se recupera. Esto es lo que más nota quien entra a La
+   Sala con una GPU integrada. */
+const MAX_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+let adaptiveDpr = MAX_DPR;
 {
   try {
     /* Los ornamentos de la puerta viven en pocos píxeles; con antialias=false
        los filetes y aristas se rompen justo donde necesitamos legibilidad. */
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(adaptiveDpr);
     renderer.setSize(initialVp.width, initialVp.height);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -292,7 +298,7 @@ async function runWarmUp() {
 
          Pintar una vez NO sirve como atajo: three.js elige otra variante de
          programa cuando el destino no es el canvas —el outputColorSpace cambia
-         (js/three.module.js:20753)—, así que una pinta de calentamiento
+         (js/lib/three/three.module.js:20753)—, así que una pinta de calentamiento
          calienta programas que después no usa nadie. Medido: 57 programas
          creados, 16 sin usar nunca, y 9 todavía fríos en el scroll. */
       scene.traverse((obj) => {
@@ -532,7 +538,7 @@ function getHeroTitleTop() {
    El hueco real que queda entre la barra de marca y el titular. Todo lo
    demás del hero (diámetro de la moneda y su altura en pantalla) se deriva
    de aquí, así que la proporción es la misma en cualquier viewport.
-   Ver el diagrama y el porqué en js/config.js → HERO. */
+   Ver el diagrama y el porqué en js/core/config.js → HERO. */
 function getHeroBand() {
   const { width: w, height: h } = getViewportSize();
   const top = THREE.MathUtils.clamp(h * HERO.safeTopRatio, 56, 112);
@@ -774,6 +780,12 @@ const bcchDoorMats = [];
 const bcchApertureMats = [];
 const bcchEdgeMats = [];
 const proceduralDoorMats = [];
+/* Estado de la puerta del frame anterior. Los materiales solo se tocan cuando
+   su input cambió: en portada y al final del recorrido el scroll no se mueve,
+   y repintar ~20 materiales era trabajo tirado. */
+const doorMatCache = {
+  vis: -1, colorT: -1, crossT: -1, scatter: -1, exitT: -1, fade: -1,
+};
 
 function applyDoorScale() {
   if (!doorModel || !doorFootprint) return;
@@ -1017,7 +1029,7 @@ function doorFrameTone(matName) {
   return 'stone';
 }
 
-/* Pivotes y glow del generador procedural (js/build-door.js). */
+/* Pivotes y glow del generador procedural (js/scene/build-door.js). */
 let doorPivotL = null, doorPivotR = null, doorGlowMat = null;
 /* Base real de la puerta relativa al pivote, en unidades del modelo. Se usa
    para apoyar la puerta en CONFIG.door.groundY y para la sombra de contacto.
@@ -1031,7 +1043,7 @@ let doorTopOffset = 1.15;
    el tamaño en pantalla del lockup para que el pórtico quepa en el viewport. */
 let doorLocalHeight = 0;
 {
-  /* La puerta ya no es un GLB estático: la genera js/build-door.js (port del
+  /* La puerta ya no es un GLB estático: la genera js/scene/build-door.js (port del
      Blender tools/build_door.py) con pivotes reales para abrir las hojas. */
   const built = buildCentralBankDoor();
   const model = built.group;
@@ -1850,7 +1862,7 @@ function createParticleTexture() {
      degradado se aplica en `destination-in`, que conserva el color del
      destino y toma el alfa del origen. Mismos píxeles, cero readback.
      (Se descartó un DataTexture: en este three.js nace con NearestFilter y
-     generateMipmaps=false —js/three.module.js:32315— y las partículas se
+     generateMipmaps=false —js/lib/three/three.module.js:32315— y las partículas se
      verían dentadas.) */
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, 64, 64);
@@ -1891,6 +1903,12 @@ const pMat = new THREE.PointsMaterial({
 });
 const points = new THREE.Points(pGeo, pMat);
 swarm.add(points);
+/* Cache del color de la nube: con la escena quieta (o sin selección activa)
+   el color no cambia y no hay que recorrer los 100 puntos cada frame. */
+const particleColorCache = {
+  roomWarm: -1, voiceFocusMix: -1, actFocusMix: -1, quoteStageMix: -1,
+  focusName: null, activeQuoteIndex: -1, selectedActDate: null,
+};
 
 /* ═══════════════════════════════════════════════════════════
    ÓRBITAS DE LA SALA — fragmentos que giran sobre el eje de la figura
@@ -2327,7 +2345,7 @@ function openQuote(i, anchor) {
   }
   document.getElementById('qpYear').textContent = q.year ? 'Año ' + q.year : 'Año no especificado';
   /* Puntuación hawk/dov del clasificador. En maqueta: valor de referencia 0–1
-     determinístico (ver js/quotes.js); el dato real la reemplaza al llegar. */
+     determinístico (ver js/data/quotes.js); el dato real la reemplaza al llegar. */
   const scoreRow = document.getElementById('qpScore');
   if (scoreRow) {
     const sc = (typeof q.score === 'number') ? q.score : null;
@@ -2707,6 +2725,18 @@ const _doorFitV = new THREE.Vector3();
 initVoiceExplorer({ quotes, openQuote, closeQuotePanel });
 
 
+/* DPR adaptable en caliente. `renderer.setSize` con CSS false mantiene el
+   tamaño de layout y solo cambia el búfer, evitando un salto visual. */
+const frameSamples = [];
+function applyAdaptiveDpr(next) {
+  if (!renderer || Math.abs(next - adaptiveDpr) < 0.05) return;
+  adaptiveDpr = next;
+  renderer.setPixelRatio(adaptiveDpr);
+  const vp = getViewportSnapshot();
+  renderer.setSize(vp.width, vp.height, false);
+  if (typeof syncOrbitPointScale === 'function') syncOrbitPointScale();
+}
+
 function animate() {
   const time = clock.getElapsedTime();
   /* crossT es SOLO la entrada por la puerta. `exitT` ya no invierte esa
@@ -2782,7 +2812,7 @@ function animate() {
     coin.getWorldPosition(projectedPos);
     projectedPos.project(camera);
     /* Snapshot, no lectura viva: leer clientWidth aquí dentro fuerza un
-       reflujo cada frame (ver js/viewport.js). */
+       reflujo cada frame (ver js/core/viewport.js). */
     const vp = getViewportSnapshot();
     const coinScreenX = (projectedPos.x * 0.5 + 0.5) * vp.width;
     const coinScreenY = (-projectedPos.y * 0.5 + 0.5) * vp.height;
@@ -2800,9 +2830,11 @@ function animate() {
     }
     coin.visible = (currentStage === 1) && (coinFade > 0.01);
     if (HERO_DOOR_LOCKUP) coin.position.z = 0.55;
-    for (let i = 0; i < coinMats.length; i++) {
-      coinMats[i].transparent = true;
-      coinMats[i].opacity = coinFade;
+    if (coin.visible) {
+      for (let i = 0; i < coinMats.length; i++) {
+        coinMats[i].transparent = true;
+        coinMats[i].opacity = coinFade;
+      }
     }
   }
 
@@ -2830,6 +2862,16 @@ function animate() {
        doorModelGroup se añade siempre: si el GLB no cargó, la escena sigue
        "teniendo" la puerta y se encendían niebla y sombra sobre la nada. */
     doorGroup.visible = doorVisOpacity > 0.001 && !!doorModel;
+    /* Early-out real: cuando la puerta ya está apagada (dentro de La Sala o
+       más adelante), no hay que repintar materiales ni reescribir matrices
+       cada frame. Antes estos bucles corrían siempre que el modelo estuviera
+       cargado, ~60 veces por segundo sin que se viera nada. */
+    if (!doorGroup.visible) {
+      if (doorLightGroup) doorLightGroup.visible = false;
+      doorFloor.visible = false;
+      if (doorAura) doorAura.visible = false;
+      if (scene.fog) scene.fog.density = 0;
+    } else {
     const doorEase = doorFade * doorFade * (3 - 2 * doorFade);
     const lockupMix = HERO_DOOR_LOCKUP
       ? 1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
@@ -2898,7 +2940,20 @@ function animate() {
        medallas y aristas— se disuelve ahí, mientras la cámara todavía avanza
        (el movimiento tapa el fundido). Simétrico al volver atrás. */
     const porticoHold = 1 - THREE.MathUtils.smoothstep(crossT, 0.86, 0.96);
-    for (let i = 0; i < bcchDoorMats.length; i++) {
+    const matDirty =
+      Math.abs(doorVisOpacity - doorMatCache.vis) > 1e-4 ||
+      Math.abs(bcchColorT - doorMatCache.colorT) > 1e-4 ||
+      Math.abs(crossT - doorMatCache.crossT) > 1e-4 ||
+      Math.abs(scatterProgress - doorMatCache.scatter) > 1e-4 ||
+      Math.abs(exitT - doorMatCache.exitT) > 1e-4 ||
+      Math.abs(doorFade - doorMatCache.fade) > 1e-4;
+    doorMatCache.vis = doorVisOpacity;
+    doorMatCache.colorT = bcchColorT;
+    doorMatCache.crossT = crossT;
+    doorMatCache.scatter = scatterProgress;
+    doorMatCache.exitT = exitT;
+    doorMatCache.fade = doorFade;
+    if (matDirty) for (let i = 0; i < bcchDoorMats.length; i++) {
       const m = bcchDoorMats[i];
       const kind = m.userData?.bcchKind || 'frame';
       const isLeaf = kind === 'leaf';
@@ -2923,26 +2978,28 @@ function animate() {
         m.emissiveIntensity = (isBronze ? 0.006 : 0.0015) * lightT;
       }
     }
-    for (let i = 0; i < bcchEdgeMats.length; i++) {
-      const rec = bcchEdgeMats[i];
-      const edgeHold = rec.kind === 'leaf'
-        ? (1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75))
-        : (rec.kind === 'aperture' ? apertureHold : 1) * porticoHold;
-      rec.m.opacity = rec.baseOpacity * doorVisOpacity * bcchVisualT * edgeHold * (0.55 + 0.45 * bcchColorT);
-    }
-    for (let i = 0; i < proceduralDoorMats.length; i++) {
-      proceduralDoorMats[i].transparent = true;
-      proceduralDoorMats[i].opacity = doorVisOpacity * proceduralVisualT;
-    }
-    for (let i = 0; i < doorLeafLineMats.length; i++) {
-      doorLeafLineMats[i].opacity = 0.42 * doorVisOpacity * proceduralVisualT;
-    }
-    for (let i = 0; i < doorFrameLineMats.length; i++) {
-      doorFrameLineMats[i].m.opacity = doorFrameLineMats[i].baseOpacity * doorVisOpacity * proceduralVisualT;
+    if (matDirty) {
+      for (let i = 0; i < bcchEdgeMats.length; i++) {
+        const rec = bcchEdgeMats[i];
+        const edgeHold = rec.kind === 'leaf'
+          ? (1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75))
+          : (rec.kind === 'aperture' ? apertureHold : 1) * porticoHold;
+        rec.m.opacity = rec.baseOpacity * doorVisOpacity * bcchVisualT * edgeHold * (0.55 + 0.45 * bcchColorT);
+      }
+      for (let i = 0; i < proceduralDoorMats.length; i++) {
+        proceduralDoorMats[i].transparent = true;
+        proceduralDoorMats[i].opacity = doorVisOpacity * proceduralVisualT;
+      }
+      for (let i = 0; i < doorLeafLineMats.length; i++) {
+        doorLeafLineMats[i].opacity = 0.42 * doorVisOpacity * proceduralVisualT;
+      }
+      for (let i = 0; i < doorFrameLineMats.length; i++) {
+        doorFrameLineMats[i].m.opacity = doorFrameLineMats[i].baseOpacity * doorVisOpacity * proceduralVisualT;
+      }
     }
     /* La fachada ya no se funde aparte: es parte de la figura en portada y
        en el Acto 2, y su opacidad la lleva doorMats como el resto. */
-    if (HERO_DOOR_LOCKUP && doorLeafMats.length) {
+    if (matDirty && HERO_DOOR_LOCKUP && doorLeafMats.length) {
       const leafT = THREE.MathUtils.smoothstep(scatterProgress, 0.28, 0.9);
       /* El oro espejado llega con el CRUCE, como en la versión anterior del
          sitio: durante el Acto 2 las hojas son bronce oscuro (el acabado del
@@ -3036,6 +3093,7 @@ function animate() {
         sp.target.updateMatrixWorld();
       });
     }
+    }
   }
 
   /* enjambre: orbita y se dispersa por la pantalla al hacer scroll.
@@ -3084,42 +3142,62 @@ function animate() {
   const voiceStageMix = particleStoryMix.voices * voiceFocusMix;
   const actStageMix = particleStoryMix.acts * actFocusMix;
   const quoteStageMix = particleStoryMix.quotes;
-  const cols = pGeo.attributes.color.array;
-  for (let i = 0; i < PCOUNT; i++) {
-    const idx = i * 3;
-    const q = quotes[i];
-    const isVoiceFocus = !!(focusName && q && q.participant === focusName);
-    const isActFocus = !!(selectedActDate && pActKeys[i] === selectedActDate);
-    const isQuoteFocus = i === activeQuoteIndex;
-    const voiceVisibility = focusName
-      ? THREE.MathUtils.lerp(1, isVoiceFocus ? 1 : 0.10, voiceStageMix)
-      : 1;
-    const actVisibility = selectedActDate
-      ? THREE.MathUtils.lerp(1, isActFocus ? 1 : 0.16, actStageMix)
-      : 1;
-    const quoteVisibilityMix = activeQuoteIndex >= 0 ? Math.max(0.55, quoteStageMix * 0.82) : 0;
-    const quoteVisibility = activeQuoteIndex >= 0
-      ? THREE.MathUtils.lerp(1, isQuoteFocus ? 1.15 : 0.28, quoteVisibilityMix)
-      : 1;
-    const visibility = voiceVisibility * actVisibility * quoteVisibility;
-    const warm = roomWarm * 0.22;
-    const litR = THREE.MathUtils.lerp(pColors[idx], 1.00, warm);
-    const litG = THREE.MathUtils.lerp(pColors[idx + 1], 0.80, warm);
-    const litB = THREE.MathUtils.lerp(pColors[idx + 2], 0.52, warm);
-    /* La atenuación narrativa no debe convertir el contexto en píxeles
-       negros. Se conserva un mínimo cromático y se interpola hacia él,
-       en vez de multiplicar el color hasta cero. El foco sigue teniendo
-       prioridad y puede superar 1 para ganar un poco de luz. */
-    const visibleMix = THREE.MathUtils.clamp(Math.max(visibility, 0.22), 0, 1);
-    const strength = Math.max(1, visibility);
-    const safeR = Math.max(pColors[idx] * 0.34, 0.14);
-    const safeG = Math.max(pColors[idx + 1] * 0.34, 0.16);
-    const safeB = Math.max(pColors[idx + 2] * 0.34, 0.20);
-    cols[idx] = THREE.MathUtils.lerp(safeR, litR, visibleMix) * strength;
-    cols[idx + 1] = THREE.MathUtils.lerp(safeG, litG, visibleMix) * strength;
-    cols[idx + 2] = THREE.MathUtils.lerp(safeB, litB, visibleMix) * strength;
+  /* Solo se reescribe el color si algo cambió: con roomWarm, foco y quote
+     estables el coste de la nube baja casi a cero (las posiciones sí se
+     actualizan siempre porque hay deriva/ondulación). */
+  const colorDirty =
+    Math.abs(roomWarm - particleColorCache.roomWarm) > 1e-4 ||
+    Math.abs(voiceFocusMix - particleColorCache.voiceFocusMix) > 1e-3 ||
+    Math.abs(actFocusMix - particleColorCache.actFocusMix) > 1e-3 ||
+    Math.abs(quoteStageMix - particleColorCache.quoteStageMix) > 1e-3 ||
+    focusName !== particleColorCache.focusName ||
+    activeQuoteIndex !== particleColorCache.activeQuoteIndex ||
+    selectedActDate !== particleColorCache.selectedActDate;
+  particleColorCache.roomWarm = roomWarm;
+  particleColorCache.voiceFocusMix = voiceFocusMix;
+  particleColorCache.actFocusMix = actFocusMix;
+  particleColorCache.quoteStageMix = quoteStageMix;
+  particleColorCache.focusName = focusName;
+  particleColorCache.activeQuoteIndex = activeQuoteIndex;
+  particleColorCache.selectedActDate = selectedActDate;
+  if (colorDirty) {
+    const cols = pGeo.attributes.color.array;
+    for (let i = 0; i < PCOUNT; i++) {
+      const idx = i * 3;
+      const q = quotes[i];
+      const isVoiceFocus = !!(focusName && q && q.participant === focusName);
+      const isActFocus = !!(selectedActDate && pActKeys[i] === selectedActDate);
+      const isQuoteFocus = i === activeQuoteIndex;
+      const voiceVisibility = focusName
+        ? THREE.MathUtils.lerp(1, isVoiceFocus ? 1 : 0.10, voiceStageMix)
+        : 1;
+      const actVisibility = selectedActDate
+        ? THREE.MathUtils.lerp(1, isActFocus ? 1 : 0.16, actStageMix)
+        : 1;
+      const quoteVisibilityMix = activeQuoteIndex >= 0 ? Math.max(0.55, quoteStageMix * 0.82) : 0;
+      const quoteVisibility = activeQuoteIndex >= 0
+        ? THREE.MathUtils.lerp(1, isQuoteFocus ? 1.15 : 0.28, quoteVisibilityMix)
+        : 1;
+      const visibility = voiceVisibility * actVisibility * quoteVisibility;
+      const warm = roomWarm * 0.22;
+      const litR = THREE.MathUtils.lerp(pColors[idx], 1.00, warm);
+      const litG = THREE.MathUtils.lerp(pColors[idx + 1], 0.80, warm);
+      const litB = THREE.MathUtils.lerp(pColors[idx + 2], 0.52, warm);
+      /* La atenuación narrativa no debe convertir el contexto en píxeles
+         negros. Se conserva un mínimo cromático y se interpola hacia él,
+         en vez de multiplicar el color hasta cero. El foco sigue teniendo
+         prioridad y puede superar 1 para ganar un poco de luz. */
+      const visibleMix = THREE.MathUtils.clamp(Math.max(visibility, 0.22), 0, 1);
+      const strength = Math.max(1, visibility);
+      const safeR = Math.max(pColors[idx] * 0.34, 0.14);
+      const safeG = Math.max(pColors[idx + 1] * 0.34, 0.16);
+      const safeB = Math.max(pColors[idx + 2] * 0.34, 0.20);
+      cols[idx] = THREE.MathUtils.lerp(safeR, litR, visibleMix) * strength;
+      cols[idx + 1] = THREE.MathUtils.lerp(safeG, litG, visibleMix) * strength;
+      cols[idx + 2] = THREE.MathUtils.lerp(safeB, litB, visibleMix) * strength;
+    }
+    pGeo.attributes.color.needsUpdate = true;
   }
-  pGeo.attributes.color.needsUpdate = true;
 
   /* La misma nube cambia de gramática por acto. El plano y el timeline se
      alinean sin jitter; voz y acta solo convergen con la selección activa. */
@@ -3373,6 +3451,13 @@ function animate() {
        aquí (una vez por resize) y no en syncViewportAndObjects(). */
     if (roomAimDirty) refreshRoomAim();
     figureSystem.group.visible = figureReveal > 0.01 && exitHide < 0.99;
+    if (!figureSystem.group.visible) {
+      figureAccent.intensity = 0;
+      figureFill.intensity = 0;
+      orbitGroup.visible = false;
+      figureSystem.group.scale.setScalar(0.86 + 0.14 * figureReveal);
+      figureSystem.group.position.y = (1 - figureReveal) * 0.5;
+    } else {
     figureSystem.group.scale.setScalar(0.86 + 0.14 * figureReveal);
     figureSystem.group.position.y = (1 - figureReveal) * 0.5;
     /* Sigue la iluminación de las figuras (placeholder no enciende nada):
@@ -3418,9 +3503,29 @@ function animate() {
     orbitGroup.scale.setScalar(figureSystem.group.scale.x);
     orbitMat.uniforms.uFocus.value = orbitFocusOwner();
     updateOrbitals(reduceMotion ? 0 : time, statueT);
+    }
   }
 
-  if (renderer) renderer.render(scene, camera);
+  if (renderer) {
+    const frameStart = performance.now();
+    renderer.render(scene, camera);
+    /* Decisión cada ~90 frames. Los dos primeros segundos se ignoran: el
+       arranque/precalentado no es representativo del scroll normal. */
+    if (clock.elapsedTime > 2 && !reduceMotion) {
+      frameSamples.push(performance.now() - frameStart);
+      if (frameSamples.length >= 90) {
+        let sum = 0;
+        for (let i = 0; i < frameSamples.length; i++) sum += frameSamples[i];
+        const avg = sum / frameSamples.length;
+        frameSamples.length = 0;
+        if (avg > 26 && adaptiveDpr > 1) {
+          applyAdaptiveDpr(Math.max(1, adaptiveDpr - 0.25));
+        } else if (avg < 12 && adaptiveDpr < MAX_DPR) {
+          applyAdaptiveDpr(Math.min(MAX_DPR, adaptiveDpr + 0.25));
+        }
+      }
+    }
+  }
 }
 /* Un solo loop rAF: el ticker de GSAP (que ya maneja Lenis) maneja la escena.
    Antes había dos loops rAF independientes desincronizados. */

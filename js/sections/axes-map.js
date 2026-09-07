@@ -1,20 +1,20 @@
 /* axes-map.js — "Mapa de intervenciones": el plano factual en D3.
  *
  * Sección de scrollytelling. Vive fuera de main.js porque su única relación
- * con la escena 3D pasa por `js/interaction-state.js` (qué cita está
+ * con la escena 3D pasa por `js/core/interaction-state.js` (qué cita está
  * señalada) y por las dos funciones del panel de cita, que llegan inyectadas.
  * No importa Three.js ni conoce la cámara.
  *
  * Las dependencias se declaran en la firma de init: quien la llame tiene que
  * dárselas. Nada de leer variables de otro archivo por la puerta de atrás.
  */
-import { pinQuote, axesState, focusReturn } from '../interaction-state.js';
+import { pinQuote, axesState, focusReturn } from '../core/interaction-state.js';
 /* Misma URL (query incluida) que en main.js: con specifiers distintos el
    navegador instancia DOS módulos viewport.js, cada uno con su snapshot. */
-import { getViewportSize } from '../viewport.js?v=2';
+import { getViewportSize } from '../core/viewport.js?v=2';
 /* clamp llega de utils.js: se usaba THREE.MathUtils.clamp por costumbre, pero
    una sección de D3 no tiene por qué arrastrar Three.js para acotar un número. */
-import { clamp, getQuoteAxisSentiment } from '../utils.js';
+import { clamp, getQuoteAxisSentiment } from '../core/utils.js';
 
 export function initD3Axes({ quotes, openQuote }) {
   const container = document.getElementById('d3-canvas');

@@ -1,15 +1,15 @@
 /* voice-explorer.js — "Las voces": directorio editorial de participantes.
  *
  * Sección de scrollytelling. Vive fuera de main.js porque su única relación
- * con la escena 3D pasa por `js/interaction-state.js` (qué cita está
+ * con la escena 3D pasa por `js/core/interaction-state.js` (qué cita está
  * señalada) y por las dos funciones del panel de cita, que llegan inyectadas.
  * No importa Three.js ni conoce la cámara.
  *
  * Las dependencias se declaran en la firma de init: quien la llame tiene que
  * dárselas. Nada de leer variables de otro archivo por la puerta de atrás.
  */
-import { voiceFocus, pinQuote } from '../interaction-state.js';
-import { TOPIC_DEFINITIONS, normalizeTopicText, topicHasTerm } from '../topics.js';
+import { voiceFocus, pinQuote } from '../core/interaction-state.js';
+import { TOPIC_DEFINITIONS, normalizeTopicText, topicHasTerm } from '../data/topics.js';
 
 
 export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
