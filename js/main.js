@@ -18,6 +18,7 @@ import { initFigureSystem } from './scene/figures.js?v=4';
 import { buildCentralBankDoor } from './scene/build-door.js?v=14';
 import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './core/config.js?v=15';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './core/viewport.js?v=2';
+import { detectLowPower, describeGLRenderer } from './core/perf-tier.js';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
   voiceFocus, axesState, focusReturn, particleFocus,
@@ -135,17 +136,33 @@ camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
 camera.lookAt(0, HERO_DOOR_LOCKUP ? 0.95 : 0.7, HERO_DOOR_LOCKUP ? -0.25 : 0);
 
 let renderer = null;
+/* Nivel de potencia (ver js/core/perf-tier.js): en máquinas débiles el DPR
+   arranca capado a 1 y sin antialiasing — el MSAA a pantalla completa es de
+   lo más caro que tiene la escena en una integrada vieja, y en pantallas de
+   alta densidad apenas se nota. La clase `low-power` del <body> apaga además
+   los vidrios caros (css/29-low-power.css). El bucle adaptativo de abajo
+   sigue pudiendo bajar el DPR en caliente si hace falta. */
+const LOW_POWER = detectLowPower();
+const DPR_CAP = LOW_POWER ? 1 : 1.5;
+if (LOW_POWER) document.body.classList.add('low-power');
 /* DPR adaptable: el máximo es 1,5 para ahorrar en pantallas retina. Si la
    escena se queda por debajo de ~40 fps, se baja de a 0,25 y se vuelve a
    subir si la carga se recupera. Esto es lo que más nota quien entra a La
    Sala con una GPU integrada. */
-const MAX_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+const MAX_DPR = Math.min(window.devicePixelRatio || 1, DPR_CAP);
 let adaptiveDpr = MAX_DPR;
+/* Techo efectivo del DPR: normalmente sigue al monitor (ver el resize), pero
+   si la GPU real resulta ser software o integrada antigua se clava en 1 y
+   el bucle adaptativo ya no lo sube solo (subirlo sería volver a tirar). */
+let dprCeiling = MAX_DPR;
+let weakGpuConfirmed = LOW_POWER;
 {
   try {
     /* Los ornamentos de la puerta viven en pocos píxeles; con antialias=false
-       los filetes y aristas se rompen justo donde necesitamos legibilidad. */
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+       los filetes y aristas se rompen justo donde necesitamos legibilidad.
+       En low-power se acepta ese coste: el MSAA a pantalla completa es lo
+       que más castiga a una integrada débil. */
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW_POWER, alpha: true, powerPreference: 'high-performance', stencil: false });
     renderer.setPixelRatio(adaptiveDpr);
     renderer.setSize(initialVp.width, initialVp.height);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -162,6 +179,23 @@ let adaptiveDpr = MAX_DPR;
     renderer.debug.checkShaderErrors = DEBUG_MODE;
   } catch (e) {
     renderer = null;
+  }
+}
+
+/* Confirmación con la GPU real: si es software (SwiftShader/llvmpipe) o una
+   integrada antigua, se degrada aunque los núcleos/memoria dijeran que no.
+   El antialiasing ya no se puede quitar (se fijó al crear el renderer),
+   pero DPR 1 + clase low-power es casi todo el ahorro. No se llama a
+   applyAdaptiveDpr(): toca orbitMat, que se declara más abajo (zona muerta
+   temporal); setPixelRatio ya reaplica el tamaño del búfer por dentro. */
+if (renderer && !LOW_POWER) {
+  const gl = describeGLRenderer(renderer);
+  if (gl.weak) {
+    weakGpuConfirmed = true;
+    dprCeiling = 1;
+    adaptiveDpr = 1;
+    renderer.setPixelRatio(1);
+    document.body.classList.add('low-power');
   }
 }
 
@@ -261,6 +295,8 @@ async function runWarmUp() {
   const markStart = `warmUpScene ${++warmUpRuns}`;
   try { performance.mark(`${markStart} start`); } catch { /* sin User Timing no pasa nada */ }
   const doorWas = doorLightGroup ? doorLightGroup.visible : null;
+  /* Afuera del try como doorWas: el finally lo necesita para restaurar. */
+  const roomWas = [roomLight.visible, figureAccent.visible, figureFill.visible];
   const singlePassDuringWarmUp = [];
   const programs = new Set();
   try {
@@ -284,12 +320,32 @@ async function runWarmUp() {
 
     await breathe();
 
-    /* Dos pasadas, una por estado de luces del relato (la puerta encendida y
-       apagada): el número de luces visibles forma parte de la clave con la que
-       three.js cachea los programas, así que cada estado es un programa
-       distinto y los dos se usan al bajar. */
-    for (const doorOn of doorWas === null ? [true] : [doorWas, !doorWas]) {
+    /* Una pasada por cada ESTADO DE LUCES del relato. El número de luces
+       VISIBLES forma parte de la clave con la que three.js cachea los
+       programas —una luz con intensity 0 pero visible SÍ ocupa slot en el
+       shader (projectObject solo salta las invisibles; verificado en
+       js/lib/three/three.module.js)—, así que cada combinación es un
+       programa distinto y todas las que ocurren se compilan aquí:
+         doorway: (puerta on, sala off) = hero/La Reunión · (on, on) = La Sala
+                  (off, off) = capítulos tardíos. (off, on) no ocurre: la sala
+                  encendida implica estar dentro, con la puerta presente.
+         classic: la puerta como antes; las de sala son estáticas (roomLight
+                  siempre invisible —su intensity es 0 ahí—, las de figuras
+                  siempre visibles) y no añaden variantes.
+       Las tres luces de sala comparten UN solo interruptor en animate()
+       (setRoomLightsVisible): si cada una togglara por su cuenta habría
+       estados mixtos sin precalentar y su primera compilación caería justo
+       en mitad del cruce del umbral. */
+    const lightStates = (DOOR_MODE === 'doorway' && doorLightGroup)
+      ? [[true, false], [true, true], [false, false]]
+      : (doorWas === null ? [[true, null]] : [[doorWas, null], [!doorWas, null]]);
+    for (const [doorOn, roomOn] of lightStates) {
       if (doorLightGroup) doorLightGroup.visible = doorOn;
+      if (roomOn !== null) {
+        roomLight.visible = roomOn;
+        figureAccent.visible = roomOn;
+        figureFill.visible = roomOn;
+      }
       renderer.compile(scene, camera);
       /* compile() deja el programa en el material, pero la INTROSPECCIÓN de
          uniforms (getProgramParameter + getActiveUniform, que es lo que
@@ -354,6 +410,9 @@ async function runWarmUp() {
   } finally {
     for (let i = 0; i < singlePassDuringWarmUp.length; i++) singlePassDuringWarmUp[i].forceSinglePass = false;
     if (doorLightGroup) doorLightGroup.visible = doorWas;
+    roomLight.visible = roomWas[0];
+    figureAccent.visible = roomWas[1];
+    figureFill.visible = roomWas[2];
     try {
       performance.mark(`${markStart} end`);
       performance.measure('warmUpScene', `${markStart} start`, `${markStart} end`);
@@ -2737,6 +2796,24 @@ function applyAdaptiveDpr(next) {
   if (typeof syncOrbitPointScale === 'function') syncOrbitPointScale();
 }
 
+/* Interruptor ÚNICO de las tres luces de sala en modo doorway. Estar visible
+   con intensity 0 igual cuesta ALU en cada píxel iluminado (moneda, puerta,
+   figuras), así que se apagan del todo cuando no alumbran. Comparten estado
+   a propósito: si cada una togglara con su propia rampa habría combinaciones
+   mixtas (sala a medio encender) sin precalentar, y warmUpScene solo cubre
+   sala on/off (ver el comentario de lightStates). En classic roomLight se
+   apaga para siempre (su intensity es 0 ahí) y las de figuras se dejan como
+   estaban, que sí alumbran fuera del hero. */
+function setRoomLightsVisible(on) {
+  if (DOOR_MODE === 'doorway') {
+    roomLight.visible = on;
+    figureAccent.visible = on;
+    figureFill.visible = on;
+  } else {
+    roomLight.visible = false;
+  }
+}
+
 function animate() {
   const time = clock.getElapsedTime();
   /* crossT es SOLO la entrada por la puerta. `exitT` ya no invierte esa
@@ -3333,11 +3410,14 @@ function animate() {
      se apaga al disolver hacia El Método, sin reactivar el pórtico. Antes
      esperaba hasta 0.56 y, con el interior a oscuras, la estatua no se veía
      cuando la puerta se abría: solo asomaba al estar entrando. */
+  /* roomLightT vive a nivel de frame (no dentro del if) porque el
+     interruptor único de las luces de sala lo necesita junto a statueT, que
+     se calcula más abajo en el bloque de figuras. */
+  const roomLightT = DOOR_MODE === 'doorway'
+    ? THREE.MathUtils.smoothstep(roomPresence, 0.10, 0.45)
+    : 0;
   if (roomLight) {
-    const lightT = DOOR_MODE === 'doorway'
-      ? THREE.MathUtils.smoothstep(roomPresence, 0.10, 0.45)
-      : 0;
-    roomLight.intensity = lightT * (CONFIG.door?.roomLight?.intensity ?? 10);
+    roomLight.intensity = roomLightT * (CONFIG.door?.roomLight?.intensity ?? 10);
   }
 
   /* La Sala (b1): la cámara cruza el plano de la puerta. El FOV hace un
@@ -3454,6 +3534,7 @@ function animate() {
     if (!figureSystem.group.visible) {
       figureAccent.intensity = 0;
       figureFill.intensity = 0;
+      setRoomLightsVisible(roomLightT > 0.001); // statueT = 0 en esta rama
       orbitGroup.visible = false;
       figureSystem.group.scale.setScalar(0.86 + 0.14 * figureReveal);
       figureSystem.group.position.y = (1 - figureReveal) * 0.5;
@@ -3481,6 +3562,10 @@ function animate() {
       if (record.model) statueReady = true;
     });
     const statueT = statueReady ? figureReveal * exitFade * (1 - exitHide) : 0;
+    /* Las tres luces comparten interruptor (una sola condición) para no crear
+       estados mixtos sin precalentar. Una luz visible con intensity ~0 no
+       aporta nada, así que el corte en 0.001 no se ve. */
+    setRoomLightsVisible(roomLightT > 0.001 || statueT > 0.001);
     /* El foco apunta a la ESTATUA (0, ~0.9, -4.8), no al origen de la
        escena: antes el target se reescribía con la z del grupo (0) y el
        cono iluminaba el aire delante de la cámara. */
@@ -3520,8 +3605,8 @@ function animate() {
         frameSamples.length = 0;
         if (avg > 26 && adaptiveDpr > 1) {
           applyAdaptiveDpr(Math.max(1, adaptiveDpr - 0.25));
-        } else if (avg < 12 && adaptiveDpr < MAX_DPR) {
-          applyAdaptiveDpr(Math.min(MAX_DPR, adaptiveDpr + 0.25));
+        } else if (avg < 12 && adaptiveDpr < dprCeiling) {
+          applyAdaptiveDpr(Math.min(dprCeiling, adaptiveDpr + 0.25));
         }
       }
     }
@@ -3565,7 +3650,16 @@ function syncViewportAndObjects() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   if (renderer) {
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    /* El techo sigue al monitor (arrastrar la ventana a otra pantalla con
+       distinto DPR), salvo que la GPU sea débil: ahí se queda clavado en 1.
+       Pero el resize solo puede BAJAR adaptiveDpr, nunca subirlo: si el
+       bucle adaptativo ya lo bajó por fluidez, un resize no debe deshacerlo
+       (antes lo reseteaba a min(dpr, 1.5) y la GPU débil volvía a ahogarse
+       hasta el siguiente ciclo de ~90 frames). Subir es decisión del bucle. */
+    if (!weakGpuConfirmed) dprCeiling = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+    const dprCapNow = Math.min(window.devicePixelRatio || 1, DPR_CAP, dprCeiling);
+    if (dprCapNow < adaptiveDpr) adaptiveDpr = dprCapNow;
+    renderer.setPixelRatio(adaptiveDpr);
     renderer.setSize(width, height);
   }
   syncOrbitPointScale();
@@ -3748,12 +3842,15 @@ function initTextToParticlePOC() {
        niebla: dos protagonistas a la vez. Se retrasa el arranque de la
        secuencia (0 → 0,08 ≈ 12vh) para que el título aparezca cuando la
        sala ya se apagó (exitT ≈ 0,95) y el ritmo interno se conserva. */
+    /* En low-power no se programa blur: animar `filter` en scrub obliga a
+       repintar el texto en cada tick del scroll, y en una iGPU débil eso se
+       nota como tirones. La entrada por opacidad + traslación se conserva. */
     .fromTo('#stageHook h2[data-hook]',
-      { opacity: 0, y: 16, filter: 'blur(8px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.10, ease: 'none' }, 0.08)
+      { opacity: 0, y: 16, ...(LOW_POWER ? {} : { filter: 'blur(8px)' }) },
+      { opacity: 1, y: 0, ...(LOW_POWER ? {} : { filter: 'blur(0px)' }), duration: 0.10, ease: 'none' }, 0.08)
     .fromTo('.hook-lead',
-      { opacity: 0, y: 18, filter: 'blur(8px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.14, ease: 'none' }, 0.14)
+      { opacity: 0, y: 18, ...(LOW_POWER ? {} : { filter: 'blur(8px)' }) },
+      { opacity: 1, y: 0, ...(LOW_POWER ? {} : { filter: 'blur(0px)' }), duration: 0.14, ease: 'none' }, 0.14)
     .fromTo('.hook-caption',
       { opacity: 0, y: 12 },
       { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.26)
@@ -3904,13 +4001,14 @@ if (DEBUG_MODE) {
         coinFade: Number(coinFade.toFixed(3)),
         crossT: Number(crossT.toFixed(3)),
         exitT: Number(exitT.toFixed(3)),
+        lowPower: LOW_POWER || weakGpuConfirmed,
         y: Math.round(window.scrollY),
       };
     },
   };
   /* Bisectación visual de artefactos de render: permite ocultar objetos
      concretos desde herramientas externas (solo con ?debug). */
-  window.__objs = { doorGroup, doorFloor, swarm, orbitGroup, figureGroup: figureSystem ? figureSystem.group : null, scene, camera };
+  window.__objs = { doorGroup, doorFloor, swarm, orbitGroup, figureGroup: figureSystem ? figureSystem.group : null, scene, camera, renderer };
 }
 
 const lenis = new Lenis({

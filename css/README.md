@@ -1,19 +1,31 @@
 # CSS
 
 El CSS vivía dentro de un `<style>` de 3.769 líneas en `index.html`. Ahora hay
-un archivo por sección.
+un archivo por sección, que se publica concatenado en `bundle.css`.
+
+## El bundle: `npm run build:css`
+
+`index.html` carga UN solo `<link>`: `css/bundle.css`. Se genera con
+`npm run build:css` (concatena las hojas en orden) y **se commitea**, porque
+GitHub Pages publica el repo tal cual, sin paso de build. `npm run check`
+falla si el bundle quedó desactualizado, así que es imposible olvidarlo.
+
+- Los fuentes se editan en `css/*.css`, nunca en `bundle.css` (se genera).
+- `noscript.css` no entra al bundle: solo se carga dentro de `<noscript>`.
+- La versión del `<link>` (`bundle.css?v=N`) se sube a mano al cambiar CSS
+  visible, igual que se hacía con cada hoja por separado.
 
 ## La regla de oro: el orden es la cascada
 
-Estos archivos se cargan con `<link rel="stylesheet">` en `index.html`, **en el
-orden que marca el prefijo numérico**. CSS resuelve los empates de
-especificidad por orden de aparición, así que reordenar los `<link>` puede
-cambiar cómo se ve el sitio sin tocar una sola regla.
+El orden de concatenación —el mismo que tenían los `<link>`— vive en
+`tools/build-css.mjs` (`BUNDLE_FILES`) y **sigue el prefijo numérico**. CSS
+resuelve los empates de especificidad por orden de aparición, así que
+reordenar puede cambiar cómo se ve el sitio sin tocar una sola regla.
 
 - No los reordenes sin comprobar qué se rompe.
 - No los cargues con `@import` (serializa las descargas y es más lento).
 - Un archivo nuevo va con el prefijo que le corresponda por posición, no al
-  final por costumbre.
+  final por costumbre (y hay que añadirlo a `BUNDLE_FILES`).
 
 ## Mapa
 
@@ -40,7 +52,9 @@ cambiar cómo se ve el sitio sin tocar una sola regla.
 | `26-room-voice-nav.css` | La Sala: navegación por teclado de las voces en órbita. |
 | `27-figure-cabinet.css` | Gabinete de figuras 3D (panel de estado). |
 | `28-height-fixes.css` | Ajustes por altura útil en portátiles reales (600–940 px). |
-| `noscript.css` | **Solo se aplica sin JavaScript.** Va dentro de `<noscript>`. |
+| `29-low-power.css` | Modo de bajo consumo (`<body class="low-power">`): apaga todos los `backdrop-filter`/blurs y los cambia por los fondos sólidos, con los mismos tokens que el fallback táctil. Va último para pisar por cascada. Ver `js/core/perf-tier.js`. |
+| `bundle.css` | **Generado** (`npm run build:css`). Lo único que carga `index.html`. |
+| `noscript.css` | **Solo se aplica sin JavaScript.** Va dentro de `<noscript>`. No entra al bundle. |
 
 ## Convenciones
 

@@ -5,6 +5,7 @@
   "scripts": {
     "start": "python3 scripts/serve.py 8000",
     "dev": "python3 scripts/serve.py 8000",
+    "build:css": "node tools/build-css.mjs",
     "check": "node tools/smoke-test.mjs",
     "shots": "node scripts/screenshots/capture.mjs",
     "hero:check": "node scripts/screenshots/hero-check.mjs",

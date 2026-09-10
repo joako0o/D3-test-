@@ -1,0 +1,86 @@
+/* 29-low-power.css — modo de bajo consumo para GPUs débiles.
+ *
+ * Va ÚLTIMO del bundle a propósito: sus reglas pisan por cascada a las de
+ * vidrio de los stages sin tocar la especificidad de nadie. Solo aplica con
+ * <body class="low-power">, que pone main.js cuando js/core/perf-tier.js
+ * detecta pocos núcleos, poca memoria o una GPU software/integrada antigua
+ * (también con ?lowpower=1 para probarlo a mano).
+ *
+ * QUÉ SE APAGA Y POR QUÉ. `backdrop-filter: blur()` obliga al navegador a
+ * re-desenfocar todo lo que hay detrás del panel en CADA frame: con un
+ * canvas WebGL a pantalla completa repintándose debajo, cada scroll es
+ * "pintar la escena 3D + volver a desenfocar los paneles". En una integrada
+ * débil eso son los tirones que se ven en algunos PC. El precedente ya
+ * existe en el proyecto: el bloque táctil / reduced-transparency de
+ * 20-breakpoints.css midió que el blur(18px) de Actas llega a cubrir el
+ * 79 % de la pantalla, y lo cambia por el degradado "sólido". Aquí se aplica
+ * el MISMO criterio a escritorio débil, con los mismos tokens
+ * (--color-glass-solid-*): se pierde el vidrio, no el color ni la
+ * legibilidad. La única diferencia con el bloque táctil es que aquí caen
+ * TAMBIÉN los vidrios chicos (señales, citas, cierre): en un móvil el GPU
+ * da de sobra para áreas chicas, en una integrada vieja no.
+ *
+ * Lo que NO se toca: opacidades, transforms, sombras estáticas (se pintan
+ * una vez) y la animación del halo (solo opacity/transform, la compone la
+ * GPU). El blur animado por GSAP en el hook (#stageHook) no se pisa aquí
+ * con !important: main.js directamente no programa esos tweens en low-power.
+ * El gabinete de figuras (27) no se cubre: sin ?debug nunca se pinta.
+ */
+
+/* Tableros grandes de vidrio (voces, actas, lenguaje): el coste gordo.
+   Mismo fondo que el fallback táctil. */
+body.low-power .voice-explorer,
+body.low-power .acts-browser,
+body.low-power .word-evolution-board {
+  background: linear-gradient(145deg, var(--color-glass-solid-hi), var(--color-glass-solid-lo));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Tarjetas de señal del hook y de cita del epílogo. */
+body.low-power .signal-card,
+body.low-power .quote-card {
+  background: linear-gradient(145deg, var(--color-glass-solid-hi), var(--color-glass-solid-lo));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Panel flotante de cita (blur 20px, justo sobre La Sala donde más trabaja
+   la GPU). Mismo fondo que el fallback táctil de 22-quote-panel.css. */
+body.low-power #quotePanel {
+  background: rgba(10, 14, 26, 0.95);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Botón de cierre: pastilla oscura sólida en vez de vidrio dorado. */
+body.low-power .closing-cta {
+  background: rgba(10, 14, 26, 0.88);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Telón del perfil de voz. Mismo fondo que el fallback táctil. */
+body.low-power .voice-profile-backdrop {
+  background: rgba(6, 10, 20, 0.96);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Navegación por teclado de La Sala y tooltip de jerga: fondos ya sólidos,
+   solo sobra el blur. */
+body.low-power .room-voice-nav:focus-within,
+body.low-power .jargon-term::after {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Halos del mapa de intervenciones: un blur SVG por cada una de las ~99
+   marcas. Sin filtro se compensan con un poco más de opacidad. */
+body.low-power #d3-canvas .axes-data-halo {
+  filter: none;
+  opacity: 0.30;
+}
+body.low-power #d3-canvas .axes-data-mark.is-focus .axes-data-halo {
+  opacity: 0.62;
+}

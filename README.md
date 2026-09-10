@@ -14,6 +14,7 @@ Exploración interactiva de 16 años de reuniones de política monetaria en Chil
 
 ```bash
 npm start            # servidor estático en http://localhost:8000
+npm run build:css    # regenera css/bundle.css (lo único que carga index.html)
 npm run check        # arranca el sitio fuera del navegador y avisa si algo revienta
 npm run shots        # capturas reales de cada sección (necesita npm start)
 npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
@@ -23,8 +24,9 @@ npm run format:check # Prettier sobre scripts/, tools/ y los JSON (format → lo
 ```
 
 `npm run check` necesita las dependencias de desarrollo una sola vez
-(`npm install`). No hay paso de build: lo que hay en el repo es lo que se
-publica.
+(`npm install`). Casi no hay paso de build: lo que hay en el repo es lo que se
+publica, salvo `css/bundle.css`, que se genera con `npm run build:css` y se
+commitea (`check` falla si quedó desactualizado). Ver `css/README.md`.
 
 ### Calidad de código y SEO
 
@@ -480,6 +482,40 @@ Lo que se hizo (todo en `js/main.js` y `js/core/viewport.js`):
   `needsUpdate`): con `forceSinglePass = true` temporal se adquiere la
   variante que de verdad se dibuja.
 
+### PCs lentos: nivel low-power + bundle de CSS (2026-09)
+
+En algunos PC (integradas viejas, Celeron de oficina) la página se veía lenta
+aunque el hilo principal estuviera optimizado: el cuello no era el JS, era la
+GPU. Tres cambios, todos medibles en `window.__diag` (con `?debug`):
+
+1. **Nivel low-power** (`js/core/perf-tier.js` + `css/29-low-power.css`). Antes
+   de crear el renderer se decide con señales baratas (núcleos ≤ 4, memoria
+   ≤ 4 GB, override `?lowpower=1|0`): DPR capado a 1, sin antialiasing y
+   `<body class="low-power">`, que cambia todos los vidrios (`backdrop-filter`,
+   medido hasta 79 % de la pantalla en Actas) por los fondos sólidos. Justo
+   después de crear el renderer se confirma con el nombre real de la GPU
+   (SwiftShader, llvmpipe, Intel HD/UHD viejas, Adreno/Mali antiguas) y se
+   degrada aunque las señales previas dijeran que no. El blur animado por
+   GSAP en el hook tampoco se programa en este modo.
+2. **El resize ya no resetea el DPR adaptativo.** `syncViewportAndObjects()`
+   lo devolvía a `min(dpr, 1.5)` en cada resize, deshaciendo lo que el bucle
+   adaptativo había bajado; ahora solo puede bajarlo, y el techo sigue al
+   monitor (salvo GPU débil, clavado en 1).
+3. **Un solo CSS** (`npm run build:css` → `css/bundle.css`). Eran 21
+   `<link rel="stylesheet">` bloqueando el primer pintado; ahora es uno. La
+   cascada no cambia (mismo orden) y `check` falla si el bundle está viejo.
+   Además: preload de las 3 fuentes del primer frame y `.nojekyll` para que
+   Pages no pase por Jekyll en cada push.
+4. **Menos luces en el shader fuera de La Sala + `stencil: false`**
+   (2026-09-10). Las 3 luces de la sala con intensidad 0 seguían ocupando
+   slot en el shader (three.js r160 solo salta `visible = false`); ahora un
+   interruptor único las apaga fuera de la sala (hero 12→9 luces, capítulos
+   tardíos 9→6, La Sala intacta en 12) y el precalentado cubre los 3 estados
+   (puerta,sala) para no compilar en el scroll — verificado envolviendo
+   `linkProgram`: los cruces del umbral compilan 0. Además `stencil: false`
+   en el renderer (nada usa stencil ni clipping planes). Ver
+   `setRoomLightsVisible` en `js/main.js`.
+
 ### Lo que queda (medido, no adivinado)
 
 - **~2.584 reflujos forzados por pasada**: no son de este código (el perfil no
@@ -487,6 +523,15 @@ Lo que se hizo (todo en `js/main.js` y `js/core/viewport.js`):
   Lenis por frame y del style+layout que Blink fuerza al componer. Es el
   suelo de una página que anima el DOM; bajar de ahí es trabajo futuro, no un
   presupuesto que se pueda exigir hoy.
+- **Compilaciones en scroll: 3, no 0 (corrección 2026-09-10).** El "0"
+  histórico era un artefacto del arnés: el muestreador por frame ponía
+  `__gl.links` a 0 en cada rAF y el contador final salía 0 aunque hubiera
+  habido compilaciones (arreglado en `scripts/perf/measure.mjs`: el total
+  honesto es la suma de la columna por frame). Re-medido: 3 `linkProgram` en
+  2 frames, ambos en La Sala y ambos pre-existentes — primera pinta del
+  material de la órbita y de las figuras, invisibles durante el
+  precalentado, así que `compile()` no los cubre. El interruptor de luces de
+  la sala aporta 0 de esos 3.
 - **Los frames >50 ms** en este entorno los domina el raster por software; se
   informan pero no suspenden la ejecución.
 
@@ -549,6 +594,26 @@ Con el plan de `docs/PLAN_NIVEL_PREMIUM.md`, el proyecto avanza hacia una pieza
   el mapa normal en near-lossless). Fidelidad verificada por métricas (p95 del
   error angular 0°, PSNR ≥ 40 dB en píxeles visibles) y estructura intacta
   (mismos triángulos/bbox). El alfa no usado del color se aplanó con *bleed*:
+  además mejora los mipmaps del borde de la moneda.
+  La puerta que se carga hoy es `Puerta_bcch_v3.glb` (282 KB, ya con Draco);
+  las puertas anteriores y la prueba de Meshy se retiraron del repo el
+  2026-09-05 (ver la nota bajo el árbol de archivos). Receta usada para la
+  Meshy, por si se repite: `@gltf-transform/cli` `weld` + `simplify` (341k →
+  44k triángulos, error p95 ≈ 1% del bbox) + texturas 1024 WebP + Draco
+  (posición 14, normal 10, uv 12).
+- **Fuentes self-hosted** (`fonts/*.woff2` + `@font-face`): ✅ completado el 2026-08-30 (ver `fonts/README.md`).
+- **HUD "La Sala de Deliberaciones"** (`#chapterHud`): pendiente (no implementado).
+- **Descubrimiento** (`Evidencia n/100` en localStorage): pendiente (no implementado).
+- **Recorrido guiado** (`#guidedTour`): pendiente (no implementado).
+- **Audio**: desactivado por decisión del autor (no se pondrá música por ahora). El mecanismo queda documentado en `docs/PLAN_NIVEL_PREMIUM.md` por si se retoma.
+
+### Tu lista de tareas (las que dependen de ti)
+
+1. **Modelar figuras Blender** → `figures/README.md`. ✅ Balanza lista; quedan
+   `inflacion.glb`, `brote.glb`, `acta.glb`, `corpus.glb`, `campana.glb`.
+2. **Ajustar `js/scene/figures.js`** si cambian posiciones/escalas de las figuras.
+3. **Definir moodboard** (el audio quedó desactivado; ver `docs/PLAN_NIVEL_PREMIUM.md`).
+�ngulos/bbox). El alfa no usado del color se aplanó con *bleed*:
   además mejora los mipmaps del borde de la moneda.
   La puerta que se carga hoy es `Puerta_bcch_v3.glb` (282 KB, ya con Draco);
   las puertas anteriores y la prueba de Meshy se retiraron del repo el

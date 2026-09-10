@@ -95,7 +95,11 @@ await page.evaluateOnNewDocument(() => {
   window.__perf = { frames: [], tasks: [], t0: 0 };
   /* `links` y `creates` cuentan COMPILACIONES de programa: después del
      arranque deberían ser 0. Un programa recompilado en caliente bloquea el
-     hilo principal decenas de milisegundos, que es justo el tirón que se ve. */
+     hilo principal decenas de milisegundos, que es justo el tirón que se ve.
+     Ojo: el muestreador por frame pone `links` a 0 en cada rAF, así que el
+     total honesto NO es `__gl.links` al final (casi siempre sale 0) sino la
+     suma de la columna f[4] de todos los frames. `creates` no se toca por
+     frame y su total sí vale tal cual. */
   window.__gl = { draws: 0, links: 0, creates: 0, deletes: 0, infoLogs: 0, patched: false };
 
   /* Dos trampas de Chromium que costaron mediciones enteras:
@@ -637,8 +641,11 @@ console.log(
 );
 const gl = scrollPhase.perf.gl || {};
 const linkFrames = scrollPhase.perf.frames.filter((f) => f[4] > 0).length;
+/* El total honesto es la suma por frame: el muestreador pone __gl.links a 0
+   en cada rAF y el contador final sale 0 aunque haya habido compilaciones. */
+const linkTotal = scrollPhase.perf.frames.reduce((a, f) => a + (f[4] || 0), 0);
 console.log(
-  `  programas compilados     ${String(gl.links ?? 0).padStart(4)}   (debería ser 0 tras el arranque; ${linkFrames} frames con compilación)` +
+  `  programas compilados     ${String(linkTotal).padStart(4)}   (debería ser 0 tras el arranque; ${linkFrames} frames con compilación)` +
     ` · createProgram ${gl.creates ?? 0} · deleteProgram ${gl.deletes ?? 0} · getShaderInfoLog ${gl.infoLogs ?? 0}`
 );
 

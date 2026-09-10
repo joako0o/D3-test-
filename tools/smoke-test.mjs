@@ -1,6 +1,7 @@
 /* smoke-test.mjs — arranca el sitio entero fuera del navegador y avisa si algo revienta.
  *
  * QUÉ HACE
+ *   0. Comprueba que css/bundle.css está regenerado (`npm run build:css`).
  *   1. Levanta un servidor estático sobre la raíz del repo en un puerto libre.
  *   2. Carga index.html en jsdom (DOM real, sin pintar), con los scripts vendor.
  *   3. Importa js/main.js y lo deja correr unos segundos.
@@ -22,10 +23,27 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { buildCssBundle, BUNDLE_PATH } from './build-css.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TMP = path.join(ROOT, '.smoke-tmp');
 const SETTLE_MS = Number(process.env.SMOKE_SETTLE_MS || 6000);
+
+/* ── 0. El bundle de CSS está al día ───────────────────────────────────
+   css/bundle.css se genera con `npm run build:css` y se commitea (Pages no
+   tiene paso de build). Si alguien edita css/*.css y olvida regenerarlo, el
+   sitio publicado miente: falla aquí, antes de levantar nada. */
+{
+  let have = null;
+  try {
+    have = fs.readFileSync(path.join(ROOT, BUNDLE_PATH), 'utf8');
+  } catch {}
+  if (have !== buildCssBundle()) {
+    console.error(`FALLA ${BUNDLE_PATH} desactualizado: corre \`npm run build:css\` y commitea el resultado.`);
+    process.exit(1);
+  }
+  console.log(`  ok   ${BUNDLE_PATH} al día`);
+}
 
 let JSDOM;
 try {
