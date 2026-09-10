@@ -57,13 +57,23 @@
 
   <!-- Fuentes self-hosted (fonts/*.woff2). Sin dependencia de Google Fonts:
        el render ya no cambia entre local, CI y producción, y funciona offline.
-       Las @font-face viven en el bundle css/site.css; aquí solo se PRE-CARGAN
-       las tres que pinta la portada (h1 serif 600, kicker Inter 500 y el
-       cuerpo Inter 400). El resto baja con font-display:swap cuando su
-       sección las usa. -->
+       Las @font-face viven en el bundle css/site.css.
+       PRE-CARGA: las tres de la portada con prioridad normal (h1 serif 600,
+       kicker Inter 500 y el cuerpo Inter 400) y las seis de las secciones
+       con fetchpriority="low". Sin pre-carga, un swap a mitad de scroll
+       re-maqueta el texto de la sección justo cuando el lector la lee
+       (font-display:swap descarga la cara cuando su texto aparece): con
+       prioridad baja bajan durante la portada y el swap ocurre fuera de
+       pantalla. -->
   <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/playfair-display-600.woff2" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/inter-500.woff2" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/inter-400.woff2" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/playfair-display-700.woff2" fetchpriority="low" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/playfair-display-400.woff2" fetchpriority="low" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/playfair-display-500.woff2" fetchpriority="low" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/playfair-display-400-italic.woff2" fetchpriority="low" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/inter-600.woff2" fetchpriority="low" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/inter-300.woff2" fetchpriority="low" />
 
   <!-- El importmap DEBE ir antes que cualquier carga de módulo (incluidos los
        <link rel=modulepreload> de abajo), o los specifiers como "three" no
@@ -84,7 +94,7 @@
        corran en paralelo con el parseo de lo anterior. En red real recorta el
        arranque; en local (este entorno, limitado por CPU) el efecto es menor. -->
   <link rel="modulepreload" href="js/lib/three/three.module.min.js?v=1" />
-  <link rel="modulepreload" href="js/main.js?v=65" />
+  <link rel="modulepreload" href="js/main.js?v=67" />
   <link rel="modulepreload" href="js/lib/three/addons/loaders/GLTFLoader.js" />
   <link rel="modulepreload" href="js/lib/three/addons/loaders/DRACOLoader.js" />
   <link rel="modulepreload" href="js/core/config.js?v=15" />
@@ -128,7 +138,7 @@
        tools/build-css.mjs desde css/*.css (mismo orden de cascada, 21
        peticiones render-blocking → 1). Editar siempre las fuentes y
        reconstruir; `npm run check` falla si el bundle queda desactualizado. -->
-  <link rel="stylesheet" href="css/site.css?v=1" />
+  <link rel="stylesheet" href="css/site.css?v=2" />
 
   <!-- Copia cache-inmune de la acuñación. Viaja DENTRO del HTML para que el
        aro se vea aunque el navegador sirva un css/19-stage-closing.css viejo
@@ -769,7 +779,7 @@
   <script defer src="js/data/quotes.js"></script>
 
   <!-- El importmap vive en el <head> (debe preceder a toda carga de módulo). -->
-  <script type="module" src="js/main.js?v=65"></script>
+  <script type="module" src="js/main.js?v=67"></script>
 
 
 </body>

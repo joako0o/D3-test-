@@ -346,12 +346,16 @@ body::after {
   width: min(240px, 28vmin);
   height: min(240px, 28vmin);
   transform: translate(-50%, -50%);
+  /* Sin filter: el halo se reposiciona cada frame y un blur(8px) obligaba a
+     re-difuminar ese radio entero 60 veces por segundo. El degradado lleva
+     el suavizado ya horneado (más paradas en la caída). */
   background:
     radial-gradient(circle,
       rgba(255,215,106,0.42) 0%,
+      rgba(255,215,106,0.26) 14%,
       rgba(255,215,106,0.12) 32%,
+      rgba(255,215,106,0.05) 50%,
       transparent 68%);
-  filter: blur(8px);
   animation: haloPulse 8s ease-in-out infinite;
 }
 

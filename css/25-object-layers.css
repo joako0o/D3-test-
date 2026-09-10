@@ -21,11 +21,13 @@
   opacity: 0;
   will-change: transform, opacity;
   border-radius: 50%;
+  /* Sin filter ni mix-blend-mode: el reflejo sigue a la moneda frame a
+     frame y cada uno de esos filtros forzaba un re-difuminado/re-mezcla del
+     área entera 60 veces por segundo. El degradado lleva el suavizado ya
+     horneado (sobre fondo casi negro el blend apenas cambiaba nada). */
   background:
-    radial-gradient(ellipse at center 18%, rgba(255,231,166,0.42) 0%, rgba(255,215,106,0.19) 28%, rgba(255,215,106,0.055) 58%, transparent 76%),
+    radial-gradient(ellipse at center 18%, rgba(255,231,166,0.42) 0%, rgba(255,231,166,0.24) 12%, rgba(255,215,106,0.16) 26%, rgba(255,215,106,0.07) 48%, rgba(255,215,106,0.03) 66%, transparent 80%),
     linear-gradient(180deg, rgba(255,255,255,0.06), transparent 34%);
-  filter: blur(9px);
-  mix-blend-mode: screen;
 }
 .object-reflection::before {
   content: "";
@@ -33,7 +35,6 @@
   inset: 6% 16% 46%;
   border-radius: 50%;
   background: linear-gradient(90deg, transparent, rgba(255,237,188,0.46), transparent);
-  filter: blur(4px);
   opacity: 0.52;
 }
 .object-reflection::after {
@@ -100,7 +101,7 @@
 .axes-data-mark.is-focus .axes-data-halo { opacity: 0.62; }
 
 @media (max-width: 600px) {
-  .object-reflection { width: 180px; height: 42px; filter: blur(8px); }
+  .object-reflection { width: 180px; height: 42px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -467,6 +467,42 @@ ruido run-a-run):
   `filter: blur(8px→0)` sobre el titular — interpolar un blur re-rastreriza
   el texto grande en cada frame del tramo de entrada.
 
+## Raster por software y costos por frame en la portada
+
+La portada tenía tres costos de GPU **por frame** que no dependían del
+scroll (la moneda y sus capas se mueven siempre):
+
+- `.coin-halo` se reposiciona cada frame siguiendo a la moneda y además
+  tenía `filter: blur(8px)` + animación infinita → re-difuminado perpetuo de
+  un área de 240 px. El degradado ahora lleva el suavizado horneado (más
+  paradas de caída) y no hay filtro que re-rasterizar.
+- `.object-reflection` (reflejo bajo la moneda) se reposiciona cada frame y
+  combinaba `filter: blur(9px)` + `mix-blend-mode: screen` + un ::before con
+  otro blur(4px) → tres re-rasterizaciones por frame. Mismos degradados
+  pre-suavizados, cero filtros (sobre el fondo casi negro el blend no
+  cambiaba nada visible).
+- **DPR adaptable por tipo de rasterizador**: con WebGL por software
+  (SwiftShader/llvmpipe — VMs, CI, escritorios remotos, el preview de este
+  repo) cada píxel se paga en CPU, así que el tope baja de 1,5× a 1,0×, el
+  arranque a 0,75× (suelo 0,6× del adaptativo) y **se apaga el MSAA 4×**
+  (recreando el renderer sobre un canvas nuevo: un contexto WebGL no se
+  renegocia). En GPU real no cambia nada. La detección consulta el MISMO
+  contexto ya creado (`WEBGL_debug_renderer_info`): no se sondea un contexto
+  aparte (crear uno costaba 1,6 s de arranque).
+
+Medido en este entorno (raster por software): la cortina pasa de 17,7 s a
+9,9 s (−44 %) y el precalentado de 8,4 s a 4,3 s. En GPU real nada de esto
+se activa.
+
+## Fuentes de las secciones pre-cargadas (sin swaps a mitad de scroll)
+
+`font-display: swap` baja cada cara cuando su texto aparece: las seis caras
+que usan las secciones (Playfair 700/400/500/itálica, Inter 600/300) llegaban
+tarde y re-maquetaban el texto de la sección justo cuando el lector la
+recorría. Ahora viajan pre-cargadas con `fetchpriority="low"`: bajan durante
+la portada y el swap ocurre fuera de pantalla. Las tres de la portada
+conservan prioridad normal.
+
 Se conservan solo los desenfoques de área diminuta o transitoria (señales
 10 px, CTA de cierre, tooltips al hover, navegación por teclado, gabinete
 ?debug), donde el coste es despreciable y el vidrio sí luce.

@@ -138,13 +138,40 @@ let renderer = null;
    escena se queda por debajo de ~40 fps, se baja de a 0,25 y se vuelve a
    subir si la carga se recupera. Esto es lo que más nota quien entra a La
    Sala con una GPU integrada. */
-const MAX_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+let MAX_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
 let adaptiveDpr = MAX_DPR;
+/* Raster por software (SwiftShader/llvmpipe en VMs, CI, escritorios remotos,
+   este preview): cada píxel se paga en CPU. Ahí el tope 1,5× es regalar
+   trabajo: se arranca en 0,75× y el DPR adaptable puede bajar hasta 0,6×.
+   En GPU real no cambia nada. La consulta usa el MISMO contexto ya creado —
+   no se sondea un contexto aparte: crear uno costaba 1,6 s de arranque. */
+let softwareGL = false;
 {
   try {
     /* Los ornamentos de la puerta viven en pocos píxeles; con antialias=false
        los filetes y aristas se rompen justo donde necesitamos legibilidad. */
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    try {
+      const gl = renderer.getContext();
+      const dbg = gl && gl.getExtension('WEBGL_debug_renderer_info');
+      const r = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '') : '';
+      softwareGL = /swiftshader|llvmpipe|softpipe|mesa offscreen/i.test(r);
+    } catch { /* sin info del driver: se asume GPU real */ }
+    if (softwareGL) {
+      MAX_DPR = 1;
+      adaptiveDpr = 0.75;
+      /* MSAA 4× multiplica el costo de fragmento en raster por software, y el
+         canvas NO puede renegociar su contexto una vez creado: se recrea el
+         renderer sin antialias sobre un canvas nuevo (mismos atributos/id).
+         Los filetes de la puerta pierden algo de nitidez, pero con raster por
+         CPU la prioridad es el frame, no el suavizado. */
+      const aaCanvas = document.createElement('canvas');
+      for (const a of canvas.attributes) aaCanvas.setAttribute(a.name, a.value);
+      canvas.parentNode.replaceChild(aaCanvas, canvas);
+      renderer.dispose();
+      renderer = new THREE.WebGLRenderer({ canvas: aaCanvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
+      console.info('[perf] raster por software detectado: sin MSAA y resolución interna reducida (DPR adaptable 0,6–1)');
+    }
     renderer.setPixelRatio(adaptiveDpr);
     renderer.setSize(initialVp.width, initialVp.height);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -170,13 +197,16 @@ if (!renderer) {
 
 // WebGL context loss handler
 if (renderer) {
-  canvas.addEventListener('webglcontextlost', (e) => {
+  /* Sobre el canvas VIVO del renderer (en raster por software se recreó el
+     renderer sobre un canvas nuevo). */
+  const glCanvas = renderer.domElement;
+  glCanvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
     loadEl.innerHTML = '<span style="opacity:.9">Conexi&oacute;n WebGL perdida. Recargue la p&aacute;gina.</span>';
     loadEl.style.display = 'flex';
   }, false);
 
-  canvas.addEventListener('webglcontextrestored', () => {
+  glCanvas.addEventListener('webglcontextrestored', () => {
     window.location.reload();
   }, false);
 }
@@ -3599,13 +3629,14 @@ function animate() {
        arranque/precalentado no es representativo del scroll normal. */
     if (clock.elapsedTime > 2 && !reduceMotion) {
       frameSamples.push(performance.now() - frameStart);
-      if (frameSamples.length >= 90) {
+      if (frameSamples.length >= 45) {
         let sum = 0;
         for (let i = 0; i < frameSamples.length; i++) sum += frameSamples[i];
         const avg = sum / frameSamples.length;
         frameSamples.length = 0;
-        if (avg > 26 && adaptiveDpr > 1) {
-          applyAdaptiveDpr(Math.max(1, adaptiveDpr - 0.25));
+        const dprFloor = softwareGL ? 0.6 : 1;
+        if (avg > 26 && adaptiveDpr > dprFloor) {
+          applyAdaptiveDpr(Math.max(dprFloor, adaptiveDpr - 0.25));
         } else if (avg < 12 && adaptiveDpr < MAX_DPR) {
           applyAdaptiveDpr(Math.min(MAX_DPR, adaptiveDpr + 0.25));
         }
@@ -3651,7 +3682,7 @@ function syncViewportAndObjects() {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   if (renderer) {
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setPixelRatio(adaptiveDpr);
     renderer.setSize(width, height);
   }
   syncOrbitPointScale();
