@@ -518,11 +518,17 @@ GPU. Tres cambios, todos medibles en `window.__diag` (con `?debug`):
 
 ### Lo que queda (medido, no adivinado)
 
-- **~2.584 reflujos forzados por pasada**: no son de este código (el perfil no
-  encuentra ni una lectura de layout propia); vienen del `window.scrollTo` de
-  Lenis por frame y del style+layout que Blink fuerza al componer. Es el
-  suelo de una página que anima el DOM; bajar de ahí es trabajo futuro, no un
-  presupuesto que se pueda exigir hoy.
+- **~2.700 reflujos forzados por pasada (mecanismo probado 2026-09-10)**:
+  no son lecturas de medidas en este código (sonda: 248 lecturas en toda la
+  bajada, cero `getBoundingClientRect`): es el suavizado de Lenis —
+  `gsap.ticker → lenis.raf → rootElement.scrollTop = t` por frame con el
+  estilo sucio por los writes del scrub, y Blink resuelve style+layout en
+  síncrono (2.054 ms en total ≈ 15 ms/s, casi todo el coste de estilo).
+  Prueba A/B sobre los mismos píxeles: con rueda 225 eventos/181 ms, con
+  saltos instantáneos 36/7 ms. Reparto: ticker/Lenis 89 %, ScrollTrigger
+  9 %, resto ~2 %. El presupuesto (3.200) ahora vigila el contador real —
+  antes vigilaba uno que siempre daba 0 — y bajar de aquí pasa por dieta
+  de DOM (el coste por evento lo fija su tamaño), no por este código.
 - **Compilaciones en scroll: 3, no 0 (corrección 2026-09-10).** El "0"
   histórico era un artefacto del arnés: el muestreador por frame ponía
   `__gl.links` a 0 en cada rAF y el contador final salía 0 aunque hubiera

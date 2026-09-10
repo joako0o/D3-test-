@@ -712,7 +712,11 @@ console.log('  ' + '─'.repeat(76));
 check('scripting por segundo', rate(scrollTrace.totals.script), BUDGET.scriptMsPerSec);
 check('estilo por segundo', rate(scrollTrace.totals.style), BUDGET.styleMsPerSec);
 check('layout por segundo', rate(scrollTrace.totals.layout), BUDGET.layoutMsPerSec);
-check('reflujos forzados', scrollTrace.forced, BUDGET.forcedReflows, 'uds');
+/* `scrollTrace.forced` (layouts CON pila) es siempre 0: la pila solo viene con
+   la categoría `timeline.stack`, que no se activa. El que cuenta de verdad es
+   `counts.forced` (eventos Blink.ForcedStyleAndLayout.UpdateTime). El coste en
+   ms lo vigila ya el presupuesto de estilo por segundo. */
+check('reflujos forzados', scrollTrace.counts.forced, BUDGET.forcedReflows, 'uds');
 check('peor tarea larga', longTasks.length ? longTasks[0][1] : 0, BUDGET.longTaskMs);
 /* Los frames por encima de 50 ms se INFORMAN pero no suspenden: en este
    entorno el raster es por software y el número lo domina SwiftShader, no el
@@ -754,7 +758,7 @@ const result = {
     style: Number(rate(scrollTrace.totals.style).toFixed(1)),
     layout: Number(rate(scrollTrace.totals.layout).toFixed(1)),
   },
-  forcedReflows: scrollTrace.forced,
+  forcedReflows: scrollTrace.counts.forced,
   worstLongTaskMs: longTasks.length ? longTasks[0][1] : 0,
   idle: {
     p50: idleFrames.p50,
