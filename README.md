@@ -447,6 +447,34 @@ en red es proporcionalmente mayor), y la cortina se levanta sin esperar a
 nada de lo diferido. Ver `tools/net-profile.mjs` para volver a medir el
 inventario de red.
 
+## Fluidez GPU: sin re-desenfoques por frame
+
+El `backdrop-filter` de los paneles grandes era el trabajo de GPU más caro
+del recorrido: re-difuminaba **cada frame** el canvas 3D animado que vive
+detrás — incluso sin hacer scroll, porque la moneda y las partículas se
+mueven siempre. Medido por el propio CSS: el blur(18px) de Voces cubría el
+36 % de la pantalla y el de Actas el 79 %.
+
+Lo que se retiró (y con qué se sustituyó, sin cambio de color perceptible —
+validado con capturas píxel a píxel: ≤1,3 % de píxeles distintos, dentro del
+ruido run-a-run):
+
+- `.word-evolution-board`, `.voice-explorer`, `.acts-browser` →
+  degradado "glass sólido" (tokens `--color-glass-solid-*`, ya existentes).
+- `.quote-card`, telón del perfil de voz, `#quotePanel` (escritorio y móvil)
+  → fondo más opaco (ya eran 88–96 % opacos: el blur no aportaba).
+- Tweens de entrada de El Método (`.stage-hook`): ya no animan
+  `filter: blur(8px→0)` sobre el titular — interpolar un blur re-rastreriza
+  el texto grande en cada frame del tramo de entrada.
+
+Se conservan solo los desenfoques de área diminuta o transitoria (señales
+10 px, CTA de cierre, tooltips al hover, navegación por teclado, gabinete
+?debug), donde el coste es despreciable y el vidrio sí luce.
+
+Medido antes/después en esta máquina (SwiftShader): estilo 10,3 → 7,1 ms/s
+de scroll y frames lentos 85,8 → 80,0 por cada 100; en GPU real la mejora
+es proporcionalmente mayor porque el blur por frame era puro raster.
+
 ## Fluidez (medida, no impresiones)
 
 "Va más suave" sin número era justo la clase de afirmación que este proyecto

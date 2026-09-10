@@ -3841,11 +3841,13 @@ function initTextToParticlePOC() {
        secuencia (0 → 0,08 ≈ 12vh) para que el título aparezca cuando la
        sala ya se apagó (exitT ≈ 0,95) y el ritmo interno se conserva. */
     .fromTo('#stageHook h2[data-hook]',
-      { opacity: 0, y: 16, filter: 'blur(8px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.10, ease: 'none' }, 0.08)
+      /* Sin animar `filter`: un blur interpolado por frame re-rastreriza el
+         titular entero durante todo el tramo de entrada (GPU). */
+      { opacity: 0, y: 16 },
+      { opacity: 1, y: 0, duration: 0.10, ease: 'none' }, 0.08)
     .fromTo('.hook-lead',
-      { opacity: 0, y: 18, filter: 'blur(8px)' },
-      { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.14, ease: 'none' }, 0.14)
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.14)
     .fromTo('.hook-caption',
       { opacity: 0, y: 12 },
       { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.26)

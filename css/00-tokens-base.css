@@ -18,11 +18,12 @@
   --color-bg: #0a0e1a;
 
   /* ── Glass "sólido" ──
-     Versión sin desenfoque de los paneles grandes (ver 20-breakpoints.css):
-     el velo blanco del vidrio (rgba(255,255,255,.055)→.018) ya mezclado sobre
-     --color-bg, listo para usarse cuando el dispositivo no desenfoca
-     (pantallas táctiles y transparencia reducida). Por eso el color no cambia
-     respecto del vidrio real: solo se elimina el trabajo de la GPU. */
+     Versión sin desenfoque de los paneles grandes (word-evolution-board,
+     voice-explorer, acts-browser): el velo blanco del vidrio
+     (rgba(255,255,255,.055)→.018) ya mezclado sobre --color-bg. Es el DEFAULT
+     desde que se retiró el backdrop-filter de esos paneles (ver
+     20-breakpoints.css): el color no cambia respecto del vidrio real, solo se
+     elimina el re-desenfoque por frame del canvas 3D animado. */
   --color-glass-solid-hi: #181b27;
   --color-glass-solid-lo: #0e121e;
 

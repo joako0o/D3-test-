@@ -51,9 +51,9 @@
 .quote-card {
   padding: 32px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.025);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  /* Sin blur: el 14px anterior re-difuminaba el canvas animado cada frame.
+     Velo blanco 0,025 pre-mezclado sobre --color-bg (#0a0e1a ≈ #101420). */
+  background: linear-gradient(160deg, #121624, #0c101b);
   border: 1px solid var(--color-surface-border);
   opacity: 0;
   transform: translateY(24px);
