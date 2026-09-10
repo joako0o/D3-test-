@@ -3,17 +3,37 @@
 El CSS vivía dentro de un `<style>` de 3.769 líneas en `index.html`. Ahora hay
 un archivo por sección.
 
+## Publicación: un solo archivo (css/site.css)
+
+`index.html` NO enlaza estos archivos: enlaza **`css/site.css`**, el bundle
+generado por `tools/build-css.mjs`, que los concatena **en este mismo orden**
+y los minifica de forma conservadora (comentarios y espacios fuera; cadenas,
+`url(...)` y `calc(...)` intactos). Así el primer render son 100 KB en UNA
+petición en vez de 21 peticiones render-blocking.
+
+Flujo al editar CSS:
+
+1. Editar la fuente (`css/00-*.css` … `css/28-*.css`).
+2. `node tools/build-css.mjs` → regenera `css/site.css` (se committea).
+3. `npm run check` falla si el bundle committeado no coincide con las fuentes.
+
+`css/noscript.css` queda fuera del bundle a propósito: viaja en `<noscript>`
+y solo se descarga cuando el JS no corre.
+
 ## La regla de oro: el orden es la cascada
 
-Estos archivos se cargan con `<link rel="stylesheet">` en `index.html`, **en el
-orden que marca el prefijo numérico**. CSS resuelve los empates de
-especificidad por orden de aparición, así que reordenar los `<link>` puede
-cambiar cómo se ve el sitio sin tocar una sola regla.
+Las fuentes se concatenan en `css/site.css` **en el orden que marca el prefijo
+numérico**. CSS resuelve los empates de especificidad por orden de aparición,
+así que reordenarlas puede cambiar cómo se ve el sitio sin tocar una sola
+regla.
 
-- No los reordenes sin comprobar qué se rompe.
-- No los cargues con `@import` (serializa las descargas y es más lento).
+- No las reordenes sin comprobar qué se rompe, y si lo haces, reconstruye el
+  bundle (el orden vive en `SOURCES` de `tools/build-css.mjs`, NO en
+  `index.html`).
+- No las cargues con `@import` (serializa las descargas y es más lento).
 - Un archivo nuevo va con el prefijo que le corresponda por posición, no al
-  final por costumbre.
+  final por costumbre, y hay que añadirlo a `SOURCES` de
+  `tools/build-css.mjs` y regenerar el bundle.
 
 ## Mapa
 

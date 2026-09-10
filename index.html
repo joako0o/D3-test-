@@ -56,8 +56,14 @@
   </script>
 
   <!-- Fuentes self-hosted (fonts/*.woff2). Sin dependencia de Google Fonts:
-       el render ya no cambia entre local, CI y producción, y funciona offline. -->
-  <link rel="stylesheet" href="css/fonts.css?v=2" />
+       el render ya no cambia entre local, CI y producción, y funciona offline.
+       Las @font-face viven en el bundle css/site.css; aquí solo se PRE-CARGAN
+       las tres que pinta la portada (h1 serif 600, kicker Inter 500 y el
+       cuerpo Inter 400). El resto baja con font-display:swap cuando su
+       sección las usa. -->
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/playfair-display-600.woff2" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/inter-500.woff2" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/inter-400.woff2" />
 
   <!-- El importmap DEBE ir antes que cualquier carga de módulo (incluidos los
        <link rel=modulepreload> de abajo), o los specifiers como "three" no
@@ -78,11 +84,11 @@
        corran en paralelo con el parseo de lo anterior. En red real recorta el
        arranque; en local (este entorno, limitado por CPU) el efecto es menor. -->
   <link rel="modulepreload" href="js/lib/three/three.module.min.js?v=1" />
-  <link rel="modulepreload" href="js/main.js?v=63" />
+  <link rel="modulepreload" href="js/main.js?v=64" />
   <link rel="modulepreload" href="js/lib/three/addons/loaders/GLTFLoader.js" />
   <link rel="modulepreload" href="js/lib/three/addons/loaders/DRACOLoader.js" />
   <link rel="modulepreload" href="js/core/config.js?v=15" />
-  <link rel="modulepreload" href="js/scene/figures.js?v=4" />
+  <link rel="modulepreload" href="js/scene/figures.js?v=5" />
   <link rel="modulepreload" href="js/core/viewport.js?v=2" />
   <!-- Segundo nivel del grafo (lo importa main.js): sin estas pistas el
        navegador recién los descubre al terminar de parsear main.js. -->
@@ -92,18 +98,16 @@
   <link rel="modulepreload" href="js/core/utils.js" />
   <link rel="modulepreload" href="js/lib/three/addons/utils/BufferGeometryUtils.js" />
   <link rel="modulepreload" href="js/lib/three/addons/environments/RoomEnvironment.js" />
-  <link rel="modulepreload" href="js/sections/word-evolution.js" />
-  <link rel="modulepreload" href="js/sections/voice-explorer.js?v=2" />
-  <link rel="modulepreload" href="js/sections/act-browser.js" />
-  <link rel="modulepreload" href="js/sections/axes-map.js?v=3" />
-  <link rel="modulepreload" href="js/sections/timeline.js?v=3" />
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
        incluida) debe ser IDÉNTICA a la que pide el loader en main.js, o el
        navegador descarta el preload y baja el archivo dos veces. `crossorigin`
        porque fetch() en modo cors no reutiliza un preload sin ese atributo. -->
-  <link rel="preload" as="fetch" href="monedav5-draco.glb" crossorigin />
-  <link rel="preload" as="fetch" href="Puerta_bcch_v3.glb?v=16" crossorigin />
+  <link rel="preload" as="fetch" href="monedav5-draco.glb?v=2" crossorigin />
+  <!-- La puerta ya no está en el camino crítico de la cortina (solo la
+       moneda la gana): baja con prioridad baja para no competir con la
+       moneda ni con el wasm de Draco. -->
+  <link rel="preload" as="fetch" href="Puerta_bcch_v3.glb?v=17" crossorigin fetchpriority="low" />
   <!-- El decodificador Draco (wasm + wrapper) se necesita para abrir CUALQUIER
        GLB: se baja junto a ellos, no después de evaluar three.js. -->
   <link rel="preload" as="fetch" href="js/vendor/draco/draco_decoder.wasm" crossorigin />
@@ -114,31 +118,17 @@
   <!--
     HOJAS DE ESTILO
     ───────────────
-    El CSS vivia dentro de <style> en este mismo archivo (3.769 lineas). Ahora
-    esta en css/, un archivo por seccion. EL ORDEN DE ESTOS <link> ES LA
-    CASCADA: no los reordenes ni los cargues con @import o con media dinamico.
-    El prefijo numerico del nombre marca ese orden. Ver css/README.md.
+    Las fuentes viven en css/, un archivo por seccion, y se publican como UN
+    solo bundle (css/site.css) generado por tools/build-css.mjs: el orden de
+    concatenacion ES la cascada y el prefijo numerico marca ese orden. No
+    anadir <link> nuevos aqui: editar la fuente y reconstruir el bundle.
+    Ver css/README.md.
   -->
-  <link rel="stylesheet" href="css/00-tokens-base.css?v=10" />
-  <link rel="stylesheet" href="css/10-stage-hook.css?v=3" />
-  <link rel="stylesheet" href="css/11-stage-map.css?v=2" />
-  <link rel="stylesheet" href="css/12-stage-counters.css?v=2" />
-  <link rel="stylesheet" href="css/13-stage-pipeline.css?v=2" />
-  <link rel="stylesheet" href="css/14-stage-language.css?v=2" />
-  <link rel="stylesheet" href="css/15-stage-acts.css?v=2" />
-  <link rel="stylesheet" href="css/16-stage-voices.css?v=3" />
-  <link rel="stylesheet" href="css/17-stage-timeline.css?v=2" />
-  <link rel="stylesheet" href="css/18-stage-quotes.css?v=2" />
-  <link rel="stylesheet" href="css/19-stage-closing.css?v=4" />
-  <link rel="stylesheet" href="css/20-breakpoints.css?v=4" />
-  <link rel="stylesheet" href="css/21-a11y-focus.css?v=4" />
-  <link rel="stylesheet" href="css/22-quote-panel.css?v=4" />
-  <link rel="stylesheet" href="css/23-a11y-jargon.css?v=3" />
-  <link rel="stylesheet" href="css/24-layout-fluid.css?v=3" />
-  <link rel="stylesheet" href="css/25-object-layers.css?v=2" />
-  <link rel="stylesheet" href="css/26-room-voice-nav.css?v=5" />
-  <link rel="stylesheet" href="css/27-figure-cabinet.css?v=2" />
-  <link rel="stylesheet" href="css/28-height-fixes.css?v=2" />
+  <!-- CSS UNIFICADO: css/site.css es el bundle generado por
+       tools/build-css.mjs desde css/*.css (mismo orden de cascada, 21
+       peticiones render-blocking → 1). Editar siempre las fuentes y
+       reconstruir; `npm run check` falla si el bundle queda desactualizado. -->
+  <link rel="stylesheet" href="css/site.css?v=1" />
 
   <!-- Copia cache-inmune de la acuñación. Viaja DENTRO del HTML para que el
        aro se vea aunque el navegador sirva un css/19-stage-closing.css viejo
@@ -768,18 +758,18 @@
   <!-- `defer`: los vendor dejan de bloquear el parser (Lighthouse los contaba
        como bloqueo de render, ~0,9 s). Los scripts diferidos se ejecutan en
        orden de documento y ANTES que el módulo main.js (que también es
-       diferido por definición), así que gsap/d3/QUOTES siguen existiendo
-       cuando main.js se evalúa. -->
+       diferido por definición), así que gsap/QUOTES siguen existiendo cuando
+       main.js se evalúa. d3 ya no vive aquí: lo inyecta main.js en diferido
+       (startDeferredSections), junto con las secciones de mitad de página. -->
   <script defer src="js/vendor/lenis.min.js"></script>
   <script defer src="js/vendor/gsap.min.js"></script>
   <script defer src="js/vendor/ScrollTrigger.min.js"></script>
   <script defer src="js/vendor/CustomEase.min.js"></script>
   <script defer src="js/vendor/SplitText.min.js"></script>
-  <script defer src="js/vendor/d3.min.js"></script>
   <script defer src="js/data/quotes.js"></script>
 
   <!-- El importmap vive en el <head> (debe preceder a toda carga de módulo). -->
-  <script type="module" src="js/main.js?v=63"></script>
+  <script type="module" src="js/main.js?v=64"></script>
 
 
 </body>

@@ -20,12 +20,19 @@ esta tabla.**
 
 - **Los imports dentro de `js/` son relativos al archivo.** Si mueves un
   módulo, actualiza las rutas de quien lo importa y el `modulepreload` de
-  `index.html`.
+  `index.html` (solo para los módulos del arranque: los diferidos no llevan
+  modulepreload a propósito).
 - **El `importmap` vive en `index.html` y apunta a `js/lib/three/`.** No
   referencies `three` desde una ruta absoluta: usa `import * as THREE from 'three'`
   o el specifier `'three/addons/...'`.
 - **Datos**: `quotes.js` se carga como `<script defer>` (script clásico) porque
   las secciones D3 y la escena leen `window.QUOTES`. Todo lo demás es un módulo.
+- **Secciones diferidas**: `sections/` ya NO se importa estático desde
+  `main.js`. `startDeferredSections()` (en `main.js`) baja d3 + los cinco
+  módulos de sección al levantar la cortina de carga y los inicializa en el
+  MISMO orden de antes. Si añades un módulo de sección nuevo que solo se usa
+  a mitad de página, mételo ahí: el arranque no debe pagar su descarga ni su
+  parseo.
 - **No muevas `vmo` de `vendor/` ni de `lib/three/`**: son dependencias.
 - **No agregues lógica 3D pesada a `core/config.js`**: es configuración, no render.
 - **Código sin usar**: va a `legacy/`, no a la basura sin aviso; puede servir

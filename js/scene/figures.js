@@ -44,7 +44,7 @@ export const FIGURE_DEFS = [
     id: 'balanza',
     label: 'Balanza',
     subtitle: 'Equilibrio hawkish / dovish',
-    glb: 'figures/balanza.glb',
+    glb: 'figures/balanza.glb?v=1',
     available: true,
     /* Centro y al FONDO de la La Sala (pieza central, tipo museo).
        La cámara entra mirando a z=-2.0; a z=-4.8 queda detrás de la nube
@@ -122,11 +122,15 @@ export const FIGURE_DEFS = [
  * Crea todos los grupos de figuras y devuelve un objeto para actualizarlas.
  * Se invoca con `scene` ya construida.
  */
-export function initFigureSystem(scene, { onReady = null, debug = false, dracoLoader = null } = {}) {
+export function initFigureSystem(scene, { onReady = null, debug = false, dracoLoader = null, lazyLoad = false } = {}) {
   const figures = new Map();
   const group = new THREE.Group();
   group.name = 'dioramas';
   scene.add(group);
+  /* lazyLoad: las descargas se encolan y solo se disparan con beginLoads()
+     (main.js lo llama al levantar la cortina, para no competir con la moneda
+     por el ancho de banda del arranque). */
+  const pendingLoads = [];
 
   /* Se comparte el decodificador Draco de main.js (un worker y una descarga
      del wasm para todos los GLB). Solo se crea uno propio si nadie lo pasa
@@ -303,11 +307,15 @@ export function initFigureSystem(scene, { onReady = null, debug = false, dracoLo
     /* No hacer HEAD a GLBs ausentes: cada 404 ensucia consola y red.
        Solo se carga si `available: true`. Los placeholders y el gabinete
        quedan reservados al modo ?debug. */
-    if (def.available) {
+    const loadModel = () => {
       if (debug) markCabinet(def, 'searching');
       loader.loadAsync(def.glb).then(applyModel).catch(() => {
         if (debug) showPlaceholder();
       });
+    };
+    if (def.available) {
+      if (lazyLoad) pendingLoads.push(loadModel);
+      else loadModel();
     } else if (debug) {
       showPlaceholder();
     }
@@ -355,5 +363,14 @@ export function initFigureSystem(scene, { onReady = null, debug = false, dracoLo
     }
   }
 
-  return { group, figures, defs: FIGURE_DEFS, restack };
+  return {
+    group,
+    figures,
+    defs: FIGURE_DEFS,
+    restack,
+    /* Dispara las descargas encoladas por `lazyLoad`. Idempotente. */
+    beginLoads: () => {
+      while (pendingLoads.length) pendingLoads.shift()();
+    },
+  };
 }

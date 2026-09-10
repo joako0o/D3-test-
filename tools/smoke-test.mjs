@@ -21,11 +21,26 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TMP = path.join(ROOT, '.smoke-tmp');
 const SETTLE_MS = Number(process.env.SMOKE_SETTLE_MS || 6000);
+
+/* El bundle CSS committeado (css/site.css) debe coincidir con las fuentes:
+   si alguien editó css/*.css sin reconstruirlo, el sitio publicado llevaría
+   CSS viejo. Fallar aquí es más barato que descubrirlo en producción. */
+{
+  const check = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'build-css.mjs'), '--check'], {
+    encoding: 'utf8',
+  });
+  if (check.status !== 0) {
+    console.error(check.stdout || '');
+    console.error(check.stderr || '');
+    process.exit(1);
+  }
+}
 
 let JSDOM;
 try {
@@ -230,7 +245,15 @@ for (const k of BRIDGE) {
     Object.defineProperty(globalThis, k, { value, configurable: true, writable: true });
   } catch {}
 }
-const vendors = ['gsap', 'ScrollTrigger', 'd3', 'Lenis', 'SplitText', 'CustomEase'];
+/* d3 ya no viaja como script defer en el HTML: lo inyecta main.js en
+   diferido (startDeferredSections). Como llega después de este puente, se
+   expone un getter dinámico: los módulos de secciones leen el global `d3`
+   igual que en el navegador (window), sin importar cuándo cargue. */
+Object.defineProperty(globalThis, 'd3', {
+  get: () => w.d3,
+  configurable: true,
+});
+const vendors = ['gsap', 'ScrollTrigger', 'Lenis', 'SplitText', 'CustomEase'];
 const missing = vendors.filter((k) => !w[k]);
 console.log('vendors:', vendors.map((k) => `${k}:${w[k] ? 'ok' : 'FALTA'}`).join(' '));
 if (missing.length) errors.push('vendor no cargado: ' + missing.join(', '));
@@ -257,6 +280,10 @@ try {
   errors.push('import de js/main.js: ' + (e.stack || e));
 }
 await new Promise((r) => setTimeout(r, SETTLE_MS));
+
+/* d3 llega en diferido: startDeferredSections() debió inyectarlo durante el
+   settle (el getter de arriba ya lo expone a los módulos de sección). */
+if (!w.d3) errors.push('vendor no cargado: d3 (diferido)');
 
 /* ── 5. Comprobaciones sobre el DOM ya construido ────────────────────── */
 const checks = [];

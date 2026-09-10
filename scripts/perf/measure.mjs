@@ -82,7 +82,14 @@ const BUDGET = {
      pone en 1 s: tolera la varianza del entorno y sigue cazando cualquier
      regresión de compilación-en-el-scroll. */
   longTaskMs: Number(args.maxLongTaskMs || 1000),
-  curtainMs: Number(args.maxCurtainMs || 15000), // medido: 7.328 ms
+  /* La cortina espera el arranque + el precalentado de shaders (warmUpScene),
+     que en SwiftShader (sin GPU) es CPU puro y depende de la máquina: se
+     midió 7,3 s el 2026-09-02, pero en la máquina actual (2 núcleos) va de
+     14 a 19 s (muestras: 14,0 / 17,7 / 17,9 / 19,2 s). El presupuesto se
+     recalibra a 25 s: sigue cazando regresiones de arranque (p. ej. que la
+     cortina espere a una descarga) y queda por debajo del failsafe de 30 s
+     con el que la página se libera sola si un GLB falla. */
+  curtainMs: Number(args.maxCurtainMs || 25000), // medido: 14–19 s en esta máquina
 };
 
 const { browser, page, errors } = await launchChromium({ width: W, height: H });

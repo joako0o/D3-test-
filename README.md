@@ -20,6 +20,8 @@ npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa
 npm run perf         # mide la fluidez del hilo principal haciendo scroll (ver § Fluidez)
 npm run lint         # ESLint sobre el código propio: variables sin definir, imports sin usar…
 npm run format:check # Prettier sobre scripts/, tools/ y los JSON (format → los reescribe)
+node tools/build-css.mjs   # regenera css/site.css tras editar css/*.css (check lo exige)
+node tools/compress-glbs.mjs # recomprime puerta/moneda/balanza (validar con shots + hero:check)
 ```
 
 `npm run check` necesita las dependencias de desarrollo una sola vez
@@ -414,6 +416,37 @@ y en el Paso 2 quedaron todas por debajo del 0,4 %.
 `index.html` son de la maqueta original y varios los pisa GSAP en caliente;
 moverlos a CSS sin comprobarlo uno a uno rompe animaciones.
 
+## Optimización de carga (para GitHub Pages)
+
+El sitio se publica tal cual está en el repo, así que la optimización vive en
+los artefactos committeados. Lo que se hizo, por orden de impacto en red real:
+
+- **CSS en un solo bundle** (`css/site.css`, ~100 KB): antes eran 21 hojas
+  render-blocking en el camino crítico del primer render. Generado por
+  `tools/build-css.mjs`; `npm run check` falla si queda desactualizado.
+- **GLB recomprimidos**: la puerta salía de Blender sin Draco (282 KB de
+  geometría cruda → 21 KB, −93 %); la moneda traía su textura de relieve como
+  WebP SIN pérdida (282 KB → 20 KB lossy q90, PSNR ~44 dB, imperceptible);
+  la balanza re-cuantizada (173 → 136 KB). Ver `tools/compress-glbs.mjs`.
+- **JS diferido**: d3 (~280 KB) y los cinco módulos de secciones de mitad de
+  página (ejes, timeline, voces, actas, evolución del lenguaje) ya no se
+  descargan ni se parsean en el arranque: `startDeferredSections()` los baja
+  al levantar la cortina (o al primer scroll / failsafe de 30 s) y los monta
+  en el MISMO orden de triggers que antes, con un `ScrollTrigger.refresh()`
+  final. La cortina ya no espera ni su descarga ni su parseo.
+- **Figuras de La Sala diferidas**: `initFigureSystem({ lazyLoad: true })`
+  encola pedestal y balanza; `beginLoads()` los pide al destapar la cortina.
+- **Preloads afinados**: se pre-cargan solo las 3 fuentes que pinta la
+  portada (Playfair 600, Inter 500/400) y la puerta baja con
+  `fetchpriority="low"` (la cortina ya no la espera). La moneda y el wasm de
+  Draco conservan prioridad alta: son el camino crítico de la portada.
+
+Efecto medido en arranque local: **62 peticiones / 3,2 MB → ~20 peticiones /
+1,7 MB sin comprimir** (GitHub Pages sirve con gzip, así que la mejora real
+en red es proporcionalmente mayor), y la cortina se levanta sin esperar a
+nada de lo diferido. Ver `tools/net-profile.mjs` para volver a medir el
+inventario de red.
+
 ## Fluidez (medida, no impresiones)
 
 "Va más suave" sin número era justo la clase de afirmación que este proyecto
@@ -436,7 +469,12 @@ Medido en 1440×900, recorrido completo, antes y después del trabajo del
 | bucle rAF (Lenis+GSAP+animate) | 175 ms/s | 29 ms/s | −83 % |
 | peor tarea larga | 11.047 ms | 156 ms | −98,6 % |
 | programas compilados en pleno scroll | 5 | 0 | |
-| cortina de carga | — | ≈7,3 s | el coste se paga aquí |
+| cortina de carga | — | ≈14–19 s* | el coste se paga aquí |
+
+\* La cortina espera el arranque + el precalentado de shaders; en SwiftShader
+  es CPU puro y depende de la máquina: 7,3 s el 2026-09-02, 14–19 s en la
+  máquina actual de 2 núcleos. El presupuesto en `scripts/perf/measure.mjs`
+  está recalibrado a 25 s (muestras: 14,0 / 17,7 / 17,9 / 19,2 s).
 
 Lo que se hizo (todo en `js/main.js` y `js/core/viewport.js`):
 

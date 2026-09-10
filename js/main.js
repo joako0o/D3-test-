@@ -14,7 +14,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { initFigureSystem } from './scene/figures.js?v=4';
+import { initFigureSystem } from './scene/figures.js?v=5';
 import { buildCentralBankDoor } from './scene/build-door.js?v=14';
 import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './core/config.js?v=15';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './core/viewport.js?v=2';
@@ -22,11 +22,10 @@ import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
   voiceFocus, axesState, focusReturn, particleFocus,
 } from './core/interaction-state.js';
-import { initWordEvolution } from './sections/word-evolution.js';
-import { initVoiceExplorer } from './sections/voice-explorer.js?v=2';
-import { initActBrowser } from './sections/act-browser.js';
-import { initD3Axes } from './sections/axes-map.js?v=3';
-import { initTimeline } from './sections/timeline.js?v=3';
+/* Los módulos de secciones de mitad de página (d3 + gráficos) se cargan en
+   diferido: ver startDeferredSections() más abajo. Cargarlos aquí pagaba su
+   descarga y parseo por adelantado, en el arranque, cuando el lector todavía
+   no llega a ninguna de esas secciones. */
 import { particleRandom, getQuoteAxisSentiment } from './core/utils.js';
 
 /* Los timelines de la escena se crean durante la inicialización de los
@@ -429,6 +428,10 @@ preloadDraco('js/vendor/draco/').catch(() => {
 const figureSystem = initFigureSystem(scene, {
   dracoLoader,
   debug: DEBUG_MODE,
+  /* lazyLoad: los GLB de La Sala (pedestal + balanza, ~160 KB) no compiten
+     con la moneda por el ancho de banda del arranque; se piden en
+     figureSystem.beginLoads() cuando la cortina ya se levantó. */
+  lazyLoad: true,
   onReady: () => setTimeout(warmUpScene, 0),
 });
 
@@ -669,7 +672,14 @@ manager.onLoad = () => {
      sigue girando mientras tanto, que es justo lo contrario de antes.
      `finally` y no `then` para que un fallo no deje la cortina puesta. */
   warmUpScene().finally(() => {
-    setTimeout(() => { if (renderer) loadEl.classList.add('hidden'); }, 300);
+    setTimeout(() => {
+      if (renderer) loadEl.classList.add('hidden');
+      /* Descargas diferidas JUSTO al destapar: d3 + secciones + figuras de
+         La Sala bajan mientras el lector mira la portada, sin competir con
+         la moneda ni con el wasm de Draco por el ancho de banda. */
+      startDeferredSections();
+      if (figureSystem?.beginLoads) figureSystem.beginLoads();
+    }, 300);
   });
 };
 manager.onError = (url) => console.warn('Error cargando recurso:', url);
@@ -681,15 +691,19 @@ setTimeout(() => {
   }
 }, 15000);
 /* Red de seguridad: si a los 30s nada terminó de cargar, liberar la página igual.
-   (Antes el overlay bloqueaba la página para siempre si un GLB fallaba.) */
+   (Antes el overlay bloqueaba la página para siempre si un GLB fallaba.)
+   Aunque la cortina siga puesta, las secciones diferidas deben montarse:
+   son las que dibujan los gráficos de mitad de página. */
 setTimeout(() => {
   if (loadEl && !loadEl.classList.contains('hidden')) loadEl.classList.add('hidden');
+  startDeferredSections();
+  if (figureSystem?.beginLoads) figureSystem.beginLoads();
 }, 30000);
 
 
 const loader = new GLTFLoader(manager);
 loader.setDRACOLoader(dracoLoader);
-loader.load('monedav5-draco.glb', (gltf) => {
+loader.load('monedav5-draco.glb?v=2', (gltf) => {
   const model = gltf.scene;
   /* El GLB se exportó con el disco en el plano Y-Z (su nodo raíz trae una
      rotación de +90° en X): sin corrección, el eje fino de la moneda queda
@@ -728,7 +742,11 @@ loader.load('monedav5-draco.glb', (gltf) => {
 }, undefined, (err) => {
   console.error('Error cargando GLB:', err);
   loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la moneda</span>';
-  setTimeout(() => loadEl.classList.add('hidden'), 1200);
+  setTimeout(() => {
+    loadEl.classList.add('hidden');
+    startDeferredSections();
+    if (figureSystem?.beginLoads) figureSystem.beginLoads();
+  }, 1200);
 });
 
 /* ────────────────────────────────
@@ -1681,7 +1699,7 @@ function buildOpenableBcchDoor(sourceModel, rawCenter) {
   return group;
 }
 
-loader.load('Puerta_bcch_v3.glb?v=16', (gltf) => {
+loader.load('Puerta_bcch_v3.glb?v=17', (gltf) => {
   const rawBox = new THREE.Box3().setFromObject(gltf.scene);
   const rawCenter = rawBox.getCenter(new THREE.Vector3());
   const model = buildOpenableBcchDoor(gltf.scene, rawCenter);
@@ -2721,8 +2739,76 @@ const _doorFitV = new THREE.Vector3();
 
 /* "Las voces" vive en js/sections/voice-explorer.js.
    La llamada se queda AQUÍ, en el mismo punto de la ejecución que antes: el
-   orden en que se crean los ScrollTrigger es parte del contrato. */
-initVoiceExplorer({ quotes, openQuote, closeQuotePanel });
+   orden en que se crean los ScrollTrigger es parte del contrato.
+   Antes era `initVoiceExplorer({...})` directo. Ahora vive en
+   startDeferredSections() (abajo): los cinco módulos de secciones y d3 se
+   bajan DESPUÉS de levantar la cortina, no en el arranque. El orden de las
+   llamadas dentro de startDeferredSections conserva el orden original. */
+
+/* ────────────────────────────────
+   Secciones diferidas: d3 + los cinco gráficos de mitad de página
+────────────────────────────────
+   d3.min.js (~280 KB) y los módulos axes-map, timeline, word-evolution,
+   voice-explorer y act-browser solo se usan a partir de La Sala. En el
+   arranque eran ~350 KB de JS extra compitiendo con la moneda y el wasm de
+   Draco por el ancho de banda, y parseo que el lector no necesitaba todavía.
+
+   Aquí se bajan e inicializan al levantar la cortina —mientras el lector
+   todavía mira la portada— de modo que al llegar a sus secciones todo esté
+   montado y los pins de ScrollTrigger se creen con el documento ya en
+   reposo. `startDeferredSections()` es idempotente y se dispara desde:
+   el final de la carga, el primer scroll y un failsafe de 30 s (el mismo
+   plazo con el que se levanta la cortina si un GLB falla). */
+let deferredStartPromise = null;
+let deferredFns = null;
+
+function startDeferredSections() {
+  if (deferredStartPromise) return deferredStartPromise;
+  deferredStartPromise = (async () => {
+    try {
+      /* d3 es un script clásico que expone `window.d3`: se inyecta, no se
+         importa (los módulos de secciones lo leen como global). */
+      if (!window.d3) {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'js/vendor/d3.min.js';
+          s.onload = () => resolve(window.d3);
+          s.onerror = () => reject(new Error('No se pudo cargar d3.min.js'));
+          document.head.appendChild(s);
+        });
+      }
+      const [axesMap, timeline, wordEvolution, voiceExplorer, actBrowser] = await Promise.all([
+        import('./sections/axes-map.js?v=3'),
+        import('./sections/timeline.js?v=3'),
+        import('./sections/word-evolution.js'),
+        import('./sections/voice-explorer.js?v=2'),
+        import('./sections/act-browser.js'),
+      ]);
+      deferredFns = {
+        initD3Axes: axesMap.initD3Axes,
+        initTimeline: timeline.initTimeline,
+        initWordEvolution: wordEvolution.initWordEvolution,
+        initVoiceExplorer: voiceExplorer.initVoiceExplorer,
+        initActBrowser: actBrowser.initActBrowser,
+      };
+      /* MISMO orden de creación de triggers que antes de diferirlo. Los
+         pins de initTimeline alteran la altura del documento: deben crearse
+         después de los triggers anteriores, igual que en la versión síncrona. */
+      deferredFns.initVoiceExplorer({ quotes, openQuote, closeQuotePanel });
+      deferredFns.initD3Axes({ quotes, openQuote });
+      buildParticleStoryTargets();
+      deferredFns.initWordEvolution(quotes);
+      deferredFns.initActBrowser({ quotes, openQuote });
+      deferredFns.initTimeline(quotes);
+      /* Un solo refresh tras crear todos los pins: recalcula las posiciones
+         contra el documento definitivo (con el pin del timeline incluido). */
+      ScrollTrigger.refresh();
+    } catch (err) {
+      console.error('Error inicializando las secciones diferidas:', err);
+    }
+  })();
+  return deferredStartPromise;
+}
 
 
 /* DPR adaptable en caliente. `renderer.setSize` con CSS false mantiene el
@@ -3693,20 +3779,26 @@ function buildParticleStoryTargets() {
   particleTargetsReady = true;
 }
 
-/* "Mapa de intervenciones" vive en js/sections/axes-map.js. */
-initD3Axes({ quotes, openQuote });
-buildParticleStoryTargets();
+/* "Mapa de intervenciones" vive en js/sections/axes-map.js: se monta en
+   startDeferredSections() (arriba), junto con buildParticleStoryTargets(),
+   que solo alimenta destinos de la nube para secciones posteriores. */
 /* Debounce: en mobile el resize dispara varias veces (barra de URL) y
    reconstruir el SVG entero en cada evento era innecesario */
 let d3ResizeT;
 function onViewportResizeDebounced() {
   clearTimeout(d3ResizeT);
   d3ResizeT = setTimeout(() => {
-    initD3Axes({ quotes, openQuote });
-    buildParticleStoryTargets();
-    initWordEvolution(quotes);
-    if (particleFocus.index >= 0) syncAxesMarkFocus(particleFocus.index);
     rebuildCameraChoreography();
+    buildParticleStoryTargets();
+    /* initD3Axes/initWordEvolution llegan en diferido: si el resize llega
+       antes, el rebuild se encola tras la carga. */
+    const rebuildD3 = () => {
+      deferredFns.initD3Axes({ quotes, openQuote });
+      deferredFns.initWordEvolution(quotes);
+      if (particleFocus.index >= 0) syncAxesMarkFocus(particleFocus.index);
+    };
+    if (deferredFns) rebuildD3();
+    else if (deferredStartPromise) deferredStartPromise.then(rebuildD3);
   }, 150);
 }
 window.addEventListener('resize', onViewportResizeDebounced);
@@ -3876,6 +3968,13 @@ function updateScrubber() {
   indicatorTimeout = setTimeout(() => { sectionIndicator.style.opacity = '0'; }, 1500);
 }
 window.addEventListener('scroll', updateScrubber, { passive: true });
+/* Primer scroll = el lector ya está interactuando: si la cortina no levantó
+   (red lenta), las descargas diferidas arrancan aquí en vez de esperar al
+   failsafe de 30 s. */
+window.addEventListener('scroll', () => {
+  startDeferredSections();
+  if (figureSystem?.beginLoads) figureSystem.beginLoads();
+}, { once: true, passive: true });
 updateScrubber();
 
 
@@ -3885,9 +3984,7 @@ updateScrubber();
 /* El gráfico de evolución necesita que ScrollTrigger y las curvas estén
    registradas; se inicializa aquí, después de construir el canvas D3. */
 initParticleStoryScroll();
-initWordEvolution(quotes);
-/* "De la señal a la fuente" vive en js/sections/act-browser.js. */
-initActBrowser({ quotes, openQuote });
+/* initWordEvolution e initActBrowser viven en startDeferredSections(). */
 
 /* Gancho de diagnóstico solo con ?debug: deja leer el estado de la escena
    (etapa, dispersión, visibilidad de la moneda, scroll) desde herramientas
@@ -4535,13 +4632,12 @@ counterEls.forEach((el) => {
 })();
 
 
-/* OJO CON EL ORDEN. initTimeline() crea un ScrollTrigger con `pin`, y los
-   pins alteran la altura del documento: si se instancian en otro punto de la
-   ejecución, las posiciones de arranque del resto se calculan contra un
-   documento distinto. Esta llamada va EXACTAMENTE donde vivía el bloque antes
-   de extraerlo a js/sections/timeline.js. Moverla arriba dejó la sección sin
-   fijar y el gráfico sin dibujar (comprobado con npm run shots). */
-initTimeline(quotes);
+/* OJO CON EL ORDEN (también en diferido). initTimeline() crea un
+   ScrollTrigger con `pin`, y los pins alteran la altura del documento. Por eso
+   startDeferredSections() lo invoca EN ÚLTIMO LUGAR, igual que esta llamada
+   vivía al final del arranque síncrono, y hace un ScrollTrigger.refresh()
+   después. Moverla antes dejó la sección sin fijar y el gráfico sin dibujar
+   (comprobado con npm run shots). */
 
 /* ────────────────────────────────
    Acto 4: Sincronización de visibilidad para #d3-canvas
