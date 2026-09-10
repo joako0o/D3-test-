@@ -304,7 +304,7 @@ export function initActBrowser({ quotes, openQuote }) {
     renderAct(act);
     window.dispatchEvent(new CustomEvent('particle-act-focus', { detail: { date: act.date } }));
     const selected = listItems.find(({ act: listAct }) => listAct.id === act.id);
-    selected?.button.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    selected?.button.scrollIntoView({ block: 'nearest', inline: 'center' });
   };
 
   const renderList = (yearValue = yearFilter.value) => {

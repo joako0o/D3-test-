@@ -171,10 +171,9 @@
      más de alto para mostrar dos completas. */
   .act-evidence-row { min-height: 40px; }
   .act-evidence-list { max-height: 88px; }
-  /* El badge de era va absoluto arriba a la derecha de la cabecera; con el
-     kicker "02 · Sigue la señal · Acta seleccionada" en la misma línea se
-     montaban. El kicker se corta con puntos suspensivos antes de tocarlo. */
-  .act-reader-kicker { max-width: calc(100% - 150px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* El badge de era va en su propia línea bajo la fecha (15-stage-acts):
+     el kicker usa todo el ancho sin puntos suspensivos. */
+  .act-reader-kicker { max-width: 100%; }
   .act-era-badge { font-size: 10px; }
   .brand { font-size: var(--fs-micro); letter-spacing: 3px; }
   .hero-title h1 { font-size: clamp(1.125rem, 5vw, 1.75rem); }

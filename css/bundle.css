@@ -1879,18 +1879,19 @@ body::after {
   .acts-pin-wrapper {
     padding: max(22px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
   }
-  .acts-shell { gap: 12px; }
+  .acts-shell { gap: 12px; max-height: 100%; min-height: 0; }
   .acts-title { margin-top: 7px; font-size: clamp(25px, 7vw, 38px); }
   .acts-lead { margin-top: 8px; font-size: clamp(14px, 3.7vw, 17px); line-height: 1.4; }
-  .acts-browser { grid-template-columns: 1fr; gap: 10px; padding: 13px; }
+  .acts-browser { grid-template-columns: 1fr; gap: 10px; padding: 13px; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
   .acts-index { padding-right: 0; padding-bottom: 9px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.09); }
-  .acts-list { display: flex; flex-direction: row; max-height: none; overflow-x: auto; overflow-y: hidden; padding: 1px 0 5px; }
-  .act-list-item { flex: 0 0 150px; min-height: 72px; }
+  .acts-list { display: flex; flex-direction: row; max-height: none; overflow-x: auto; overflow-y: hidden; padding: 1px 0 5px; scroll-snap-type: x proximity; scroll-padding-inline: 10px; }
+  .act-list-item { flex: 0 0 150px; min-height: 72px; scroll-snap-align: center; }
   .act-reader { gap: 8px; }
   .act-reader-head { padding-bottom: 8px; }
   .act-date { font-size: clamp(23px, 7vw, 32px); }
   .act-facts { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 7px; }
   .act-fact { padding: 8px 9px; }
+  .act-signal-line { flex-wrap: wrap; row-gap: 2px; }
   .act-signal-name { font-size: 16px; }
   .act-participant { font-size: 9px; }
   .act-signal-explanation { font-size: 12px; }
@@ -1903,11 +1904,18 @@ body::after {
   .acts-browser-note { font-size: 9px; }
 }
 
+@media (max-width: 600px) {
+  /* "Acta seleccionada" no cabe junto al kicker bajo 600px (se partía en dos
+     líneas sobre la fecha); el kicker solo ya dice dónde se está. */
+  .act-reader-kicker > span { display: none; }
+}
+
 @media (max-width: 430px) {
-  .act-reader-head { position: relative; display: block; min-height: 60px; padding-bottom: 6px; }
-  .act-date { max-width: 100%; padding-right: 92px; font-size: 23px; white-space: nowrap; }
-  .act-era-badge { position: absolute; top: 0; right: 0; }
+  .act-reader-head { display: block; padding-bottom: 6px; }
+  .act-date { font-size: 23px; }
+  .act-era-badge { display: inline-block; margin-top: 8px; }
   .act-term-list { flex-wrap: nowrap; overflow-x: auto; gap: 3px; margin-top: 5px; padding-bottom: 2px; }
+  .act-facts { grid-template-columns: 1fr; }
   .act-evidence-grid { grid-template-columns: minmax(100px, 0.43fr) minmax(0, 0.57fr); gap: 6px; }
   .act-evidence-list { flex-direction: column; max-height: 76px; overflow-x: hidden; overflow-y: auto; padding: 0 3px 0 0; }
   .act-evidence-row { flex: 0 0 auto; padding: 5px; }
@@ -1956,10 +1964,10 @@ body::after {
   .act-list-date { font-size: 10px; }
   .act-list-meta, .act-list-signal { font-size: 8px; }
   .act-reader { gap: 6px; }
-  .act-reader-head { position: relative; display: block; min-height: 60px; padding-bottom: 6px; }
+  .act-reader-head { display: block; padding-bottom: 6px; }
   .act-reader-kicker { font-size: 8px; letter-spacing: 1.8px; }
-  .act-date { max-width: 100%; padding-right: 92px; font-size: 21px; white-space: nowrap; }
-  .act-era-badge { position: absolute; top: 0; right: 0; }
+  .act-date { font-size: 21px; }
+  .act-era-badge { display: inline-block; margin-top: 6px; }
   .act-date-sub { margin-top: 3px; font-size: 8px; }
   .act-era-badge { padding: 4px 6px; font-size: 8px; }
   .act-facts { gap: 5px; }
@@ -3360,10 +3368,9 @@ body.voice-profile-modal-open { overflow-y: hidden; }
      más de alto para mostrar dos completas. */
   .act-evidence-row { min-height: 40px; }
   .act-evidence-list { max-height: 88px; }
-  /* El badge de era va absoluto arriba a la derecha de la cabecera; con el
-     kicker "02 · Sigue la señal · Acta seleccionada" en la misma línea se
-     montaban. El kicker se corta con puntos suspensivos antes de tocarlo. */
-  .act-reader-kicker { max-width: calc(100% - 150px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* El badge de era va en su propia línea bajo la fecha (15-stage-acts):
+     el kicker usa todo el ancho sin puntos suspensivos. */
+  .act-reader-kicker { max-width: 100%; }
   .act-era-badge { font-size: 10px; }
   .brand { font-size: var(--fs-micro); letter-spacing: 3px; }
   .hero-title h1 { font-size: clamp(1.125rem, 5vw, 1.75rem); }
