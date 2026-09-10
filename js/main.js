@@ -2556,13 +2556,18 @@ const _roomLookTarget = new THREE.Vector3(
 const roomTitleEl = document.getElementById('roomTitle');
 const _roomProbeCam = new THREE.PerspectiveCamera();
 const _roomProbeBox = new THREE.Box3();
+const _roomProbeHeadBox = new THREE.Box3();
 const _roomProbePoint = new THREE.Vector3();
 const ROOM_LOOK_Y_BASE = CONFIG.door?.roomLook?.y ?? 0.45;
+/* Retroceso de seguridad de la cámara de sala (mundo, +Z): lo resuelve
+   refreshRoomAim junto con la mira y lo aplica el dolly de entrada
+   (proporcional a crossEase). 0 = la estatua cabe sin mover la cámara. */
+let _roomDollyZ = 0;
 let roomAimDirty = true;
 
-/* Y en píxeles de pantalla del punto más bajo del retablo, si la cámara de
-   sala mirase a `lookY`. */
-function projectRoomFootY(lookY) {
+/* Y en píxeles de pantalla de un punto del retablo (mundo), si la cámara de
+   sala en pose exacta (+retroceso `camZ`) mirase a `lookY`. */
+function _projectRoomPointY(worldX, worldY, worldZ, lookY, camZ) {
   const { width: w, height: h } = getViewportSize();
   const cam = _roomProbeCam;
   cam.fov = CONFIG.camera.fov;
@@ -2572,28 +2577,51 @@ function projectRoomFootY(lookY) {
   cam.position.set(
     CONFIG.camera.x,
     CONFIG.door?.roomCamY ?? 0.62,
-    CONFIG.door?.roomCamZ ?? -0.5
+    camZ
   );
   cam.up.set(0, 1, 0);
   cam.lookAt(CONFIG.door?.roomLook?.x ?? 0, lookY, CONFIG.door?.roomLook?.z ?? -2.0);
   cam.updateMatrixWorld(true);
   cam.updateProjectionMatrix();
-  _roomProbePoint.set(
-    CONFIG.room?.figure?.x ?? 0,
-    _roomProbeBox.min.y,
-    CONFIG.room?.figure?.z ?? -4.8
-  ).project(cam);
+  _roomProbePoint.set(worldX, worldY, worldZ).project(cam);
   return (1 - _roomProbePoint.y) * 0.5 * h;
 }
 
+/* Y en píxeles del punto más bajo del retablo (base del pedestal). */
+function projectRoomFootY(lookY, camZ = CONFIG.door?.roomCamZ ?? -0.5) {
+  return _projectRoomPointY(
+    CONFIG.room?.figure?.x ?? 0,
+    _roomProbeBox.min.y,
+    CONFIG.room?.figure?.z ?? -4.8,
+    lookY,
+    camZ
+  );
+}
+
+/* Y en píxeles del punto más alto del retablo (mano/balanza de la estatua:
+   lo primero que se corta arriba en ventanas bajas). */
+function projectRoomHeadY(lookY, camZ) {
+  return _projectRoomPointY(
+    CONFIG.room?.figure?.x ?? 0,
+    _roomProbeHeadBox.max.y,
+    CONFIG.room?.figure?.z ?? -4.8,
+    lookY,
+    camZ
+  );
+}
+
 function refreshRoomAim() {
-  roomAimDirty = false;
   if (!figureSystem || !roomTitleEl) return;
   /* Solo el PEDESTAL, no `figureSystem.group`: el grupo también contiene los
      placeholders de las figuras aún sin modelar (inflación, brote…), que
      viven a los lados y hundirían el mínimo en Y. */
   const plinthRoot = figureSystem.figures.get('soporte')?.root;
   if (!plinthRoot) return;
+  /* La estatua ('balanza') corona el retablo: su punto más alto (mano y
+     balanza en alto) es lo que se corta arriba en ventanas bajas. Si aún
+     no cargó, se usa la corona del pedestal y se reintenta en el próximo
+     frame (roomAimDirty solo se limpia al resolver con la estatua real). */
+  const ladyRoot = figureSystem.figures.get('balanza')?.root;
 
   /* El grupo se escala y se desplaza cada frame según `figureReveal`. La caja
      hay que medirla en el estado ASENTADO (escala 1, y 0) o el encuadre
@@ -2605,6 +2633,8 @@ function refreshRoomAim() {
   g.position.y = 0;
   g.updateMatrixWorld(true);
   _roomProbeBox.setFromObject(plinthRoot);
+  if (ladyRoot) _roomProbeHeadBox.setFromObject(ladyRoot);
+  else _roomProbeHeadBox.copy(_roomProbeBox);
   g.scale.setScalar(prevScale);
   g.position.y = prevY;
   g.updateMatrixWorld(true);
@@ -2616,19 +2646,43 @@ function refreshRoomAim() {
   const titleTop = roomTitleEl.offsetTop;
   if (!Number.isFinite(titleTop) || titleTop <= 0) return;
   const target = titleTop - Math.max(24, h * (HERO.gapRatio ?? 0.045));
+  /* Margen superior: la balanza nunca debe tocar el borde. En escritorio
+     sobra espacio y el bucle de abajo no mueve la cámara (dolly 0). */
+  const headMargin = Math.max(10, h * 0.02);
+  const baseCamZ = CONFIG.door?.roomCamZ ?? -0.5;
+  const figZ = CONFIG.room?.figure?.z ?? -4.8;
 
+  /* Se resuelve la mira para el PIE y se comprueba la CABEZA: si no cabe
+     entre el margen superior y el titular, se retrocede la cámara (la
+     figura encoge) y se re-resuelve la mira para que el pie siga sobre el
+     titular. La proyección es casi lineal: 3 iteraciones sobran. */
   const y0 = ROOM_LOOK_Y_BASE;
   const y1 = ROOM_LOOK_Y_BASE + 0.15;
-  const s0 = projectRoomFootY(y0);
-  const s1 = projectRoomFootY(y1);
-  const slope = (s1 - s0) / (y1 - y0);          // px por unidad de mundo
-  if (!Number.isFinite(slope) || Math.abs(slope) < 1) return;
+  let camZ = baseCamZ;
+  let lookY = ROOM_LOOK_Y_BASE;
+  for (let i = 0; i < 3; i++) {
+    const s0 = projectRoomFootY(y0, camZ);
+    const s1 = projectRoomFootY(y1, camZ);
+    const slope = (s1 - s0) / (y1 - y0);          // px por unidad de mundo
+    if (!Number.isFinite(slope) || Math.abs(slope) < 1) return;
+    lookY = THREE.MathUtils.clamp(
+      y0 + (target - s0) / slope,
+      ROOM_LOOK_Y_BASE - 0.7,
+      ROOM_LOOK_Y_BASE + 0.35
+    );
+    const head = projectRoomHeadY(lookY, camZ);
+    const span = target - head;                    // alto actual en px
+    if (!(span > 1)) break;
+    const shrink = (target - headMargin) / span;   // < 1 = hay que encoger
+    if (!(shrink < 0.999)) break;                  // cabe: no se mueve nada
+    const dist = Math.max(camZ - figZ, 0.5);       // cámara ↔ figura
+    camZ += dist * (1 / Math.max(shrink, 0.5) - 1);
+    if (camZ - baseCamZ >= 1.2) { camZ = baseCamZ + 1.2; }
+  }
 
-  _roomLookTarget.y = THREE.MathUtils.clamp(
-    y0 + (target - s0) / slope,
-    ROOM_LOOK_Y_BASE - 0.7,
-    ROOM_LOOK_Y_BASE + 0.35
-  );
+  _roomLookTarget.y = lookY;
+  _roomDollyZ = Math.max(0, camZ - baseCamZ);
+  if (ladyRoot) roomAimDirty = false;
 }
 /* Mira durante el cruce del umbral:
    _lookBase  = mira neutra de "La Reunión" (idéntica a la rama sin cruce,
@@ -3375,7 +3429,10 @@ function animate() {
     camera.position.set(
       THREE.MathUtils.lerp(0, CONFIG.camera.x, crossEase),
       THREE.MathUtils.lerp(enterY, CONFIG.door.roomCamY ?? 0.62, crossEase),
-      THREE.MathUtils.lerp(enterZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
+      /* + _roomDollyZ: en ventanas bajas la cámara termina un poco más
+         atrás para que la estatua quepa en alto (0 = cabe sin moverla;
+         al ir dentro del lerp, el retroceso entra continuo con el cruce). */
+      THREE.MathUtils.lerp(enterZ, (CONFIG.door.roomCamZ ?? -0.5) + _roomDollyZ, crossEase)
     );
     if (roomExitT > 0.001) camera.position.lerp(choreo.pos, roomExitT);
     /* Encuadre del acercamiento (tres fases encadenadas por crossT):
