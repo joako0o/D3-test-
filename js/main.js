@@ -22,12 +22,49 @@ import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
   voiceFocus, axesState, focusReturn, particleFocus,
 } from './core/interaction-state.js';
-import { initWordEvolution } from './sections/word-evolution.js';
-import { initVoiceExplorer } from './sections/voice-explorer.js?v=2';
-import { initActBrowser } from './sections/act-browser.js';
-import { initD3Axes } from './sections/axes-map.js?v=3';
-import { initTimeline } from './sections/timeline.js?v=3';
+/* Las cinco secciones de datos (mapa de intervenciones, evolución del
+   lenguaje, navegador de actas, voces y línea de tiempo) NO se importan aquí.
+   Se cargan con `import()` dinámico y se construyen DESPUÉS de la primera
+   pinta, desde js/core/deferred-boot.js: son ~1.500 nodos entre SVG de D3,
+   tarjetas y ScrollTriggers que nadie ve en la portada y que antes se
+   construían antes de que el navegador pintara nada. Cada `init…` se importa
+   en el punto del archivo donde se llamaba, para que el orden de creación de
+   los ScrollTrigger —que es parte del contrato del relato— siga leyéndose
+   igual que antes. */
+import {
+  deferBoot, onDeferredBootDone, deferredBootState, flushDeferredBoot, deferredBootDone,
+} from './core/deferred-boot.js';
 import { particleRandom, getQuoteAxisSentiment, frameDamp, frameDampT } from './core/utils.js';
+
+/* D3 a pedido.
+   `js/vendor/d3.min.js` son 91 KiB (273 KB sin comprimir) que la portada no
+   usa: lo consumen tres de las cinco secciones de datos (mapa de
+   intervenciones, evolución del lenguaje y línea de tiempo), y ninguna está a
+   la vista al cargar. Iba como <script defer> en index.html, o sea que se
+   bajaba y se evaluaba entero ANTES de la primera pinta, compitiendo por la
+   conexión con el CSS y con las fuentes del <h1>.
+   Ahora lo pide la primera sección que lo necesita, ya con la portada pintada.
+   La promesa se cachea: solo se inyecta una vez, y si el archivo falla las
+   secciones avisan y el resto de la página sigue. */
+let d3Promise = null;
+function loadD3() {
+  if (d3Promise) return d3Promise;
+  if (window.d3) {
+    d3Promise = Promise.resolve(window.d3);
+    return d3Promise;
+  }
+  d3Promise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    /* Relativo al DOCUMENTO (index.html, la raíz), no a este módulo: igual que
+       los GLB y el importmap. `async` para no bloquear el parser. */
+    script.src = 'js/vendor/d3.min.js';
+    script.async = true;
+    script.onload = () => resolve(window.d3);
+    script.onerror = () => reject(new Error('No se pudo cargar js/vendor/d3.min.js'));
+    document.head.appendChild(script);
+  });
+  return d3Promise;
+}
 
 /* Los timelines de la escena se crean durante la inicialización de los
    gráficos. Registrar los plugins antes de construir cualquiera de ellos
@@ -85,6 +122,38 @@ if (!DEBUG_MODE) {
 const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const animMul = reduceMotion ? 0 : 1;
 
+/* ────────────────────────────────
+   Pintar ANTES de construir la escena
+────────────────────────────────
+   Todo lo que sigue —crear el contexto WebGL, generar el environment con
+   PMREM, construir la puerta, rellenar los búferes de partículas, registrar
+   los ScrollTrigger— ocurre de forma SÍNCRONA en la evaluación de este
+   módulo. Si el JS ya está en caché (segunda visita) main.js arranca en cuanto
+   termina de parsearse, o sea ANTES de la primera pinta: la cortina de carga y
+   el <h1> del hero aparecen recién cuando todo ese trabajo terminó.
+
+   `await` en el nivel superior del módulo (los módulos lo permiten) cede el
+   hilo: el navegador pinta la cortina y la portada, y recién después seguimos.
+   El coste, si el navegador no iba a pintar de todos modos, es como máximo los
+   100 ms del `race` de abajo.
+
+   OJO con cómo se mide esto: aquí no se ve. Con el servidor local respondiendo
+   al instante, el navegador pinta a los ~0,7 s en las dos versiones (caché
+   fría) porque three.js tarda más en llegar que el resto del módulo en
+   evaluarse. Con caché llena manda el raster por software. El cambio se nota
+   en un navegador real, con la red rápida y el JS en caché.
+
+   Dos rAF y no `setTimeout(0)`: un rAF se sirve al PRINCIPIO del frame, antes
+   de pintar, así que el anidado es el que garantiza que ya hubo una pinta
+   (misma razón que documenta `breathe()` más abajo).
+   El `race` contra 100 ms es la red de seguridad: en una pestaña en segundo
+   plano rAF no se dispara nunca, y en un equipo muy lento dos frames pueden
+   tardar bastante más que el beneficio que se busca. Pasado ese plazo se
+   sigue igual —se pierde la pinta anticipada, no la página. */
+await Promise.race([
+  new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  new Promise((resolve) => setTimeout(resolve, 100)),
+]);
 
 const canvas = document.getElementById('canvas');
 const loadEl = document.getElementById('load');
@@ -764,12 +833,18 @@ const manager = new THREE.LoadingManager();
    pinta (compilar programas, subir texturas) ocurre tapado, no en el primer
    scroll del lector. */
 manager.onLoad = () => {
-  /* Se ESPERA al precalentado antes de levantar la cortina: si se levanta
-     antes, el trabajo sucio de la primera pinta ocurre a la vista del lector.
-     Ahora que el precalentado cede el hilo, esperar no congela nada: la moneda
-     sigue girando mientras tanto, que es justo lo contrario de antes.
+  /* Las secciones de datos se construyen en huecos (js/core/deferred-boot.js):
+     en un equipo lento pueden ir por la mitad cuando los GLB terminan. A partir
+     de aquí dejan de esperar huecos —flushDeferredBoot() las saca de una vez—,
+     porque levantar la cortina con una sección a medio construir es peor que
+     tardar un poco más: el lector bajaría hasta una sección que no existe. */
+  flushDeferredBoot();
+  /* Se ESPERA al precalentado Y a la cola antes de levantar la cortina: si se
+     levanta antes, el trabajo sucio de la primera pinta ocurre a la vista del
+     lector. Ahora que el precalentado cede el hilo, esperar no congela nada: la
+     moneda sigue girando mientras tanto, que es justo lo contrario de antes.
      `finally` y no `then` para que un fallo no deje la cortina puesta. */
-  warmUpScene().finally(() => {
+  Promise.all([warmUpScene(), deferredBootDone()]).finally(() => {
     setTimeout(() => {
       if (renderer) loadEl.classList.add('hidden');
       armAdaptive(); // el arranque ya no contamina la muestra de fps
@@ -2889,8 +2964,14 @@ const _doorFitV = new THREE.Vector3();
 
 /* "Las voces" vive en js/sections/voice-explorer.js.
    La llamada se queda AQUÍ, en el mismo punto de la ejecución que antes: el
-   orden en que se crean los ScrollTrigger es parte del contrato. */
-initVoiceExplorer({ quotes, openQuote, closeQuotePanel });
+   orden en que se crean los ScrollTrigger es parte del contrato —y la cola de
+   deferred-boot es FIFO, así que ese orden no cambia—, pero se corre tras la
+   primera pinta. El directorio de voces monta 17 tarjetas y sus gráficos: no
+   hace falta para pintar la portada y se paga en el TBT. */
+deferBoot(async () => {
+  const { initVoiceExplorer } = await import('./sections/voice-explorer.js?v=2');
+  initVoiceExplorer({ quotes, openQuote, closeQuotePanel });
+});
 
 
 /* DPR adaptable en caliente. `renderer.setSize` con CSS false mantiene el
@@ -4104,20 +4185,43 @@ function buildParticleStoryTargets() {
   particleTargetsReady = true;
 }
 
-/* "Mapa de intervenciones" vive en js/sections/axes-map.js. */
-initD3Axes({ quotes, openQuote });
+/* "Mapa de intervenciones" vive en js/sections/axes-map.js.
+   El módulo se cachea en `axesModule`: el resize de abajo lo vuelve a
+   necesitar y no tiene sentido bajarlo dos veces.
+   OJO con `buildParticleStoryTargets()`, que sigue siendo SÍNCRONO: rellena
+   los búferes de destino de las partículas y el hero los consulta desde el
+   primer frame. Lo que se difiere es el SVG y sus ScrollTrigger, no los datos
+   de la escena. */
+let axesModule = null;
+const loadAxes = () => (axesModule ||= import('./sections/axes-map.js?v=3'));
+deferBoot(async () => {
+  const [{ initD3Axes }] = await Promise.all([loadAxes(), loadD3()]);
+  initD3Axes({ quotes, openQuote });
+});
 buildParticleStoryTargets();
 /* Debounce: en mobile el resize dispara varias veces (barra de URL) y
    reconstruir el SVG entero en cada evento era innecesario */
 let d3ResizeT;
 function onViewportResizeDebounced() {
   clearTimeout(d3ResizeT);
-  d3ResizeT = setTimeout(() => {
-    initD3Axes({ quotes, openQuote });
+  d3ResizeT = setTimeout(async () => {
     buildParticleStoryTargets();
-    initWordEvolution(quotes);
-    if (particleFocus.index >= 0) syncAxesMarkFocus(particleFocus.index);
-    rebuildCameraChoreography();
+    /* Si las secciones de datos todavía no se construyeron no hay nada que
+       reconstruir: lo hará la cola diferida, ya con el tamaño nuevo. */
+    if (!deferredBootState().finished) {
+      rebuildCameraChoreography();
+      return;
+    }
+    try {
+      const [{ initD3Axes }, { initWordEvolution }] =
+        await Promise.all([loadAxes(), loadWordEvolution(), loadD3()]);
+      initD3Axes({ quotes, openQuote });
+      initWordEvolution(quotes);
+      if (particleFocus.index >= 0) syncAxesMarkFocus(particleFocus.index);
+      rebuildCameraChoreography();
+    } catch (e) {
+      console.warn('Reconstrucción de las secciones de datos incompleta:', e);
+    }
   }, 150);
 }
 window.addEventListener('resize', onViewportResizeDebounced);
@@ -4262,7 +4366,10 @@ function updateScrubber() {
   const pct = Math.round(p * 100);
   if (pct !== lastProgressPct) {
     lastProgressPct = pct;
-    progressBar.style.width = pct + '%';
+    /* scaleX y no width: animar el ancho es animar layout (recálculo por
+       paso de scroll, animación no compuesta y CLS). Ver el comentario de
+       #progressBar en index.html. */
+    progressBar.style.transform = 'scaleX(' + (pct / 100) + ')';
     progressBar.setAttribute('aria-valuenow', String(pct));
   }
 
@@ -4293,12 +4400,27 @@ updateScrubber();
 /* ────────────────────────────────
    Lenis + GSAP ScrollTrigger
 ──────────────────────────────── */
-/* El gráfico de evolución necesita que ScrollTrigger y las curvas estén
-   registradas; se inicializa aquí, después de construir el canvas D3. */
+/* initParticleStoryScroll() sigue siendo SÍNCRONO: son cuatro ScrollTrigger
+   sobre el relato de partículas, cuestan nada y la escena los consulta desde
+   el primer frame. */
 initParticleStoryScroll();
-initWordEvolution(quotes);
-/* "De la señal a la fuente" vive en js/sections/act-browser.js. */
-initActBrowser({ quotes, openQuote });
+/* El gráfico de evolución necesita que ScrollTrigger y las curvas estén
+   registradas; se encola aquí —mismo sitio del archivo que antes, para que el
+   orden de la cola respete el contrato— y se construye tras la primera pinta.
+   `loadWordEvolution()` cachea el módulo: el resize de más arriba lo reutiliza. */
+let wordEvolutionModule = null;
+const loadWordEvolution = () => (wordEvolutionModule ||= import('./sections/word-evolution.js'));
+deferBoot(async () => {
+  const [{ initWordEvolution }] = await Promise.all([loadWordEvolution(), loadD3()]);
+  initWordEvolution(quotes);
+});
+/* "De la señal a la fuente" vive en js/sections/act-browser.js. Es la sección
+   más pesada de las cinco: monta el índice de actas (una tarjeta por reunión)
+   más el lector y sus SVG. Va diferida igual que las demás. */
+deferBoot(async () => {
+  const { initActBrowser } = await import('./sections/act-browser.js');
+  initActBrowser({ quotes, openQuote });
+});
 
 /* Gancho de diagnóstico solo con ?debug: deja leer el estado de la escena
    (etapa, dispersión, visibilidad de la moneda, scroll) desde herramientas
@@ -4933,7 +5055,7 @@ counterEls.forEach((el) => {
       debugProgress.textContent = Math.round(p * 100) + '%';
       const panelNames = ['01 · Fuente', '02 · Muestra / criterio', '03 · Clasificación guiada', '04 · Revisión / trazabilidad'];
       debugPanelInfo.textContent = panelNames[activeIdx] || '—';
-      debugBar.style.width = (p * 100) + '%';
+      debugBar.style.transform = 'scaleX(' + p + ')';
     }
   }
 
@@ -4967,8 +5089,18 @@ counterEls.forEach((el) => {
    ejecución, las posiciones de arranque del resto se calculan contra un
    documento distinto. Esta llamada va EXACTAMENTE donde vivía el bloque antes
    de extraerlo a js/sections/timeline.js. Moverla arriba dejó la sección sin
-   fijar y el gráfico sin dibujar (comprobado con npm run shots). */
-initTimeline(quotes);
+   fijar y el gráfico sin dibujar (comprobado con npm run shots).
+
+   Lo que CAMBIA es CUÁNDO corre, no en qué orden: la cola de
+   deferred-boot.js es FIFO, así que sigue construyéndose después de las voces,
+   los ejes, el lenguaje y las actas, y antes que nada de lo que venga abajo.
+   Y como añadir un pin cambia la altura del documento, al vaciarse la cola se
+   llama una vez a refreshLayout() (al final de este archivo), que recalcula
+   todos los trigger contra el documento ya definitivo. */
+deferBoot(async () => {
+  const [{ initTimeline }] = await Promise.all([import('./sections/timeline.js?v=3'), loadD3()]);
+  initTimeline(quotes);
+});
 
 /* ────────────────────────────────
    Acto 4: Sincronización de visibilidad para #d3-canvas
@@ -5205,14 +5337,33 @@ const refreshLayout = () => {
   rebuildCameraChoreography();
   refreshST();
 };
-if (document.fonts && document.fonts.ready) {
-  document.fonts.ready.then(() => refreshLayout());
+
+/* Tres avisos (fuentes listas, `load` y el último GLB) disparaban hasta TRES
+   `ScrollTrigger.refresh()` completos, cada uno recorriendo los ~40 triggers
+   y forzando layout. Además las secciones de datos ahora se construyen
+   después, y cada una añade triggers y cambia la altura del documento.
+   Se coalescean: un solo refresh, cuando ya no llega ningún aviso más.
+   150 ms es lo que tarda en silenciarse la ráfaga del arranque; pasado ese
+   plazo se ejecuta igual, así que un aviso aislado no se queda sin refresco. */
+let refreshLayoutTimer = 0;
+const REFRESH_DEBOUNCE_MS = 150;
+function scheduleRefreshLayout() {
+  clearTimeout(refreshLayoutTimer);
+  refreshLayoutTimer = setTimeout(refreshLayout, REFRESH_DEBOUNCE_MS);
 }
-window.addEventListener('load', () => refreshLayout());
+
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(scheduleRefreshLayout);
+}
+window.addEventListener('load', scheduleRefreshLayout);
 manager.onLoad = (() => {
   const original = manager.onLoad;
   return () => {
     original();
-    refreshLayout();
+    scheduleRefreshLayout();
   };
 })();
+/* Lo último que hace el arranque diferido: con las cinco secciones ya en el
+   DOM —y con el pin de la línea de tiempo sumando su altura— las posiciones
+   de todos los triggers se recalculan UNA vez, contra el documento final. */
+onDeferredBootDone(scheduleRefreshLayout);

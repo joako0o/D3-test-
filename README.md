@@ -13,7 +13,8 @@ Exploración interactiva de 16 años de reuniones de política monetaria en Chil
 ## Cómo ejecutar
 
 ```bash
-npm start            # servidor estático en http://localhost:8000
+npm start            # servidor estático en http://localhost:8000 (regenera el CSS solo)
+npm run build:css    # rehace css/bundle.css a partir de css/*.css (lo corre npm start)
 npm run check        # arranca el sitio fuera del navegador y avisa si algo revienta
 npm run shots        # capturas reales de cada sección (necesita npm start)
 npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
@@ -25,8 +26,13 @@ npm run format:check # Prettier sobre scripts/, tools/ y los JSON (format → lo
 ```
 
 `npm run check` necesita las dependencias de desarrollo una sola vez
-(`npm install`). No hay paso de build: lo que hay en el repo es lo que se
-publica.
+(`npm install`).
+
+**El único paso de build es el CSS**, y es de una línea: `npm run build:css`
+junta los archivos de `css/` en `css/bundle.css` (ver § Rendimiento de carga).
+Lo corre `npm start` automáticamente y `npm run check` falla si te olvidas de
+correrlo. Todo lo demás —HTML, JS, GLB, fuentes— es lo que hay en el repo: se
+publica tal cual.
 
 ### Calidad de código y SEO
 
@@ -505,6 +511,103 @@ Lo que se hizo (todo en `js/main.js` y `js/core/viewport.js`):
   presupuesto que se pueda exigir hoy.
 - **Los frames >50 ms** en este entorno los domina el raster por software; se
   informan pero no suspenden la ejecución.
+
+## Rendimiento de carga (Lighthouse, 2026-09-12)
+
+El informe que ordenó este trabajo, medido en producción y en escritorio
+(Lighthouse 13.4.1): **56 de performance** — FCP 1,8 s · LCP 1,9 s ·
+TBT 440 ms · CLS 0,042 · Speed Index 6,1 s, con 21 hojas de estilo bloqueando
+el render (58,6 KiB · 850 ms de ahorro estimado) y una cadena crítica de
+3.656 ms en la que **las fuentes de la portada entraban a 3,1–3,6 s**.
+
+Las cinco métricas pesan distinto (LCP 25 % · TBT 30 % · CLS 25 % · FCP 10 % ·
+SI 10 %), así que el orden del trabajo salió de ahí: primero lo que bloquea la
+pintura (FCP/LCP/SI) y después lo que ocupa el hilo principal antes de que el
+lector pueda tocar nada (TBT).
+
+### Lo que se hizo
+
+1. **Una sola hoja de CSS.** Los 21 `<link>` de `index.html` son 21 peticiones
+   de bloqueo de render que sobre HTTP/1.1 se encolan de a seis por origen.
+   `scripts/build-css.mjs` (Node puro, sin dependencias) los une y los minifica
+   en `css/bundle.css`, en el mismo orden de la cascada: **21 peticiones → 1** y
+   **147 KiB → 103 KiB (−28 %)**. Los fuentes siguen siendo los de `css/`: el
+   bundle es un derivado (ver `css/README.md`). Verificado comparando el AST con
+   PostCSS: 1.027 reglas, 3.424 declaraciones y 61 `@`-rules idénticas.
+2. **Pintar antes de construir la escena.** Todo el arranque del 3D (contexto
+   WebGL, PMREM, puerta, búferes de partículas, ScrollTriggers) ocurre de forma
+   síncrona al evaluar `main.js`. Si el JS ya está en caché, el módulo arranca
+   antes de la primera pinta y la retrasa todo lo que dure ese trabajo. Ahora
+   `main.js` cede el hilo con un doble `requestAnimationFrame` antes de crear el
+   renderer. **Medirlo aquí no sirve**: con el servidor local respondiendo al
+   instante, el navegador pinta a los ~0,7 s en las dos versiones (caché fría),
+   y con caché llena manda el raster por software, no este cambio (8 s en las
+   dos, con una dispersión enorme entre corridas). El `await` está acotado a
+   100 ms, así que el peor caso es ese: la pinta anticipada se gana o no, pero
+   nunca se paga más.
+3. **Las cinco secciones de datos se construyen después de la primera pinta**
+   (`js/core/deferred-boot.js`): mapa de intervenciones, evolución del
+   lenguaje, navegador de actas, voces y línea de tiempo. Son ~1.500 nodos que
+   nadie ve en la portada. La cola es FIFO —el orden en que se crean los
+   ScrollTrigger es parte del contrato—, corre una tarea por hueco y la cortina
+   de carga **no se levanta hasta que están listas**.
+4. **D3 a pedido.** `d3.min.js` (91 KiB) solo lo usan tres de esas secciones;
+   iba como `<script defer>` y competía con el CSS y las fuentes sin pintar
+   nada en la portada. Ahora lo pide la primera sección que lo necesita.
+5. **Un solo `ScrollTrigger.refresh()`.** Fuentes listas, `load` y el último GLB
+   disparaban hasta tres refrescos completos; se coalescen en uno.
+6. **Animaciones no compuestas.** `#progressBar` y la barra del panel de debug
+   animaban `width`, o sea layout, en cada paso de scroll: pasan a
+   `transform: scaleX()`.
+
+### Medido aquí, antes → después
+
+| | antes | después | |
+|---|---|---|---|
+| Hilo principal ocupado en el arranque (`npm run startup`) | 11,4 s | 7,8 s | −31 % |
+| TBT del arranque | 10,4 s | 6,6 s | −36 % |
+| Lecturas de geometría (reflujos forzados) | 745 | 574–702 | hasta −23 % |
+| FCP (`npm run lh`, escritorio, este entorno) | 10,1 s | 9,2 s | |
+| LCP (ídem) | 18,6 s | 16,5 s | |
+| Peticiones de la página | 68 | 49 | −19 |
+| Hojas de estilo bloqueando el render | 21 | 1 | −20 |
+| CSS transferido (sin comprimir, en local) | 147 KiB | 103 KiB | −28 % |
+
+Medianas de tres corridas de cada lado: en este entorno una sola corrida no
+dice nada (la de la izquierda osciló entre 9,1 s y 14,4 s). Todas las capturas
+de `npm run shots` quedan entre 0,00 % y 0,53 % de píxeles distintos salvo el
+hero, que es la moneda girando; `npm run hero:check` sigue dando 12/12.
+
+**Ojo con el número del sandbox**: el Chromium de aquí pinta con SwiftShader y
+no emite capturas, así que `npm run lh` da las métricas y las auditorías pero
+**no el puntaje**. El 56 de partida y el de llegada se confirman en un navegador
+real (o con `npm run lh -- --origin=https://joako0o.github.io/D3-test-`).
+
+### Dos cosas que aparecieron al medir
+
+- **El CLS no era de las fuentes.** Instrumentando `layout-shift` con sus
+  `sources` salió un salto de 0,029 a los 7,8 s protagonizado por `.acts-shell`:
+  el `scrollIntoView` del navegador de actas mueve el DOCUMENTO, no solo la
+  lista, y al construirse la sección después nadie lo devolvía a la portada (el
+  `load` de `main.js` lo hacía antes, por casualidad). Ahora mueve solo el scroll
+  interno de la lista. CLS local: 0,029 → 0,0001.
+- **Una sección no puede construirse con la cortina ya levantada.** La cola
+  espera huecos para no competir con el arranque del 3D, pero cuando los GLB
+  terminan pasa a modo apuro (`flushDeferredBoot()`) y la cortina espera a
+  `Promise.all([warmUpScene(), deferredBootDone()])`.
+
+### Lo que queda
+
+- **Minificar el JS propio**: Lighthouse estima 135 KiB, la mayor parte de
+  `js/main.js` (249 KB sin comprimir). No se toca porque esos fuentes son los
+  que se leen y comentan a mano; haría falta un build con dos juegos de
+  archivos (fuente y servido) y su `?v=`.
+- **Los ~303 KB de three.js que no se usan**: solo se arreglan con un build a
+  medida de la biblioteca.
+- **Las 9 fuentes (165 KiB)** se descargan todas en la carga inicial; bajar a
+  tres o cuatro pesos es una decisión de diseño, no de rendimiento.
+- **HTTP/1.1 y `Cache-Control: max-age=600`** los pone GitHub Pages; desde el
+  repo no se pueden cambiar.
 
 ## Rendimiento del 3D en máquinas modestas (2026-09-11)
 

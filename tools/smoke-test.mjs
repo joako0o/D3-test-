@@ -230,9 +230,22 @@ for (const k of BRIDGE) {
     Object.defineProperty(globalThis, k, { value, configurable: true, writable: true });
   } catch {}
 }
-const vendors = ['gsap', 'ScrollTrigger', 'd3', 'Lenis', 'SplitText', 'CustomEase'];
+/* D3 llega DESPUÉS de este puente: lo piden a pedido las secciones de datos
+   (loadD3() en js/main.js) y en ese momento el bucle de arriba ya corrió. No
+   se puede copiar el valor, así que se expone como un getter que lee el vivo
+   de jsdom: los módulos de sección usan `d3` DENTRO de sus funciones, o sea
+   cuando el valor ya existe. Sin esto, en este arnés (y solo en él: en un
+   navegador los módulos y los scripts clásicos comparten `window`) la
+   referencia revienta. */
+try {
+  Object.defineProperty(globalThis, 'd3', { get: () => w.d3, configurable: true });
+} catch {}
+/* d3 sale de la lista: ya no se carga con la página. Lo piden a pedido las
+   secciones de datos (loadD3() en js/main.js), así que aquí solo se comprueba
+   al final, cuando la cola diferida ya corrió (ver § 5b). */
+const vendors = ['gsap', 'ScrollTrigger', 'Lenis', 'SplitText', 'CustomEase'];
 const missing = vendors.filter((k) => !w[k]);
-console.log('vendors:', vendors.map((k) => `${k}:${w[k] ? 'ok' : 'FALTA'}`).join(' '));
+console.log('vendors:', vendors.map((k) => `${k}:${w[k] ? 'ok' : 'FALTA'}`).join(' '), '· d3:diferido');
 if (missing.length) errors.push('vendor no cargado: ' + missing.join(', '));
 
 globalThis.URL.createObjectURL ||= () => 'blob:fake';
@@ -306,6 +319,16 @@ checks.push([
     : 'ningún módulo importado con dos ?v= distintos',
   dupes.length === 0,
 ]);
+
+/* ── 5b. El arranque diferido realmente corrió ─────────────────────────
+   Las cinco secciones de datos se construyen DESPUÉS de la primera pinta
+   (js/core/deferred-boot.js), y D3 se pide a pedido dentro de esa cola. Si
+   algo de eso se rompe, ningún error llega a `window.onerror`: lo captura la
+   cola y sigue. Así que se comprueba por sus efectos: d3 en `window` y las
+   secciones con contenido en el DOM. */
+checks.push([`d3 cargado a pedido: ${w.d3 ? 'ok' : 'NO'}`, !!w.d3]);
+checks.push([`navegador de actas construido (${w.document.querySelectorAll('#actsList .act-list-item').length} actas)`, w.document.querySelectorAll('#actsList .act-list-item').length > 0]);
+checks.push([`línea de tiempo construida (${w.document.querySelectorAll('#timelineContainer *').length} nodos)`, w.document.querySelectorAll('#timelineContainer *').length > 0]);
 
 checks.push(['skip link', !!$('.skip-link')]);
 checks.push(['canvas con texto alternativo', !!$('#canvas[aria-label]')]);
