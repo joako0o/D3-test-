@@ -12,6 +12,10 @@
 import * as THREE from '../lib/three/three.module.min.js?v=1';
 import { GLTFLoader } from '../lib/three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from '../lib/three/addons/loaders/DRACOLoader.js';
+/* Misma URL (query incluida) que en main.js: con specifiers distintos el
+   navegador instancia DOS módulos config.js con valores distintos. La z de
+   la pieza central sale de aquí para no tenerla escrita en dos sitios. */
+import { ROOM_FIGURE_Z } from '../core/config.js?v=16';
 
 export const FIGURE_DEFS = [
   {
@@ -25,7 +29,7 @@ export const FIGURE_DEFS = [
     subtitle: 'Base de la pieza central',
     glb: 'figures/soporte.glb',
     available: true,
-    x: 0, y: 0, z: -4.8,
+    x: 0, y: 0, z: ROOM_FIGURE_Z,
     /* `scale` normaliza por la dimensión mayor: aquí es el DIÁMETRO.
        0.70 de diámetro → 0.159 de alto (el GLB es un disco escalonado).
        `stretchY` estira SOLO el alto después de normalizar: el disco original
@@ -47,13 +51,15 @@ export const FIGURE_DEFS = [
     glb: 'figures/balanza.glb',
     available: true,
     /* Centro y al FONDO de la La Sala (pieza central, tipo museo).
-       La cámara entra mirando a z=-2.0; a z=-4.8 queda detrás de la nube
-       de partículas (que se despeja al cruzar) y la luz de acento la
-       ilumina desde el frente.
+       La z sale de `ROOM_FIGURE_Z` (config.js), que viaja con la cámara
+       (ROOM_Z): si la sala se mueve, la estatua se mueve sola y mantiene
+       los 4,3 de distancia al encuadre. Queda detrás de la nube de
+       partículas (que se despeja al cruzar) y la luz de acento la ilumina
+       desde el frente.
        `standsOn: 'soporte'` → el sistema la apoya sobre la cara superior del
        pedestal en cuanto ambos GLB terminan de cargar (ver `restack`), así el
        alto del pedestal no queda escrito a mano en dos sitios. */
-    x: 0, y: 0, z: -4.8,
+    x: 0, y: 0, z: ROOM_FIGURE_Z,
     standsOn: 'soporte',
     /* La balanza sale hacia un lado y la espada hacia el otro: centrada por
        bounding box, la peana quedaba corrida sobre el pedestal. Se centra por

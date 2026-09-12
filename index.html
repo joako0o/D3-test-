@@ -78,11 +78,11 @@
        corran en paralelo con el parseo de lo anterior. En red real recorta el
        arranque; en local (este entorno, limitado por CPU) el efecto es menor. -->
   <link rel="modulepreload" href="js/lib/three/three.module.min.js?v=1" />
-  <link rel="modulepreload" href="js/main.js?v=63" />
+  <link rel="modulepreload" href="js/main.js?v=64" />
   <link rel="modulepreload" href="js/lib/three/addons/loaders/GLTFLoader.js" />
   <link rel="modulepreload" href="js/lib/three/addons/loaders/DRACOLoader.js" />
-  <link rel="modulepreload" href="js/core/config.js?v=15" />
-  <link rel="modulepreload" href="js/scene/figures.js?v=4" />
+  <link rel="modulepreload" href="js/core/config.js?v=16" />
+  <link rel="modulepreload" href="js/scene/figures.js?v=5" />
   <link rel="modulepreload" href="js/core/viewport.js?v=2" />
   <!-- Segundo nivel del grafo (lo importa main.js): sin estas pistas el
        navegador recién los descubre al terminar de parsear main.js. -->
@@ -129,7 +129,7 @@
   <link rel="stylesheet" href="css/16-stage-voices.css?v=3" />
   <link rel="stylesheet" href="css/17-stage-timeline.css?v=2" />
   <link rel="stylesheet" href="css/18-stage-quotes.css?v=2" />
-  <link rel="stylesheet" href="css/19-stage-closing.css?v=4" />
+  <link rel="stylesheet" href="css/19-stage-closing.css?v=5" />
   <link rel="stylesheet" href="css/20-breakpoints.css?v=4" />
   <link rel="stylesheet" href="css/21-a11y-focus.css?v=4" />
   <link rel="stylesheet" href="css/22-quote-panel.css?v=4" />
@@ -146,7 +146,11 @@
        antes que las hojas). Pisa background/mask-image por si un CSS antiguo
        las aplica y deja el fondo vacío. Colores en literal, sin tokens. -->
   <style id="mint-inline">
-    .mint{position:relative;width:116px;height:116px}
+    /* Velocidades del aro y de las dos señales: el de adentro (r 38) da una
+       vuelta en 1,9 s y las de fuera (r 48) en 2,7 s — Kepler, T proporcional
+       a r^1,5. Compartían periodo y las de fuera adelantaban. Hay que cambiar
+       los dos números también en css/19-stage-closing.css. */
+    .mint{position:relative;width:116px;height:116px;--mint-ring-period:1.9s;--mint-orbit-period:2.7s}
     .mint>span{position:absolute}
     .mint-halo{left:4.58%;top:4.58%;width:90.83%;height:90.83%;box-sizing:border-box;
       border:1px solid rgba(255,215,106,.6);border-radius:50%;opacity:.15;
@@ -159,8 +163,8 @@
       background:rgba(255,215,106,.05)}
     .mint-ring{left:17.29%;top:17.29%;width:65.42%;height:65.42%;box-sizing:border-box;
       border:3px solid transparent;border-top-color:#ffd76a;border-right-color:#ffd76a;
-      border-radius:50%;animation:mint-spin 2.4s linear infinite}
-    .mint-orbit{left:0;top:0;width:100%;height:100%;animation:mint-spin 2.4s linear infinite}
+      border-radius:50%;animation:mint-spin var(--mint-ring-period) linear infinite}
+    .mint-orbit{left:0;top:0;width:100%;height:100%;animation:mint-spin var(--mint-orbit-period) linear infinite}
     .mint-orbit::after{content:"";position:absolute;top:7.83%;left:50%;width:4.33%;height:4.33%;
       margin-left:-2.167%;border-radius:50%;background:#8ab4f8}
     .mint-orbit::before{content:"";position:absolute;top:87.84%;left:50%;width:4.33%;height:4.33%;
@@ -779,7 +783,7 @@
   <script defer src="js/data/quotes.js"></script>
 
   <!-- El importmap vive en el <head> (debe preceder a toda carga de módulo). -->
-  <script type="module" src="js/main.js?v=63"></script>
+  <script type="module" src="js/main.js?v=64"></script>
 
 
 </body>

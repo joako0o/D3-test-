@@ -14,9 +14,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { initFigureSystem } from './scene/figures.js?v=4';
+import { initFigureSystem } from './scene/figures.js?v=5';
 import { buildCentralBankDoor } from './scene/build-door.js?v=14';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './core/config.js?v=15';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './core/config.js?v=16';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './core/viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
@@ -3172,6 +3172,11 @@ function animate() {
        medallas y aristas— se disuelve ahí, mientras la cámara todavía avanza
        (el movimiento tapa el fundido). Simétrico al volver atrás. */
     const porticoHold = 1 - THREE.MathUtils.smoothstep(crossT, 0.86, 0.96);
+    /* Ventana del fundido de las HOJAS (los dos bloques de materiales de
+       abajo la usan, por eso se declara aquí y no dentro de un bucle).
+       Ver CONFIG.door.leafFadeT: con la cámara terminando en ROOM_Z la
+       puerta ya queda detrás al llegar a esta ventana. */
+    const [lf0, lf1] = CONFIG.door?.leafFadeT ?? [0.84, 0.94];
     const matDirty =
       Math.abs(doorVisOpacity - doorMatCache.vis) > 1e-4 ||
       Math.abs(bcchColorT - doorMatCache.colorT) > 1e-4 ||
@@ -3194,10 +3199,14 @@ function animate() {
       const isBronze = isLeaf || kind === 'medal';
       const isAperture = kind === 'aperture';
       const lightT = THREE.MathUtils.smoothstep(bcchColorT, 0.10, 1.0);
-      /* Las hojas abren hacia DENTRO (z→−): al terminar quedan dentro de la
-         sala, frente a la cámara que ya entró. Se funden justo después de
-         abrir para que no se vean al final del cruce. */
-      const leafHold = isLeaf ? 1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75) : 1;
+      /* Las hojas abren hacia DENTRO (z→−). Antes se fundían en 0,55→0,75,
+         con la cámara todavía a 2,9…0,8 del umbral: el lector las veía
+         desvanecerse mientras ocupaban el 11–19 % de la pantalla. Ahora la
+         cámara termina DETRÁS de ellas (ROOM_Z), así que salen del encuadre
+         por sí solas y el fundido cae donde ya no se ven. */
+      const leafHold = isLeaf
+        ? 1 - THREE.MathUtils.smoothstep(crossT, lf0, lf1)
+        : 1;
       const hold = isLeaf ? leafHold : (isAperture ? apertureHold : 1) * porticoHold;
       const op = doorVisOpacity * bcchVisualT * hold;
       /* Idéntico trato a la moneda: mientras la puerta está a opacidad
@@ -3219,7 +3228,7 @@ function animate() {
       for (let i = 0; i < bcchEdgeMats.length; i++) {
         const rec = bcchEdgeMats[i];
         const edgeHold = rec.kind === 'leaf'
-          ? (1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75))
+          ? (1 - THREE.MathUtils.smoothstep(crossT, lf0, lf1))
           : (rec.kind === 'aperture' ? apertureHold : 1) * porticoHold;
         rec.m.opacity = rec.baseOpacity * doorVisOpacity * bcchVisualT * edgeHold * (0.55 + 0.45 * bcchColorT);
       }

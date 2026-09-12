@@ -82,6 +82,32 @@ export const HERO = {
   centerYRatio: heroParam('coinY', 0.31),
 };
 
+/* ══════════════════════════════════════════════════════════════════════
+   PROFUNDIDAD DE LA SALA — por qué la cámara termina DONDE termina
+═══════════════════════════════════════════════════════════════════════
+   MEDIDO sobre el GLB de la puerta (no a ojo):
+
+     · plano del umbral / bisagras  → z ≈ −0,89
+     · punta de las hojas abiertas a 78° → z = −1,26  (se meten 0,37 sala adentro)
+
+   Con `roomCamZ = −0,5` (lo que había) la cámara se detenía **0,39 por
+   DELANTE del umbral**: la puerta nunca quedaba detrás, así que no quedaba
+   más remedio que disolverla a la vista del lector — las hojas se fundían
+   entre crossT 0,55 y 0,75 ocupando entre el 11 % y el 19 % de la pantalla,
+   mientras la cámara todavía estaba a 2,9…0,8 unidades de distancia. Era
+   literalmente "la puerta desaparece antes de tiempo y se ve".
+
+   Con la cámara en −2,0 el cruce termina con **toda la puerta detrás**
+   (0,74 por detrás de la punta de las hojas), y las hojas salen del encuadre
+   por sí solas hacia crossT 0,79: el fundido ocurre donde nadie lo ve.
+
+   Todo lo que hay DENTRO de la sala viaja con la cámara (misma distancia
+   relativa), así que el encuadre de la estatua no cambia: 4,3 unidades de
+   la cámara a la figura, igual que antes. De ahí que estos cinco números
+   salgan de una sola constante: movida la cámara, se mueven juntos. */
+export const ROOM_Z = -2.0;
+export const ROOM_FIGURE_Z = ROOM_Z - 4.3;
+
 /* ────────────────────────────────
    Three.js — Coin & Setup
 ──────────────────────────────── */
@@ -203,10 +229,10 @@ export const CONFIG = {
                   'classic' → comportamiento ANTERIOR (fade-out simple).
                         ← cambiar a 'classic' para volver a la versión previa */
     transition: 'doorway',
-    roomCamZ: -0.5,    // z al terminar el dolly: la cámara queda dentro (0 = umbral)
+    roomCamZ: ROOM_Z,  // z al terminar el dolly: DETRÁS de las hojas (ver ROOM_Z arriba)
     roomCamY: 0.62,    // altura que limpia los escalones al cruzar
-    roomLook: { x: 0, y: 0.55, z: -2.0 },  // punto de mira ya dentro de la sala (sube el encuadre: la estatua queda arriba y el copy abajo)
-    roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
+    roomLook: { x: 0, y: 0.55, z: ROOM_Z - 1.5 },  // punto de mira ya dentro de la sala (sube el encuadre: la estatua queda arriba y el copy abajo)
+    roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: ROOM_Z + 0.05 },
     veilFog: 0.06,     // pico del velo de niebla durante el cruce
     exitFog: 0.16,     // pico de niebla al salir de la sala: la estatua se hunde en vez de apagarse
     exitFogSink: 0.14, // espesor extra al final de la salida (0,55→0,90): la estatua termina de hundirse ANTES de apagarse
@@ -215,7 +241,7 @@ export const CONFIG = {
        recoloca el enjambre al cruzar el umbral. La nube queda DELANTE de
        la cámara (z < roomCamZ) y se comprime, así el giro alrededor del
        eje Y nunca la barre hacia atrás y la sala no queda sin partículas. */
-    roomSwarm: { x: 0, y: 0.55, z: -2.5, scale: 0.35 },
+    roomSwarm: { x: 0, y: 0.55, z: ROOM_Z - 2.0, scale: 0.35 },
     /* Encuadre del acercamiento (ventanas de crossT en las que la mira viaja):
        aimDoorT: mira neutra de "La Reunión" → centro VISUAL de la puerta.
                  Que termine a ~0.45 hace que "un instante antes de entrar" la
@@ -223,6 +249,14 @@ export const CONFIG = {
        aimRoomT: puerta (ya disuelta) → interior de la sala (roomLook). */
     aimDoorT: [0.0, 0.45],
     aimRoomT: [0.55, 0.95],
+    /* Ventana en la que las HOJAS se funden (crossT). Antes 0,55→0,75, con
+       la cámara todavía a 2,9…0,8 unidades del umbral: el lector veía las
+       hojas desvanecerse ocupando entre el 11 % y el 19 % de la pantalla.
+       Con la cámara terminando en ROOM_Z (−2,0), las hojas salen del
+       encuadre por sí solas hacia crossT ≈ 0,79 y a partir de 0,84 ya están
+       detrás de la cámara, así que el fundido ocurre fuera de cuadro.
+       El pórtico sigue con su ventana propia (porticoHold, en main.js). */
+    leafFadeT: [0.84, 0.94],
   },
   doorText: {
     /* ══════════════════════════════════════════════════════════════════════
@@ -266,7 +300,7 @@ export const CONFIG = {
      Las posiciones/escalas de las figuras viven en `js/figures.js`; aquí
      solo se configura la órbita. */
   room: {
-    figure: { x: 0, z: -4.8 },     // debe coincidir con `figures.js` (soporte/balanza)
+    figure: { x: 0, z: ROOM_FIGURE_Z },   // `figures.js` importa ROOM_FIGURE_Z: no puede desincronizarse
     orbit: {
       count: 12,                    // fragmentos en órbita (4 por tono)
       trail: 58,                    // muestras de estela por fragmento
