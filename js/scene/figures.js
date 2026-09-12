@@ -15,7 +15,7 @@ import { DRACOLoader } from '../lib/three/addons/loaders/DRACOLoader.js';
 /* Misma URL (query incluida) que en main.js: con specifiers distintos el
    navegador instancia DOS módulos config.js con valores distintos. La z de
    la pieza central sale de aquí para no tenerla escrita en dos sitios. */
-import { ROOM_FIGURE_Z } from '../core/config.js?v=16';
+import { ROOM_FIGURE_Z } from '../core/config.js?v=21';
 
 export const FIGURE_DEFS = [
   {

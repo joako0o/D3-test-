@@ -55,6 +55,23 @@
   }
   </script>
 
+  <!-- Las DOS fuentes del pliegue superior, precargadas.
+       El <h1> del hero —que es el elemento LCP— usa `var(--font-display)` con
+       `font-weight: 600` (00-tokens-base.css:159), o sea Playfair Display 600;
+       el párrafo bajo él usa Inter 300. Son exactamente las dos que Lighthouse
+       señaló como causantes del layout shift (CLS 0,042).
+       Sin estas pistas el navegador las descubre recién al parsear
+       css/fonts.css, así que la cadena es HTML → fonts.css → woff2: en el
+       informe de producción esa cadena llegó a 3.617 ms de latencia crítica.
+       Con preload se piden en paralelo con el HTML, el intercambio de fuente
+       ocurre antes y el texto se mueve menos al cargar.
+       `crossorigin` es OBLIGATORIO en un preload de fuente aunque el origen sea
+       el mismo: sin ese atributo el navegador descarta la pista y baja el
+       archivo dos veces. La URL debe coincidir con la de @font-face en
+       css/fonts.css (que resuelve a /fonts/… desde css/). -->
+  <link rel="preload" as="font" type="font/woff2" href="fonts/playfair-display-600.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="fonts/inter-300.woff2" crossorigin />
+
   <!-- Fuentes self-hosted (fonts/*.woff2). Sin dependencia de Google Fonts:
        el render ya no cambia entre local, CI y producción, y funciona offline. -->
   <link rel="stylesheet" href="css/fonts.css?v=2" />

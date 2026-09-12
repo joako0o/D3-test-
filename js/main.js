@@ -129,7 +129,7 @@ document.querySelectorAll('.stage-hook, .stage-voices, .stage-acts, .stage-count
 const scene = new THREE.Scene();
 const camBaseY = 0.7;
 scene.fog = new THREE.FogExp2(CONFIG.door?.fog ?? 0x0a0e1a, 0);
-const initialVp = getViewportSize();
+const initialVp = getViewportSnapshot();
 const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, initialVp.width / initialVp.height, 0.1, 100);
 camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
 camera.lookAt(0, HERO_DOOR_LOCKUP ? 0.95 : 0.7, HERO_DOOR_LOCKUP ? -0.25 : 0);
@@ -641,7 +641,7 @@ function getHeroTitleTop() {
    de aquí, así que la proporción es la misma en cualquier viewport.
    Ver el diagrama y el porqué en js/core/config.js → HERO. */
 function getHeroBand() {
-  const { width: w, height: h } = getViewportSize();
+  const { width: w, height: h } = getViewportSnapshot();
   const top = THREE.MathUtils.clamp(h * HERO.safeTopRatio, 56, 112);
   const titleTop = getHeroTitleTop();
   /* Si el título aún no ha maquetado (primer frame, fuentes sin cargar) se
@@ -697,7 +697,7 @@ function getResponsiveCoinTargetPx() {
 }
 
 function getResponsiveCoinScale() {
-  const { height: h } = getViewportSize();
+  const { height: h } = getViewportSnapshot();
   const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
   const dist = CONFIG.camera.z;
   const worldPxPerUnit = h / (2 * tanHalf * dist);
@@ -722,7 +722,7 @@ function getResponsiveCoinScale() {
  * puerta detrás de ella.
  */
 function getResponsiveCoinBaseY() {
-  const { height: h } = getViewportSize();
+  const { height: h } = getViewportSnapshot();
   const centerY = h * (HERO_DOOR_LOCKUP ? HERO.centerYRatio : 0.41);
   const tanHalf = Math.tan((CONFIG.camera.fov * Math.PI) / 360);
   const worldPxPerUnit = h / (2 * tanHalf * CONFIG.camera.z);
@@ -898,7 +898,7 @@ function applyDoorScale() {
   /* En ventanas muy anchas y bajas la moneda de referencia conserva un
      tamaño tipográfico que haría crecer demasiado la puerta en vertical.
      El límite solo actúa por encima de ~19:10; 16:9 y móvil no cambian. */
-  const vp = getViewportSize();
+  const vp = getViewportSnapshot();
   const aspect = vp.width / Math.max(vp.height, 1);
   const aspectFit = THREE.MathUtils.clamp(1.9 / aspect, 0.78, 1);
   const widthWorld = getCoinWorldSize() * (cfg.widthVsCoin ?? 1.4) * aspectFit;
@@ -1806,7 +1806,7 @@ let lastPointerX = 0, lastPointerY = 0;
 let isDragging = false, dragStartX = 0, dragStartY = 0, dragRotY = 0, dragRotX = 0;
 
 function onPointerMove(cx, cy) {
-  const vp = getViewportSize();
+  const vp = getViewportSnapshot();
   mouseX = (cx / vp.width) * 2 - 1;
   mouseY = (cy / vp.height) * 2 - 1;
   if (isDragging) { dragRotY += (cx - dragStartX) * 0.005; dragRotX += (cy - dragStartY) * 0.005; dragStartX = cx; dragStartY = cy; }
@@ -2408,7 +2408,7 @@ function setPickThreshold(radiusMul = 1) {
    más cercana al punto de contacto se lleva el acierto. */
 function pickPoint(cx, cy, radiusMul = 1) {
   if (!QUOTES_N) return -1;
-  const vp = getViewportSize();
+  const vp = getViewportSnapshot();
   setPickThreshold(radiusMul);
   ndc.x = (cx / vp.width) * 2 - 1;
   ndc.y = -(cy / vp.height) * 2 + 1;
@@ -2672,7 +2672,7 @@ let roomAimDirty = true;
 /* Y en píxeles de pantalla del punto más bajo del retablo, si la cámara de
    sala mirase a `lookY`. */
 function projectRoomFootY(lookY) {
-  const { width: w, height: h } = getViewportSize();
+  const { width: w, height: h } = getViewportSnapshot();
   const cam = _roomProbeCam;
   cam.fov = CONFIG.camera.fov;
   cam.aspect = w / h;
@@ -2719,7 +2719,7 @@ function refreshRoomAim() {
   g.updateMatrixWorld(true);
   if (_roomProbeBox.isEmpty() || !Number.isFinite(_roomProbeBox.min.y)) return;
 
-  const { height: h } = getViewportSize();
+  const { height: h } = getViewportSnapshot();
   /* offsetTop del titular DENTRO del contenedor sticky = su posición en
      pantalla mientras la sección está fijada, y no depende del scroll. */
   const titleTop = roomTitleEl.offsetTop;
@@ -4010,7 +4010,7 @@ let axesFocusT = 0;
    scatter quedaría proyectado con coordenadas incorrectas para los ejes. */
 const _layoutCamera = new THREE.PerspectiveCamera();
 function getLayoutCamera() {
-  const { width, height } = getViewportSize();
+  const { width, height } = getViewportSnapshot();
   _layoutCamera.aspect = width / height;
   _layoutCamera.fov = CONFIG.camera.fov;
   _layoutCamera.near = camera.near;
@@ -4029,7 +4029,7 @@ function get3DPosFromData(date, sentiment) {
 
   const px = xScale(date);
   const py = yScale(sentiment);
-  const vp = getViewportSize();
+  const vp = getViewportSnapshot();
   const xNDC = (px / vp.width) * 2 - 1;
   const pyNDC = -(py / vp.height) * 2 + 1;
 
@@ -4837,6 +4837,22 @@ counterEls.forEach((el) => {
        pasado el centro y terminaba desplazado a la izquierda. */
     const focusStart = cw * 0.78;
     const focusEnd = cw * 0.5;
+    /* GUARDA CONTRA 0/0. Si la pista todavía no maquetó (sección fuera de
+       flujo, fuentes sin cargar, viewport de ancho 0) entonces `panelCenter`,
+       `focusStart` y `totalW` valen todos 0 y la división de abajo da
+       0/0 = NaN. Ese NaN viaja por seg() → easeOut3() → fmt() y los tres
+       contadores del pipeline pintan literalmente «NaN» — es lo que se ve en
+       producción: «NaN palabras en los textos truncados», «NaN fragmentos
+       etiquetados» y «confianza del ejemplo NaN», los tres a la vez porque
+       los tres cuelgan de `bounds`.
+       Sin desbordamiento no hay recorrido horizontal que mapear, así que se
+       reparten los paneles a partes iguales: la secuencia se conserva y ningún
+       valor sale no finito. */
+    if (!(totalW > 0) || !(cw > 0) || !panels.length) {
+      const n = panels.length || 1;
+      const step = 1 / n;
+      return Array.from(panels).map((_, i) => ({ start: i * step, end: Math.min(1, (i + 1) * step) }));
+    }
     return Array.from(panels).map(panel => {
       const panelCenter = panel.offsetLeft + panel.offsetWidth / 2;
       const start = (panelCenter - focusStart) / totalW;

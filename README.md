@@ -18,6 +18,8 @@ npm run check        # arranca el sitio fuera del navegador y avisa si algo revi
 npm run shots        # capturas reales de cada sección (necesita npm start)
 npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
 npm run perf         # mide la fluidez del hilo principal haciendo scroll (ver § Fluidez)
+npm run startup      # qué bloquea el hilo principal mientras la página ARRANCA
+npm run lh           # Lighthouse real contra el sitio: puntaje y auditorías que restan
 npm run lint         # ESLint sobre el código propio: variables sin definir, imports sin usar…
 npm run format:check # Prettier sobre scripts/, tools/ y los JSON (format → los reescribe)
 ```
@@ -35,10 +37,19 @@ publica.
   `tools/` y los JSON. Los fuentes de `js/` y `css/` están excluidos a
   propósito: tienen comentarios alineados a mano y un reformateo masivo solo
   ensuciaría el historial. `.editorconfig` fija sangría/EOL para cualquier editor.
-- **Lighthouse** (Chrome → F12 → pestaña *Lighthouse*): la referencia es
-  accesibilidad 100 · buenas prácticas 100 · SEO 100. El puntaje de
-  rendimiento solo vale medido en un navegador real (no en el sandbox por
-  software).
+- **Lighthouse** (`npm run lh`, o Chrome → F12 → pestaña *Lighthouse*): la
+  referencia es accesibilidad 100 · buenas prácticas 100 · SEO 100.
+  `npm run lh` corre el Lighthouse de verdad e imprime las cinco métricas que
+  deciden el puntaje (LCP 25 % · TBT 30 % · CLS 25 % · FCP 10 % · SI 10 %) y
+  las auditorías que restan, ordenadas por ahorro estimado. Contra la URL
+  publicada: `npm run lh -- --origin=https://joako0o.github.io/D3-test-`
+  (eso hay que correrlo en una máquina con salida a internet: el sandbox
+  filtra el egreso y no alcanza github.io).
+  **Ojo con el número del sandbox:** ese Chromium pinta con SwiftShader, así
+  que el raster cuesta mucho más que en una GPU real y el puntaje que sale
+  aquí es un SUELO, no el de producción. Lo que sí se transfiere tal cual es
+  el diagnóstico —qué archivo pesa de más, qué bloquea el render, qué fuente
+  es el LCP—, porque eso es propiedad del código y no de la GPU.
 - **SEO**: `robots.txt`, `sitemap.xml`, `<link rel=canonical>`, Open Graph +
   Twitter Card con `og-image.jpg` (1200×630) y datos estructurados JSON-LD
   (`WebPage` + `Dataset`) en `index.html`. Tras publicar, verificar la
@@ -123,8 +134,10 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │   ├── smoke-test.mjs     204 · `npm run check`
 │   └── build_door.py         generador paramétrico de la puerta BCCh (Blender, Cycles/EEVEE)
 ├── scripts/
-│   ├── lib/chromium.mjs    el Chromium con SwiftShader, compartido por las tres herramientas de abajo
+│   ├── lib/chromium.mjs    el Chromium con SwiftShader, compartido por las herramientas de abajo
 │   ├── perf/measure.mjs    `npm run perf` — mide el coste del hilo principal en scroll y reposo
+│   ├── perf/startup.mjs    `npm run startup` — tareas largas del arranque, con la pila que las causó
+│   ├── perf/lighthouse.mjs `npm run lh` — Lighthouse real: las 5 métricas y las auditorías que restan
 │   └── screenshots/
 │       ├── capture.mjs     `npm run shots`
 │       └── hero-check.mjs  `npm run hero:check`

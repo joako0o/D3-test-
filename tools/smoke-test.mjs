@@ -261,6 +261,52 @@ await new Promise((r) => setTimeout(r, SETTLE_MS));
 /* ── 5. Comprobaciones sobre el DOM ya construido ────────────────────── */
 const checks = [];
 const $ = (sel) => w.document.querySelector(sel);
+
+/* ── 5a. Un mismo archivo con dos specifiers = dos módulos ──────────────
+   Para el navegador `core/config.js?v=16` y `core/config.js?v=21` son DOS
+   módulos distintos: lo baja dos veces, lo parsea dos veces y crea dos
+   instancias con estado propio. No es teoría: pasó entre main.js y
+   scene/figures.js y el informe de Lighthouse lo mostró en la red (ambas
+   URLs, 9,1 KiB cada una). Los `?v=` se suben a mano, así que la deriva
+   vuelve a ocurrir en cuanto alguien bumpéa uno y no el otro. Esto la corta.
+   Se miran solo los fuentes propios: js/lib/ y js/vendor/ son bibliotecas
+   copiadas y no usan versionado por query. */
+const importSpecs = [];
+(function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) {
+      if (!/[\\/](lib|vendor)$/.test(p)) walk(p);
+      continue;
+    }
+    if (!p.endsWith('.js')) continue;
+    const src = fs.readFileSync(p, 'utf8');
+    for (const m of src.matchAll(/(?:^|[\n;])\s*(?:import|export)[\s\S]{0,200}?from\s*['"]([^'"]+)['"]/g))
+      importSpecs.push([path.relative(ROOT, p), m[1]]);
+  }
+})(path.join(ROOT, 'js'));
+
+const byResolved = new Map();
+for (const [from, spec] of importSpecs) {
+  if (!spec.startsWith('.')) continue;
+  const q = spec.indexOf('?');
+  const abs = path.resolve(path.join(ROOT, path.dirname(from)), q < 0 ? spec : spec.slice(0, q));
+  if (!abs.startsWith(path.join(ROOT, 'js'))) continue;
+  /* Se compara la QUERY, no el texto del specifier: `./core/x.js?v=2` desde
+     main.js y `../core/x.js?v=2` desde scene/ son la MISMA URL y por tanto el
+     mismo módulo. Lo que parte el módulo en dos es que la query difiera. */
+  if (!byResolved.has(abs)) byResolved.set(abs, new Set());
+  byResolved.get(abs).add(q < 0 ? '(sin query)' : spec.slice(q));
+}
+const dupes = [...byResolved].filter(([, specs]) => specs.size > 1);
+checks.push([
+  dupes.length
+    ? 'módulos con ?v= divergente (el navegador los instancia dos veces): ' +
+      dupes.map(([f, s]) => `${path.relative(ROOT, f)} → ${[...s].join(' | ')}`).join('; ')
+    : 'ningún módulo importado con dos ?v= distintos',
+  dupes.length === 0,
+]);
+
 checks.push(['skip link', !!$('.skip-link')]);
 checks.push(['canvas con texto alternativo', !!$('#canvas[aria-label]')]);
 /* jsdom, con los scripts activos, deja el contenido de <noscript> como texto

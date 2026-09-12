@@ -88,14 +88,20 @@ export async function loadChromium() {
 /* Abre el navegador y devuelve { browser, page, errors }.
    `errors` recoge pageerror + console.error, que es el fallo que más importa:
    una pantalla en negro por un `const` mal escrito no se ve en una métrica. */
-export async function launchChromium({ width = 1440, height = 900, extraArgs = [] } = {}) {
+export async function launchChromium({ width = 1440, height = 900, extraArgs = [], headless = 'shell' } = {}) {
   const { chromium, puppeteer } = await loadChromium();
   await ensureChromiumLibs();
 
   const executablePath = await chromium.executablePath();
   const browser = await puppeteer.launch({
     executablePath,
-    headless: 'shell',
+    /* `headless` se puede pedir: 'shell' (el viejo, más rápido y el que usan
+       las capturas) o `true` (el headless NUEVO). Lighthouse necesita el
+       nuevo: con el viejo Chrome no emite los eventos `Screenshot` de la
+       traza y Lighthouse revienta con NO_SCREENSHOTS, lo que deja sin valor
+       `metrics`, sin puntaje la categoría de rendimiento y sin datos todos
+       los insights. No es cosmético: sin capturas no hay Speed Index. */
+    headless,
     args: [
       ...chromium.args,
       '--use-gl=angle',
