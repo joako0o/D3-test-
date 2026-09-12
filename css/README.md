@@ -3,6 +3,34 @@
 El CSS vivía dentro de un `<style>` de 3.769 líneas en `index.html`. Ahora hay
 un archivo por sección.
 
+## Antes de tocar nada: `css/bundle.css` es un derivado
+
+`index.html` carga **una sola hoja**: `css/bundle.css`. Es la unión minificada
+de los archivos de este directorio, en el mismo orden de la cascada, y la
+genera:
+
+```bash
+npm run build:css
+```
+
+- **Se edita aquí** (`css/00-tokens-base.css`, `css/16-stage-voices.css`…), con
+  sus comentarios y su orden por prefijo numérico. El bundle nunca se edita a
+  mano: se pisa al regenerar.
+- `npm start` lo regenera solo (hay un `prestart`), así que en el día a día no
+  hay que acordarse de nada.
+- `npm run check` **falla** si el bundle quedó viejo respecto a los fuentes,
+  para que no se publique un CSS a medio cambiar.
+- Si agregas un archivo nuevo, respeta el prefijo numérico: el generador avisa
+  y lo deja fuera si no lo lleva (`scripts/build-css.mjs`).
+
+Por qué una sola hoja y no 21: cada `<link>` es una petición que **bloquea el
+render**, y sobre HTTP/1.1 se encolan de a seis por origen. Medido en
+producción con Lighthouse, las 21 hojas eran 58,6 KiB de bloqueo de render y
+850 ms de ahorro estimado, con las fuentes de la portada entrando a 3,1–3,6 s
+porque iban al final de esa cola. El minificado es conservador a propósito
+(protege cadenas, `url(data:…)` y `calc()`): quita comentarios y espacios, no
+reescribe valores.
+
 ## La regla de oro: el orden es la cascada
 
 Estos archivos se cargan con `<link rel="stylesheet">` en `index.html`, **en el

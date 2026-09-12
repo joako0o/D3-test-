@@ -304,7 +304,22 @@ export function initActBrowser({ quotes, openQuote }) {
     renderAct(act);
     window.dispatchEvent(new CustomEvent('particle-act-focus', { detail: { date: act.date } }));
     const selected = listItems.find(({ act: listAct }) => listAct.id === act.id);
-    selected?.button.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    /* `scrollIntoView` mueve el DOCUMENTO, no solo la lista: recorre todos los
+       ancestros desplazables, y el de arriba del todo es la página. Mientras la
+       sección se construía en la evaluación del módulo no se notaba (el `load`
+       de main.js devolvía el scroll a 0 justo después); al construirse DESPUÉS
+       (js/core/deferred-boot.js) ese salto se quedaba: el lector aterrizaba en
+       el acta en vez de en la portada, y el desplazamiento contaba como CLS.
+       Ahora se mueve SOLO el scroll interno de la lista, que es lo que se
+       quería: que el acta elegida quede a la vista dentro del índice. */
+    if (!selected) return;
+    const listBox = list.getBoundingClientRect();
+    const btnBox = selected.button.getBoundingClientRect();
+    /* Mismo criterio que `block: 'nearest'`: el desplazamiento MÍNIMO que deja
+       el botón dentro, pegado al borde por el que se salía. Nada de centrarlo:
+       se veía distinto y movía la lista más de lo necesario. */
+    if (btnBox.top < listBox.top) list.scrollTop += btnBox.top - listBox.top;
+    else if (btnBox.bottom > listBox.bottom) list.scrollTop += btnBox.bottom - listBox.bottom;
   };
 
   const renderList = (yearValue = yearFilter.value) => {
