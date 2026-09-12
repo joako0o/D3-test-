@@ -161,18 +161,21 @@ Es el archivo que hay que saber recorrer. Va en este orden:
 
 | Líneas | Región |
 |---|---|
-| 1–385 | imports, constantes del DOM, escena, cámara, luces, estado de módulo, warmup |
-| 386–467 | figuras de La Sala + rig de luces de la puerta |
-| 468–716 | moneda, composición del hero |
-| 717–1716 | la puerta (Acto 2): respaldo procedural, GLB `Puerta_bcch_v3`, `BCCH_V3` + `buildOpenableBcchDoor()` (1388–1660) |
-| 1717–1903 | enjambre de partículas (memoria trazable) |
-| 1904–2544 | órbitas de La Sala + `openQuote()` + navegación por teclado |
-| 2545–2672 | coreografía de cámara (`cameraChoreographyStops`) |
-| **2673–3341** | **`animate()`** — el bucle de render |
-| 3342–3532 | panel de cita, layout/resize, objetivos de partículas |
-| 3533–3750 | hook de señales, scrubber, hooks `?debug`, Lenis |
-| 3751–4398 | todos los `ScrollTrigger`, sección por sección |
-| 4399–4545 | "técnicas premium": color de fondo, parallax, velocidad de scroll |
+| 1–138 | imports, constantes del DOM, escena, cámara, luces, estado de módulo |
+| 139–250 | **tier de calidad 3D**: `deviceMemory`, GPU débil, techo de DPR, `window.__D3_PERF` |
+| 251–490 | precalentado de la escena (`warmUpScene`, texturas, introspección) |
+| 491–570 | figuras de La Sala + rig de luces de la puerta |
+| 571–813 | moneda, composición del hero |
+| 814–1836 | la puerta (Acto 2): respaldo procedural, GLB `Puerta_bcch_v3`, `BCCH_V3` + `buildOpenableBcchDoor()` |
+| 1837–1992 | enjambre de partículas (memoria trazable) |
+| 1993–2665 | órbitas de La Sala + `openQuote()` + navegación por teclado |
+| 2666–2837 | coreografía de cámara (`cameraChoreographyStops`) |
+| 2838–2902 | **DPR adaptable** (métrica de frame real) + **modo póster** (`enterPosterMode`) |
+| **2903–3731** | **`animate()`** — el bucle de render |
+| 3732–3926 | panel de cita, layout/resize, objetivos de partículas |
+| 3927–4141 | hook de señales, scrubber, hooks `?debug`, Lenis |
+| 4142–4854 | todos los `ScrollTrigger`, sección por sección |
+| 4855–5000 | "técnicas premium": color de fondo, parallax, velocidad de scroll |
 
 Los números envejecen a cada commit. Para regenerar el mapa:
 
@@ -489,6 +492,197 @@ Lo que se hizo (todo en `js/main.js` y `js/core/viewport.js`):
   presupuesto que se pueda exigir hoy.
 - **Los frames >50 ms** en este entorno los domina el raster por software; se
   informan pero no suspenden la ejecución.
+
+## Rendimiento del 3D en máquinas modestas (2026-09-11)
+
+El síntoma era en GitHub Pages: **la portada y la puerta se arrastraban en
+ciertos portátiles, mientras las secciones D3 volaban**. El diagnóstico: el
+hilo principal de la página es barato (ver § Fluidez); lo que se nota en una
+GPU integrada (Intel HD/UHD, iGPU de portátil) es el **relleno de píxeles** —
+DPR 1,5 × antialias (MSAA) × materiales PBR × hasta 9 luces por fragmento.
+La geometría no es el problema (la puerta trae ~3,3k triángulos, la moneda
+~18k).
+
+El sistema viejo ya tenía un "DPR adaptable", pero medía mal y se
+autobloqueaba:
+
+1. **Medía el coste de CPU de `renderer.render()`**, no el tiempo real del
+   frame. En una iGPU el CPU despacha los draws en ~10 ms y la GPU se queda
+   atrás pintando: el medidor decía "todo bien" a 25 fps y el DPR nunca
+   bajaba. Ahora se mide el delta entre rAF (`animate()` cabecera), que es
+   lo que ve el ojo. El parón por pestaña en segundo plano se descarta con
+   `visibilitychange`, **no** con un tope de ms: a 2 fps los deltas son de
+   500 ms y cuentan; con un tope fijo el sistema quedaba ciego justo en la
+   máquina más lenta.
+2. **El handler de resize repintaba con `Math.min(devicePixelRatio, 1,5)`
+   fijo**: cada resize deshacía la bajada que el adaptable había conseguido.
+   Ahora respeta `adaptiveDpr`.
+3. Solo se mide con la cortina ya abajo (`armAdaptive()`), no los primeros
+   segundos, que no son representativos.
+
+Sobre eso, tres capas de degradación (todo en `js/main.js`, todo reversible
+hasta la última):
+
+- **Tier por memoria declarada** (`deviceMemory ≤ 4`): sin MSAA y techo de
+  DPR 1,0 desde la creación del contexto. Es lo único que se puede decidir
+  antes de crearlo; el resto se decide después con los datos reales.
+- **Tier por GPU conocida débil**: el nombre se lee del contexto principal
+  con `WEBGL_debug_renderer_info` (cero coste; **no** se crea contexto de
+  sonda — medido: ~1,6 s de arranque, y es la razón por la que el proyecto
+  no sondea WebGL aparte). Lista conservadora: Intel HD/UHD, Iris pre-Xe,
+  Adreno de entrada, Mali antiguos, SwiftShader/llvmpipe. Un Iris Xe o un
+  Adreno 650+ no entra: para ellos ya está el paso adaptable. Si aplica, el
+  techo baja a DPR 1,0 con la cortina aún arriba (no se ve como tirón).
+- **DPR adaptable con la métrica corregida**: a media ventana de 90 frames,
+  >26 ms de media baja el DPR de a 0,25 (suelo 0,75 — render por debajo de
+  la resolución de pantalla y upscale por CSS, la técnica que recomienda la
+  guía de mejores prácticas de WebGL de MDN) y <12 ms lo recupera.
+
+**Modo póster — el "truco del PNG" hecho a fondo.** Si con el DPR ya en su
+suelo el equipo sostiene menos de ~24 fps (3 ventanas malas seguidas, a más
+de 15 s de la cortina), la escena 3D pasa a ser **una imagen fija**:
+
+1. último `render()`,
+2. `canvas.toDataURL('image/png')` **síncrono, en el mismo task** (con
+   `preserveDrawingBuffer=false` el buffer se descarta al componer; leerlo
+   después da una imagen en blanco — verificado en Chromium 133),
+3. el `<canvas>` se sustituye por un `<img id="canvasPoster">` con ese PNG
+   (mismo layout: `fixed; inset:0; z-index:2`),
+4. el bucle se retira del ticker (coste JS y GPU a cero) y el contexto se
+   **pierde a propósito** (libera la VRAM) — solo si el swap salió bien;
+   si la captura falla, el canvas se queda pintando congelado antes que
+   quedar en blanco.
+
+Qué sigue vivo en modo póster: scroll, Lenis, las secciones D3, el panel de
+citas (DOM), el teclado, todo el relato. Qué se congela: moneda, puerta,
+nube, cámara. El síntoma "las tarjetas vuelan pero la moneda se arrastra"
+deja de existir: la moneda deja de arrastrarse porque deja de moverse.
+`body[data-perf-poster="1"]` lo marca.
+
+Diagnóstico en caliente: con `?debug`, `window.__D3_PERF` expone
+`{ tier, gpu, cpuTier, lowMem, headless, armed, frames, samples, dpr, cap,
+poster, avgMs }` — para depurar un portátil concreto sin abrir consola.
+
+En headless (`npm run shots/perf/hero:check`) el sistema queda **desactivado
+a propósito**: el arnés va a DPR 1 por definición y el SwiftShader va a
+~1,5 fps por software; si el póster disparara ahí, las capturas saldrían
+congeladas a mitad de recorrido.
+
+Además, dos técnicas de la investigación (ver abajo) aplican a TODAS las
+máquinas sin cambiar un solo píxel:
+
+- **Pase opaco con opacidad 1** (moneda, hojas y marco de la puerta): el
+  blending alfa paga la lectura + escritura del frame buffer **incluso con
+  alfa = 1**, y en GPUs débiles ese coste es desproporcionado ("most mobile
+  devices are catastrophically slow at drawing alpha-blended pixels" —
+  r/gamedev; "additive is much cheaper than alpha" — thegamedev.guru). La
+  puerta cubre una fracción grande de la pantalla en el hero y el Acto 2,
+  justo las secciones que se arrastraban. Con opacidad completa el material
+  va al pase opaco (sin blending, con depth write igual); solo cruza al
+  pase de blending durante los fundidos reales. Píxel a píxel idéntico.
+- **Suelo de DPR 0,75**: cuando 1,0 no basta, en vez de saltar al póster se
+  renderiza a 0,75× la resolución de pantalla y el CSS escala el canvas
+  (la técnica explícita de la guía de mejores prácticas de WebGL de MDN:
+  "rendering to a low resolution WebGL context and using CSS to upscale").
+  ~44 % menos píxeles que DPR 1,0; la escena (oro liso, piedra, niebla)
+  tolera el upscale; el texto del hero es DOM y sigue nítido.
+
+### Lo demás que se investigó (y por qué sí/no entró)
+
+Investigación 2026-09-11 sobre foros (gamedev, Stack Overflow, r/gamedev),
+docs (MDN, three.js) y guías de optimización (RapidMade "WebGL/Three.js CAD
+Rendering Optimization", Utsubo "100 Three.js Tips", comparativas de
+antialiasing 2026):
+
+| Técnica | Hallazgo | Decisión |
+|---|---|---|
+| **MSAA → FXAA/SMAA post** | MSAA 4× cuesta 10–40 % del FPS; FXAA <3 %, SMAA 3–8 %; "MSAA is dead" en el consenso. | Parcial: `antialias:false` ya entra en el tier LOW_MEM. No en el tier de GPU débil: el nombre de la GPU solo se conoce DESPUÉS de crear el contexto (y el proyecto ya decidió —medido: 1,6 s— no crear contexto de sonda). FXAA completo requeriría añadir la cadena de post-processing (EffectComposer + shaders) al vendor; queda como siguiente paso si el tier de iGPU sigue justo. |
+| **Materiales PBR baratos** | `MeshStandardMaterial` es el material más caro; en Intel UHD puede saturar los fragment processors (RapidMade). | Descartado: la escena tiene ~21k triángulos (no el caso CAD de 1M+); el brillo PBR de la moneda ES la pieza. El coste de fragmento se ataca con DPR/opaco/póster, que es donde se medía el arrastre. |
+| **Recortar luces** | Cada luz × cada fragmento (forward): coste lineal con el nº de luces. | Descartado por ahora: cambiar el set de luces recompila shaders (el warmup ya calienta dos estados; un tercero "lite" es viable si el tier sigue justo). En las secciones tardías ya se vive con 3–5 luces, no 11. |
+| **`mediump` en shaders** | Hasta 2× más rápido en Adreno/Mali (Qualcomm/Arm); "desktop GPUs ignore mediump entirely" (Utsubo). | Descartado: sin ganancia en el hardware objetivo (iGPU de escritorio) y `MeshStandardMaterial` tiene artefactos de precisión conocidos en mediump (three.js #14570). |
+| **Render-on-demand** | "Three.js renders 60×/s regardless of whether the scene changed" (RapidMade). | No aplica: la escena NUNCA está quieta (la moneda gira y la nube deriva siempre). Primera candidata si algún día el hero se congela en reposo. |
+| **`EXT_disjoint_timer_query_webgl2`** (tiempo GPU real en página) | Mediría el GPU en vez del rAF… pero está **desactivado en Chrome estable** y ausente en Firefox por mitigaciones de timing-attack (SitePoint, 2026). | No usable: el delta de rAF sigue siendo la métrica práctica (y la que ve el ojo). |
+| **Foveated / Variable Rate Shading** | Menor resolución en el periférico. | No aplica: no hay eye-tracking y `EXT_fragment_density_map` no está disponible por defecto; la escena es pequeña y centrada. |
+| **WebGPU** | Ganas grandes en draw calls/compute; aquí los draw calls son ~18. | Migración de tamaño distinto a este problema; se reevalúa si se toca el techo de WebGL. |
+
+**Cómo diagnosticar la máquina que falla (lo que falta en el arnés):** el
+SwiftShader de `npm run perf` no reproduce una iGPU real. En el portátil
+problema: 1) `tu-sitio/?debug` → `window.__D3_PERF` (tier, gpu, dpr, avgMs,
+poster, en vivo); 2) Chrome → F12 → Performance → grabar: la línea **GPU**
+muestra el tiempo real por frame; 3) extensión **Spector.js** (captura un
+frame WebGL: draw calls, buffers, stats); 4) para el caso grueso,
+**RenderDoc** se engancha a Chrome (soporte oficial para WebGL/ANGLE, ver
+`chromium.googlesource.com/docs/gpu/`) y desmenuza el frame por pipeline;
+5) en Intel, **Intel GPA** mide fill rate y uso de GPU directo.
+
+### Adaptación a dispositivos, resoluciones y refresco (2026-09-11)
+
+Investigación sobre tipografía fluida (WCAG 1.4.4), unidades de viewport
+(`vh`/`svh`/`dvh`/`lvh`), safe areas, responsive en three.js y
+independencia del refresco (gamedev.net, web.dev, MDN, discursos de three.js).
+Primero, lo que el repo **ya hacía bien** (auditado contra la práctica
+recomendada, no se tocó):
+
+- **Tipografía fluida correcta**: los tokens `--fs-*` de
+  `css/00-tokens-base.css` son `clamp(min, rem + vw, max)` con **min y max en
+  rem** (respeta el tamaño de letra que el usuario elija en el navegador —
+  WCAG 1.4.4—) y el centro en vw. Nunca puro `vw` en el preferido: con zoom
+  150–200 % un `vw` solo ignoraría la escala del usuario.
+- **Alturas de sección estables**: los contenedores fijados usan `100svh`
+  (el viewport **con** barra de direcciones: el valor no cambia al
+  desplazarse) y `22-quote-panel.css` los corrige a `100dvh` con `@supports`
+  en los navegadores móviles. La regla general de la investigación: `vh` ≡
+  `lvh` (viewport grande, "el 100vh miente" en móvil), `svh` = estable para
+  longitudes y pins, `dvh` = sigue el colapso de la barra → **reflows y
+  saltos de scroll si se usa como longitud**.
+- **Safe areas**: `env(safe-area-inset-*)` ya está en 4 hojas +
+  `viewport-fit=cover` en el meta (sin el meta los insets salen 0: añadirlos
+  no arriesga nada).
+- **El lienzo**: `getViewportSize()` se apoya en `clientWidth/Height` con
+  `visualViewport` solo como **disparador** de resize (base medida), y
+  `getViewportSnapshot()` evita el reflujo por frame.
+- **Las figuras 3D se componen contra el DOM real**, no contra fórmulas: el
+  FOV de `PerspectiveCamera` es **vertical** (three.js), así que un objeto
+  sigue su tamaño de pantalla con el **alto** del viewport; en pantallas
+  ultraanchas el texto CSS se encoge y la figura no. La adaptación correcta —
+  y la que ya usa el repo— es medir la banda libre del titular
+  (`getHeroCoinFrame()`) y la base del retablo (`refreshRoomAim()`) en píxeles
+  reales y escalar la figura a esos píxeles. Cambiar el FOV por aspect
+  rompería la coreografía de cámara.
+
+Lo que **se añadió** en esta ronda:
+
+1. **Movimiento independiente del refresco** (`frameDamp`/`frameDampT` en
+   `js/core/utils.js`, aplicado a los 9 sitios de convergencia de
+   `animate()`). El lerp clásico por frame —`x = lerp(x, target, coef)`—
+   converge **2,4× más rápido en un monitor de 144 Hz** que en uno de 60 Hz:
+   `coef` es una fracción por frame, no por tiempo. La fórmula re-deriva el
+   coeficiente para el dt real —`t = 1 − (1 − coef)^(dt/16,67)`—, así la
+   misma animación corre al mismo ritmo en 60/120/144 Hz y, al revés, una
+   máquina a 30 fps da pasos más grandes para **alcanzar** el objetivo en
+   vez de arrastrarse. Afecta: mezcla de partículas por acto, mouse suave,
+   rotación de arrastre, fade de la puerta, foco de voces/actas y las 99×3
+   posiciones del enjambre (un solo `Math.pow` por frame).
+2. **Tier de CPU** (`navigator.cpuPerformance`, Chrome 152, estable
+   agosto 2026): nivel 0–4 clasificado por el navegador (0 = desconocido →
+   la spec manda tratarlo como capaz; planificar niveles 5+, no hardcodear
+   4). Es la única señal disponible **antes de crear el contexto** —el
+   antialias se fija en la creación y el nombre de la GPU solo se conoce
+   después—, así que resuelve el huevo y la gallina del MSAA en Chrome:
+   nivel 1 ("básicamente usable", según el ejemplo de la spec) entra al tier
+   lite (sin MSAA + techo de DPR 1,0) junto a `deviceMemory`.
+3. **Batería (techo blando)**: batería ≤ 20 % y sin cargador (la API sigue
+   disponible en Chrome/Edge, HTTPS) → el techo de DPR baja a 1,0: un
+   portátil con batería baja también limita por calor, y el lector está
+   pagando la energía. Si se enchufa más tarde se queda el modo conservador
+   hasta recargar (estado seguro).
+
+| Técnica | Hallazgo | Decisión |
+|---|---|---|
+| FOV diagonal por aspect (ultra-wide) | El FOV vertical de three.js hace que las figuras sigan el alto; ajustar fov/zoom por aspect reencuadra TODO el recorrido. | Descartado: el repo compone contra el DOM real (banda libre + mira del retablo), que es la adaptación correcta y ya cubre ultra-wide. |
+| `content-visibility: auto` | Salta layout+paint de secciones fuera de pantalla; caso web.dev: 232 → 30 ms (≈7×). | Descartado: secciones **fijadas** con ScrollTrigger — la medición de pins y los tramos de scroll atados a posiciones se romperían con secciones sin maquetar; el hilo principal ya está en ~28 ms/s (ver § Fluidez), así que la ganancia no compensa el riesgo. |
+| `dvh` para longitudes de scroll | `dvh` sigue el colapso de la barra de direcciones → cada reflow mueve la barra de scroll y desfasa los pins. | No: `svh` (estable) para longitudes; `dvh` solo como corrección puntual del contenedor fijado en móvil (ya está). |
+| `safe-area-max-inset-*` | Variante 2026 que se mantiene estable aunque la barra se oculte al scrollear. | No: con `svh` + los insets actuales el layout no depende de la barra; no hay síntoma que corregir. |
 
 ## Secciones del scrollytelling
 

@@ -27,7 +27,7 @@ import { initVoiceExplorer } from './sections/voice-explorer.js?v=2';
 import { initActBrowser } from './sections/act-browser.js';
 import { initD3Axes } from './sections/axes-map.js?v=3';
 import { initTimeline } from './sections/timeline.js?v=3';
-import { particleRandom, getQuoteAxisSentiment } from './core/utils.js';
+import { particleRandom, getQuoteAxisSentiment, frameDamp, frameDampT } from './core/utils.js';
 
 /* Los timelines de la escena se crean durante la inicialización de los
    gráficos. Registrar los plugins antes de construir cualquiera de ellos
@@ -135,17 +135,54 @@ camera.position.set(CONFIG.camera.x, CONFIG.camera.y, CONFIG.camera.z);
 camera.lookAt(0, HERO_DOOR_LOCKUP ? 0.95 : 0.7, HERO_DOOR_LOCKUP ? -0.25 : 0);
 
 let renderer = null;
-/* DPR adaptable: el máximo es 1,5 para ahorrar en pantallas retina. Si la
-   escena se queda por debajo de ~40 fps, se baja de a 0,25 y se vuelve a
-   subir si la carga se recupera. Esto es lo que más nota quien entra a La
-   Sala con una GPU integrada. */
-const MAX_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
-let adaptiveDpr = MAX_DPR;
+/* ═══════════════════════════════════════════════════════════════
+   TIER DE CALIDAD — quién paga el 3D completo
+═══════════════════════════════════════════════════════════════
+   La escena es ligera en triángulos (puerta ~3,3k, moneda ~18k); el
+   coste por frame son PÍXELES: DPR × antialias × materiales PBR ×
+   luces por fragmento. Una GPU integrada (Intel HD/UHD, Adreno o
+   Mali de entrada) rellena esos píxeles 4–8× más lento que una dGPU,
+   y eso es lo que se lee como "la moneda y la puerta van lentas,
+   pero las secciones D3 vuelan": el DOM es barato, el canvas no.
+   Tres capas, de la más barata a la más radical:
+   1. Techo de DPR por memoria declarada (deviceMemory ≤ 4: además
+      sin MSAA — 4 muestras a DPR 1,5 son ~9× el coste de fragmento
+      de un búfer plano a 1,0).
+   2. GPU conocida débil (nombre leído del contexto REAL, sin
+      segunda sonda: un contexto desechable cuesta ~1,6 s de
+      arranque, medido) → arrancar a DPR 1,0 de entrada.
+   3. DPR adaptable con la métrica correcta — el tiempo REAL de
+      frame, no el coste de CPU de render() (ver animate()).
+   Y si aun así no alcanza: MODO PÓSTER — el 3D se congela como
+   imagen fija y la historia sigue en el DOM (ver enterPosterMode).
+   En headless (shots/perf/hero:check) nada de esto cambia: el
+   harness ya va a DPR 1 y la lógica queda desactivada, para que
+   las mediciones no se muevan. */
+const IS_HEADLESS = /HeadlessChrome|Headless/.test(navigator.userAgent);
+/* Tier de CPU (Chrome 152+, estable agosto 2026): `navigator.cpuPerformance`.
+   Nivel 0–4 clasificado por el propio navegador, con entropía a propósito
+   baja (0 = "desconocido", que la spec manda tratar como capaz; se planifica
+   para niveles 5+). Es la ÚNICA señal disponible ANTES de crear el contexto:
+   el antialias se fija en la creación y el nombre de la GPU solo se conoce
+   después, y sondear con un contexto desechable cuesta 1,6 s (medido).
+   Nivel 1 —"básicamente usable", según el propio ejemplo de la spec— se
+   trata como LOW_MEM: sin MSAA + techo de DPR 1,0. GitHub Pages es HTTPS,
+   requisito de la API. */
+const CPU_TIER = (typeof navigator.cpuPerformance === 'number') ? navigator.cpuPerformance : 0;
+const LOW_MEM = ((typeof navigator.deviceMemory === 'number') && navigator.deviceMemory <= 4) || CPU_TIER === 1;
+let dprCap = Math.min(window.devicePixelRatio || 1, LOW_MEM ? 1 : 1.5);
+let adaptiveDpr = dprCap;
+/* Estado del modo póster (se declara aquí, no junto a animate(),
+   porque los handlers de contexto perdido de abajo lo consultan). */
+let posterMode = false;
+let perfAvgMs = 0;
 {
   try {
     /* Los ornamentos de la puerta viven en pocos píxeles; con antialias=false
-       los filetes y aristas se rompen justo donde necesitamos legibilidad. */
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+       los filetes y aristas se rompen justo donde necesitamos legibilidad.
+       En LOW_MEM se sacrifica el MSAA primero: es lo que más multiplica
+       el coste por píxel y lo que menos se nota en esta escena. */
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW_MEM, alpha: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(adaptiveDpr);
     renderer.setSize(initialVp.width, initialVp.height);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -173,14 +210,78 @@ if (!renderer) {
 if (renderer) {
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
+    /* El modo póster pierde el contexto A PROPÓSITO (para liberar VRAM):
+       el canvas conserva el último frame pintado y no hay que asustar. */
+    if (posterMode) return;
     loadEl.innerHTML = '<span style="opacity:.9">Conexi&oacute;n WebGL perdida. Recargue la p&aacute;gina.</span>';
     loadEl.style.display = 'flex';
   }, false);
 
   canvas.addEventListener('webglcontextrestored', () => {
+    if (posterMode) return; // no restaurar: la escena ya no se va a pintar
     window.location.reload();
   }, false);
 }
+
+/* Nombre de la GPU, leído del contexto PRINCIPAL: cero coste (no se crea
+   contexto de sonda — medido: ~1,6 s de arranque, y es justo lo que este
+   proyecto dejó de hacer). Si es una iGPU conocida débil, el techo baja a
+   DPR 1,0 y se aplica YA: la cortina de carga aún está arriba, así que el
+   cambio no se ve como un tirón, sino como un arranque más ligero.
+   La lista es conservadora, lo que de verdad se nota: Intel HD/UHD y los
+   Iris pre-Xe, Adreno de entrada, Mali antiguos, y los renderizadores por
+   software SwiftShader/llvmpipe. Un Iris Xe o un Adreno 650+ NO entran
+   aquí: para ellos ya está el paso adaptable por tiempo real de frame. */
+let gpuName = '';
+let weakGpu = false;
+const WEAK_GPU_RE = /intel.*(hd graphics|uhd graphics|iris (plus|pro) graphics|gen[5-9])|adreno.*\b(3\d\d|4\d\d|5[01]\d|6[01]\d|64\d)\b|powervr|mali-t\d{2}|swiftshader|llvmpipe/i;
+if (renderer) {
+  try {
+    const gl = renderer.getContext();
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    if (ext) gpuName = String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '');
+    weakGpu = WEAK_GPU_RE.test(gpuName);
+  } catch { /* sin la extensión, el paso adaptable decide solo */ }
+}
+if (weakGpu && !IS_HEADLESS) {
+  dprCap = Math.min(dprCap, 1);
+  adaptiveDpr = dprCap;
+  const vpNow = getViewportSnapshot();
+  renderer.setPixelRatio(adaptiveDpr);
+  renderer.setSize(vpNow.width, vpNow.height, false);
+}
+/* Batería (techo blando, ahorro de energía): un portátil con batería baja
+   también está limitando por calor, y el lector está pagando la energía.
+   Si hay señal (Chrome/Edge, HTTPS; la API sigue disponible en 2026),
+   batería ≤ 20 % y sin cargador → el techo de DPR baja a 1,0 y el
+   adaptable trabaja dentro de ese techo (ya sabe bajar/subir solo).
+   Solo se consulta una vez al arranque: si se enchufa más tarde se queda
+   el modo conservador hasta recargar, que es un estado seguro. */
+if (renderer && typeof navigator.getBattery === 'function' && !IS_HEADLESS) {
+  navigator.getBattery().then((battery) => {
+    if (battery && !battery.charging && battery.level <= 0.2 && dprCap > 1) {
+      dprCap = Math.min(dprCap, 1);
+      applyAdaptiveDpr(Math.min(adaptiveDpr, dprCap));
+    }
+  }).catch(() => { /* sin la API (Firefox/Safari), nada cambia */ });
+}
+/* Diagnóstico en caliente para `?debug` (y para depurar en un portátil
+   concreto sin abrir consola):
+   `window.__D3_PERF.tier / .gpu / .dpr / .cap / .poster / .avgMs`. */
+window.__D3_PERF = {
+  get gpu() { return gpuName; },
+  get tier() { return !renderer ? 'none' : (weakGpu || LOW_MEM) ? 'lite' : 'high'; },
+  lowMem: LOW_MEM,
+  cpuTier: CPU_TIER,
+  headless: IS_HEADLESS,
+  get armed() { return adaptiveArmed; },
+  get frames() { return frameCount; },
+  get samples() { return frameSamples.length; },
+  get dpr() { return adaptiveDpr; },
+  get cap() { return dprCap; },
+  get poster() { return posterMode; },
+  get avgMs() { return perfAvgMs; },
+};
 
 if (renderer) {
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -669,7 +770,10 @@ manager.onLoad = () => {
      sigue girando mientras tanto, que es justo lo contrario de antes.
      `finally` y no `then` para que un fallo no deje la cortina puesta. */
   warmUpScene().finally(() => {
-    setTimeout(() => { if (renderer) loadEl.classList.add('hidden'); }, 300);
+    setTimeout(() => {
+      if (renderer) loadEl.classList.add('hidden');
+      armAdaptive(); // el arranque ya no contamina la muestra de fps
+    }, 300);
   });
 };
 manager.onError = (url) => console.warn('Error cargando recurso:', url);
@@ -684,6 +788,7 @@ setTimeout(() => {
    (Antes el overlay bloqueaba la página para siempre si un GLB fallaba.) */
 setTimeout(() => {
   if (loadEl && !loadEl.classList.contains('hidden')) loadEl.classList.add('hidden');
+  armAdaptive(); // si los GLB no llegan, el adaptable igualmente vigila
 }, 30000);
 
 
@@ -2728,6 +2833,25 @@ initVoiceExplorer({ quotes, openQuote, closeQuotePanel });
 /* DPR adaptable en caliente. `renderer.setSize` con CSS false mantiene el
    tamaño de layout y solo cambia el búfer, evitando un salto visual. */
 const frameSamples = [];
+let lastFrameNow = 0;
+let frameCount = 0;
+let hiddenStale = false;
+/* El frame que llega DESPUÉS de pasar la pestaña en segundo plano trae un
+   delta enorme que no dice nada de la GPU: se descarta con esta bandera
+   (no con un tope de ms — una máquina que va a 2 fps tiene deltas de 500 ms
+   que SÍ importan, y un tope fijo la dejaría ciega justo cuando más la
+   necesita). */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) hiddenStale = true;
+});
+let adaptiveArmed = false;
+let armedAt = 0;
+let posterStreak = 0;
+/* Solo se mide desde que la cortina de carga se levanta: el arranque y el
+   precalentado no son representativos del scroll normal. */
+function armAdaptive() {
+  if (!adaptiveArmed) { adaptiveArmed = true; armedAt = performance.now(); }
+}
 function applyAdaptiveDpr(next) {
   if (!renderer || Math.abs(next - adaptiveDpr) < 0.05) return;
   adaptiveDpr = next;
@@ -2736,8 +2860,108 @@ function applyAdaptiveDpr(next) {
   renderer.setSize(vp.width, vp.height, false);
   if (typeof syncOrbitPointScale === 'function') syncOrbitPointScale();
 }
+/* ────────────────────────────────────────────────────────────────
+   MODO PÓSTER — el 3D se vuelve una imagen fija
+────────────────────────────────────────────────────────────────
+   Es la degradación de último recurso, y hace en vivo lo que el
+   proyecto ya hace en `og-image.jpg`: una captura congelada del
+   escenario. Si con DPR 1,0 el equipo no llega ni a ~24 fps de
+   forma sostenida, seguir pintando 60 veces por segundo una escena
+   que a 15 fps es lo que el lector ve es tirar la batería en
+   movimiento que nadie va a apreciar. Con esto:
+   - el frame se captura a PNG y el <canvas> se sustituye por un
+     <img> con esa imagen (la imagen fija garantizada),
+   - el bucle deja de correr (coste JS y GPU a cero),
+   - el contexto se pierde a propósito: la VRAM del render vuelve
+     al sistema, que es lo que una máquina así necesita.
+   Lo que sigue funcionando: scroll, Lenis, las secciones D3, el
+   panel de citas, el teclado, el audio. Lo que se congela: la
+   moneda, la puerta, la nube y la cámara. La historia no se
+   interrumpe; el escenario pasa a ser un fondo fijo, que es
+   exactamente lo que se ve en la tarjeta de redes del sitio.
+
+   Por qué se captura a PNG y no basta con "dejar el canvas como
+   está": con preserveDrawingBuffer=false el buffer se descarta al
+   componer, y perder el contexto ADEMÁS lo deja en blanco en
+   varios navegadores (verificado en Chromium 133 headless: el
+   canvas quedaba vacío). La captura síncrona justo después del
+   último render() —mientras el buffer sigue vivo— es lo que da la
+   imagen fija garantizada; solo se pierde el contexto si el swap
+   a <img> salió bien. */
+function enterPosterMode() {
+  if (posterMode || !renderer) return;
+  posterMode = true;
+  try { renderer.render(scene, camera); } catch { /* queda el frame previo */ }
+  let dataUrl = null;
+  try { dataUrl = canvas.toDataURL('image/png'); } catch { /* sin captura no se toca el contexto */ }
+  let swapped = false;
+  if (dataUrl && dataUrl.length > 1000) {
+    try {
+      const img = document.createElement('img');
+      img.id = 'canvasPoster';
+      img.src = dataUrl;
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+      /* Mismo layout que el canvas (fixed, inset 0, z 2): la imagen
+         sigue ocupando exactamente su capa, y sobrevive a los resizes
+         sin medidas en px. 'fill' y no el objectFit del canvas (que es
+         'none' y recortaría): la caja y el PNG tienen el mismo aspect
+         ratio (ambos = viewport), así que 'fill' no distorsiona. */
+      img.style.cssText =
+        'display:block; position:fixed; inset:0; width:100%; height:100%;' +
+        ' z-index:2; object-fit:fill; pointer-events:none;';
+      canvas.replaceWith(img);
+      swapped = true;
+    } catch { /* el canvas se queda puesto, que no quede en blanco */ }
+  }
+  gsap.ticker.remove(animate);
+  if (swapped) {
+    try {
+      const gl = renderer.getContext();
+      const lose = gl.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
+    } catch { /* lo importante es que el bucle ya no corre */ }
+  }
+  document.body.dataset.perfPoster = '1';
+  console.info('[perf] Modo póster: la escena 3D queda como imagen fija (DPR 0,75 no fue suficiente). El relato sigue en el DOM.');
+}
 
 function animate() {
+  /* El tiempo de frame REAL: cuántos ms han pasado desde que corrió el
+     frame anterior. Es lo que ve el ojo, y es la métrica que debe gobernar
+     el DPR — no el coste de CPU de renderer.render(), que era la anterior:
+     en una iGPU el CPU despacha los draws en ~10 ms y la GPU se queda
+     atrás pintando, así que la métrica vieja decía "todo bien" a 25 fps.
+     Con ese número el adaptable nunca bajaba el DPR y la portada y la
+     puerta se arrastraban en los portátiles de gama media.
+     El parón por pestaña en segundo plano se descarta con `hiddenStale`
+     (visibilitychange), no con un tope de ms: a 2 fps los deltas son de
+     500 ms y cuentan; lo único que no cuenta es el primer frame tras
+     volver de segundo plano. */
+  frameCount++;
+  const now = performance.now();
+  /* dt real de ESTE frame (ms), con tope de 100: tras un stall (pestaña en
+     segundo plano, GC, otra pestaña) se recupera a ~6 frames por frame en
+     vez de teletransportarse. Lo alimentan los frameDamp de abajo: el lerp
+     clásico por frame (`x = lerp(x, target, coef)`) converge 2,4× más
+     rápido en un monitor de 144 Hz que en uno de 60 Hz —coef es una
+     fracción POR FRAME, no por tiempo—; a 30 fps, además, se arrastraba.
+     frameDamp re-deriva el coeficiente para el dt real, así la velocidad de
+     convergencia es la misma en cualquier refresco (investigación en
+     README → "Independiente del refresco"). */
+  const frameDt = lastFrameNow > 0 ? Math.min(now - lastFrameNow, 100) : (1000 / 60);
+  if (lastFrameNow > 0 && adaptiveArmed) {
+    if (hiddenStale) {
+      hiddenStale = false;
+    } else {
+      const frameDelta = now - lastFrameNow;
+      /* Un delta de 2 s+ es navegación, no GPU: no lo dejamos arruinar la
+         media. Con 2 s de tope, el parón típico de cambiar de pestaña
+         (rAF pausado) ya no llega: visibilitychange lo marca primero. */
+      if (frameDelta < 2000) frameSamples.push(frameDelta);
+    }
+  }
+  lastFrameNow = now;
   const time = clock.getElapsedTime();
   /* crossT es SOLO la entrada por la puerta. `exitT` ya no invierte esa
      animación: al pasar de La Sala a El Método la sala se disuelve y la cámara
@@ -2784,15 +3008,16 @@ function animate() {
     doorGlowMat.emissiveIntensity = 0.03 + 0.42 * glowT;
   }
   particleStoryKeys.forEach((key) => {
-    particleStoryMix[key] = THREE.MathUtils.lerp(
+    particleStoryMix[key] = frameDamp(
       particleStoryMix[key],
       particleStoryTarget[key],
-      reduceMotion ? 1 : 0.14
+      reduceMotion ? 1 : 0.14,
+      frameDt
     );
   });
-  smoothMouseX = THREE.MathUtils.lerp(smoothMouseX, mouseX, 0.06);
-  smoothMouseY = THREE.MathUtils.lerp(smoothMouseY, mouseY, 0.06);
-  if (!isDragging) { dragRotY = THREE.MathUtils.lerp(dragRotY, 0, 0.05); dragRotX = THREE.MathUtils.lerp(dragRotX, 0, 0.05); }
+  smoothMouseX = frameDamp(smoothMouseX, mouseX, 0.06, frameDt);
+  smoothMouseY = frameDamp(smoothMouseY, mouseY, 0.06, frameDt);
+  if (!isDragging) { dragRotY = frameDamp(dragRotY, 0, 0.05, frameDt); dragRotX = frameDamp(dragRotX, 0, 0.05, frameDt); }
   if (coin.children.length > 0) {
     if (coinBirth < 0) coinBirth = time;
     const tElapsed = time - coinBirth;
@@ -2831,8 +3056,15 @@ function animate() {
     coin.visible = (currentStage === 1) && (coinFade > 0.01);
     if (HERO_DOOR_LOCKUP) coin.position.z = 0.55;
     if (coin.visible) {
+      /* Con opacidad completa la moneda va por el pase OPAQUE: el blending
+         alfa paga la lectura y escritura del frame buffer incluso con
+         alfa = 1, y en GPUs débiles ese coste es desproporcionado
+         (investigación en README → Rendimiento del 3D). A coinFade = 1 —
+         casi todo el hero— los píxeles son idénticos; solo se cambia a
+         pase de blending durante el fundido hacia La Reunión. */
+      const coinTransparent = coinFade < 0.999;
       for (let i = 0; i < coinMats.length; i++) {
-        coinMats[i].transparent = true;
+        coinMats[i].transparent = coinTransparent;
         coinMats[i].opacity = coinFade;
       }
     }
@@ -2841,7 +3073,7 @@ function animate() {
   /* puerta: acto 2 — fade sutil + parallax de frente (sin giro 360°) */
   let doorVisOpacity = doorFade;
   if (doorGroup.children.length > 0) {
-    doorFade = THREE.MathUtils.lerp(doorFade, doorTarget, 0.12);
+    doorFade = frameDamp(doorFade, doorTarget, 0.12, frameDt);
     if (doorTarget === 0 && doorFade < 0.03) doorFade = 0;
     /* La Sala (b1): la puerta se DISUELVE en la luz cálida al cruzar el umbral
        (en modo 'classic' dissolve=0 → comportamiento previo intacto). */
@@ -2967,8 +3199,13 @@ function animate() {
          abrir para que no se vean al final del cruce. */
       const leafHold = isLeaf ? 1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75) : 1;
       const hold = isLeaf ? leafHold : (isAperture ? apertureHold : 1) * porticoHold;
-      m.transparent = true;
-      m.opacity = doorVisOpacity * bcchVisualT * hold;
+      const op = doorVisOpacity * bcchVisualT * hold;
+      /* Idéntico trato a la moneda: mientras la puerta está a opacidad
+         completa (todo el hero y el Acto 2, la zona donde más pantalla
+         ocupa) va por el pase OPAQUE y el GPU no paga el blending alfa
+         de una superficie que en realidad no es transparente. */
+      m.transparent = op < 0.999;
+      m.opacity = op;
       m.color.copy(bcchHeroTint).lerp(bcchMeetTint, bcchColorT);
       m.envMapIntensity = isBronze
         ? THREE.MathUtils.lerp(0.22, 0.58, lightT)
@@ -2987,8 +3224,9 @@ function animate() {
         rec.m.opacity = rec.baseOpacity * doorVisOpacity * bcchVisualT * edgeHold * (0.55 + 0.45 * bcchColorT);
       }
       for (let i = 0; i < proceduralDoorMats.length; i++) {
-        proceduralDoorMats[i].transparent = true;
-        proceduralDoorMats[i].opacity = doorVisOpacity * proceduralVisualT;
+        const pOp = doorVisOpacity * proceduralVisualT;
+        proceduralDoorMats[i].transparent = pOp < 0.999;
+        proceduralDoorMats[i].opacity = pOp;
       }
       for (let i = 0; i < doorLeafLineMats.length; i++) {
         doorLeafLineMats[i].opacity = 0.42 * doorVisOpacity * proceduralVisualT;
@@ -3135,8 +3373,8 @@ function animate() {
      siga visible. El mismo tratamiento se usa para acta y cita, sin perder
      jamás las filas vecinas. */
   const focusName = voiceFocus.participant || voiceFocus.rendered;
-  voiceFocusMix = THREE.MathUtils.lerp(voiceFocusMix, voiceFocus.participant ? 1 : 0, reduceMotion ? 1 : 0.08);
-  actFocusMix = THREE.MathUtils.lerp(actFocusMix, selectedActDate ? 1 : 0, reduceMotion ? 1 : 0.08);
+  voiceFocusMix = frameDamp(voiceFocusMix, voiceFocus.participant ? 1 : 0, reduceMotion ? 1 : 0.08, frameDt);
+  actFocusMix = frameDamp(actFocusMix, selectedActDate ? 1 : 0, reduceMotion ? 1 : 0.08, frameDt);
   if (!voiceFocus.participant && voiceFocusMix < 0.005) voiceFocus.rendered = null;
   const activeQuoteIndex = particleFocus.index >= 0 ? particleFocus.index : -1;
   const voiceStageMix = particleStoryMix.voices * voiceFocusMix;
@@ -3205,7 +3443,9 @@ function animate() {
   const swarmScatter = THREE.MathUtils.lerp(scatterProgress, 0.06, roomSwarmT);
   const axesMix = particleTargetsReady ? particleStoryMix.axes : 0;
   const timelineMix = particleTargetsReady ? particleStoryMix.timeline : 0;
-  const particleEase = reduceMotion ? 1 : 0.16;
+  /* t del frame para el enjambre: un solo Math.pow por frame en vez de
+     297 (99 × 3). Con reduceMotion salta directo al objetivo. */
+  const particleT = frameDampT(reduceMotion ? 1 : 0.16, frameDt);
   const ambientLock = Math.max(axesMix, timelineMix, voiceStageMix, actStageMix);
   for (let i = 0; i < PCOUNT; i++) {
     const idx = i * 3;
@@ -3241,9 +3481,9 @@ function animate() {
       targetZ = THREE.MathUtils.lerp(targetZ, pActFocusPos[idx + 2], actStageMix);
     }
 
-    positions[idx] = THREE.MathUtils.lerp(positions[idx], targetX, particleEase);
-    positions[idx + 1] = THREE.MathUtils.lerp(positions[idx + 1], targetY, particleEase);
-    positions[idx + 2] = THREE.MathUtils.lerp(positions[idx + 2], targetZ, particleEase);
+    positions[idx] += (targetX - positions[idx]) * particleT;
+    positions[idx + 1] += (targetY - positions[idx + 1]) * particleT;
+    positions[idx + 2] += (targetZ - positions[idx + 2]) * particleT;
   }
   pGeo.attributes.position.needsUpdate = true;
 
@@ -3507,21 +3747,39 @@ function animate() {
   }
 
   if (renderer) {
-    const frameStart = performance.now();
     renderer.render(scene, camera);
-    /* Decisión cada ~90 frames. Los dos primeros segundos se ignoran: el
-       arranque/precalentado no es representativo del scroll normal. */
-    if (clock.elapsedTime > 2 && !reduceMotion) {
-      frameSamples.push(performance.now() - frameStart);
+    /* Decisión cada ~90 frames, sobre el tiempo de frame REAL (se muestrea
+       al inicio de animate, no alrededor del render: ver el comentario de
+       ahí). Solo con la cortina ya abajo y no en headless: el harness de
+       shots/perf va a DPR 1 por definición y no se le mueve el búfer. */
+    if (adaptiveArmed && !reduceMotion && !IS_HEADLESS) {
       if (frameSamples.length >= 90) {
         let sum = 0;
         for (let i = 0; i < frameSamples.length; i++) sum += frameSamples[i];
         const avg = sum / frameSamples.length;
         frameSamples.length = 0;
-        if (avg > 26 && adaptiveDpr > 1) {
-          applyAdaptiveDpr(Math.max(1, adaptiveDpr - 0.25));
-        } else if (avg < 12 && adaptiveDpr < MAX_DPR) {
-          applyAdaptiveDpr(Math.min(MAX_DPR, adaptiveDpr + 0.25));
+        perfAvgMs = avg;
+        /* El suelo es 0,75, no 1,0: renderizar a resolución más baja que
+           la pantalla y dejar que el CSS escale el canvas es la técnica
+           que recomienda la propia guía de mejores prácticas de WebGL de
+           MDN para cuando el fill rate aprieta. Es el último escalón de
+           calidad antes del póster: ~44 % menos píxeles que DPR 1,0, y la
+           escena (oro liso, piedra, niebla) tolera el upscale sin romperse. */
+        if (avg > 26 && adaptiveDpr > 0.75) {
+          applyAdaptiveDpr(Math.max(0.75, adaptiveDpr - 0.25));
+        } else if (avg < 12 && adaptiveDpr < dprCap) {
+          applyAdaptiveDpr(Math.min(dprCap, adaptiveDpr + 0.25));
+        }
+        /* Umbral del modo póster: con el DPR ya en su suelo (0,75) y el
+           equipo sosteniendo menos de ~24 fps. Tres ventanas malas
+           seguidas = ~11 s de arrastre continuo, y a más de 15 s de que
+           se levantó la cortina, para no dispararlo sobre un parón
+           puntual (carga de una figura, cambio de pestaña…). */
+        if (adaptiveDpr <= 0.76 && avg > 42 && now - armedAt > 15000) {
+          posterStreak++;
+          if (posterStreak >= 3) enterPosterMode();
+        } else {
+          posterStreak = 0;
         }
       }
     }
@@ -3564,8 +3822,17 @@ function syncViewportAndObjects() {
   const { width, height } = getViewportSize();
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
-  if (renderer) {
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  if (renderer && !posterMode) {
+    /* En modo póster el contexto ya se perdió: tocarlo aquí además
+       BORRARÍA el canvas (setSize reasigna el buffer). La imagen fija
+       ocupa el puesto del canvas, así que no hay nada que reponer.
+       El DPR es el ADAPTATIVO, no el de la pantalla: antes esto
+       repintaba con Math.min(devicePixelRatio, 1,5) fijo en cada
+       resize, y deshacía cualquier bajada que el adaptable hubiera
+       conseguido (una máquina débil que ya estaba en 1,0 volvía a 1,5
+       en el primer cambio de tamaño y el arrastre regresaba hasta la
+       siguiente ventana de decisión). */
+    renderer.setPixelRatio(adaptiveDpr);
     renderer.setSize(width, height);
   }
   syncOrbitPointScale();

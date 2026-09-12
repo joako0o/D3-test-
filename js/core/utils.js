@@ -31,3 +31,29 @@ export const getQuoteAxisSentiment = (q) => {
   if (label === 'dovish') return -(0.30 + score * 0.40);
   return (seeded - 0.5) * 0.18;
 };
+
+/* frameDampT — factor de amortiguación exponencial INDEPENDIENTE DEL
+   REFRESCO, para reemplazar el lerp por frame clásico.
+ *
+ * `x = lerp(x, target, coef)` en cada frame converge 2,4× más rápido en un
+ * monitor de 144 Hz que en uno de 60 Hz: coef es una fracción POR FRAME,
+ * no por tiempo (gamedev.net, "frame rate independent friction"). Aquí se
+ * interpreta coef como "fracción cubierta en 16,67 ms (60 fps)" y se
+ * re-deriva para el dt real:
+ *     t = 1 − (1 − coef)^(dt/16,67)
+ * Así la misma animación corre al mismo ritmo en 60/120/144 Hz… y en una
+ * máquina que solo llega a 30 fps da pasos más grandes para ALCANZAR el
+ * objetivo (se mantiene fluida al 50% de los fps) en vez de arrastrarse.
+ * dt se limita a 100 ms: tras un stall (cambio de pestaña) se recupera a
+ * ~6 frames por frame, sin teletransportarse. coef=1 salta directo
+ * (reduced motion); coef=0 no mueve nada. */
+export const frameDampT = (coef, dtMs) => {
+  if (coef >= 1) return 1;
+  if (coef <= 0) return 0;
+  const dt = Math.min(dtMs, 100) / (1000 / 60);
+  return 1 - Math.pow(1 - coef, dt);
+};
+
+/* frameDamp — lerp amortiguado con el dt real del frame (ver frameDampT). */
+export const frameDamp = (current, target, coef, dtMs) =>
+  current + (target - current) * frameDampT(coef, dtMs);
