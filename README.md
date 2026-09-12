@@ -161,18 +161,21 @@ Es el archivo que hay que saber recorrer. Va en este orden:
 
 | Líneas | Región |
 |---|---|
-| 1–385 | imports, constantes del DOM, escena, cámara, luces, estado de módulo, warmup |
-| 386–467 | figuras de La Sala + rig de luces de la puerta |
-| 468–716 | moneda, composición del hero |
-| 717–1716 | la puerta (Acto 2): respaldo procedural, GLB `Puerta_bcch_v3`, `BCCH_V3` + `buildOpenableBcchDoor()` (1388–1660) |
-| 1717–1903 | enjambre de partículas (memoria trazable) |
-| 1904–2544 | órbitas de La Sala + `openQuote()` + navegación por teclado |
-| 2545–2672 | coreografía de cámara (`cameraChoreographyStops`) |
-| **2673–3341** | **`animate()`** — el bucle de render |
-| 3342–3532 | panel de cita, layout/resize, objetivos de partículas |
-| 3533–3750 | hook de señales, scrubber, hooks `?debug`, Lenis |
-| 3751–4398 | todos los `ScrollTrigger`, sección por sección |
-| 4399–4545 | "técnicas premium": color de fondo, parallax, velocidad de scroll |
+| 1–138 | imports, constantes del DOM, escena, cámara, luces, estado de módulo |
+| 139–250 | **tier de calidad 3D**: `deviceMemory`, GPU débil, techo de DPR, `window.__D3_PERF` |
+| 251–490 | precalentado de la escena (`warmUpScene`, texturas, introspección) |
+| 491–570 | figuras de La Sala + rig de luces de la puerta |
+| 571–813 | moneda, composición del hero |
+| 814–1836 | la puerta (Acto 2): respaldo procedural, GLB `Puerta_bcch_v3`, `BCCH_V3` + `buildOpenableBcchDoor()` |
+| 1837–1992 | enjambre de partículas (memoria trazable) |
+| 1993–2665 | órbitas de La Sala + `openQuote()` + navegación por teclado |
+| 2666–2837 | coreografía de cámara (`cameraChoreographyStops`) |
+| 2838–2902 | **DPR adaptable** (métrica de frame real) + **modo póster** (`enterPosterMode`) |
+| **2903–3731** | **`animate()`** — el bucle de render |
+| 3732–3926 | panel de cita, layout/resize, objetivos de partículas |
+| 3927–4141 | hook de señales, scrubber, hooks `?debug`, Lenis |
+| 4142–4854 | todos los `ScrollTrigger`, sección por sección |
+| 4855–5000 | "técnicas premium": color de fondo, parallax, velocidad de scroll |
 
 Los números envejecen a cada commit. Para regenerar el mapa:
 
@@ -489,6 +492,79 @@ Lo que se hizo (todo en `js/main.js` y `js/core/viewport.js`):
   presupuesto que se pueda exigir hoy.
 - **Los frames >50 ms** en este entorno los domina el raster por software; se
   informan pero no suspenden la ejecución.
+
+## Rendimiento del 3D en máquinas modestas (2026-09-11)
+
+El síntoma era en GitHub Pages: **la portada y la puerta se arrastraban en
+ciertos portátiles, mientras las secciones D3 volaban**. El diagnóstico: el
+hilo principal de la página es barato (ver § Fluidez); lo que se nota en una
+GPU integrada (Intel HD/UHD, iGPU de portátil) es el **relleno de píxeles** —
+DPR 1,5 × antialias (MSAA) × materiales PBR × hasta 9 luces por fragmento.
+La geometría no es el problema (la puerta trae ~3,3k triángulos, la moneda
+~18k).
+
+El sistema viejo ya tenía un "DPR adaptable", pero medía mal y se
+autobloqueaba:
+
+1. **Medía el coste de CPU de `renderer.render()`**, no el tiempo real del
+   frame. En una iGPU el CPU despacha los draws en ~10 ms y la GPU se queda
+   atrás pintando: el medidor decía "todo bien" a 25 fps y el DPR nunca
+   bajaba. Ahora se mide el delta entre rAF (`animate()` cabecera), que es
+   lo que ve el ojo. El parón por pestaña en segundo plano se descarta con
+   `visibilitychange`, **no** con un tope de ms: a 2 fps los deltas son de
+   500 ms y cuentan; con un tope fijo el sistema quedaba ciego justo en la
+   máquina más lenta.
+2. **El handler de resize repintaba con `Math.min(devicePixelRatio, 1,5)`
+   fijo**: cada resize deshacía la bajada que el adaptable había conseguido.
+   Ahora respeta `adaptiveDpr`.
+3. Solo se mide con la cortina ya abajo (`armAdaptive()`), no los primeros
+   segundos, que no son representativos.
+
+Sobre eso, tres capas de degradación (todo en `js/main.js`, todo reversible
+hasta la última):
+
+- **Tier por memoria declarada** (`deviceMemory ≤ 4`): sin MSAA y techo de
+  DPR 1,0 desde la creación del contexto. Es lo único que se puede decidir
+  antes de crearlo; el resto se decide después con los datos reales.
+- **Tier por GPU conocida débil**: el nombre se lee del contexto principal
+  con `WEBGL_debug_renderer_info` (cero coste; **no** se crea contexto de
+  sonda — medido: ~1,6 s de arranque, y es la razón por la que el proyecto
+  no sondea WebGL aparte). Lista conservadora: Intel HD/UHD, Iris pre-Xe,
+  Adreno de entrada, Mali antiguos, SwiftShader/llvmpipe. Un Iris Xe o un
+  Adreno 650+ no entra: para ellos ya está el paso adaptable. Si aplica, el
+  techo baja a DPR 1,0 con la cortina aún arriba (no se ve como tirón).
+- **DPR adaptable con la métrica corregida**: a media ventana de 90 frames,
+  >26 ms de media baja el DPR de a 0,25 (suelo 1,0) y <12 ms lo recupera.
+
+**Modo póster — el "truco del PNG" hecho a fondo.** Si con el DPR ya en su
+suelo el equipo sostiene menos de ~24 fps (3 ventanas malas seguidas, a más
+de 15 s de la cortina), la escena 3D pasa a ser **una imagen fija**:
+
+1. último `render()`,
+2. `canvas.toDataURL('image/png')` **síncrono, en el mismo task** (con
+   `preserveDrawingBuffer=false` el buffer se descarta al componer; leerlo
+   después da una imagen en blanco — verificado en Chromium 133),
+3. el `<canvas>` se sustituye por un `<img id="canvasPoster">` con ese PNG
+   (mismo layout: `fixed; inset:0; z-index:2`),
+4. el bucle se retira del ticker (coste JS y GPU a cero) y el contexto se
+   **pierde a propósito** (libera la VRAM) — solo si el swap salió bien;
+   si la captura falla, el canvas se queda pintando congelado antes que
+   quedar en blanco.
+
+Qué sigue vivo en modo póster: scroll, Lenis, las secciones D3, el panel de
+citas (DOM), el teclado, todo el relato. Qué se congela: moneda, puerta,
+nube, cámara. El síntoma "las tarjetas vuelan pero la moneda se arrastra"
+deja de existir: la moneda deja de arrastrarse porque deja de moverse.
+`body[data-perf-poster="1"]` lo marca.
+
+Diagnóstico en caliente: con `?debug`, `window.__D3_PERF` expone
+`{ tier, gpu, lowMem, headless, armed, frames, samples, dpr, cap, poster,
+avgMs }` — para depurar un portátil concreto sin abrir consola.
+
+En headless (`npm run shots/perf/hero:check`) el sistema queda **desactivado
+a propósito**: el arnés va a DPR 1 por definición y el SwiftShader va a
+~1,5 fps por software; si el póster disparara ahí, las capturas saldrían
+congeladas a mitad de recorrido.
 
 ## Secciones del scrollytelling
 
