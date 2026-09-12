@@ -534,7 +534,9 @@ hasta la última):
   Adreno 650+ no entra: para ellos ya está el paso adaptable. Si aplica, el
   techo baja a DPR 1,0 con la cortina aún arriba (no se ve como tirón).
 - **DPR adaptable con la métrica corregida**: a media ventana de 90 frames,
-  >26 ms de media baja el DPR de a 0,25 (suelo 1,0) y <12 ms lo recupera.
+  >26 ms de media baja el DPR de a 0,25 (suelo 0,75 — render por debajo de
+  la resolución de pantalla y upscale por CSS, la técnica que recomienda la
+  guía de mejores prácticas de WebGL de MDN) y <12 ms lo recupera.
 
 **Modo póster — el "truco del PNG" hecho a fondo.** Si con el DPR ya en su
 suelo el equipo sostiene menos de ~24 fps (3 ventanas malas seguidas, a más
@@ -565,6 +567,53 @@ En headless (`npm run shots/perf/hero:check`) el sistema queda **desactivado
 a propósito**: el arnés va a DPR 1 por definición y el SwiftShader va a
 ~1,5 fps por software; si el póster disparara ahí, las capturas saldrían
 congeladas a mitad de recorrido.
+
+Además, dos técnicas de la investigación (ver abajo) aplican a TODAS las
+máquinas sin cambiar un solo píxel:
+
+- **Pase opaco con opacidad 1** (moneda, hojas y marco de la puerta): el
+  blending alfa paga la lectura + escritura del frame buffer **incluso con
+  alfa = 1**, y en GPUs débiles ese coste es desproporcionado ("most mobile
+  devices are catastrophically slow at drawing alpha-blended pixels" —
+  r/gamedev; "additive is much cheaper than alpha" — thegamedev.guru). La
+  puerta cubre una fracción grande de la pantalla en el hero y el Acto 2,
+  justo las secciones que se arrastraban. Con opacidad completa el material
+  va al pase opaco (sin blending, con depth write igual); solo cruza al
+  pase de blending durante los fundidos reales. Píxel a píxel idéntico.
+- **Suelo de DPR 0,75**: cuando 1,0 no basta, en vez de saltar al póster se
+  renderiza a 0,75× la resolución de pantalla y el CSS escala el canvas
+  (la técnica explícita de la guía de mejores prácticas de WebGL de MDN:
+  "rendering to a low resolution WebGL context and using CSS to upscale").
+  ~44 % menos píxeles que DPR 1,0; la escena (oro liso, piedra, niebla)
+  tolera el upscale; el texto del hero es DOM y sigue nítido.
+
+### Lo demás que se investigó (y por qué sí/no entró)
+
+Investigación 2026-09-11 sobre foros (gamedev, Stack Overflow, r/gamedev),
+docs (MDN, three.js) y guías de optimización (RapidMade "WebGL/Three.js CAD
+Rendering Optimization", Utsubo "100 Three.js Tips", comparativas de
+antialiasing 2026):
+
+| Técnica | Hallazgo | Decisión |
+|---|---|---|
+| **MSAA → FXAA/SMAA post** | MSAA 4× cuesta 10–40 % del FPS; FXAA <3 %, SMAA 3–8 %; "MSAA is dead" en el consenso. | Parcial: `antialias:false` ya entra en el tier LOW_MEM. No en el tier de GPU débil: el nombre de la GPU solo se conoce DESPUÉS de crear el contexto (y el proyecto ya decidió —medido: 1,6 s— no crear contexto de sonda). FXAA completo requeriría añadir la cadena de post-processing (EffectComposer + shaders) al vendor; queda como siguiente paso si el tier de iGPU sigue justo. |
+| **Materiales PBR baratos** | `MeshStandardMaterial` es el material más caro; en Intel UHD puede saturar los fragment processors (RapidMade). | Descartado: la escena tiene ~21k triángulos (no el caso CAD de 1M+); el brillo PBR de la moneda ES la pieza. El coste de fragmento se ataca con DPR/opaco/póster, que es donde se medía el arrastre. |
+| **Recortar luces** | Cada luz × cada fragmento (forward): coste lineal con el nº de luces. | Descartado por ahora: cambiar el set de luces recompila shaders (el warmup ya calienta dos estados; un tercero "lite" es viable si el tier sigue justo). En las secciones tardías ya se vive con 3–5 luces, no 11. |
+| **`mediump` en shaders** | Hasta 2× más rápido en Adreno/Mali (Qualcomm/Arm); "desktop GPUs ignore mediump entirely" (Utsubo). | Descartado: sin ganancia en el hardware objetivo (iGPU de escritorio) y `MeshStandardMaterial` tiene artefactos de precisión conocidos en mediump (three.js #14570). |
+| **Render-on-demand** | "Three.js renders 60×/s regardless of whether the scene changed" (RapidMade). | No aplica: la escena NUNCA está quieta (la moneda gira y la nube deriva siempre). Primera candidata si algún día el hero se congela en reposo. |
+| **`EXT_disjoint_timer_query_webgl2`** (tiempo GPU real en página) | Mediría el GPU en vez del rAF… pero está **desactivado en Chrome estable** y ausente en Firefox por mitigaciones de timing-attack (SitePoint, 2026). | No usable: el delta de rAF sigue siendo la métrica práctica (y la que ve el ojo). |
+| **Foveated / Variable Rate Shading** | Menor resolución en el periférico. | No aplica: no hay eye-tracking y `EXT_fragment_density_map` no está disponible por defecto; la escena es pequeña y centrada. |
+| **WebGPU** | Ganas grandes en draw calls/compute; aquí los draw calls son ~18. | Migración de tamaño distinto a este problema; se reevalúa si se toca el techo de WebGL. |
+
+**Cómo diagnosticar la máquina que falla (lo que falta en el arnés):** el
+SwiftShader de `npm run perf` no reproduce una iGPU real. En el portátil
+problema: 1) `tu-sitio/?debug` → `window.__D3_PERF` (tier, gpu, dpr, avgMs,
+poster, en vivo); 2) Chrome → F12 → Performance → grabar: la línea **GPU**
+muestra el tiempo real por frame; 3) extensión **Spector.js** (captura un
+frame WebGL: draw calls, buffers, stats); 4) para el caso grueso,
+**RenderDoc** se engancha a Chrome (soporte oficial para WebGL/ANGLE, ver
+`chromium.googlesource.com/docs/gpu/`) y desmenuza el frame por pipeline;
+5) en Intel, **Intel GPA** mide fill rate y uso de GPU directo.
 
 ## Secciones del scrollytelling
 

@@ -2897,7 +2897,7 @@ function enterPosterMode() {
     } catch { /* lo importante es que el bucle ya no corre */ }
   }
   document.body.dataset.perfPoster = '1';
-  console.info('[perf] Modo póster: la escena 3D queda como imagen fija (DPR 1,0 no fue suficiente). El relato sigue en el DOM.');
+  console.info('[perf] Modo póster: la escena 3D queda como imagen fija (DPR 0,75 no fue suficiente). El relato sigue en el DOM.');
 }
 
 function animate() {
@@ -3019,8 +3019,15 @@ function animate() {
     coin.visible = (currentStage === 1) && (coinFade > 0.01);
     if (HERO_DOOR_LOCKUP) coin.position.z = 0.55;
     if (coin.visible) {
+      /* Con opacidad completa la moneda va por el pase OPAQUE: el blending
+         alfa paga la lectura y escritura del frame buffer incluso con
+         alfa = 1, y en GPUs débiles ese coste es desproporcionado
+         (investigación en README → Rendimiento del 3D). A coinFade = 1 —
+         casi todo el hero— los píxeles son idénticos; solo se cambia a
+         pase de blending durante el fundido hacia La Reunión. */
+      const coinTransparent = coinFade < 0.999;
       for (let i = 0; i < coinMats.length; i++) {
-        coinMats[i].transparent = true;
+        coinMats[i].transparent = coinTransparent;
         coinMats[i].opacity = coinFade;
       }
     }
@@ -3155,8 +3162,13 @@ function animate() {
          abrir para que no se vean al final del cruce. */
       const leafHold = isLeaf ? 1 - THREE.MathUtils.smoothstep(crossT, 0.55, 0.75) : 1;
       const hold = isLeaf ? leafHold : (isAperture ? apertureHold : 1) * porticoHold;
-      m.transparent = true;
-      m.opacity = doorVisOpacity * bcchVisualT * hold;
+      const op = doorVisOpacity * bcchVisualT * hold;
+      /* Idéntico trato a la moneda: mientras la puerta está a opacidad
+         completa (todo el hero y el Acto 2, la zona donde más pantalla
+         ocupa) va por el pase OPAQUE y el GPU no paga el blending alfa
+         de una superficie que en realidad no es transparente. */
+      m.transparent = op < 0.999;
+      m.opacity = op;
       m.color.copy(bcchHeroTint).lerp(bcchMeetTint, bcchColorT);
       m.envMapIntensity = isBronze
         ? THREE.MathUtils.lerp(0.22, 0.58, lightT)
@@ -3175,8 +3187,9 @@ function animate() {
         rec.m.opacity = rec.baseOpacity * doorVisOpacity * bcchVisualT * edgeHold * (0.55 + 0.45 * bcchColorT);
       }
       for (let i = 0; i < proceduralDoorMats.length; i++) {
-        proceduralDoorMats[i].transparent = true;
-        proceduralDoorMats[i].opacity = doorVisOpacity * proceduralVisualT;
+        const pOp = doorVisOpacity * proceduralVisualT;
+        proceduralDoorMats[i].transparent = pOp < 0.999;
+        proceduralDoorMats[i].opacity = pOp;
       }
       for (let i = 0; i < doorLeafLineMats.length; i++) {
         doorLeafLineMats[i].opacity = 0.42 * doorVisOpacity * proceduralVisualT;
@@ -3707,17 +3720,23 @@ function animate() {
         const avg = sum / frameSamples.length;
         frameSamples.length = 0;
         perfAvgMs = avg;
-        if (avg > 26 && adaptiveDpr > 1) {
-          applyAdaptiveDpr(Math.max(1, adaptiveDpr - 0.25));
+        /* El suelo es 0,75, no 1,0: renderizar a resolución más baja que
+           la pantalla y dejar que el CSS escale el canvas es la técnica
+           que recomienda la propia guía de mejores prácticas de WebGL de
+           MDN para cuando el fill rate aprieta. Es el último escalón de
+           calidad antes del póster: ~44 % menos píxeles que DPR 1,0, y la
+           escena (oro liso, piedra, niebla) tolera el upscale sin romperse. */
+        if (avg > 26 && adaptiveDpr > 0.75) {
+          applyAdaptiveDpr(Math.max(0.75, adaptiveDpr - 0.25));
         } else if (avg < 12 && adaptiveDpr < dprCap) {
           applyAdaptiveDpr(Math.min(dprCap, adaptiveDpr + 0.25));
         }
-        /* Umbral del modo póster: con el DPR ya en su suelo (1,0) y el
+        /* Umbral del modo póster: con el DPR ya en su suelo (0,75) y el
            equipo sosteniendo menos de ~24 fps. Tres ventanas malas
            seguidas = ~11 s de arrastre continuo, y a más de 15 s de que
            se levantó la cortina, para no dispararlo sobre un parón
            puntual (carga de una figura, cambio de pestaña…). */
-        if (adaptiveDpr <= 1.01 && avg > 42 && now - armedAt > 15000) {
+        if (adaptiveDpr <= 0.76 && avg > 42 && now - armedAt > 15000) {
           posterStreak++;
           if (posterStreak >= 3) enterPosterMode();
         } else {
