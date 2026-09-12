@@ -27,7 +27,7 @@ import { initVoiceExplorer } from './sections/voice-explorer.js?v=2';
 import { initActBrowser } from './sections/act-browser.js';
 import { initD3Axes } from './sections/axes-map.js?v=3';
 import { initTimeline } from './sections/timeline.js?v=3';
-import { particleRandom, getQuoteAxisSentiment } from './core/utils.js';
+import { particleRandom, getQuoteAxisSentiment, frameDamp, frameDampT } from './core/utils.js';
 
 /* Los timelines de la escena se crean durante la inicialización de los
    gráficos. Registrar los plugins antes de construir cualquiera de ellos
@@ -159,7 +159,17 @@ let renderer = null;
    harness ya va a DPR 1 y la lógica queda desactivada, para que
    las mediciones no se muevan. */
 const IS_HEADLESS = /HeadlessChrome|Headless/.test(navigator.userAgent);
-const LOW_MEM = (typeof navigator.deviceMemory === 'number') && navigator.deviceMemory <= 4;
+/* Tier de CPU (Chrome 152+, estable agosto 2026): `navigator.cpuPerformance`.
+   Nivel 0–4 clasificado por el propio navegador, con entropía a propósito
+   baja (0 = "desconocido", que la spec manda tratar como capaz; se planifica
+   para niveles 5+). Es la ÚNICA señal disponible ANTES de crear el contexto:
+   el antialias se fija en la creación y el nombre de la GPU solo se conoce
+   después, y sondear con un contexto desechable cuesta 1,6 s (medido).
+   Nivel 1 —"básicamente usable", según el propio ejemplo de la spec— se
+   trata como LOW_MEM: sin MSAA + techo de DPR 1,0. GitHub Pages es HTTPS,
+   requisito de la API. */
+const CPU_TIER = (typeof navigator.cpuPerformance === 'number') ? navigator.cpuPerformance : 0;
+const LOW_MEM = ((typeof navigator.deviceMemory === 'number') && navigator.deviceMemory <= 4) || CPU_TIER === 1;
 let dprCap = Math.min(window.devicePixelRatio || 1, LOW_MEM ? 1 : 1.5);
 let adaptiveDpr = dprCap;
 /* Estado del modo póster (se declara aquí, no junto a animate(),
@@ -240,6 +250,21 @@ if (weakGpu && !IS_HEADLESS) {
   renderer.setPixelRatio(adaptiveDpr);
   renderer.setSize(vpNow.width, vpNow.height, false);
 }
+/* Batería (techo blando, ahorro de energía): un portátil con batería baja
+   también está limitando por calor, y el lector está pagando la energía.
+   Si hay señal (Chrome/Edge, HTTPS; la API sigue disponible en 2026),
+   batería ≤ 20 % y sin cargador → el techo de DPR baja a 1,0 y el
+   adaptable trabaja dentro de ese techo (ya sabe bajar/subir solo).
+   Solo se consulta una vez al arranque: si se enchufa más tarde se queda
+   el modo conservador hasta recargar, que es un estado seguro. */
+if (renderer && typeof navigator.getBattery === 'function' && !IS_HEADLESS) {
+  navigator.getBattery().then((battery) => {
+    if (battery && !battery.charging && battery.level <= 0.2 && dprCap > 1) {
+      dprCap = Math.min(dprCap, 1);
+      applyAdaptiveDpr(Math.min(adaptiveDpr, dprCap));
+    }
+  }).catch(() => { /* sin la API (Firefox/Safari), nada cambia */ });
+}
 /* Diagnóstico en caliente para `?debug` (y para depurar en un portátil
    concreto sin abrir consola):
    `window.__D3_PERF.tier / .gpu / .dpr / .cap / .poster / .avgMs`. */
@@ -247,6 +272,7 @@ window.__D3_PERF = {
   get gpu() { return gpuName; },
   get tier() { return !renderer ? 'none' : (weakGpu || LOW_MEM) ? 'lite' : 'high'; },
   lowMem: LOW_MEM,
+  cpuTier: CPU_TIER,
   headless: IS_HEADLESS,
   get armed() { return adaptiveArmed; },
   get frames() { return frameCount; },
@@ -2914,6 +2940,16 @@ function animate() {
      volver de segundo plano. */
   frameCount++;
   const now = performance.now();
+  /* dt real de ESTE frame (ms), con tope de 100: tras un stall (pestaña en
+     segundo plano, GC, otra pestaña) se recupera a ~6 frames por frame en
+     vez de teletransportarse. Lo alimentan los frameDamp de abajo: el lerp
+     clásico por frame (`x = lerp(x, target, coef)`) converge 2,4× más
+     rápido en un monitor de 144 Hz que en uno de 60 Hz —coef es una
+     fracción POR FRAME, no por tiempo—; a 30 fps, además, se arrastraba.
+     frameDamp re-deriva el coeficiente para el dt real, así la velocidad de
+     convergencia es la misma en cualquier refresco (investigación en
+     README → "Independiente del refresco"). */
+  const frameDt = lastFrameNow > 0 ? Math.min(now - lastFrameNow, 100) : (1000 / 60);
   if (lastFrameNow > 0 && adaptiveArmed) {
     if (hiddenStale) {
       hiddenStale = false;
@@ -2972,15 +3008,16 @@ function animate() {
     doorGlowMat.emissiveIntensity = 0.03 + 0.42 * glowT;
   }
   particleStoryKeys.forEach((key) => {
-    particleStoryMix[key] = THREE.MathUtils.lerp(
+    particleStoryMix[key] = frameDamp(
       particleStoryMix[key],
       particleStoryTarget[key],
-      reduceMotion ? 1 : 0.14
+      reduceMotion ? 1 : 0.14,
+      frameDt
     );
   });
-  smoothMouseX = THREE.MathUtils.lerp(smoothMouseX, mouseX, 0.06);
-  smoothMouseY = THREE.MathUtils.lerp(smoothMouseY, mouseY, 0.06);
-  if (!isDragging) { dragRotY = THREE.MathUtils.lerp(dragRotY, 0, 0.05); dragRotX = THREE.MathUtils.lerp(dragRotX, 0, 0.05); }
+  smoothMouseX = frameDamp(smoothMouseX, mouseX, 0.06, frameDt);
+  smoothMouseY = frameDamp(smoothMouseY, mouseY, 0.06, frameDt);
+  if (!isDragging) { dragRotY = frameDamp(dragRotY, 0, 0.05, frameDt); dragRotX = frameDamp(dragRotX, 0, 0.05, frameDt); }
   if (coin.children.length > 0) {
     if (coinBirth < 0) coinBirth = time;
     const tElapsed = time - coinBirth;
@@ -3036,7 +3073,7 @@ function animate() {
   /* puerta: acto 2 — fade sutil + parallax de frente (sin giro 360°) */
   let doorVisOpacity = doorFade;
   if (doorGroup.children.length > 0) {
-    doorFade = THREE.MathUtils.lerp(doorFade, doorTarget, 0.12);
+    doorFade = frameDamp(doorFade, doorTarget, 0.12, frameDt);
     if (doorTarget === 0 && doorFade < 0.03) doorFade = 0;
     /* La Sala (b1): la puerta se DISUELVE en la luz cálida al cruzar el umbral
        (en modo 'classic' dissolve=0 → comportamiento previo intacto). */
@@ -3336,8 +3373,8 @@ function animate() {
      siga visible. El mismo tratamiento se usa para acta y cita, sin perder
      jamás las filas vecinas. */
   const focusName = voiceFocus.participant || voiceFocus.rendered;
-  voiceFocusMix = THREE.MathUtils.lerp(voiceFocusMix, voiceFocus.participant ? 1 : 0, reduceMotion ? 1 : 0.08);
-  actFocusMix = THREE.MathUtils.lerp(actFocusMix, selectedActDate ? 1 : 0, reduceMotion ? 1 : 0.08);
+  voiceFocusMix = frameDamp(voiceFocusMix, voiceFocus.participant ? 1 : 0, reduceMotion ? 1 : 0.08, frameDt);
+  actFocusMix = frameDamp(actFocusMix, selectedActDate ? 1 : 0, reduceMotion ? 1 : 0.08, frameDt);
   if (!voiceFocus.participant && voiceFocusMix < 0.005) voiceFocus.rendered = null;
   const activeQuoteIndex = particleFocus.index >= 0 ? particleFocus.index : -1;
   const voiceStageMix = particleStoryMix.voices * voiceFocusMix;
@@ -3406,7 +3443,9 @@ function animate() {
   const swarmScatter = THREE.MathUtils.lerp(scatterProgress, 0.06, roomSwarmT);
   const axesMix = particleTargetsReady ? particleStoryMix.axes : 0;
   const timelineMix = particleTargetsReady ? particleStoryMix.timeline : 0;
-  const particleEase = reduceMotion ? 1 : 0.16;
+  /* t del frame para el enjambre: un solo Math.pow por frame en vez de
+     297 (99 × 3). Con reduceMotion salta directo al objetivo. */
+  const particleT = frameDampT(reduceMotion ? 1 : 0.16, frameDt);
   const ambientLock = Math.max(axesMix, timelineMix, voiceStageMix, actStageMix);
   for (let i = 0; i < PCOUNT; i++) {
     const idx = i * 3;
@@ -3442,9 +3481,9 @@ function animate() {
       targetZ = THREE.MathUtils.lerp(targetZ, pActFocusPos[idx + 2], actStageMix);
     }
 
-    positions[idx] = THREE.MathUtils.lerp(positions[idx], targetX, particleEase);
-    positions[idx + 1] = THREE.MathUtils.lerp(positions[idx + 1], targetY, particleEase);
-    positions[idx + 2] = THREE.MathUtils.lerp(positions[idx + 2], targetZ, particleEase);
+    positions[idx] += (targetX - positions[idx]) * particleT;
+    positions[idx + 1] += (targetY - positions[idx + 1]) * particleT;
+    positions[idx + 2] += (targetZ - positions[idx + 2]) * particleT;
   }
   pGeo.attributes.position.needsUpdate = true;
 

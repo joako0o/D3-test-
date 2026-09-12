@@ -560,8 +560,8 @@ deja de existir: la moneda deja de arrastrarse porque deja de moverse.
 `body[data-perf-poster="1"]` lo marca.
 
 Diagnóstico en caliente: con `?debug`, `window.__D3_PERF` expone
-`{ tier, gpu, lowMem, headless, armed, frames, samples, dpr, cap, poster,
-avgMs }` — para depurar un portátil concreto sin abrir consola.
+`{ tier, gpu, cpuTier, lowMem, headless, armed, frames, samples, dpr, cap,
+poster, avgMs }` — para depurar un portátil concreto sin abrir consola.
 
 En headless (`npm run shots/perf/hero:check`) el sistema queda **desactivado
 a propósito**: el arnés va a DPR 1 por definición y el SwiftShader va a
@@ -614,6 +614,75 @@ frame WebGL: draw calls, buffers, stats); 4) para el caso grueso,
 **RenderDoc** se engancha a Chrome (soporte oficial para WebGL/ANGLE, ver
 `chromium.googlesource.com/docs/gpu/`) y desmenuza el frame por pipeline;
 5) en Intel, **Intel GPA** mide fill rate y uso de GPU directo.
+
+### Adaptación a dispositivos, resoluciones y refresco (2026-09-11)
+
+Investigación sobre tipografía fluida (WCAG 1.4.4), unidades de viewport
+(`vh`/`svh`/`dvh`/`lvh`), safe areas, responsive en three.js y
+independencia del refresco (gamedev.net, web.dev, MDN, discursos de three.js).
+Primero, lo que el repo **ya hacía bien** (auditado contra la práctica
+recomendada, no se tocó):
+
+- **Tipografía fluida correcta**: los tokens `--fs-*` de
+  `css/00-tokens-base.css` son `clamp(min, rem + vw, max)` con **min y max en
+  rem** (respeta el tamaño de letra que el usuario elija en el navegador —
+  WCAG 1.4.4—) y el centro en vw. Nunca puro `vw` en el preferido: con zoom
+  150–200 % un `vw` solo ignoraría la escala del usuario.
+- **Alturas de sección estables**: los contenedores fijados usan `100svh`
+  (el viewport **con** barra de direcciones: el valor no cambia al
+  desplazarse) y `22-quote-panel.css` los corrige a `100dvh` con `@supports`
+  en los navegadores móviles. La regla general de la investigación: `vh` ≡
+  `lvh` (viewport grande, "el 100vh miente" en móvil), `svh` = estable para
+  longitudes y pins, `dvh` = sigue el colapso de la barra → **reflows y
+  saltos de scroll si se usa como longitud**.
+- **Safe areas**: `env(safe-area-inset-*)` ya está en 4 hojas +
+  `viewport-fit=cover` en el meta (sin el meta los insets salen 0: añadirlos
+  no arriesga nada).
+- **El lienzo**: `getViewportSize()` se apoya en `clientWidth/Height` con
+  `visualViewport` solo como **disparador** de resize (base medida), y
+  `getViewportSnapshot()` evita el reflujo por frame.
+- **Las figuras 3D se componen contra el DOM real**, no contra fórmulas: el
+  FOV de `PerspectiveCamera` es **vertical** (three.js), así que un objeto
+  sigue su tamaño de pantalla con el **alto** del viewport; en pantallas
+  ultraanchas el texto CSS se encoge y la figura no. La adaptación correcta —
+  y la que ya usa el repo— es medir la banda libre del titular
+  (`getHeroCoinFrame()`) y la base del retablo (`refreshRoomAim()`) en píxeles
+  reales y escalar la figura a esos píxeles. Cambiar el FOV por aspect
+  rompería la coreografía de cámara.
+
+Lo que **se añadió** en esta ronda:
+
+1. **Movimiento independiente del refresco** (`frameDamp`/`frameDampT` en
+   `js/core/utils.js`, aplicado a los 9 sitios de convergencia de
+   `animate()`). El lerp clásico por frame —`x = lerp(x, target, coef)`—
+   converge **2,4× más rápido en un monitor de 144 Hz** que en uno de 60 Hz:
+   `coef` es una fracción por frame, no por tiempo. La fórmula re-deriva el
+   coeficiente para el dt real —`t = 1 − (1 − coef)^(dt/16,67)`—, así la
+   misma animación corre al mismo ritmo en 60/120/144 Hz y, al revés, una
+   máquina a 30 fps da pasos más grandes para **alcanzar** el objetivo en
+   vez de arrastrarse. Afecta: mezcla de partículas por acto, mouse suave,
+   rotación de arrastre, fade de la puerta, foco de voces/actas y las 99×3
+   posiciones del enjambre (un solo `Math.pow` por frame).
+2. **Tier de CPU** (`navigator.cpuPerformance`, Chrome 152, estable
+   agosto 2026): nivel 0–4 clasificado por el navegador (0 = desconocido →
+   la spec manda tratarlo como capaz; planificar niveles 5+, no hardcodear
+   4). Es la única señal disponible **antes de crear el contexto** —el
+   antialias se fija en la creación y el nombre de la GPU solo se conoce
+   después—, así que resuelve el huevo y la gallina del MSAA en Chrome:
+   nivel 1 ("básicamente usable", según el ejemplo de la spec) entra al tier
+   lite (sin MSAA + techo de DPR 1,0) junto a `deviceMemory`.
+3. **Batería (techo blando)**: batería ≤ 20 % y sin cargador (la API sigue
+   disponible en Chrome/Edge, HTTPS) → el techo de DPR baja a 1,0: un
+   portátil con batería baja también limita por calor, y el lector está
+   pagando la energía. Si se enchufa más tarde se queda el modo conservador
+   hasta recargar (estado seguro).
+
+| Técnica | Hallazgo | Decisión |
+|---|---|---|
+| FOV diagonal por aspect (ultra-wide) | El FOV vertical de three.js hace que las figuras sigan el alto; ajustar fov/zoom por aspect reencuadra TODO el recorrido. | Descartado: el repo compone contra el DOM real (banda libre + mira del retablo), que es la adaptación correcta y ya cubre ultra-wide. |
+| `content-visibility: auto` | Salta layout+paint de secciones fuera de pantalla; caso web.dev: 232 → 30 ms (≈7×). | Descartado: secciones **fijadas** con ScrollTrigger — la medición de pins y los tramos de scroll atados a posiciones se romperían con secciones sin maquetar; el hilo principal ya está en ~28 ms/s (ver § Fluidez), así que la ganancia no compensa el riesgo. |
+| `dvh` para longitudes de scroll | `dvh` sigue el colapso de la barra de direcciones → cada reflow mueve la barra de scroll y desfasa los pins. | No: `svh` (estable) para longitudes; `dvh` solo como corrección puntual del contenedor fijado en móvil (ya está). |
+| `safe-area-max-inset-*` | Variante 2026 que se mantiene estable aunque la barra se oculte al scrollear. | No: con `svh` + los insets actuales el layout no depende de la barra; no hay síntoma que corregir. |
 
 ## Secciones del scrollytelling
 
