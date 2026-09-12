@@ -237,11 +237,29 @@ export const CONFIG = {
     exitFog: 0.16,     // pico de niebla al salir de la sala: la estatua se hunde en vez de apagarse
     exitFogSink: 0.14, // espesor extra al final de la salida (0,55→0,90): la estatua termina de hundirse ANTES de apagarse
     fovKick: 4,        // grados extra de FOV durante el dolly (0 → 1 → 0)
-    /* Nube de voces dentro de la sala: centro y escala con los que se
-       recoloca el enjambre al cruzar el umbral. La nube queda DELANTE de
-       la cámara (z < roomCamZ) y se comprime, así el giro alrededor del
-       eje Y nunca la barre hacia atrás y la sala no queda sin partículas. */
-    roomSwarm: { x: 0, y: 0.55, z: ROOM_Z - 2.0, scale: 0.35 },
+    /* Nube de voces dentro de la sala: el enjambre se comprime y su centro
+       viaja CON la cámara, `lead` unidades por DELANTE de ella, así la nube
+       cruza la puerta a la vez que el lector en vez de adelantarse sola.
+       `leadOut` es el adelanto al empezar el cruce y `lead` el de dentro de
+       la sala: la nube se va abriendo paso a medida que entra. La escala
+       comprime el conjunto para que el giro en Y no la barra fuera del
+       encuadre y la sala no se quede sin partículas. */
+    roomSwarm: { x: 0, y: 0.55, leadOut: 1.2, lead: 2.0, scale: 0.35 },
+    /* Embudo del umbral: las partículas cruzan la puerta CONTIGO. Cada una
+       tiene un carril dentro del hueco (medido del GLB: 1,24 de ancho ×
+       2,66 de alto en el plano z ≈ −0,89) y su lateral se estruja hacia él
+       justo al pasar el plano, abriéndose después dentro de la sala.
+         window:  ventana de crossT en la que el embudo existe (entra y sale
+                  con suavidad; fuera de ella la nube nunca se estruja).
+         depth:   grosor en z de la zona de estrujamiento.
+         squeeze: cuánto se acerca cada punto a su carril (1 = colapsa en él).
+         zSqueeze: el umbral ATRAE en z a las que todavía no han cruzado, así
+                   entran todas juntas en vez de quedarse rezagadas detrás de
+                   la cámara (que es de dónde salían las manchas enormes). */
+    funnel: {
+      z: -0.89, cx: 0, cy: 1.3, halfW: 0.42, halfH: 0.85,
+      window: [0.30, 0.52, 0.86, 0.98], depth: 1.5, squeeze: 0.75, zSqueeze: 0.6,
+    },
     /* Encuadre del acercamiento (ventanas de crossT en las que la mira viaja):
        aimDoorT: mira neutra de "La Reunión" → centro VISUAL de la puerta.
                  Que termine a ~0.45 hace que "un instante antes de entrar" la
@@ -316,6 +334,30 @@ export const CONFIG = {
       precession: 0.028,            // rad/s de giro del plano (las estelas nunca se repiten)
       opacity: 0.82,
       neutralDim: 0.78,             // el plata en aditivo se va a blanco puro; se baja solo aquí
+    },
+    /* Nube de fondo: mismos tres tonos que los fragmentos de la estatua
+       (oro / azul / plata) y mismo blending aditivo, porque el lector ya
+       aprendió ese código de color en la órbita.
+
+       Lo que cambia es la INTENSIDAD. Medido sobre el navy real de la pieza
+       (rgb 10,14,26): con alfa por debajo de ~0,35 el núcleo del punto
+       apenas levanta el píxel y el degradado suave se come el resto, así que
+       el oro NO llega a imponerse al azul del fondo — el 0 % de los píxeles
+       de la nube se leían cálidos y el 89 % salían azules, es decir: toda la
+       nube se veía gris. Estos suelos son los que mantienen el tono vivo
+       cuando la nube cede protagonismo al dato activo. */
+    swarm: {
+      ambientFloor: 0.62,           // suelo de ambientMin (era 0,42)
+      stageFloor: 0.62,             // suelo de stageAlpha (era 0,36)
+      stageFalloff: 0.38,           // cuánto cede ante el dato denso (era 0,60)
+      figureFloor: 0.60,            // dentro de la sala baja de 1 a esto (era 0,45)
+      chroma: 1.16,                 // empuje de croma: el oro le gana al navy
+      /* Un punto a 0,1 de la cámara proyecta una mancha de 600 px que tapa
+         la escena: medido, durante el cruce había partículas a 0,07. Con
+         blending aditivo basta con escalar su COLOR (la contribución es
+         alfa × color) para que se apague al pegarse a la lente.
+         [distancia a la que ya no se ve, distancia a la que está completa] */
+      nearFade: [0.35, 1.2],
     },
     /* Luces de la pieza central. OJO: el renderer usa unidades físicas
        (useLegacyLights = false, three r160), así que estos valores son

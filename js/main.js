@@ -16,7 +16,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { initFigureSystem } from './scene/figures.js?v=5';
 import { buildCentralBankDoor } from './scene/build-door.js?v=14';
-import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './core/config.js?v=16';
+import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './core/config.js?v=21';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './core/viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
@@ -1894,16 +1894,47 @@ const pActKeys = quotes.map((q) => {
     : `${Number.isFinite(year) ? year : 0}-01-01`;
 });
 
+const SW = CONFIG.room?.swarm ?? {};
+
+/* Embudo del umbral (CONFIG.door.funnel): carril de cada partícula dentro
+   del hueco de la puerta, y temporales para pasar de local a mundo y
+   vuelta sin reservar memoria en cada frame. */
+const FN = CONFIG.door?.funnel ?? null;
+const funnelLane = FN ? new Float32Array(PCOUNT * 2) : null;
+const funnelTmp = FN ? new THREE.Vector3() : null;
+const funnelInv = FN ? new THREE.Matrix4() : null;
+/* Apagado por proximidad a la lente (CONFIG.room.swarm.nearFade). */
+const particleTmp = new THREE.Vector3();
+const pNearFade = new Float32Array(PCOUNT).fill(1);
+
 const colorHawkish = new THREE.Color(0xffd76a); // Oro / Hawkish
 const colorDovish  = new THREE.Color(0x8ab4f8); // Azul suave / Dovish
 const colorNeutral = new THREE.Color(0xcfd6e4); // Plata / Neutral
 
+/* El fondo navy le suma azul a cualquier cosa que se le ponga encima: con
+   el punto a baja intensidad el oro se queda corto contra ese azul y el ojo
+   lo lee gris. Empujar cada canal lejos de la luminancia del color (sin
+   tocar su brillo) hace que el tono aguante justo donde el punto es más
+   tenue —que es casi todo el punto, por el degradado de la textura. */
+function boostChroma(c, k) {
+  if (!k || k === 1) return c;
+  const l = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+  return new THREE.Color(
+    THREE.MathUtils.clamp(l + (c.r - l) * k, 0, 1),
+    THREE.MathUtils.clamp(l + (c.g - l) * k, 0, 1),
+    THREE.MathUtils.clamp(l + (c.b - l) * k, 0, 1)
+  );
+}
+const swarmHawkish = boostChroma(colorHawkish, SW.chroma);
+const swarmDovish = boostChroma(colorDovish, SW.chroma);
+const swarmNeutral = boostChroma(colorNeutral, SW.chroma);
+
 for (let i = 0; i < PCOUNT; i++) {
   const q = quotes[i];
   const label = q ? q.label : 'neutral';
-  let c = colorNeutral;
-  if (label === 'hawkish') c = colorHawkish;
-  else if (label === 'dovish') c = colorDovish;
+  let c = swarmNeutral;
+  if (label === 'hawkish') c = swarmHawkish;
+  else if (label === 'dovish') c = swarmDovish;
 
   pColors[i * 3 + 0] = c.r;
   pColors[i * 3 + 1] = c.g;
@@ -1930,6 +1961,14 @@ for (let i = 0; i < PCOUNT; i++) {
   pScatterPos[i * 3 + 0] = Math.cos(scatterAng) * scatterRad;
   pScatterPos[i * 3 + 1] = (particleRandom(i, 6) - 0.5) * 6.5;
   pScatterPos[i * 3 + 2] = (particleRandom(i, 7) - 0.5) * 4.5 - 1.0;
+
+  /* Carril de esta partícula dentro del hueco de la puerta: un punto fijo
+     (mismo en cada cruce) adonde se estruja su lateral al pasar el umbral.
+     Semillas 8 y 9: las 1–7 ya están usadas arriba. */
+  if (FN) {
+    funnelLane[i * 2] = (FN.cx ?? 0) + (particleRandom(i, 8) - 0.5) * 2 * (FN.halfW ?? 0.42);
+    funnelLane[i * 2 + 1] = (FN.cy ?? 1.3) + (particleRandom(i, 9) - 0.5) * 2 * (FN.halfH ?? 0.85);
+  }
 }
 
 
@@ -1987,21 +2026,45 @@ function getParticleTexture() {
 
 const pGeo = new THREE.BufferGeometry();
 pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-pGeo.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
+/* OJO: el atributo de color NO puede compartir array con la paleta base.
+   El bucle de color de animate() escribe en el atributo LEYENDO de la
+   paleta (litR = lerp(pColors[idx], 1.00, warm)), así que si son el mismo
+   array el tinte cálido de La Sala se reaplica frame a frame —1 − (1 −
+   0,22)ⁿ— y en unos diez frames los tres tonos colapsan en el mismo blanco
+   cálido. Medido dentro de la sala: hawkish 0,94/0,75/0,48, dovish
+   0,98/0,79/0,54, neutral 0,99/0,80/0,53, es decir indistinguibles, y como
+   nunca se deshacía, la nube se quedaba gris para el resto de la pieza.
+   Era el origen de «las partículas se ven todas grises». */
+pGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(pColors), 3));
 /* El enjambre cambia de radio al dispersarse. Un bounding sphere estable
    evita que el raycaster conserve la caja pequeña del estado inicial y deje
    fuera los puntos lejanos del estado de memoria. */
 pGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 12);
 
+/* Tamaño base del punto de la nube. OJO: en three.js gl_PointSize usa el
+   `size` del material y la distancia a la cámara —NO la matriz del objeto—,
+   así que comprimir el enjambre (swarm.scale) NO comprime los puntos. Por
+   eso el tamaño se reescribe cada frame multiplicado por la escala del
+   grupo (ver el bloque del enjambre en animate()). */
+const PARTICLE_SIZE = 0.14;
+
 const pMat = new THREE.PointsMaterial({
-  size: 0.14,
+  size: PARTICLE_SIZE,
   sizeAttenuation: true,
   vertexColors: true,
   map: getParticleTexture(),
   transparent: true,
   alphaTest: 0.06,
   opacity: 0.82,
-  blending: THREE.NormalBlending,
+  /* Aditivo, como los fragmentos que orbitan la estatua: el oro y el azul
+     «encienden» el navy en vez de sustituirlo, y dos puntos que se cruzan
+     suman luz en vez de taparse. Es lo que hace que el tono se lea cuando
+     el punto va tenue —medido sobre el fondo real de la pieza, con
+     NormalBlending y alfa bajo el oro no conseguía imponerse al azul del
+     fondo y TODA la nube se veía gris. La textura conserva RGB blanco y es
+     el alfa el que dibuja el degradado (ver createParticleTexture), así que
+     aditivo no levanta halos negros. */
+  blending: THREE.AdditiveBlending,
   depthTest: false,
   depthWrite: false,
   fog: false,
@@ -3347,17 +3410,34 @@ function animate() {
      En La Sala la nube se recoloca delante de la cámara y se comprime;
      de lo contrario el giro continuo la pasa detrás de la cámara en
      ciertos ángulos y la sección queda sin partículas. */
-  const roomSwarmCfg = CONFIG.door?.roomSwarm ?? { x: 0, y: 0.55, z: -2.5, scale: 0.35 };
+  const roomSwarmCfg = CONFIG.door?.roomSwarm ?? { x: 0, y: 0.55, lead: 2.0, leadOut: 1.2, scale: 0.35 };
   const roomSwarmT = (DOOR_MODE === 'doorway' && roomPresence > 0)
     ? THREE.MathUtils.smoothstep((roomPresence - 0.25) / 0.5, 0, 1)
     : 0;
   const roomSwarmScale = THREE.MathUtils.lerp(1, roomSwarmCfg.scale ?? 0.35, roomSwarmT);
+  /* La nube cruza la puerta CONTIGO: su centro viaja con la cámara, con un
+     adelanto fijo (lead), en vez de recolocarse de golpe dentro de la sala.
+     Antes el grupo se interpolaba a una z fija (−4) mientras la cámara
+     todavía estaba en +5, así que la nube se adelantaba SOLA: llegaba al
+     umbral en crossT ≈ 0,36, con la cámara a 5,9 de distancia. Con el
+     centro atado a la cámara, entran juntas. */
+  const roomSwarmLead = THREE.MathUtils.lerp(roomSwarmCfg.leadOut ?? 1.2, roomSwarmCfg.lead ?? 2.0, roomSwarmT);
+  /* La Z se fija DESPUÉS de colocar la cámara (bloque «la z del enjambre»
+     más abajo): depende de la cámara de ESTE frame. Calculada aquí, con la
+     del frame anterior, la nube se quedaba detrás en cuanto el dolly corría
+     (medido a bajo framerate: 0,75 por detrás en crossT 0,70). */
   swarm.position.set(
     THREE.MathUtils.lerp(0, roomSwarmCfg.x ?? 0, roomSwarmT),
     THREE.MathUtils.lerp(0, roomSwarmCfg.y ?? 0.55, roomSwarmT),
-    THREE.MathUtils.lerp(0, roomSwarmCfg.z ?? -2.5, roomSwarmT)
+    swarm.position.z
   );
   swarm.scale.setScalar(roomSwarmScale);
+  /* El tamaño del punto NO sigue a la escala del grupo (ver PARTICLE_SIZE).
+     Sin esta línea, al comprimir el enjambre a 0,35 dentro de la sala los
+     puntos se quedaban en 24–70 px: manchas blandas de las que se ve la
+     cola, no el núcleo, y por eso la nube salía gris justo donde más se la
+     mira (delante de la estatua). */
+  pMat.size = PARTICLE_SIZE * roomSwarmScale;
   /* Dentro de la sala se frena el giro completo y queda una oscilación
      suave: movimiento sin barrer la nube fuera del encuadre. */
   const baseSwirl = time * 0.12 + scatterProgress * 0.8;
@@ -3407,7 +3487,23 @@ function animate() {
   particleColorCache.focusName = focusName;
   particleColorCache.activeQuoteIndex = activeQuoteIndex;
   particleColorCache.selectedActDate = selectedActDate;
-  if (colorDirty) {
+  /* Desvanecer lo que se pega a la lente: una partícula a 0,07 de la cámara
+     proyecta una mancha de 600 px. Con blending aditivo la contribución es
+     alfa × color, así que escalar el color la apaga sin tocar el material.
+     Solo marca el color como sucio si el factor cambia de verdad. */
+  const NEARFADE = SW.nearFade ?? null;
+  let nearFadeDirty = false;
+  if (NEARFADE) {
+    const pp = pGeo.attributes.position.array;
+    for (let i = 0; i < PCOUNT; i++) {
+      particleTmp.set(pp[i * 3], pp[i * 3 + 1], pp[i * 3 + 2]).applyMatrix4(swarm.matrixWorld);
+      const f = THREE.MathUtils.smoothstep(
+        particleTmp.distanceTo(camera.position), NEARFADE[0], NEARFADE[1]
+      );
+      if (Math.abs(f - pNearFade[i]) > 0.01) { pNearFade[i] = f; nearFadeDirty = true; }
+    }
+  }
+  if (colorDirty || nearFadeDirty) {
     const cols = pGeo.attributes.color.array;
     for (let i = 0; i < PCOUNT; i++) {
       const idx = i * 3;
@@ -3439,9 +3535,10 @@ function animate() {
       const safeR = Math.max(pColors[idx] * 0.34, 0.14);
       const safeG = Math.max(pColors[idx + 1] * 0.34, 0.16);
       const safeB = Math.max(pColors[idx + 2] * 0.34, 0.20);
-      cols[idx] = THREE.MathUtils.lerp(safeR, litR, visibleMix) * strength;
-      cols[idx + 1] = THREE.MathUtils.lerp(safeG, litG, visibleMix) * strength;
-      cols[idx + 2] = THREE.MathUtils.lerp(safeB, litB, visibleMix) * strength;
+      const fade = pNearFade[i];
+      cols[idx] = THREE.MathUtils.lerp(safeR, litR, visibleMix) * strength * fade;
+      cols[idx + 1] = THREE.MathUtils.lerp(safeG, litG, visibleMix) * strength * fade;
+      cols[idx + 2] = THREE.MathUtils.lerp(safeB, litB, visibleMix) * strength * fade;
     }
     pGeo.attributes.color.needsUpdate = true;
   }
@@ -3456,6 +3553,19 @@ function animate() {
      297 (99 × 3). Con reduceMotion salta directo al objetivo. */
   const particleT = frameDampT(reduceMotion ? 1 : 0.16, frameDt);
   const ambientLock = Math.max(axesMix, timelineMix, voiceStageMix, actStageMix);
+  /* Embudo del umbral: solo vive en la ventana de cruce (entra y sale con
+     suavidad, así la nube no se estruja en el hero ni dentro de la sala).
+     El hueco de la puerta está en el MUNDO, pero las posiciones de la nube
+     son locales al grupo, así que se pasa a mundo, se estruja y se vuelve. */
+  const FN_W = FN?.window ?? null;
+  const funnelMix = FN_W
+    ? THREE.MathUtils.smoothstep(crossT, FN_W[0], FN_W[1]) *
+      (1 - THREE.MathUtils.smoothstep(crossT, FN_W[2], FN_W[3]))
+    : 0;
+  if (funnelMix > 0) {
+    swarm.updateMatrixWorld(true);
+    funnelInv.copy(swarm.matrixWorld).invert();
+  }
   for (let i = 0; i < PCOUNT; i++) {
     const idx = i * 3;
     const ox = pOriginalPos[idx], oy = pOriginalPos[idx+1], oz = pOriginalPos[idx+2];
@@ -3488,6 +3598,27 @@ function animate() {
       targetX = THREE.MathUtils.lerp(targetX, pActFocusPos[idx], actStageMix);
       targetY = THREE.MathUtils.lerp(targetY, pActFocusPos[idx + 1], actStageMix);
       targetZ = THREE.MathUtils.lerp(targetZ, pActFocusPos[idx + 2], actStageMix);
+    }
+
+    /* Embudo del umbral: cuando esta partícula va a pasar por el plano del
+       vano, su lateral se estruja hacia su carril dentro del hueco —entra
+       por la puerta contigo— y al salir se abre de nuevo hacia su sitio. */
+    if (funnelMix > 0) {
+      funnelTmp.set(targetX, targetY, targetZ).applyMatrix4(swarm.matrixWorld);
+      const near = 1 - THREE.MathUtils.smoothstep(Math.abs(funnelTmp.z - FN.z) / FN.depth, 0, 1);
+      if (near > 0.002) {
+        const k = near * (FN.squeeze ?? 0.75) * funnelMix;
+        funnelTmp.x += (funnelLane[i * 2] - funnelTmp.x) * k;
+        funnelTmp.y += (funnelLane[i * 2 + 1] - funnelTmp.y) * k;
+        /* El umbral ATRAE a las rezagadas (las que todavía no han cruzado).
+           Sin esto se quedan detrás de la cámara y, al pasarle por al lado,
+           se convierten en manchas de cientos de píxeles. */
+        if (funnelTmp.z > FN.z) {
+          funnelTmp.z += (FN.z - funnelTmp.z) * near * (FN.zSqueeze ?? 0.6) * funnelMix;
+        }
+        funnelTmp.applyMatrix4(funnelInv);
+        targetX = funnelTmp.x; targetY = funnelTmp.y; targetZ = funnelTmp.z;
+      }
     }
 
     positions[idx] += (targetX - positions[idx]) * particleT;
@@ -3550,6 +3681,10 @@ function animate() {
       THREE.MathUtils.lerp(enterZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
     );
     if (roomExitT > 0.001) camera.position.lerp(choreo.pos, roomExitT);
+    /* La z del enjambre, con la cámara ya colocada en este frame: la nube
+       queda `lead` por delante de ella y entra en la sala a la vez que
+       el lector (ver el cálculo de roomSwarmLead más arriba). */
+    swarm.position.z = THREE.MathUtils.lerp(0, camera.position.z - roomSwarmLead, roomSwarmT);
     /* Encuadre del acercamiento (tres fases encadenadas por crossT):
          1) mira neutra → centro de la puerta  [aimDoor: crossT 0 → 0.45]
          2) mira bloqueada en la puerta mientras ésta se disuelve
@@ -3657,14 +3792,14 @@ function animate() {
   /* El dato contextual se atenúa, pero nunca se apaga: la Sala es UN solo
      mundo visual, así que la nube permanece como atmósfera de fondo en
      todos los capítulos (solo cede protagonismo al dato activo). */
-  const stageAlpha = Math.max(0.36, 1 - 0.60 * stageDensity);
-  const ambientMin = Math.max(0.42, 0.82 - 0.30 * scatterProgress);
+  const stageAlpha = Math.max(SW.stageFloor ?? 0.62, 1 - (SW.stageFalloff ?? 0.38) * stageDensity);
+  const ambientMin = Math.max(SW.ambientFloor ?? 0.62, 0.82 - 0.30 * scatterProgress);
   /* Cuando la estatua central está al frente (dentro de La Sala), el
      centro se despeja de partículas: la nube queda como polvo de fondo
      (nunca se apaga) pero deja de ocultar a la figura. figureClear es
      1 fuera de la sala, así el resto de la pieza no cambia. */
   const figureClear = (DOOR_MODE === 'doorway')
-    ? 1 - 0.55 * THREE.MathUtils.smoothstep((roomSwarmT - 0.1) / 0.5, 0, 1)
+    ? 1 - (1 - (SW.figureFloor ?? 0.60)) * THREE.MathUtils.smoothstep((roomSwarmT - 0.1) / 0.5, 0, 1)
     : 1;
   pMat.opacity = ambientMin * (1 - 0.5 * veilShape) * stageAlpha * figureClear;
 
