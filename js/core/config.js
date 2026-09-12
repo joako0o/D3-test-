@@ -82,6 +82,32 @@ export const HERO = {
   centerYRatio: heroParam('coinY', 0.31),
 };
 
+/* ══════════════════════════════════════════════════════════════════════
+   PROFUNDIDAD DE LA SALA — por qué la cámara termina DONDE termina
+═══════════════════════════════════════════════════════════════════════
+   MEDIDO sobre el GLB de la puerta (no a ojo):
+
+     · plano del umbral / bisagras  → z ≈ −0,89
+     · punta de las hojas abiertas a 78° → z = −1,26  (se meten 0,37 sala adentro)
+
+   Con `roomCamZ = −0,5` (lo que había) la cámara se detenía **0,39 por
+   DELANTE del umbral**: la puerta nunca quedaba detrás, así que no quedaba
+   más remedio que disolverla a la vista del lector — las hojas se fundían
+   entre crossT 0,55 y 0,75 ocupando entre el 11 % y el 19 % de la pantalla,
+   mientras la cámara todavía estaba a 2,9…0,8 unidades de distancia. Era
+   literalmente "la puerta desaparece antes de tiempo y se ve".
+
+   Con la cámara en −2,0 el cruce termina con **toda la puerta detrás**
+   (0,74 por detrás de la punta de las hojas), y las hojas salen del encuadre
+   por sí solas hacia crossT 0,79: el fundido ocurre donde nadie lo ve.
+
+   Todo lo que hay DENTRO de la sala viaja con la cámara (misma distancia
+   relativa), así que el encuadre de la estatua no cambia: 4,3 unidades de
+   la cámara a la figura, igual que antes. De ahí que estos cinco números
+   salgan de una sola constante: movida la cámara, se mueven juntos. */
+export const ROOM_Z = -2.0;
+export const ROOM_FIGURE_Z = ROOM_Z - 4.3;
+
 /* ────────────────────────────────
    Three.js — Coin & Setup
 ──────────────────────────────── */
@@ -203,19 +229,37 @@ export const CONFIG = {
                   'classic' → comportamiento ANTERIOR (fade-out simple).
                         ← cambiar a 'classic' para volver a la versión previa */
     transition: 'doorway',
-    roomCamZ: -0.5,    // z al terminar el dolly: la cámara queda dentro (0 = umbral)
+    roomCamZ: ROOM_Z,  // z al terminar el dolly: DETRÁS de las hojas (ver ROOM_Z arriba)
     roomCamY: 0.62,    // altura que limpia los escalones al cruzar
-    roomLook: { x: 0, y: 0.55, z: -2.0 },  // punto de mira ya dentro de la sala (sube el encuadre: la estatua queda arriba y el copy abajo)
-    roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: -0.45 },
+    roomLook: { x: 0, y: 0.55, z: ROOM_Z - 1.5 },  // punto de mira ya dentro de la sala (sube el encuadre: la estatua queda arriba y el copy abajo)
+    roomLight: { color: 0xffbe73, intensity: 11, x: 0, y: 0.9, z: ROOM_Z + 0.05 },
     veilFog: 0.06,     // pico del velo de niebla durante el cruce
     exitFog: 0.16,     // pico de niebla al salir de la sala: la estatua se hunde en vez de apagarse
     exitFogSink: 0.14, // espesor extra al final de la salida (0,55→0,90): la estatua termina de hundirse ANTES de apagarse
     fovKick: 4,        // grados extra de FOV durante el dolly (0 → 1 → 0)
-    /* Nube de voces dentro de la sala: centro y escala con los que se
-       recoloca el enjambre al cruzar el umbral. La nube queda DELANTE de
-       la cámara (z < roomCamZ) y se comprime, así el giro alrededor del
-       eje Y nunca la barre hacia atrás y la sala no queda sin partículas. */
-    roomSwarm: { x: 0, y: 0.55, z: -2.5, scale: 0.35 },
+    /* Nube de voces dentro de la sala: el enjambre se comprime y su centro
+       viaja CON la cámara, `lead` unidades por DELANTE de ella, así la nube
+       cruza la puerta a la vez que el lector en vez de adelantarse sola.
+       `leadOut` es el adelanto al empezar el cruce y `lead` el de dentro de
+       la sala: la nube se va abriendo paso a medida que entra. La escala
+       comprime el conjunto para que el giro en Y no la barra fuera del
+       encuadre y la sala no se quede sin partículas. */
+    roomSwarm: { x: 0, y: 0.55, leadOut: 1.2, lead: 2.0, scale: 0.35 },
+    /* Embudo del umbral: las partículas cruzan la puerta CONTIGO. Cada una
+       tiene un carril dentro del hueco (medido del GLB: 1,24 de ancho ×
+       2,66 de alto en el plano z ≈ −0,89) y su lateral se estruja hacia él
+       justo al pasar el plano, abriéndose después dentro de la sala.
+         window:  ventana de crossT en la que el embudo existe (entra y sale
+                  con suavidad; fuera de ella la nube nunca se estruja).
+         depth:   grosor en z de la zona de estrujamiento.
+         squeeze: cuánto se acerca cada punto a su carril (1 = colapsa en él).
+         zSqueeze: el umbral ATRAE en z a las que todavía no han cruzado, así
+                   entran todas juntas en vez de quedarse rezagadas detrás de
+                   la cámara (que es de dónde salían las manchas enormes). */
+    funnel: {
+      z: -0.89, cx: 0, cy: 1.3, halfW: 0.42, halfH: 0.85,
+      window: [0.30, 0.52, 0.86, 0.98], depth: 1.5, squeeze: 0.75, zSqueeze: 0.6,
+    },
     /* Encuadre del acercamiento (ventanas de crossT en las que la mira viaja):
        aimDoorT: mira neutra de "La Reunión" → centro VISUAL de la puerta.
                  Que termine a ~0.45 hace que "un instante antes de entrar" la
@@ -223,6 +267,14 @@ export const CONFIG = {
        aimRoomT: puerta (ya disuelta) → interior de la sala (roomLook). */
     aimDoorT: [0.0, 0.45],
     aimRoomT: [0.55, 0.95],
+    /* Ventana en la que las HOJAS se funden (crossT). Antes 0,55→0,75, con
+       la cámara todavía a 2,9…0,8 unidades del umbral: el lector veía las
+       hojas desvanecerse ocupando entre el 11 % y el 19 % de la pantalla.
+       Con la cámara terminando en ROOM_Z (−2,0), las hojas salen del
+       encuadre por sí solas hacia crossT ≈ 0,79 y a partir de 0,84 ya están
+       detrás de la cámara, así que el fundido ocurre fuera de cuadro.
+       El pórtico sigue con su ventana propia (porticoHold, en main.js). */
+    leafFadeT: [0.84, 0.94],
   },
   doorText: {
     /* ══════════════════════════════════════════════════════════════════════
@@ -266,7 +318,7 @@ export const CONFIG = {
      Las posiciones/escalas de las figuras viven en `js/figures.js`; aquí
      solo se configura la órbita. */
   room: {
-    figure: { x: 0, z: -4.8 },     // debe coincidir con `figures.js` (soporte/balanza)
+    figure: { x: 0, z: ROOM_FIGURE_Z },   // `figures.js` importa ROOM_FIGURE_Z: no puede desincronizarse
     orbit: {
       count: 12,                    // fragmentos en órbita (4 por tono)
       trail: 58,                    // muestras de estela por fragmento
@@ -282,6 +334,30 @@ export const CONFIG = {
       precession: 0.028,            // rad/s de giro del plano (las estelas nunca se repiten)
       opacity: 0.82,
       neutralDim: 0.78,             // el plata en aditivo se va a blanco puro; se baja solo aquí
+    },
+    /* Nube de fondo: mismos tres tonos que los fragmentos de la estatua
+       (oro / azul / plata) y mismo blending aditivo, porque el lector ya
+       aprendió ese código de color en la órbita.
+
+       Lo que cambia es la INTENSIDAD. Medido sobre el navy real de la pieza
+       (rgb 10,14,26): con alfa por debajo de ~0,35 el núcleo del punto
+       apenas levanta el píxel y el degradado suave se come el resto, así que
+       el oro NO llega a imponerse al azul del fondo — el 0 % de los píxeles
+       de la nube se leían cálidos y el 89 % salían azules, es decir: toda la
+       nube se veía gris. Estos suelos son los que mantienen el tono vivo
+       cuando la nube cede protagonismo al dato activo. */
+    swarm: {
+      ambientFloor: 0.62,           // suelo de ambientMin (era 0,42)
+      stageFloor: 0.62,             // suelo de stageAlpha (era 0,36)
+      stageFalloff: 0.38,           // cuánto cede ante el dato denso (era 0,60)
+      figureFloor: 0.60,            // dentro de la sala baja de 1 a esto (era 0,45)
+      chroma: 1.16,                 // empuje de croma: el oro le gana al navy
+      /* Un punto a 0,1 de la cámara proyecta una mancha de 600 px que tapa
+         la escena: medido, durante el cruce había partículas a 0,07. Con
+         blending aditivo basta con escalar su COLOR (la contribución es
+         alfa × color) para que se apague al pegarse a la lente.
+         [distancia a la que ya no se ve, distancia a la que está completa] */
+      nearFade: [0.35, 1.2],
     },
     /* Luces de la pieza central. OJO: el renderer usa unidades físicas
        (useLegacyLights = false, three r160), así que estos valores son

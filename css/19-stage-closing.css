@@ -117,7 +117,27 @@
 
    La geometría es la del SVG original, en porcentajes del mismo espacio de
    120 unidades: halo r=54, canto r=47, cara y aro r=38, partícula a 48. */
-.mint { position: relative; width: 116px; height: 116px; }
+/* Velocidades de lo que gira alrededor del centro. El aro (r 38) y las dos
+   señales de la órbita exterior (r 48) compartían periodo (2,4 s) y, como
+   las de fuera están más lejos, recorrían MÁS píxeles por segundo: la
+   partícula adelantaba al aro, al revés de como se lee una órbita. Ahora los
+   periodos salen de la tercera ley de Kepler (T² ∝ r³, o sea T ∝ r^1,5) con
+   el aro como referencia:
+
+       (48/38)^1,5 = 1,42  →  aro 1,9 s · partículas 2,7 s
+
+   Medido sobre la caja real de 116 px (radio del aro 38,0 px, de la órbita
+   46,4 px): el aro pasa de 99,5 a 125,7 px/s y las partículas bajan de 121,5
+   a 108,0 px/s. El aro da 0,53 vueltas por segundo y ellas 0,37: más vueltas
+   por dentro y menos por fuera, que es lo que se espera de algo que orbita.
+
+   Ojo: el canto dentado (.mint-reed) NO sigue esta ley a propósito — es el
+   dentado de la moneda, no un cuerpo orbitando. */
+.mint {
+  position: relative; width: 116px; height: 116px;
+  --mint-ring-period: 1.9s;
+  --mint-orbit-period: 2.7s;
+}
 .mint > span { position: absolute; }
 
 /* Halo exterior: r 54 + medio trazo = 54,5 de 60 → 90,8 % de la caja.
@@ -153,7 +173,9 @@
    motores sin soporte el aro no pintaba — el fallo que se vio. Ahora la forma
    más compatible de un arco que gira: un círculo con el borde transparente y
    solo dos lados en oro, rotando. Banda r 36,75–39,25 → 65,4 % de la caja,
-   una vuelta cada 2,4 s. Transform puro: lo compone la GPU. */
+   una vuelta cada 1,9 s (el número no está aquí: sale de .mint, junto con el
+   de la órbita exterior, para que los dos se ajusten en el mismo sitio).
+   Transform puro: lo compone la GPU. */
 .mint-ring {
   left: 17.29%; top: 17.29%; width: 65.42%; height: 65.42%;
   box-sizing: border-box;
@@ -161,11 +183,12 @@
   border-top-color: var(--color-gold);
   border-right-color: var(--color-gold);
   border-radius: 50%;
-  animation: mint-spin 2.4s linear infinite;
+  animation: mint-spin var(--mint-ring-period) linear infinite;
 }
+/* La órbita exterior: mismo eje, más lejos (r 48), así que más lenta. */
 .mint-orbit {
   left: 0; top: 0; width: 100%; height: 100%;
-  animation: mint-spin 2.4s linear infinite;
+  animation: mint-spin var(--mint-orbit-period) linear infinite;
 }
 /* Dos señales en el MISMO eje de giro, una de cada tono del enjambre
    (js/main.js:1065): dovish arriba, hawkish abajo. Giran juntas con .mint-orbit. */
