@@ -23,6 +23,7 @@ npm run perf         # mide la fluidez del hilo principal haciendo scroll (ver �
 npm run startup      # qué bloquea el hilo principal mientras la página ARRANCA
 npm run perf:early   # aísla el coste del TRAMO INICIAL apagando un sospechoso cada vez
 npm run perf:ambient # comprueba que el halo dorado se pinta igual que antes
+npm run perf:willchange # comprueba que el halo no deja una capa de GPU retenida
 npm run lh           # Lighthouse real contra el sitio: puntaje y auditorías que restan
 npm run lint         # ESLint sobre el código propio: variables sin definir, imports sin usar…
 npm run format:check # Prettier sobre scripts/, tools/ y los JSON (format → los reescribe)
@@ -153,6 +154,7 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │   ├── perf/lighthouse.mjs `npm run lh` — Lighthouse real: las 5 métricas y las auditorías que restan
 │   ├── perf/early-scroll.mjs  aísla el coste del TRAMO INICIAL apagando un sospechoso cada vez
 │   ├── perf/ambient-parity.mjs  comprueba que el halo se pinta igual tras el cambio de mecanismo
+│   ├── perf/ambient-willchange.mjs  comprueba que el halo no retiene capa de GPU en reposo
 │   ├── perf/ambient-shot.mjs    foto del hero para mirar el halo con los ojos
 │   └── screenshots/
 │       ├── capture.mjs     `npm run shots`
@@ -922,6 +924,25 @@ viejo como reserva por si el div no existiera.
 La prueba de que el cuello de botella desapareció y no se movió: apagar
 ScrollTrigger **ya no ahorra nada medible** (−12 %, solapado con `base`),
 cuando antes ahorraba un 31 % consistente.
+
+### Dos cosas que aparecieron al revisar el propio arreglo
+
+**El `will-change` sobraba.** La primera versión del arreglo dejaba
+`will-change: opacity` permanente sobre `#ambientGlow`, que cubre el viewport
+entero — exactamente lo que este repo ya se había prohibido por escrito en
+`css/19-stage-closing.css`. La variante `nowillchange` de la sonda dice que
+quitarlo **no empeora nada demostrable** (rango solapado con `base`): era un
+coste de memoria de GPU permanente a cambio de una ganancia no probada. Ahora
+la promoción dura solo el fundido (`.is-fading`, que pone y quita
+`setAmbientAlpha()`), y se limpia también en `onInterrupt` porque cuando una
+sección llega antes de que termine la anterior GSAP mata el tween y
+`onComplete` nunca corre. `npm run perf:willchange` lo verifica navegando a
+saltos más rápidos que el fundido.
+
+**`--room-scrim` no es el mismo problema.** También se escribe en cada frame,
+pero sobre un contenedor y no sobre la raíz. La variante `noscrim` sale
+solapada con `base`: no hay nada que arreglar ahí. Es la confirmación de que
+lo caro no era "escribir una variable por frame", sino hacerlo **en la raíz**.
 
 ### Que la imagen no cambió
 

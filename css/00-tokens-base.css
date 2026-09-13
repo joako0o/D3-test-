@@ -106,8 +106,18 @@ body {
   /* El gradiente se pinta con alfa 1 y es la opacidad de la capa la que
      gradúa la intensidad: así el color final es el mismo que antes. */
   background: radial-gradient(circle at var(--ambient-x) var(--ambient-y), rgba(255,215,106,1), transparent var(--ambient-size));
-  /* Capa propia en el compositor: sin esto, animar la opacidad todavía
-     obligaría a repintar lo que hay debajo. */
+}
+
+/* La promoción a capa propia SOLO mientras el halo se está animando.
+   La primera versión de este arreglo dejaba `will-change: opacity` puesto para
+   siempre sobre un elemento que cubre el viewport entero — exactamente lo que
+   este repo ya se había prohibido en css/19-stage-closing.css ("dejar
+   will-change puesto para siempre costaría memoria de GPU toda la sesión").
+   Y medido con scripts/perf/early-scroll.mjs (variante `nowillchange`),
+   quitarlo no empeora nada de forma demostrable: el rango se solapa con el de
+   `base`. O sea que era un coste permanente a cambio de una ganancia no
+   probada. La clase la pone y la quita setAmbientAlpha() en js/main.js. */
+#ambientGlow.is-fading {
   will-change: opacity;
 }
 

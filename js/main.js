@@ -5287,6 +5287,15 @@ function setAmbientAlpha(alpha, immediate = false) {
     else ambientLayer.style.setProperty('--ambient-alpha', String(alpha));
     return;
   }
+  /* `will-change` solo mientras dura la transición (ver el comentario en
+     css/00-tokens-base.css): una capa promovida a perpetuidad sobre un
+     elemento del tamaño del viewport cuesta memoria de GPU toda la sesión, y
+     la medición no encontró ninguna ganancia que lo justifique.
+     `onComplete` no basta por sí solo: si llega otra sección antes de que
+     termine, GSAP mata este tween y `onComplete` no corre — por eso también
+     se limpia en `onInterrupt`. Sin eso, la clase se quedaría pegada. */
+  const doneFading = () => ambientGlow && ambientGlow.classList.remove('is-fading');
+  if (ambientGlow) ambientGlow.classList.add('is-fading');
   gsap.to(ambientLayer, {
     /* `opacity` sobre la capa propia; la variable solo en el camino de
        reserva. La duración y la curva son las mismas: el cambio es de
@@ -5295,6 +5304,8 @@ function setAmbientAlpha(alpha, immediate = false) {
     duration: 1.25,
     ease: 'power2.inOut',
     overwrite: 'auto',
+    onComplete: doneFading,
+    onInterrupt: doneFading,
   });
 }
 

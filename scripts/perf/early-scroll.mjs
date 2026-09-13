@@ -79,6 +79,15 @@ const ALL = [
   'nobgtween',
   'noambienttween',
   'norootwrites',
+  /* `nowillchange`: el halo tiene will-change:opacity permanente y ocupa el
+     viewport entero. El repo tiene una regla escrita en contra de eso
+     (css/19-stage-closing.css) porque una capa promovida cuesta memoria de
+     GPU toda la sesión. Esta variante mide si la promoción aporta algo.
+     `noscrim`: --room-scrim se escribe en cada frame durante La Sala, uno de
+     los tramos que el lector reporta lentos. Está acotado a un contenedor (no
+     a la raíz), pero hay que comprobar que eso basta. */
+  'nowillchange',
+  'noscrim',
 ];
 const ONLY = (args.only ? String(args.only).split(',') : ALL).filter((v) => ALL.includes(v));
 
@@ -227,6 +236,26 @@ const VARIANTS = {
       }),
     off: () => page.evaluate(() => window.__st.forEach((t) => t.enable(false))),
   },
+  nowillchange: {
+    on: () =>
+      page.evaluate(() => {
+        const s = document.createElement('style');
+        s.id = '__v';
+        s.textContent = '#ambientGlow { will-change: auto !important; }';
+        document.head.appendChild(s);
+      }),
+    off: () => page.evaluate(() => document.getElementById('__v')?.remove()),
+  },
+  noscrim: {
+    on: () =>
+      page.evaluate(() => {
+        window.__st = window.ScrollTrigger.getAll().filter(
+          (t) => String(t.vars.trigger) === '#stageRoom' || t.trigger?.id === 'stageRoom'
+        );
+        window.__st.forEach((t) => t.disable(false));
+      }),
+    off: () => page.evaluate(() => window.__st.forEach((t) => t.enable(false))),
+  },
   nobackdrop: {
     on: () =>
       page.evaluate(() => {
@@ -304,6 +333,22 @@ async function pass(name) {
 async function metrics() {
   const { metrics: list } = await cdp.send('Performance.getMetrics');
   return Object.fromEntries(list.map((m) => [m.name, m.value]));
+}
+
+/* Una variante mal escrita en --only se DESCARTABA en silencio y la tabla
+   salía con menos filas de las pedidas: pasó de verdad (se midieron 3 pasadas
+   de `base` creyendo que eran tres variantes distintas, y el informe parecía
+   correcto). Mejor reventar que informar de menos. */
+const desconocidas = (args.only ? String(args.only).split(',') : []).filter((v) => !ALL.includes(v));
+if (desconocidas.length) {
+  console.error(`  ✗ variante(s) desconocida(s): ${desconocidas.join(', ')}`);
+  console.error(`    disponibles: ${ALL.join(', ')}`);
+  process.exit(2);
+}
+const sinImplementar = ALL.filter((v) => !VARIANTS[v]);
+if (sinImplementar.length) {
+  console.error(`  ✗ en la lista pero sin implementación: ${sinImplementar.join(', ')}`);
+  process.exit(2);
 }
 
 const runs = new Map(ONLY.map((n) => [n, []]));
