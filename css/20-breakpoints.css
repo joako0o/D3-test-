@@ -14,6 +14,31 @@
   .pipeline-pin-wrapper { padding: 32px 8%; }
 }
 
+/* ─── Fix universal de scroll atascado ───
+   Los tres contenedores fijados con `overflow-y:auto` llevan
+   `overscroll-behavior: contain`, y eso rompe el encadenado con el
+   scroll suave (Lenis) en CUALQUIER dispositivo:
+   cuando el contenido interno es más alto que la pantalla (el navegador
+   de actas lo es en casi cualquier teléfono, y el de palabras/voces en
+   portátiles con poca altura), el gesto de scroll desplaza el interior
+   hasta el tope y ahí se queda: la página ya no avanza por mucho que se
+   deslice o gire la rueda, a menos que se arrastre directamente la
+   barra lateral.
+   Medido en escritorio (rueda) al llegar al Acto 4: el scroll se pega
+   exactamente en el contenedor .word-evolution-pin-wrapper, porque el
+   navegador entrega el evento wheel al contenedor con overflow:auto y
+   `contain` le impide pasarlo al documento (y por tanto a Lenis).
+   Con `auto` el desplazamiento encadena al documento al llegar al
+   tope superior/inferior del contenedor, que es lo que espera cualquier
+   lector.
+   Los scrollables INTERNOS de estos contenedores (la lista de actas,
+   el lector de evidencia, el rail horizontal de voces) siguen llevando
+   su propio `overscroll-behavior: contain` para que no arrastren la
+   página al hacer scroll dentro de ellos. */
+.word-evolution-pin-wrapper,
+.voices-pin-wrapper,
+.acts-pin-wrapper { overscroll-behavior: auto; }
+
 /* ─── Mobile: 768px ─── */
 @media (max-width: 768px) {
   .quotes-grid { grid-template-columns: 1fr; }
@@ -74,21 +99,6 @@
   }
   /* Timeline: stack labels vertically */
   .timeline-event { font-size: var(--fs-micro); }
-
-  /* ── Trampa de scroll táctil ──
-     Los tres contenedores fijados con `overflow-y:auto` llevan
-     `overscroll-behavior: contain`, y en táctil eso rompe el encadenado:
-     cuando el contenido interno es más alto que la pantalla (el navegador
-     de actas lo es en casi cualquier teléfono), el dedo desplaza el
-     interior hasta el tope y ahí se queda: la página ya no avanza por
-     mucho que se deslice. Medido con gestos táctiles emulados a 390×844:
-     seis deslizamientos seguidos sin moverse un píxel. Con `auto` el
-     desplazamiento encadena al documento al llegar al final, que es lo
-     que espera cualquier lector en un móvil. En escritorio (rueda) el
-     encadenado siempre funcionó, por eso nadie lo vio. */
-  .word-evolution-pin-wrapper,
-  .voices-pin-wrapper,
-  .acts-pin-wrapper { overscroll-behavior: auto; }
 
   /* ── Objetivos táctiles ──
      Los chips de término medían 67×22 px y el selector de año 80×26 px:
