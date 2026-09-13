@@ -665,10 +665,11 @@ hasta la última):
 - **Tier por GPU conocida débil**: el nombre se lee del contexto principal
   con `WEBGL_debug_renderer_info` (cero coste; **no** se crea contexto de
   sonda — medido: ~1,6 s de arranque, y es la razón por la que el proyecto
-  no sondea WebGL aparte). Lista conservadora: Intel HD/UHD, Iris pre-Xe,
-  Adreno de entrada, Mali antiguos, SwiftShader/llvmpipe. Un Iris Xe o un
-  Adreno 650+ no entra: para ellos ya está el paso adaptable. Si aplica, el
-  techo baja a DPR 1,0 con la cortina aún arriba (no se ve como tirón).
+  no sondea WebGL aparte). Lista conservadora: Intel HD/UHD y TODOS los
+  Iris (incluido el Xe, ver la corrección de 2026-09-13 abajo), Adreno de
+  entrada, Mali antiguos, SwiftShader/llvmpipe. Un Adreno 650+ no entra:
+  para él ya está el paso adaptable. Si aplica, el techo baja a DPR 1,0
+  con la cortina aún arriba (no se ve como tirón).
 - **DPR adaptable con la métrica corregida**: a media ventana de 90 frames,
   >26 ms de media baja el DPR de a 0,25 (suelo 0,75 — render por debajo de
   la resolución de pantalla y upscale por CSS, la técnica que recomienda la
@@ -819,6 +820,33 @@ Lo que **se añadió** en esta ronda:
 | `content-visibility: auto` | Salta layout+paint de secciones fuera de pantalla; caso web.dev: 232 → 30 ms (≈7×). | Descartado: secciones **fijadas** con ScrollTrigger — la medición de pins y los tramos de scroll atados a posiciones se romperían con secciones sin maquetar; el hilo principal ya está en ~28 ms/s (ver § Fluidez), así que la ganancia no compensa el riesgo. |
 | `dvh` para longitudes de scroll | `dvh` sigue el colapso de la barra de direcciones → cada reflow mueve la barra de scroll y desfasa los pins. | No: `svh` (estable) para longitudes; `dvh` solo como corrección puntual del contenedor fijado en móvil (ya está). |
 | `safe-area-max-inset-*` | Variante 2026 que se mantiene estable aunque la barra se oculte al scrollear. | No: con `svh` + los insets actuales el layout no depende de la barra; no hay síntoma que corregir. |
+
+## Rendimiento del 3D — Iris Xe y techo de DPR general (2026-09-13)
+
+Diagnóstico en un portátil publicado (Iris Xe, `devicePixelRatio` 1,5):
+`window.__D3_PERF` marcaba `tier: high` y `dpr: 1.5` — el código
+clasificaba al Iris Xe como GPU potente, pero es una iGPU. A DPR 1,5 se
+pintan 2,25× los píxeles de DPR 1,0, que es justo el relleno que se
+arrastraba. (El `avgMs: 0` del mismo diagnóstico no significa render
+rápido: el medidor adaptativo aún no llevaba 90 frames de muestra.)
+Dos cambios, ambos en `js/main.js`:
+
+1. **Iris Xe pasa al tier conservador**: `WEAK_GPU_RE` ahora incluye
+   TODOS los Iris, no solo los pre-Xe. La alternativa es `iris.{0,6}xe`
+   y no un espacio fijo: el string real del dispositivo trae el símbolo
+   entre nombre y generación —"Intel(R) Iris(R) Xe Graphics" (Windows/
+   ANGLE, Linux) o "Intel Iris Xe" (macOS)— y `iris xe` literal no
+   casaba con el primero. Ese portátil ahora arranca con `dpr: 1` y
+   `tier: lite`, sin esperar a que el paso adaptable lo descubra a los
+   90 frames.
+2. **Techo general de DPR 1,5 → 1,25**: `dprCap` en el tier alto (sin
+   LOW_MEM ni GPU en la lista) baja de 1,5 a 1,25 — 1,56× los píxeles
+   de DPR 1,0 en vez de 2,25×. El adaptable sigue subiendo y bajando
+   dentro del techo, así que una dGPU que rinde recupera hasta 1,25 y
+   no más.
+
+`js/app.js` (el bundle que sirve la página publicada) se regeneró con
+`npm run build:js` y el `?v=` de index.html pasó de 1 a 2.
 
 ## Secciones del scrollytelling
 
