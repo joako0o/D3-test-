@@ -79,15 +79,45 @@ body {
   .scroll-hint { display: none; }
 }
 
+/* ── Luz ambiental: DOS capas, y la razón es de rendimiento ──
+   El halo dorado se animaba variando `--ambient-alpha` sobre :root en cada
+   frame del scroll. Una propiedad personalizada en la RAÍZ invalida el estilo
+   del documento ENTERO —no solo del elemento que la usa—, así que el
+   navegador recalculaba todo el árbol ~60 veces por segundo mientras se hace
+   scroll por las primeras secciones.
+
+   Medido con scripts/perf/early-scroll.mjs (mediana de 3 pasadas, 900x600):
+   apagando SOLO esa animación, el recálculo de estilo baja de 9,0 a 1,5 ms
+   por segundo de scroll y el coste total del hilo principal cae un 25 %. Es
+   el 80 % de todo lo que cuesta ScrollTrigger en ese tramo.
+
+   Ahora el degradado vive en su propia capa fija y lo que se anima es su
+   `opacity`: el compositor la resuelve sin tocar el estilo de nadie más.
+   La viñeta se queda en body::before porque es constante (no se anima).
+
+   OJO: `--ambient-alpha` ya no se usa para animar. Si vuelve a hacerse,
+   vuelve el coste. */
+#ambientGlow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--ambient-alpha);
+  /* El gradiente se pinta con alfa 1 y es la opacidad de la capa la que
+     gradúa la intensidad: así el color final es el mismo que antes. */
+  background: radial-gradient(circle at var(--ambient-x) var(--ambient-y), rgba(255,215,106,1), transparent var(--ambient-size));
+  /* Capa propia en el compositor: sin esto, animar la opacidad todavía
+     obligaría a repintar lo que hay debajo. */
+  will-change: opacity;
+}
+
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background:
-    radial-gradient(circle at var(--ambient-x) var(--ambient-y), rgba(255,215,106,var(--ambient-alpha)), transparent var(--ambient-size)),
-    radial-gradient(circle at 50% 50%, transparent 52%, rgba(0,0,0,0.4) 100%);
+  background: radial-gradient(circle at 50% 50%, transparent 52%, rgba(0,0,0,0.4) 100%);
 }
 
 body::after {

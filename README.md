@@ -21,6 +21,8 @@ npm run shots        # capturas reales de cada sección (necesita npm start)
 npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
 npm run perf         # mide la fluidez del hilo principal haciendo scroll (ver § Fluidez)
 npm run startup      # qué bloquea el hilo principal mientras la página ARRANCA
+npm run perf:early   # aísla el coste del TRAMO INICIAL apagando un sospechoso cada vez
+npm run perf:ambient # comprueba que el halo dorado se pinta igual que antes
 npm run lh           # Lighthouse real contra el sitio: puntaje y auditorías que restan
 npm run lint         # ESLint sobre el código propio: variables sin definir, imports sin usar…
 npm run format:check # Prettier sobre scripts/, tools/ y los JSON (format → los reescribe)
@@ -149,6 +151,9 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │   ├── perf/measure.mjs    `npm run perf` — mide el coste del hilo principal en scroll y reposo
 │   ├── perf/startup.mjs    `npm run startup` — tareas largas del arranque, con la pila que las causó
 │   ├── perf/lighthouse.mjs `npm run lh` — Lighthouse real: las 5 métricas y las auditorías que restan
+│   ├── perf/early-scroll.mjs  aísla el coste del TRAMO INICIAL apagando un sospechoso cada vez
+│   ├── perf/ambient-parity.mjs  comprueba que el halo se pinta igual tras el cambio de mecanismo
+│   ├── perf/ambient-shot.mjs    foto del hero para mirar el halo con los ojos
 │   └── screenshots/
 │       ├── capture.mjs     `npm run shots`
 │       └── hero-check.mjs  `npm run hero:check`
@@ -847,6 +852,86 @@ Dos cambios, ambos en `js/main.js`:
 
 `js/app.js` (el bundle que sirve la página publicada) se regeneró con
 `npm run build:js` y el `?v=` de index.html pasó de 1 a 2.
+
+## Las primeras fases iban lentas, y no era el 3D (2026-09-12)
+
+Reporte: en algunos equipos **las primeras fases** —portada, acercamiento a
+la puerta y cruce del umbral— se arrastran. La sospecha razonable era la
+puerta 3D o la compilación de shaders, y ya se habían hecho dos rondas de
+trabajo sobre eso (las dos secciones anteriores). Esta vez la causa era otra
+y estaba en el CSS.
+
+### La medición (y por qué la primera versión no servía)
+
+Se añadió `scripts/perf/early-scroll.mjs`: recorre SOLO el tramo inicial y
+corre la misma pasada con variantes que apagan un sospechoso cada vez
+(`--only=base,notriggers,no3d,nolenis,nocss,…`). Lo importante es que la
+hipótesis se pueda **falsar**: si apagar algo no mejora, ese algo no es el
+cuello de botella.
+
+La primera versión comparaba por **separación entre frames** y llegó a
+conclusiones contradictorias entre ejecuciones idénticas: dos pasadas `base`
+seguidas dieron p50 de 96 ms y 164 ms, y una misma variante pasó de "−70 %" a
+"+4 %". Aquí se pinta con SwiftShader (por software, sin GPU) y ese ruido se
+come cualquier diferencia real. La sonda se reescribió sobre los **contadores
+de CPU de Chrome** (`Performance.getMetrics`), con 3 repeticiones
+intercaladas y la mediana, y además imprime el **rango** de cada variante:
+si se solapa con el de `base`, se declara "NO concluyente" en vez de inventar
+un hallazgo.
+
+Con esa sonda (900×600, mediana de 3, coste del hilo principal por segundo de
+scroll):
+
+| Variante | tarea | estilo | veredicto |
+|---|---:|---:|---|
+| `base` | 33,5 ms/s | 9,0 ms/s | — |
+| `notriggers` (sin ScrollTrigger) | 23,1 | 1,3 | −31 %, consistente |
+| `nobgtween` (sin el color de fondo por sección) | 32,1 | 7,1 | **solapado: no concluyente** |
+| `noambienttween` (sin la luz ambiental) | 25,1 | 1,5 | **−25 %, consistente** |
+| `norootwrites` (los dos) | 23,1 | 1,5 | −31 %, consistente |
+
+Apagar `no3d` (el render WebGL entero) **no mejoraba nada** (+9 %): el 3D no
+era el problema. Y dentro de ScrollTrigger, un solo grupo de triggers
+explicaba el 80 % de su coste.
+
+### La causa
+
+La luz ambiental se animaba con `gsap.to(documentElement, {'--ambient-alpha': …})`.
+Una **propiedad personalizada en la raíz invalida el estilo del documento
+entero** —no solo el del elemento que la usa—, así que el navegador
+recalculaba todo el árbol ~60 veces por segundo mientras se hacía scroll. El
+halo vivía en `body::before`, que obliga a esa indirección porque un
+pseudo-elemento no se puede animar desde JS.
+
+### El arreglo
+
+El degradado pasa a una capa propia, `#ambientGlow` (`index.html` +
+`css/00-tokens-base.css`), y lo que se anima es su **`opacity`**, que el
+compositor resuelve sin tocar el estilo de nadie. La viñeta se queda en
+`body::before` porque es constante. `setAmbientAlpha()` conserva el camino
+viejo como reserva por si el div no existiera.
+
+| | antes | después |
+|---|---:|---:|
+| coste del hilo principal (tramo inicial) | 33,5 ms/s | **23,9 ms/s** (−29 %) |
+| recálculo de estilo (tramo inicial) | 9,0 ms/s | **1,4 ms/s** (−84 %) |
+| `npm run perf`: scripting/s | **176 ms ✗ (fuera de presupuesto)** | **92,1 ms ✓** |
+| `npm run perf`: estilo/s | 45,5 ms | **10,8 ms** |
+| `npm run perf`: peor tarea larga | 744 ms | **163 ms** |
+
+La prueba de que el cuello de botella desapareció y no se movió: apagar
+ScrollTrigger **ya no ahorra nada medible** (−12 %, solapado con `base`),
+cuando antes ahorraba un 31 % consistente.
+
+### Que la imagen no cambió
+
+Una optimización que cambia lo que se ve es un cambio de diseño encubierto.
+`scripts/perf/ambient-parity.mjs` lo comprueba en los 8 valores de alpha del
+relato (0,16 en el hero … 0,015 en los ejes): por composición alfa, una capa
+con opacidad `a` sobre un gradiente opaco da el mismo color que el gradiente
+con alfa `a`. Pasa los 8. (Ese test también tuvo que aprender a **pausar
+`gsap.globalTimeline`**: la página seguía viva y animaba el halo mientras la
+sonda lo medía, así que leía los valores del relato en curso y no los suyos.)
 
 ## Secciones del scrollytelling
 
