@@ -105,20 +105,24 @@
        parsea, recién ahí pide three.module.min.js (655 KB), lo parsea, y así con
        cada addon y sección. `modulepreload` adelanta esas descargas para que
        corran en paralelo con el parseo de lo anterior. En red real recorta el
-       arranque; en local (este entorno, limitado por CPU) el efecto es menor. -->
+       arranque; en local (este entorno, limitado por CPU) el efecto es menor.
+       Los módulos PROPIOS (main, core/, scene/, sections/, data/) van en su
+       versión MINIFICADA (*.min.js): son un derivado de js/*.js que genera
+       `npm run build:js` (ver scripts/build-js.mjs), igual que css/bundle.css.
+       three y sus addons (js/lib/) no se tocan: viajan tal cual del repo. -->
   <link rel="modulepreload" href="js/lib/three/three.module.min.js?v=1" />
-  <link rel="modulepreload" href="js/main.js?v=69" />
+  <link rel="modulepreload" href="js/main.min.js?v=69" />
   <link rel="modulepreload" href="js/lib/three/addons/loaders/GLTFLoader.js" />
   <link rel="modulepreload" href="js/lib/three/addons/loaders/DRACOLoader.js" />
-  <link rel="modulepreload" href="js/core/config.js?v=21" />
-  <link rel="modulepreload" href="js/scene/figures.js?v=5" />
-  <link rel="modulepreload" href="js/core/viewport.js?v=2" />
+  <link rel="modulepreload" href="js/core/config.min.js?v=21" />
+  <link rel="modulepreload" href="js/scene/figures.min.js?v=5" />
+  <link rel="modulepreload" href="js/core/viewport.min.js?v=2" />
   <!-- Segundo nivel del grafo (lo importa main.js): sin estas pistas el
        navegador recién los descubre al terminar de parsear main.js. -->
-  <link rel="modulepreload" href="js/scene/build-door.js?v=14" />
-  <link rel="modulepreload" href="js/core/interaction-state.js" />
-  <link rel="modulepreload" href="js/data/topics.js" />
-  <link rel="modulepreload" href="js/core/utils.js" />
+  <link rel="modulepreload" href="js/scene/build-door.min.js?v=14" />
+  <link rel="modulepreload" href="js/core/interaction-state.min.js" />
+  <link rel="modulepreload" href="js/data/topics.min.js" />
+  <link rel="modulepreload" href="js/core/utils.min.js" />
   <link rel="modulepreload" href="js/lib/three/addons/utils/BufferGeometryUtils.js" />
   <link rel="modulepreload" href="js/lib/three/addons/environments/RoomEnvironment.js" />
   <!-- Las cinco secciones de datos ya NO van aquí: se cargan con import()
@@ -794,10 +798,14 @@
        después de la primera pinta. Son 91 KiB que competían con el CSS y con
        las fuentes de la portada sin pintar nada en ella. Lo carga loadD3() en
        js/main.js. -->
-  <script defer src="js/data/quotes.js"></script>
+  <script defer src="js/data/quotes.min.js"></script>
 
   <!-- El importmap vive en el <head> (debe preceder a toda carga de módulo). -->
-  <script type="module" src="js/main.js?v=69"></script>
+  <!-- main.min.js y quotes.min.js son DERIVADOS de js/main.js y
+       js/data/quotes.js: se regeneran con `npm run build:js` (que `npm start`
+       corre solo) y `npm run check` avisa si quedaron viejos. En producción se
+       sirven los .min.js; en el repo se edita siempre el .js. -->
+  <script type="module" src="js/main.min.js?v=69"></script>
 
 
 </body>

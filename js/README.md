@@ -21,6 +21,14 @@ esta tabla.**
 - **Los imports dentro de `js/` son relativos al archivo.** Si mueves un
   módulo, actualiza las rutas de quien lo importa y el `modulepreload` de
   `index.html`.
+- **Los `*.min.js` son DERIVADOS.** Se edita el `*.js` (fuente legible, con sus
+  comentarios); `npm run build:js` genera el `*.min.js` de al lado (mismo
+  nombre con `.min` antes de `.js`) y reescribe los `import` relativos para
+  apuntar al `.min.js` del módulo importado, conservando el `?v=`. No edites
+  un `.min.js` a mano: se pisa. `index.html` sirve los `.min.js`; `js/lib/` y
+  `js/vendor/` no se minifican (ya lo están o no se editan). Si cambias un
+  módulo, sube su `?v=` en quienes lo importan y en `index.html`, y corre
+  `npm run build:js`; `npm run check` avisa si un `.min.js` quedó viejo.
 - **El `importmap` vive en `index.html` y apunta a `js/lib/three/`.** No
   referencies `three` desde una ruta absoluta: usa `import * as THREE from 'three'`
   o el specifier `'three/addons/...'`.

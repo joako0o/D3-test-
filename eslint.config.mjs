@@ -17,6 +17,9 @@ export default [
       'js/lib/three/three.module.min.js',
       'js/vendor/**',
       'js/lib/three/addons/**',
+      /* Derivados de scripts/build-js.mjs: se pisan al reconstruir y su aviso
+         (una línea gigante) no dice nada del código que se edita. */
+      'js/**/*.min.js',
       'node_modules/**',
       '.cache/**',
       '.shots/**',

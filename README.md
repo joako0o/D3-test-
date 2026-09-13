@@ -13,8 +13,9 @@ Exploración interactiva de 16 años de reuniones de política monetaria en Chil
 ## Cómo ejecutar
 
 ```bash
-npm start            # servidor estático en http://localhost:8000 (regenera el CSS solo)
+npm start            # servidor estático en http://localhost:8000 (regenera CSS y JS)
 npm run build:css    # rehace css/bundle.css a partir de css/*.css (lo corre npm start)
+npm run build:js     # minifica js/*.js en js/**/*.min.js (lo corre npm start)
 npm run check        # arranca el sitio fuera del navegador y avisa si algo revienta
 npm run shots        # capturas reales de cada sección (necesita npm start)
 npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
@@ -28,11 +29,14 @@ npm run format:check # Prettier sobre scripts/, tools/ y los JSON (format → lo
 `npm run check` necesita las dependencias de desarrollo una sola vez
 (`npm install`).
 
-**El único paso de build es el CSS**, y es de una línea: `npm run build:css`
-junta los archivos de `css/` en `css/bundle.css` (ver § Rendimiento de carga).
-Lo corre `npm start` automáticamente y `npm run check` falla si te olvidas de
-correrlo. Todo lo demás —HTML, JS, GLB, fuentes— es lo que hay en el repo: se
-publica tal cual.
+**Hay dos pasos de build, y son de una línea cada uno**: `npm run build:css`
+junta los archivos de `css/` en `css/bundle.css`, y `npm run build:js` minifica
+los módulos propios de `js/` en sus `*.min.js` (ver § Rendimiento de carga).
+Los dos los corre `npm start` automáticamente y `npm run check` falla si te
+olvidas de correrlos. La regla es la misma en los dos casos: **los fuentes
+(`css/*.css` y `js/*.js`) son la única verdad que se edita; los derivados
+(`css/bundle.css` y `js/**/*.min.js`) se regeneran y se publican**. HTML, GLB
+y fuentes son lo que hay en el repo: se publica tal cual.
 
 ### Calidad de código y SEO
 
@@ -559,6 +563,16 @@ lector pueda tocar nada (TBT).
 6. **Animaciones no compuestas.** `#progressBar` y la barra del panel de debug
    animaban `width`, o sea layout, en cada paso de scroll: pasan a
    `transform: scaleX()`.
+7. **JS propio minificado.** `js/main.js` (249 KB sin comprimir, el archivo
+   propio más grande) y el resto de módulos de primera parte se servían tal
+   cual, con sus comentarios: Lighthouse lo contaba como "Minificar JavaScript"
+   con ~135 KiB de ahorro estimado. `scripts/build-js.mjs` (esbuild,
+   dependencia de desarrollo) escribe un `*.min.js` por fuente —`js/main.min.js`
+   queda en **81 KB**—, reescribe los `import` relativos para que el grafo
+   minificado sea completo y deja `js/lib/` y `js/vendor/` intactos. **437,9 KiB
+   → 181,0 KiB (−59 %)** entre los 15 módulos propios. Los fuentes `js/*.js`
+   siguen siendo la única verdad que se edita; los `.min.js` son derivados,
+   como `css/bundle.css` (ver `scripts/build-js.mjs` y `js/README.md`).
 
 ### Medido aquí, antes → después
 
@@ -598,16 +612,16 @@ real (o con `npm run lh -- --origin=https://joako0o.github.io/D3-test-`).
 
 ### Lo que queda
 
-- **Minificar el JS propio**: Lighthouse estima 135 KiB, la mayor parte de
-  `js/main.js` (249 KB sin comprimir). No se toca porque esos fuentes son los
-  que se leen y comentan a mano; haría falta un build con dos juegos de
-  archivos (fuente y servido) y su `?v=`.
 - **Los ~303 KB de three.js que no se usan**: solo se arreglan con un build a
-  medida de la biblioteca.
+  medida de la biblioteca (tree-shaking con un bundler). Es el siguiente
+  candidato, pero cambia el modelo de `importmap` + `modulepreload` por un
+  bundle único y conviene hacerlo aparte, revisable.
 - **Las 9 fuentes (165 KiB)** se descargan todas en la carga inicial; bajar a
   tres o cuatro pesos es una decisión de diseño, no de rendimiento.
 - **HTTP/1.1 y `Cache-Control: max-age=600`** los pone GitHub Pages; desde el
-  repo no se pueden cambiar.
+  repo no se pueden cambiar (GitHub Pages sirve HTTP/2 en producción y fija el
+  TTL en 10 min; un service worker podría alargar la caché del cliente, pero
+  solo ayuda en visitas repetidas y añade complejidad y riesgo de actualización).
 
 ## Rendimiento del 3D en máquinas modestas (2026-09-11)
 
