@@ -88,47 +88,22 @@
        el render no cambia entre local, CI y producción y funciona offline. -->
   <link rel="stylesheet" href="css/bundle.css?v=3" />
 
-  <!-- El importmap DEBE ir antes que cualquier carga de módulo (incluidos los
-       <link rel=modulepreload> de abajo), o los specifiers como "three" no
-       resuelven y main.js muere con "Failed to resolve module specifier". -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "./js/lib/three/three.module.min.js?v=1",
-      "three/addons/": "./js/lib/three/addons/"
-    }
-  }
-  </script>
+  <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
+       (tree-shaken desde el fuente modular) + addons + core/scene/sections,
+       todo minificado. Lo genera `npm run build:js` (scripts/build-js.mjs),
+       igual que css/bundle.css. Antes había un <script type=importmap> que
+       apuntaba 'three' a js/lib/three/ y ~14 peticiones de módulos (three +
+       addons + módulos propios) que se encolaban sobre HTTP/1.1; el bundle
+       las reduce a UNA y deja fuera el código de three que no se usa (WebGPU,
+       loaders de audio/SVG/TDS, OrbitControls…). Las cinco secciones de datos
+       se INLINAN aquí: la carga perezosa por red se pierde, pero el diferido
+       de hilo principal (deferred-boot.js) se conserva, que es lo que cuida
+       el TBT. `?v=` es la caché de GitHub Pages, como en css/bundle.css.
+       El <script type=module> real vive al final del <body> (el bundle
+       depende de los vendor con `defer`, que se ejecutan en orden de
+       documento); aquí solo se ADELANTA la descarga. -->
+  <link rel="modulepreload" href="js/app.js?v=1" />
 
-  <!-- PISTAS DE CARGA
-       Sin esto el navegador descubre el grafo en cascada: baja main.js, lo
-       parsea, recién ahí pide three.module.min.js (655 KB), lo parsea, y así con
-       cada addon y sección. `modulepreload` adelanta esas descargas para que
-       corran en paralelo con el parseo de lo anterior. En red real recorta el
-       arranque; en local (este entorno, limitado por CPU) el efecto es menor.
-       Los módulos PROPIOS (main, core/, scene/, sections/, data/) van en su
-       versión MINIFICADA (*.min.js): son un derivado de js/*.js que genera
-       `npm run build:js` (ver scripts/build-js.mjs), igual que css/bundle.css.
-       three y sus addons (js/lib/) no se tocan: viajan tal cual del repo. -->
-  <link rel="modulepreload" href="js/lib/three/three.module.min.js?v=1" />
-  <link rel="modulepreload" href="js/main.min.js?v=69" />
-  <link rel="modulepreload" href="js/lib/three/addons/loaders/GLTFLoader.js" />
-  <link rel="modulepreload" href="js/lib/three/addons/loaders/DRACOLoader.js" />
-  <link rel="modulepreload" href="js/core/config.min.js?v=21" />
-  <link rel="modulepreload" href="js/scene/figures.min.js?v=5" />
-  <link rel="modulepreload" href="js/core/viewport.min.js?v=2" />
-  <!-- Segundo nivel del grafo (lo importa main.js): sin estas pistas el
-       navegador recién los descubre al terminar de parsear main.js. -->
-  <link rel="modulepreload" href="js/scene/build-door.min.js?v=14" />
-  <link rel="modulepreload" href="js/core/interaction-state.min.js" />
-  <link rel="modulepreload" href="js/data/topics.min.js" />
-  <link rel="modulepreload" href="js/core/utils.min.js" />
-  <link rel="modulepreload" href="js/lib/three/addons/utils/BufferGeometryUtils.js" />
-  <link rel="modulepreload" href="js/lib/three/addons/environments/RoomEnvironment.js" />
-  <!-- Las cinco secciones de datos ya NO van aquí: se cargan con import()
-       dinámico después de la primera pinta (ver js/core/deferred-boot.js), así
-       que precargarlas ahora solo les robaría ancho de banda al CSS y a las
-       fuentes del hero, que son lo que pinta primero. -->
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
        incluida) debe ser IDÉNTICA a la que pide el loader en main.js, o el
@@ -800,12 +775,15 @@
        js/main.js. -->
   <script defer src="js/data/quotes.min.js"></script>
 
-  <!-- El importmap vive en el <head> (debe preceder a toda carga de módulo). -->
-  <!-- main.min.js y quotes.min.js son DERIVADOS de js/main.js y
-       js/data/quotes.js: se regeneran con `npm run build:js` (que `npm start`
-       corre solo) y `npm run check` avisa si quedaron viejos. En producción se
-       sirven los .min.js; en el repo se edita siempre el .js. -->
-  <script type="module" src="js/main.min.js?v=69"></script>
+  <!-- El bundle va al FINAL del <body> a propósito: es un módulo (diferido por
+       definición) y los scripts clásicos con `defer` se ejecutan en orden de
+       documento, así que gsap/ScrollTrigger/QUOTES deben existir antes de que
+       app.js se evalúe (hace gsap.registerPlugin(...) en el nivel superior).
+       La descarga se adelanta con el <link rel=modulepreload> del <head>. -->
+  <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
+       window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
+       si quedó viejo. En el repo se edita siempre el .js. -->
+  <script type="module" src="js/app.js?v=1"></script>
 
 
 </body>

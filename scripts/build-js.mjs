@@ -1,45 +1,50 @@
-/* build-js.mjs — minifica el JS propio y deja los fuentes como única verdad.
+/* build-js.mjs — bundlea el JS propio + three.js con tree-shaking, y minifica.
  *
  * POR QUÉ EXISTE
- *   El JS de primera parte (js/main.js, core/, scene/, sections/, data/) se
- *   servía SIN minificar: Lighthouse lo marcaba en "Minificar JavaScript" con
- *   un ahorro de ~66,7 KiB solo en archivos propios (42,2 de main.js), más el
- *   tiempo de parseo/compilación de ese peso — que es justo lo que alimenta el
- *   TBT. Los vendor y three.js ya viajan minificados; los que no lo estaban
- *   eran los nuestros.
+ *   El JS de primera parte se servía sin minificar (lo arregló la versión
+ *   anterior de este script) y three.js viajaba como MONOLÍTICO
+ *   (`js/lib/three/three.module.min.js`, 654 KiB) más 4 addons servidos SIN
+ *   minificar (GLTFLoader 105 KiB, BufferGeometryUtils 31, DRACOLoader 13,
+ *   RoomEnvironment 3). El informe de Lighthouse lo marcaba en "Reducir
+ *   JavaScript sin usar" (~76 KiB de three y ~70 de d3, comprimidos).
  *
- * QUÉ HACE (y qué NO)
- *   · Por cada fuente de TARGETS escribe un `<fuente>.min.js` AL LADO, con el
- *     mismo nombre y un `.min` antes de `.js`. Los `import`/`import()` relativos
- *     se reescriben para apuntar al `.min.js` del módulo importado (conservando
- *     el `?v=` de caché), así que el grafo minificado es completo y autónomo.
- *   · `js/lib/three/` y `js/vendor/` NO se tocan: ya están minificados y son
- *     bibliotecas copiadas (ver js/README.md). Sus specifiers desnudos
- *     ('three', 'three/addons/…') pasan intactos; los resuelve el importmap.
- *   · NO edita los fuentes: el `?v=` y el código legible viven en js/*.js.
- *     Las `.min.js` son DERIVADOS que se regeneran, como css/bundle.css.
+ * QUÉ HACE
+ *   Un solo bundle ES2018+: `js/app.js` contiene main.js, su grafo estático
+ *   (core/, scene/), three.js TREE-SHAKEADO desde su fuente modular y los
+ *   addons que se usan, todo minificado. Es la suma de lo que antes eran
+ *   ~15 peticiones de módulos (three + 4 addons + ~10 módulos propios) en
+ *   UNA: sobre HTTP/1.1 (seis conexiones por origen) esa cola era el grueso
+ *   del arranque. Se elimina el <script type=importmap> de index.html: el
+ *   bundle no tiene especificadores desnudos.
+ *   Los import() dinámicos de las cinco secciones se INLINAN en el bundle
+ *   (sin code-splitting): pierden la carga perezosa por red (~12 KiB
+ *   comprimidos en total) pero conservan el DIFERIDO de hilo principal, que
+ *   es lo que importa para el TBT — el orden y el "cuándo" de cada init()
+ *   lo sigue mandando js/core/deferred-boot.js.
  *
- * POR QUÉ ESBUILD (y no Node puro como build-css.mjs)
- *   El minificador de CSS puede ser conservador con un escáner de cadenas;
- *   en JS eso no alcanza: hay que distinguir un `//` de comentario de uno
- *   dentro de un string, una `/regex/` de una división, template literals y
- *   top-level await. Un minificador a mano es justo el sitio donde una
- *   página se rompe "solo en producción". esbuild es la herramienta estándar
- *   para esto y solo se usa en build (dependencia de desarrollo, como
- *   lighthouse o jsdom): el sitio publicado sigue siendo archivos estáticos.
+ * QUÉ NO HACE
+ *   · `js/vendor/` (GSAP, ScrollTrigger, SplitText, CustomEase, Lenis) sigue
+ *     como <script defer>: son globales clásicos, no módulos, y no se
+ *     importan desde los fuentes. Igual d3, que lo inyecta loadD3() a pedido.
+ *   · `js/data/quotes.js` es un <script> clásico (window.QUOTES): no entra al
+ *     bundle. Se minifica aparte en js/data/quotes.min.js.
+ *   · three.js se RESUELVE desde node_modules (`three@0.160.0`, dependencia de
+ *     desarrollo): el specifier exacto 'three' se re-apunta al fuente modular
+ *     `three/src/Three.js` para que el tree-shaking funcione (el monolítico
+ *     build/three.module.js no se puede podar). 'three/addons/*' lo resuelve
+ *     el export map del paquete (examples/jsm/*), byte-idéntico a los addons
+ *     vendidos en js/lib/three/addons/ (verificado).
  *
  * CACHÉ Y `?v=`
- *   GitHub Pages manda `Cache-Control: max-age=600`, así que la URL lleva
- *   `?v=` (igual que css/bundle.css). El `?v=` de CADA módulo vive en el
- *   FUENTE que lo importa y aquí se copia tal cual al `.min.js`: si cambias
- *   js/core/config.js, sube el `?v=` de `./core/config.js?v=…` en quienes lo
- *   importen Y el del `<link rel=modulepreload>` + `<script type=module>` de
- *   index.html, y corre `npm run build:js`. `npm run check` (§ 5a de
- *   tools/smoke-test.mjs) caza los `?v=` divergentes entre módulos.
+ *   `js/app.js` es un nombre estable con `?v=` (igual que css/bundle.css): el
+ *   número se sube a mano en index.html. Al ser UN solo archivo no hay el
+ *   problema de los chunks con hash (un app.js viejo en caché apuntando a
+ *   chunks borrados): solo hay que subir el `?v=` del propio app.js. El
+ *   bundle es un DERIVADO que se regenera; no se edita.
  *
  * USO
- *   npm run build:js                      # regenera los *.min.js
- *   node scripts/build-js.mjs --check     # sale con 1 si algún .min.js está viejo
+ *   npm run build:js                      # regenera js/app.js + quotes.min.js
+ *   node scripts/build-js.mjs --check     # sale con 1 si quedaron viejos
  *
  *   `npm start` lo corre solo (prestart). Y `npm run check` avisa si quedó
  *   desactualizado respecto a los fuentes.
@@ -48,116 +53,90 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { transform } from 'esbuild';
+import { gzipSync } from 'node:zlib';
+import { build, transform } from 'esbuild';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ENTRY = path.join(ROOT, 'js', 'main.js');
+const OUT = path.join(ROOT, 'js', 'app.js');
+const QUOTES_SRC = path.join(ROOT, 'js', 'data', 'quotes.js');
+const QUOTES_OUT = path.join(ROOT, 'js', 'data', 'quotes.min.js');
 
-/* Fuentes que se minifican. Lista explícita y no un glob: un archivo nuevo que
-   no esté aquí no se publica minificado, y eso es una decisión visible, no un
-   accidente. Todas viven bajo js/ (los vendor y three NO entran). */
-const TARGETS = [
-  'js/main.js',
-  'js/core/config.js',
-  'js/core/deferred-boot.js',
-  'js/core/interaction-state.js',
-  'js/core/utils.js',
-  'js/core/viewport.js',
-  'js/scene/build-door.js',
-  'js/scene/figures.js',
-  'js/data/topics.js',
-  'js/data/quotes.js',
-  'js/sections/act-browser.js',
-  'js/sections/axes-map.js',
-  'js/sections/timeline.js',
-  'js/sections/voice-explorer.js',
-  'js/sections/word-evolution.js',
-];
+const APP_HEADER =
+  '/* app.js — GENERADO por scripts/build-js.mjs. No editar: se pisa al correr\n' +
+  '   `npm run build:js` (que `npm start` ejecuta solo).\n' +
+  '   Fuentes: js/*.js (ver js/README.md) + three@0.160.0 (tree-shaken).\n' +
+  '   Edítalas y corre `npm run build:js`. */\n';
 
-const outPath = (src) => src.replace(/\.js$/, '.min.js');
+const QUOTES_HEADER =
+  '/* quotes.min.js — GENERADO por scripts/build-js.mjs. No editar: se pisa al\n' +
+  '   correr `npm run build:js`. Fuente: js/data/quotes.js. */\n';
 
-/* Reescribe los specifiers RELATIVOS ('./x.js', '../x.js', con o sin ?v=) para
-   que apunten al `.min.js` del módulo importado, PERO SOLO si el destino es un
-   módulo de primera parte (está en TARGETS). Los specifiers desnudos
-   ('three', 'three/addons/…') los resuelve el <script type=importmap>, y
-   scene/*.js importan three y sus addons por ruta RELATIVA
-   ('../lib/three/addons/…'): esos NO se minifican ni se renombran (js/lib/
-   no se edita), así que se dejan tal cual. */
-const TARGET_SET = new Set(TARGETS.map((t) => t.replace(/\\/g, '/')));
-function isFirstParty(fromRel, spec) {
-  const q = spec.indexOf('?');
-  const clean = q < 0 ? spec : spec.slice(0, q);
-  const abs = path.normalize(path.join(path.dirname(fromRel), clean)).replace(/\\/g, '/');
-  return TARGET_SET.has(abs);
-}
+/* El especifier EXACTO 'three' se re-apunta al fuente modular. 'three/addons/*'
+   NO se toca: lo resuelve el export map de npm (examples/jsm/*), idéntico a lo
+   vendido. Sin esto esbuild resolvería 'three' al build/three.module.js
+   monolítico y no habría nada que podar. */
+const threeModular = {
+  name: 'three-modular',
+  setup(b) {
+    b.onResolve({ filter: /^three$/ }, (args) =>
+      b.resolve('three/src/Three.js', { resolveDir: args.resolveDir, kind: args.kind })
+    );
+  },
+};
 
-function rewriteSpecifiers(src, fromRel) {
-  return src.replace(/(['"])(\.{1,2}\/[^'"]+?)\.js(\?[^'"]*)?(['"])/g, (m, q1, p, query, q2) =>
-    isFirstParty(fromRel, p + '.js' + (query || '')) ? `${q1}${p}.min.js${query || ''}${q2}` : m
-  );
-}
-
-function minifyOne(rel) {
-  const abs = path.join(ROOT, rel);
-  const src = fs.readFileSync(abs, 'utf8');
-  const rewritten = rewriteSpecifiers(src, rel);
-  /* quotes.js es un <script> clásico (window.QUOTES = …) sin import/export:
-     esbuild con format:'esm' lo deja igual que un script de nivel superior,
-     solo que en modo estricto — que no cambia nada para una asignación a
-     window. El resto son módulos con top-level await, que solo 'esm' admite. */
-  return transform(rewritten, { loader: 'js', format: 'esm', target: 'es2022', minify: true });
-}
-
-function header(rel) {
-  const out = rel.split('/').pop().replace(/\.js$/, '.min.js');
-  return (
-    `/* ${out} — GENERADO por scripts/build-js.mjs. No editar: se pisa al\n` +
-    `   correr \`npm run build:js\` (que \`npm start\` ejecuta solo).\n` +
-    `   Fuente: ${rel}. Edítalo ahí y corre \`npm run build:js\`. */\n`
-  );
-}
-
-async function buildAll() {
-  const results = [];
-  for (const rel of TARGETS) {
-    const { code } = await minifyOne(rel);
-    results.push({ rel, out: outPath(rel), code: header(rel) + code });
+async function bundleApp() {
+  const result = await build({
+    entryPoints: [ENTRY],
+    bundle: true,
+    write: false,
+    format: 'esm',
+    target: 'es2022',
+    minify: true,
+    treeShaking: true,
+    plugins: [threeModular],
+    logLevel: 'silent',
+  });
+  if (result.outputFiles.length !== 1) {
+    throw new Error('Se esperaba un solo archivo de salida (sin code-splitting).');
   }
-  return results;
+  return APP_HEADER + result.outputFiles[0].text;
 }
 
-/* ── Caché: el `?v=` del punto de entrada en index.html ───────────────────
-   No se sube automático (a diferencia de build-css.mjs): la versión de un
-   módulo la fija el FUENTE que lo importa y la del arranque index.html, y
-   automatizar la mitad solo daría una falsa sensación de orden. Aquí se
-   COMPRUEBA que el HTML apunte a los `.min.js` —si un revert vuelve a
-   `js/main.js`, el check avisa aunque los .min.js estén al día. */
+async function minifyQuotes() {
+  const src = fs.readFileSync(QUOTES_SRC, 'utf8');
+  const { code } = await transform(src, { loader: 'js', format: 'esm', target: 'es2022', minify: true });
+  return QUOTES_HEADER + code;
+}
+
+/* index.html debe servir js/app.js (no js/main.js ni js/main.min.js) y el
+   importmap ya no debe existir (el bundle es autónomo). */
 function wiringCheck() {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  const must = ['src="js/main.min.js', 'src="js/data/quotes.min.js'];
-  const mustNot = ['src="js/main.js', 'href="js/main.js'];
   const problems = [];
-  for (const needle of must) if (!html.includes(needle)) problems.push(`index.html no referencia ${needle}`);
-  for (const needle of mustNot) if (html.includes(needle)) problems.push(`index.html aún referencia ${needle}`);
+  if (!html.includes('src="js/app.js')) problems.push('index.html no referencia src="js/app.js"');
+  for (const stale of ['src="js/main.js', 'src="js/main.min.js', 'type="importmap"', 'href="js/main.min.js']) {
+    if (html.includes(stale)) problems.push(`index.html aún referencia ${stale}`);
+  }
   return problems;
 }
 
 const CHECK = process.argv.includes('--check');
-const results = await buildAll();
+const [app, quotes] = await Promise.all([bundleApp(), minifyQuotes()]);
 
 if (CHECK) {
   const stale = [];
-  for (const { out, code } of results) {
-    const onDisk = fs.existsSync(path.join(ROOT, out)) ? fs.readFileSync(path.join(ROOT, out), 'utf8') : null;
-    if (onDisk !== code) stale.push(out);
-  }
+  if (!fs.existsSync(OUT) || fs.readFileSync(OUT, 'utf8') !== app) stale.push(path.relative(ROOT, OUT));
+  if (!fs.existsSync(QUOTES_OUT) || fs.readFileSync(QUOTES_OUT, 'utf8') !== quotes)
+    stale.push(path.relative(ROOT, QUOTES_OUT));
   const wiring = wiringCheck();
   if (!stale.length && !wiring.length) {
-    console.log(`  ok   ${results.length} archivos .min.js al día con sus fuentes · index.html apunta a los .min.js`);
+    console.log('  ok   js/app.js y quotes.min.js al día · index.html apunta al bundle');
     process.exit(0);
   }
   if (stale.length) {
     console.error(
-      '  FALLA estos .min.js están desactualizados respecto a sus fuentes:\n' +
+      '  FALLA estos derivados están desactualizados respecto a sus fuentes:\n' +
         stale.map((f) => `        · ${f}`).join('\n') +
         '\n      Corre `npm run build:js` y sube el resultado con el commit.'
     );
@@ -166,17 +145,10 @@ if (CHECK) {
   process.exit(1);
 }
 
-for (const { out, code } of results) {
-  fs.writeFileSync(path.join(ROOT, out), code);
-}
-const rawTotal = results.reduce((a, { rel }) => a + fs.statSync(path.join(ROOT, rel)).size, 0);
-const minTotal = results.reduce((a, { code }) => a + code.length, 0);
-const pct = ((1 - minTotal / rawTotal) * 100).toFixed(0);
+fs.writeFileSync(OUT, app);
+fs.writeFileSync(QUOTES_OUT, quotes);
 console.log(
-  `  js/**/*.min.js  ${results.length} archivos · ` +
-    `${(rawTotal / 1024).toFixed(1)} KiB → ${(minTotal / 1024).toFixed(1)} KiB (−${pct}%)`
+  `  js/app.js + quotes.min.js · ${((app.length + quotes.length) / 1024).toFixed(1)} KiB` +
+    ` (app.js ${(app.length / 1024).toFixed(1)} KiB → gzip ${(gzipSync(app).length / 1024).toFixed(1)} KiB` +
+    ` · quotes.min.js ${(quotes.length / 1024).toFixed(1)} KiB)`
 );
-for (const { rel, out, code } of results) {
-  const before = fs.statSync(path.join(ROOT, rel)).size;
-  console.log(`    · ${out.padEnd(40)} ${(before / 1024).toFixed(1)} KiB → ${(code.length / 1024).toFixed(1)} KiB`);
-}

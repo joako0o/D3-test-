@@ -19,19 +19,21 @@ esta tabla.**
 ## Convenciones
 
 - **Los imports dentro de `js/` son relativos al archivo.** Si mueves un
-  módulo, actualiza las rutas de quien lo importa y el `modulepreload` de
-  `index.html`.
-- **Los `*.min.js` son DERIVADOS.** Se edita el `*.js` (fuente legible, con sus
-  comentarios); `npm run build:js` genera el `*.min.js` de al lado (mismo
-  nombre con `.min` antes de `.js`) y reescribe los `import` relativos para
-  apuntar al `.min.js` del módulo importado, conservando el `?v=`. No edites
-  un `.min.js` a mano: se pisa. `index.html` sirve los `.min.js`; `js/lib/` y
-  `js/vendor/` no se minifican (ya lo están o no se editan). Si cambias un
-  módulo, sube su `?v=` en quienes lo importan y en `index.html`, y corre
-  `npm run build:js`; `npm run check` avisa si un `.min.js` quedó viejo.
-- **El `importmap` vive en `index.html` y apunta a `js/lib/three/`.** No
-  referencies `three` desde una ruta absoluta: usa `import * as THREE from 'three'`
-  o el specifier `'three/addons/...'`.
+  módulo, actualiza las rutas de quien lo importa.
+- **Los `js/*.js` son la única verdad que se edita; `js/app.js` es DERIVADO.**
+  `npm run build:js` (esbuild) bundlea `main.js` + su grafo estático
+  (core/, scene/) + three.js tree-shakeado + los addons + las cinco secciones
+  en **un solo `js/app.js`** minificado, y minifica `quotes.js` en
+  `js/data/quotes.min.js`. No edites `app.js` ni `quotes.min.js` a mano: se
+  pisan. En el bundle no hay `importmap` ni `modulepreload` de three/addons:
+  el especificador desnudo `'three'` lo resuelve esbuild desde
+  `node_modules/three@0.160.0` (fuente modular, para poder podar). Si cambias
+  un módulo, sube el `?v=` de `js/app.js` en `index.html` y corre
+  `npm run build:js`; `npm run check` avisa si el bundle quedó viejo.
+- **`three` se importa SIEMPRE como `import * as THREE from 'three'`** (o
+  `'three/addons/...'`). Nada de rutas relativas a `js/lib/three/`: es el
+  mismo archivo que antes, pero el build lo resuelve por specifier para que el
+  tree-shaking funcione.
 - **Datos**: `quotes.js` se carga como `<script defer>` (script clásico) porque
   las secciones D3 y la escena leen `window.QUOTES`. Todo lo demás es un módulo.
 - **No muevas `vmo` de `vendor/` ni de `lib/three/`**: son dependencias.
@@ -43,15 +45,11 @@ esta tabla.**
 
 ```
 index.html
-  └─ js/main.js
-       ├─ js/core/config.js
-       ├─ js/core/viewport.js
-       ├─ js/core/utils.js
-       ├─ js/core/interaction-state.js
-       ├─ js/scene/build-door.js
-       │    └─ js/lib/three/addons/utils/BufferGeometryUtils.js
-       ├─ js/scene/figures.js
-       │    └─ js/lib/three/addons/loaders/{GLTFLoader,DRACOLoader}.js
-       ├─ js/sections/*.js
-       └─ js/vendor/*.js (cargados antes por <script defer>)
+  ├─ js/app.js (bundle GENERADO por scripts/build-js.mjs)
+  │    └─ js/main.js ─┬─ js/core/{config,viewport,utils,interaction-state,deferred-boot}.js
+  │                   ├─ js/scene/{build-door,figures}.js ─ three + addons
+  │                   ├─ js/sections/*.js (inlinados)
+  │                   └─ three@0.160.0 (tree-shaken)
+  ├─ js/data/quotes.min.js (derivado de quotes.js, <script defer>)
+  └─ js/vendor/*.js (GSAP, ScrollTrigger, SplitText, CustomEase, Lenis · <script defer>)
 ```

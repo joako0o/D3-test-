@@ -4,6 +4,7 @@ js/vendor/
 # Dato generado (CRLF, una línea por campo)
 js/data/quotes.js
 # Derivados de scripts/build-js.mjs: se pisan al reconstruir
+js/app.js
 js/**/*.min.js
 # Salidas
 node_modules/
