@@ -62,30 +62,22 @@ const server = http.createServer((req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const ORIGIN = `http://127.0.0.1:${server.address().port}`;
 
-/* ── 1b. Shim de 'three' para el resolvedor de Node ───────────────────
-   js/lib/three/addons/loaders/*.js importan el especificador desnudo 'three'. En el navegador
-   lo resuelve el <script type="importmap"> de index.html; Node no lo lee y
-   busca un paquete. Se planta uno mínimo dentro de node_modules (que está
-   en .gitignore) que reexporta el three.module.js local. */
-const shim = path.join(ROOT, 'node_modules', 'three');
-if (!fs.existsSync(path.join(shim, 'index.mjs'))) {
-  fs.mkdirSync(shim, { recursive: true });
-  fs.writeFileSync(
-    path.join(shim, 'package.json'),
-    JSON.stringify({ name: 'three', version: '0.0.0-local-shim', type: 'module', main: 'index.mjs' }, null, 2)
-  );
-  fs.writeFileSync(path.join(shim, 'index.mjs'), "export * from '../../js/lib/three/three.module.js';\n");
-}
+/* ── 1b. 'three' y 'three/addons/*' se resuelven desde node_modules ────
+   three@0.160.0 es dependencia de desarrollo (la instala `npm install`), la
+   misma que usa scripts/build-js.mjs para el tree-shaking. En Node el
+   especificador desnudo 'three' de los fuentes resuelve al paquete real.
+   Antes se plantaba un shim en node_modules que reexportaba el
+   three.module.js local: ya no hace falta, y escribir encima del package.json
+   real rompía el build. */
 
-/* ── 2. Copia de main.js con los specifiers del importmap resueltos ───
-   El navegador resuelve 'three' con el <script type="importmap"> de
-   index.html; Node no lo lee, así que aquí se reescriben a rutas relativas. */
+/* ── 2. Copia de main.js con los imports relativos reescritos ──────────
+   Los imports relativos ('./core/...') se resuelven contra este archivo en
+   .smoke-tmp, así que se reescriben a '../js/...'. Los especificadores
+   desnudos 'three' y 'three/addons/*' quedan como están: Node los resuelve
+   desde node_modules/three (una sola instancia, sin el aviso de "Multiple
+   instances of Three.js"). */
 fs.mkdirSync(TMP, { recursive: true });
-const IMPORTMAP = { 'three/addons/': '../js/lib/three/addons/', three: '../js/lib/three/three.module.js' };
 let main = fs.readFileSync(path.join(ROOT, 'js/main.js'), 'utf8');
-for (const [bare, target] of Object.entries(IMPORTMAP)) {
-  main = main.replaceAll(`'${bare}`, `'${target}`).replaceAll(`"${bare}`, `"${target}`);
-}
 main = main.replaceAll("'./", "'../js/").replaceAll('"./', '"../js/');
 /* El bucle de render nunca corre sin rAF real: se fuerza la mezcla de las
    órbitas a 1 para que su código sí se ejecute al menos una vez. */
@@ -327,8 +319,14 @@ checks.push([
    cola y sigue. Así que se comprueba por sus efectos: d3 en `window` y las
    secciones con contenido en el DOM. */
 checks.push([`d3 cargado a pedido: ${w.d3 ? 'ok' : 'NO'}`, !!w.d3]);
-checks.push([`navegador de actas construido (${w.document.querySelectorAll('#actsList .act-list-item').length} actas)`, w.document.querySelectorAll('#actsList .act-list-item').length > 0]);
-checks.push([`línea de tiempo construida (${w.document.querySelectorAll('#timelineContainer *').length} nodos)`, w.document.querySelectorAll('#timelineContainer *').length > 0]);
+checks.push([
+  `navegador de actas construido (${w.document.querySelectorAll('#actsList .act-list-item').length} actas)`,
+  w.document.querySelectorAll('#actsList .act-list-item').length > 0,
+]);
+checks.push([
+  `línea de tiempo construida (${w.document.querySelectorAll('#timelineContainer *').length} nodos)`,
+  w.document.querySelectorAll('#timelineContainer *').length > 0,
+]);
 
 checks.push(['skip link', !!$('.skip-link')]);
 checks.push(['canvas con texto alternativo', !!$('#canvas[aria-label]')]);
