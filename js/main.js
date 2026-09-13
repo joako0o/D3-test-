@@ -4463,6 +4463,12 @@ const lenis = new Lenis({
 lenis.on('scroll', ScrollTrigger.update);
 gsap.ticker.add((time) => { lenis.raf(time * 1000); });
 gsap.ticker.lagSmoothing(0);
+/* Solo con ?debug o en headless: las sondas de rendimiento
+   (scripts/perf/early-scroll.mjs) necesitan poder parar Lenis para aislar su
+   coste del resto del scroll. Sin esto, la comparación "con y sin scroll
+   suave" no se puede hacer desde fuera y la hipótesis no es falsable.
+   No se expone en producción: es una asa de diagnóstico, no una API. */
+if (DEBUG_MODE || IS_HEADLESS) window.lenis = lenis;
 
 /* CTA de cierre: volver al hero con scroll suave de Lenis
    (el href="#" nativo daba un salto brusco y sin animación) */
@@ -5230,6 +5236,9 @@ const bgSections = [
 
 bgSections.forEach(({ trigger, color }) => {
   ScrollTrigger.create({
+    /* El id permite a scripts/perf/early-scroll.mjs apagar SOLO este grupo y
+       medir cuánto cuesta, sin tocar el resto del recorrido. */
+    id: `bg${trigger}`,
     trigger,
     start: 'top center',
     end: 'bottom center',
@@ -5248,7 +5257,16 @@ bgSections.forEach(({ trigger, color }) => {
    vivir en el mismo plano. Se conserva un resplandor muy tenue en los
    momentos editoriales y se limpia el fondo cuando el dato debe ser el
    protagonista. */
-const ambientLayer = document.documentElement;
+/* La capa del halo, NO documentElement. Animar `--ambient-alpha` sobre la
+   raíz invalidaba el estilo del documento entero en cada frame del scroll:
+   medido con scripts/perf/early-scroll.mjs, era el 80 % del coste de
+   ScrollTrigger en las primeras secciones (recálculo de estilo de 9,0 a
+   1,5 ms/s al apagarlo). Ahora se anima la OPACIDAD de un elemento propio,
+   que el compositor resuelve sin tocar a nadie más.
+   Reserva: si el div no existiera (HTML viejo en caché), se vuelve a la raíz
+   y a la variable — peor rendimiento, pero nunca una página sin luz. */
+const ambientGlow = document.getElementById('ambientGlow');
+const ambientLayer = ambientGlow || document.documentElement;
 const ambientStates = [
   { trigger: '#hero',          alpha: 0.16 },
   { trigger: '#stageObjective', alpha: 0.14 },
@@ -5265,14 +5283,29 @@ const ambientStates = [
 
 function setAmbientAlpha(alpha, immediate = false) {
   if (immediate) {
-    ambientLayer.style.setProperty('--ambient-alpha', String(alpha));
+    if (ambientGlow) ambientGlow.style.opacity = String(alpha);
+    else ambientLayer.style.setProperty('--ambient-alpha', String(alpha));
     return;
   }
+  /* `will-change` solo mientras dura la transición (ver el comentario en
+     css/00-tokens-base.css): una capa promovida a perpetuidad sobre un
+     elemento del tamaño del viewport cuesta memoria de GPU toda la sesión, y
+     la medición no encontró ninguna ganancia que lo justifique.
+     `onComplete` no basta por sí solo: si llega otra sección antes de que
+     termine, GSAP mata este tween y `onComplete` no corre — por eso también
+     se limpia en `onInterrupt`. Sin eso, la clase se quedaría pegada. */
+  const doneFading = () => ambientGlow && ambientGlow.classList.remove('is-fading');
+  if (ambientGlow) ambientGlow.classList.add('is-fading');
   gsap.to(ambientLayer, {
-    '--ambient-alpha': alpha,
+    /* `opacity` sobre la capa propia; la variable solo en el camino de
+       reserva. La duración y la curva son las mismas: el cambio es de
+       mecanismo, no de dirección de arte. */
+    ...(ambientGlow ? { opacity: alpha } : { '--ambient-alpha': alpha }),
     duration: 1.25,
     ease: 'power2.inOut',
     overwrite: 'auto',
+    onComplete: doneFading,
+    onInterrupt: doneFading,
   });
 }
 
@@ -5281,6 +5314,7 @@ function setAmbientAlpha(alpha, immediate = false) {
 setAmbientAlpha(0.16, true);
 ambientStates.forEach(({ trigger, alpha }) => {
   ScrollTrigger.create({
+    id: `ambient${trigger}`,
     trigger,
     start: 'top center',
     end: 'bottom center',
