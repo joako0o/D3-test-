@@ -215,7 +215,7 @@ let renderer = null;
    pero las secciones D3 vuelan": el DOM es barato, el canvas no.
    Tres capas, de la más barata a la más radical:
    1. Techo de DPR por memoria declarada (deviceMemory ≤ 4: además
-      sin MSAA — 4 muestras a DPR 1,5 son ~9× el coste de fragmento
+      sin MSAA — 4 muestras a DPR 1,25 son ~6× el coste de fragmento
       de un búfer plano a 1,0).
    2. GPU conocida débil (nombre leído del contexto REAL, sin
       segunda sonda: un contexto desechable cuesta ~1,6 s de
@@ -239,7 +239,7 @@ const IS_HEADLESS = /HeadlessChrome|Headless/.test(navigator.userAgent);
    requisito de la API. */
 const CPU_TIER = (typeof navigator.cpuPerformance === 'number') ? navigator.cpuPerformance : 0;
 const LOW_MEM = ((typeof navigator.deviceMemory === 'number') && navigator.deviceMemory <= 4) || CPU_TIER === 1;
-let dprCap = Math.min(window.devicePixelRatio || 1, LOW_MEM ? 1 : 1.5);
+let dprCap = Math.min(window.devicePixelRatio || 1, LOW_MEM ? 1 : 1.25);
 let adaptiveDpr = dprCap;
 /* Estado del modo póster (se declara aquí, no junto a animate(),
    porque los handlers de contexto perdido de abajo lo consultan). */
@@ -297,13 +297,22 @@ if (renderer) {
    proyecto dejó de hacer). Si es una iGPU conocida débil, el techo baja a
    DPR 1,0 y se aplica YA: la cortina de carga aún está arriba, así que el
    cambio no se ve como un tirón, sino como un arranque más ligero.
-   La lista es conservadora, lo que de verdad se nota: Intel HD/UHD y los
-   Iris pre-Xe, Adreno de entrada, Mali antiguos, y los renderizadores por
-   software SwiftShader/llvmpipe. Un Iris Xe o un Adreno 650+ NO entran
-   aquí: para ellos ya está el paso adaptable por tiempo real de frame. */
+   La lista es conservadora, lo que de verdad se nota: Intel HD/UHD y TODOS
+   los Iris (incluido el Xe), Adreno de entrada, Mali antiguos, y los
+   renderizadores por software SwiftShader/llvmpipe. El Iris Xe se sumó
+   después del reporte 2026-09-13: es una iGPU y a DPR 1,5 renderiza 2,25×
+   los píxeles de DPR 1,0 — ese relleno era justo lo que se arrastraba en
+   los portátiles, y arrancar a 1,0 (tier lite) lo evita sin esperar a que
+   el paso adaptable lo descubra a los 90 frames. `.{0,6}` y no un espacio
+   fijo porque el string real trae el símbolo entre nombre y generación:
+   "Intel(R) Iris(R) Xe Graphics" (Windows/ANGLE) o "Intel Iris Xe"
+   (macOS); con espacio fijo los Iris Plus/Pro de Windows ("Iris(R) Plus")
+   se colaban en el tier high por el mismo hueco, así que el tramo leniente
+   cubre los tres. Un Adreno 650+ NO entra aquí: para él ya está el paso
+   adaptable por tiempo real de frame. */
 let gpuName = '';
 let weakGpu = false;
-const WEAK_GPU_RE = /intel.*(hd graphics|uhd graphics|iris (plus|pro) graphics|gen[5-9])|adreno.*\b(3\d\d|4\d\d|5[01]\d|6[01]\d|64\d)\b|powervr|mali-t\d{2}|swiftshader|llvmpipe/i;
+const WEAK_GPU_RE = /intel.*(hd graphics|uhd graphics|iris.{0,6}(xe|plus|pro)|gen[5-9])|adreno.*\b(3\d\d|4\d\d|5[01]\d|6[01]\d|64\d)\b|powervr|mali-t\d{2}|swiftshader|llvmpipe/i;
 if (renderer) {
   try {
     const gl = renderer.getContext();
