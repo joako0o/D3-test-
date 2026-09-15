@@ -21,6 +21,7 @@ npm run shots        # capturas reales de cada sección (necesita npm start)
 npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
 npm run perf         # mide la fluidez del hilo principal haciendo scroll (ver § Fluidez)
 npm run startup      # qué bloquea el hilo principal mientras la página ARRANCA
+npm run perf:mint    # ¿gira la acuñación de la cortina de carga o se congela a la vista?
 npm run perf:early   # aísla el coste del TRAMO INICIAL apagando un sospechoso cada vez
 npm run perf:ambient # comprueba que el halo dorado se pinta igual que antes
 npm run perf:willchange # comprueba que el halo no deja una capa de GPU retenida
@@ -151,6 +152,7 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │   ├── lib/chromium.mjs    el Chromium con SwiftShader, compartido por las herramientas de abajo
 │   ├── perf/measure.mjs    `npm run perf` — mide el coste del hilo principal en scroll y reposo
 │   ├── perf/startup.mjs    `npm run startup` — tareas largas del arranque, con la pila que las causó
+│   ├── perf/mint-curtain.mjs `npm run perf:mint` — píxeles en movimiento de la cortina de carga, captura a captura
 │   ├── perf/lighthouse.mjs `npm run lh` — Lighthouse real: las 5 métricas y las auditorías que restan
 │   ├── perf/early-scroll.mjs  aísla el coste del TRAMO INICIAL apagando un sospechoso cada vez
 │   ├── perf/ambient-parity.mjs  comprueba que el halo se pinta igual tras el cambio de mecanismo
@@ -497,6 +499,33 @@ Lo que se hizo (todo en `js/main.js` y `js/core/viewport.js`):
    etapa. Ahora `main.js` fija `history.scrollRestoration = 'manual'` y
    devuelve el scroll a 0 en el arranque, en `load` y en `pageshow` (bfcache),
    antes de que se creen observadores, ScrollTriggers y Lenis.
+6. **Nada se renderiza detrás de la cortina, y el precalentado cede programa a
+   programa** (2026-09-14). Síntoma reportado: en GitHub Pages la cortina de
+   carga se veía _congelada_ —el aro y las dos señales de la órbita quietos—
+   mientras que en local pasaba desapercibido. El diagnóstico llegó con una
+   sonda nueva, `scripts/perf/mint-curtain.mjs` (`npm run perf:mint`): captura
+   la pantalla varias veces por segundo —las capturas salen del COMPOSITOR, no
+   del hilo principal— y compara los píxeles de la banda central: 0 píxeles
+   distintos entre dos capturas es exactamente "congelado a la vista". Lo que
+   apareció: con la cortina aún arriba, los primeros renders reales de
+   `animate()` estrenaban programas de shaders DENTRO del frame
+   (`WebGLUniforms` vía `renderBufferDirect`: tareas de 2,4-3,1 s), y la
+   introspección del precalentado cedía cada 6 programas (tareas de 1,4-2,5 s);
+   con el rasterizador por software —o una GPU ahogada— el compositor no
+   llegaba a producir fotogramas de la cortina entre tarea y tarea: medido,
+   8,4 % de píxeles en movimiento en los primeros 6 s de cortina. Tres cambios
+   en `js/main.js`: (a) `animate()` no llama a `renderer.render()` hasta
+   `liftCurtain()` —el canvas vive detrás del fondo opaco de `#load` y no
+   aportaba ningún píxel visible, solo coste—; (b) la introspección de uniforms
+   cede entre programa y programa en vez de cada seis; (c) los tres sitios que
+   levantaban la cortina pasan por `liftCurtain()`, que además arma el flag del
+   render. El primer fotograma visible no estrena nada: `warmUpScene()` compila
+   e introspecta los programas de TODA la escena (dos estados de luces) y ya no
+   hay renders que compitan antes que él. Medido en el arnés (SwiftShader,
+   CPU×4, 4G, el perfil de "Pages en un portátil medio"): cortina 16,0 s →
+   10,3 s; peor tarea larga 2.569 ms → 1.453 ms; introspección dentro de un
+   frame 2,4-3,1 s → 137 ms; píxeles en movimiento en la primera ventana de la
+   cortina 8,4 % → 52,5 %.
 
 ### Tres trampas que costaron mediciones enteras
 

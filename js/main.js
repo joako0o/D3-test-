@@ -157,6 +157,23 @@ await Promise.race([
 
 const canvas = document.getElementById('canvas');
 const loadEl = document.getElementById('load');
+/* ¿Ya se levantó la cortina de carga? Mientras está arriba el canvas vive
+   DETRÁS de un fondo opaco (#load): dibujarlo no aporta ningún píxel visible
+   y cuesta carísimo. Medido con scripts/perf/mint-curtain.mjs y
+   scripts/perf/startup.mjs: los primeros renders reales —que corren desde
+   que este módulo se evalúa, con la cortina aún puesta— estrenaban programas
+   de shaders DENTRO del frame (WebGLUniforms: 2,4-3,1 s seguidos de hilo
+   principal) y además saturaban el rasterizador, así que el compositor no
+   llegaba a producir fotogramas de la cortina: la acuñación se veía
+   CONGELADA justo cuando más falta hace que gire. Con el render apagado
+   hasta que la cortina se levanta, TODO el estreno de programas ocurre en
+   warmUpScene() —que cede el hilo programa a programa— y el compositor
+   queda libre para animar la moneda. */
+let curtainUp = false;
+function liftCurtain() {
+  curtainUp = true;
+  if (loadEl) loadEl.classList.add('hidden');
+}
 const haloWrap = document.getElementById('haloWrap');
 const objectReflection = document.getElementById('objectReflection');
 const scrollHint = document.getElementById('scrollHint');
@@ -497,11 +514,18 @@ async function runWarmUp() {
 
     /* La introspección de uniforms es lo segundo más caro del arranque
        (1 595 ms medidos dentro de WebGLUniforms) y va programa por programa,
-       así que es el sitio natural para ceder: se deja pintar cada pocos. */
-    let introspected = 0;
+       así que es el sitio natural para ceder: se deja pintar entre programa
+       y programa (ver el yield del bucle de abajo). */
+    /* UN programa por hueco, no seis: ceder es gratis (un setTimeout) y el
+       coste de introspeccionar UN programa ya es el que es —en el arnés con
+       SwiftShader, hasta ~600 ms—, así que agruparlos de a seis convertía
+       ese coste en una sola tarea de 2-3 s con la cortina encima: la
+       acuñación quedaba congelada justo el rato que el lector la está
+       mirando. Programa a programa, entre hueco y hueco el compositor
+       alcanza a producir fotogramas de la cortina. */
     for (const program of programs) {
       try { program.getUniforms(); } catch { /* un programa roto ya fallará solo */ }
-      if (++introspected % 6 === 0) await breathe();
+      await breathe();
     }
 
     /* Y las texturas: se suben a la GPU ahora, no en el primer fotograma que
@@ -855,7 +879,7 @@ manager.onLoad = () => {
      `finally` y no `then` para que un fallo no deje la cortina puesta. */
   Promise.all([warmUpScene(), deferredBootDone()]).finally(() => {
     setTimeout(() => {
-      if (renderer) loadEl.classList.add('hidden');
+      if (renderer) liftCurtain();
       armAdaptive(); // el arranque ya no contamina la muestra de fps
     }, 300);
   });
@@ -871,7 +895,7 @@ setTimeout(() => {
 /* Red de seguridad: si a los 30s nada terminó de cargar, liberar la página igual.
    (Antes el overlay bloqueaba la página para siempre si un GLB fallaba.) */
 setTimeout(() => {
-  if (loadEl && !loadEl.classList.contains('hidden')) loadEl.classList.add('hidden');
+  if (loadEl && !loadEl.classList.contains('hidden')) liftCurtain();
   armAdaptive(); // si los GLB no llegan, el adaptable igualmente vigila
 }, 30000);
 
@@ -917,7 +941,7 @@ loader.load('monedav5-draco.glb', (gltf) => {
 }, undefined, (err) => {
   console.error('Error cargando GLB:', err);
   loadEl.innerHTML = '<span style="opacity:.9">No se pudo cargar la moneda</span>';
-  setTimeout(() => loadEl.classList.add('hidden'), 1200);
+  setTimeout(liftCurtain, 1200);
 });
 
 /* ────────────────────────────────
@@ -3980,7 +4004,7 @@ function animate() {
     }
   }
 
-  if (renderer) {
+  if (renderer && curtainUp) {
     renderer.render(scene, camera);
     /* Decisión cada ~90 frames, sobre el tiempo de frame REAL (se muestrea
        al inicio de animate, no alrededor del render: ver el comentario de

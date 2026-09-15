@@ -17,6 +17,7 @@
     "perf:early": "node scripts/perf/early-scroll.mjs",
     "perf:ambient": "node scripts/perf/ambient-parity.mjs",
     "perf:willchange": "node scripts/perf/ambient-willchange.mjs",
+    "perf:mint": "node scripts/perf/mint-curtain.mjs",
     "lh": "node scripts/perf/lighthouse.mjs",
     "lint": "eslint .",
     "format:check": "prettier --check .",
