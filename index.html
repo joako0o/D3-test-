@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile</title>
+  <title>In the room where monetary policy happens: Learning from a Decade of Central Bank Deliberation in Chile</title>
 
   <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
   <meta name="theme-color" content="#0a0e1a" />
   <link rel="canonical" href="https://joako0o.github.io/D3-test-/" />
-  <meta property="og:title" content="In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile" />
+  <meta property="og:title" content="In the room where monetary policy happens: Learning from a Decade of Central Bank Deliberation in Chile" />
   <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="es_CL" />
@@ -20,7 +20,7 @@
   <meta property="og:site_name" content="In the room where monetary policy happens" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="In the room where monetary policy happens" />
-  <meta name="twitter:description" content="Dieciséis años de deliberación del Banco Central de Chile (2000–2015), leídos con un modelo de lenguaje: cada partícula es un fragmento de lo que se dijo a puerta cerrada." />
+  <meta name="twitter:description" content="Una década de deliberación del Banco Central de Chile (2005–2015), leída con un modelo de lenguaje: cada partícula es un fragmento de lo que se dijo a puerta cerrada." />
   <meta name="twitter:image" content="https://joako0o.github.io/D3-test-/og-image.jpg" />
   <meta name="twitter:image:alt" content="La puerta de bronce del Banco Central de Chile entreabierta sobre una moneda dorada, portada de la pieza." />
   <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -31,8 +31,8 @@
   {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "In the room where monetary policy happens: Learning from Sixteen Years of Central Bank Deliberation in Chile",
-    "alternateName": "Dieciséis años de deliberación del Banco Central de Chile · 2000–2015",
+    "name": "In the room where monetary policy happens: Learning from a Decade of Central Bank Deliberation in Chile",
+    "alternateName": "Una década de deliberación del Banco Central de Chile · 2005–2015",
     "url": "https://joako0o.github.io/D3-test-/",
     "inLanguage": "es-CL",
     "description": "Exploración interactiva (scrollytelling 3D) de las actas de las Reuniones de Política Monetaria del Banco Central de Chile entre 2000 y 2015: quién habló, cuándo y con qué orientación (hawkish, dovish, neutral) según un modelo de lenguaje.",
@@ -44,9 +44,9 @@
     "keywords": "Banco Central de Chile, política monetaria, actas RPM, tasa de política monetaria, hawkish, dovish, análisis de texto, visualización de datos",
     "mainEntity": {
       "@type": "Dataset",
-      "name": "Fragmentos de las actas de Reuniones de Política Monetaria del Banco Central de Chile, 2000–2015",
+      "name": "Fragmentos de las actas de Reuniones de Política Monetaria del Banco Central de Chile, 2005–2015",
       "description": "Muestra visual de 99 fragmentos atribuidos a 17 participantes, con fecha, orientación (hawkish/dovish/neutral) y puntaje del clasificador. El corpus de referencia reúne 182 reuniones.",
-      "temporalCoverage": "2000/2015",
+      "temporalCoverage": "2005/2015",
       "spatialCoverage": { "@type": "Place", "name": "Chile" },
       "inLanguage": "es",
       "isBasedOn": "https://www.bcentral.cl/areas/politica-monetaria/reunion-de-politica-monetaria-rpm",
@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=6" />
+  <link rel="stylesheet" href="css/bundle.css?v=26" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=3" />
+  <link rel="modulepreload" href="js/app.js?v=5" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -236,10 +236,9 @@
     <div class="score" id="qpScore" style="display:none">
       <div class="score-bar"><i id="qpScoreBar"></i></div>
       <span class="score-val" id="qpScoreVal">&mdash;</span>
-      <span class="score-label">score de maqueta</span>
+      <span class="score-label">score del modelo</span>
     </div>
     <div class="year" id="qpYear"></div>
-    <a class="source-link" id="qpSource" href="#stageActs">Ver contexto del fragmento</a>
   </div>
 
   <!-- Perfil temático de una voz: se abre como ficha de exploración, sin
@@ -286,16 +285,9 @@
     </p>
   </noscript>
   <div class="hero" id="hero">
-    <div class="top">
-      <div class="brand"><strong>2000&#8211;2015</strong></div>
-      <div class="top-meta">
-        <div class="brand" style="opacity:0.55">Política Monetaria</div>
-        <div class="prototype-badge" role="status"><span aria-hidden="true"></span>Prototipo · datos de prueba</div>
-      </div>
-    </div>
     <div class="hero-title">
-      <h1>In the room where monetary policy happens:<br>Learning from Sixteen Years of Central Bank Deliberation in Chile</h1>
-      <p>Dieciséis años de deliberación del Banco Central de Chile &middot; 2000&ndash;2015</p>
+      <h1>In the room where monetary policy happens:<br>Learning from a Decade of Central Bank Deliberation in Chile</h1>
+      <p>Una d&eacute;cada de deliberaci&oacute;n del Banco Central de Chile &middot; 2005&ndash;2015</p>
     </div>
     <div class="scroll-hint" id="scrollHint">
       <span>Scroll</span>
@@ -314,7 +306,7 @@
       <p id="stageObjectiveParagraph" data-objective style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 720px; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin: 0 20px;">
         El Banco Central se re&uacute;ne una vez al mes <span>a puerta cerrada</span> <br>
         para discutir y tomar decisiones de <span>pol&iacute;tica monetaria</span>. <br>
-        Cada reuni&oacute;n deja un acta que registra lo que se dijo.
+        <span class="objective-acta-line">Cada reuni&oacute;n deja un acta que registra lo que se dijo.</span>
       </p>
     </div>
   </section>
@@ -326,14 +318,10 @@
         La Sala
       </h2>
       <p id="roomLead" data-room style="font-size: var(--fs-body); color: var(--color-text-primary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 640px; text-shadow: 0 2px 12px rgba(0,0,0,0.9); margin: 0 20px; opacity: 0;">
-        Dentro de la sala se ve m&aacute;s que solo una decisi&oacute;n:<br>
-        el contenido de las actas puede tener <span>se&ntilde;ales</span> m&aacute;s all&aacute; de lo evidente.
+        Dentro de la sala se ve m&aacute;s que solo una decisi&oacute;n: el contenido de las actas puede tener <span>se&ntilde;ales</span> m&aacute;s all&aacute; de lo evidente.
       </p>
       <p id="roomSub" data-room style="font-size: var(--fs-small); color: var(--color-text-secondary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 560px; text-shadow: 0 2px 10px rgba(0,0,0,0.9); margin: 0.9rem 20px 0; opacity: 0;">
-        Cada part&iacute;cula de luz que ves es un fragmento de lo que se dijo en una de estas reuniones.
-      </p>
-      <p id="roomHint" data-room-hint style="font-size: var(--fs-small); color: var(--color-text-muted); font-family: var(--font-body); text-align: center; margin-top: 1.6rem; letter-spacing: 0.3px; opacity: 0;">
-        Pasa el cursor sobre una voz para leer lo que dijo &middot; haz click para fijarla &middot; o rec&oacute;rrelas con el tabulador
+        Cada part&iacute;cula de luz es una intervenci&oacute;n. Haz clic o pulsa para leer su voz.
       </p>
     </div>
 
@@ -791,7 +779,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=3"></script>
+  <script type="module" src="js/app.js?v=5"></script>
 
 
 </body>

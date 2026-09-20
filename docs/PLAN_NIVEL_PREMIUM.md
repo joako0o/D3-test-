@@ -69,6 +69,8 @@ El tema es **política monetaria**, no un compositor. Meter música de Pendereck
 - [x] Tipos de gráfico legibles (13–16px).
 - [x] `og:image` + twitter card (imagen generada en `og-image.jpg`).
 - [x] Self-host fonts (Playfair/Inter en `fonts/` con `@font-face` en `index.html`; ver `fonts/README.md`).
+- [ ] **Escalado 3D responsive:** revisar la normalización y el encuadre de moneda, puerta y figuras cuando cambia el viewport. Los objetos deben conservar escala, proporción y posición visual premium en desktop, tablet y móvil.
+- [ ] **Capas de profundidad del hero:** asegurar que las partículas que pasan detrás de la moneda queden delante de la puerta, respetando el orden moneda → partículas → puerta.
 
 ### Fase 1.5 — Ya implementado (Núcleo "una sola sala")
 - [ ] **HUD de La Sala de Deliberaciones** (`#chapterHud`): "La Sala de Deliberaciones · 16 años · un mismo espacio". — ⚠️ *Corregido en revisión 2026-08-30: NO existe en el código. Estaba marcado como hecho por error.*

@@ -59,7 +59,7 @@ export const HERO = {
   /* Diámetro de la moneda como fracción de la ALTURA DE LA BANDA.
      Este es el número que de verdad manda en el tamaño percibido:
      0.72 deja un 14% de aire arriba y otro 14% abajo dentro de la banda. */
-  fillRatio: heroParam('coinFill', 0.72),
+  fillRatio: heroParam('coinFill', 0.78),
 
   /* Dónde cae el centro de la moneda dentro de la banda. 0.5 = centrada;
      por debajo de 0.5 sube. Un pelo por encima del centro óptico compensa
@@ -372,7 +372,7 @@ if (HERO_DOOR_LOCKUP) {
   /* Still de referencia: pórtico de piedra, vano oscuro, moneda = única joya.
      Las hojas doradas del GLB se apagan en el hero (el vano es noche) y
      vuelven en el acto 2, cuando la puerta de la reunión se cierra. */
-  CONFIG.door.widthVsCoin = 2.42;
+  CONFIG.door.widthVsCoin = 4.20;
   CONFIG.door.fogDensity = 0.026;
   CONFIG.door.doorDepthSquash = 0.72;
   CONFIG.door.maxDepthWorld = 4.8;

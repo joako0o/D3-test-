@@ -1,893 +1,895 @@
+/* Generated from data/fase-2/candidatos-particulas.csv and candidatos-crisis.csv. */
+/* Run `python3 scripts/build-particle-quotes.py` to regenerate; do not edit manually. */
 window.QUOTES = [
   {
-    "text": "mayor incertidumbre ciertamente no alcanza a dominar el efecto de primer orden que representa el aumento de la inflación. Efectivamente, indica, el aumento de la inflación se ha dado en energía y alimentos, y una vez que descontamos estos componentes del IPC, el registro de infla...",
-    "participant": "Vittorio Corbo",
-    "year": 2007,
-    "label": "hawkish",
-    "score": 0.72,
-    "date": "2007-09-13",
-    "formatted_date": "13 de Septiembre, 2007"
-  },
-  {
-    "text": "Dado lo anterior, manifiesta que ambas alternativas para esta Reunión son razonables, pero que se inclina esta por una alza de 50 puntos base, toda vez que existe el espacio para entrar a una zona de neutralidad de la política monetaria, en su opinión, se justifica ampliamente. I...",
-    "participant": "Sebastián Claro",
-    "year": 2011,
-    "label": "hawkish",
-    "score": 0.75,
-    "date": "2011-05-12",
-    "formatted_date": "12 de Mayo, 2011"
-  },
-  {
-    "text": "Concuerda el señor Presidente con la Minuta de la Gerencia de División Estudios, en cuanto a que las opciones que se enfrentan hoy para poder cumplir con la meta son subir la Tasa de Política Monetaria en 25 puntos base o mantenerla. Los argumentos a favor de subirla son evitar q...",
-    "participant": "José De Gregorio",
-    "year": 2007,
-    "label": "hawkish",
-    "score": 0.91,
-    "date": "2007-11-13",
-    "formatted_date": "13 de Noviembre, 2007"
-  },
-  {
-    "text": "Sin embargo, señala el Consejero señor Desormeaux que tanto las tasas forward como las encuestas de expectativas económicas que elabora el Banco Central de Chile prevén la mantención de la tasa de política monetaria en 5% por todo el año 2007 y un aumento de 25 puntos base en dic...",
-    "participant": "Jorge Desormeaux",
-    "year": 2007,
-    "label": "hawkish",
-    "score": 0.59,
-    "date": "2007-02-08",
-    "formatted_date": "8 de Febrero, 2007"
-  },
-  {
-    "text": "facilitando una convergencia gradual de la inflación a la meta, un cierre gradual y ordenado de la brecha producto, y una transición ordenada en los precios de activos financieros....",
-    "participant": "Luis Felipe Céspedes",
-    "year": 2010,
-    "label": "hawkish",
-    "score": 0.86,
-    "date": "2010-05-13",
-    "formatted_date": "13 de Mayo, 2010"
-  },
-  {
-    "text": "En su opinión, un factor adicional que vale la pena mencionar es que el proyecto de Ley de Presupuestos enviado al Congreso considera un aumento acotado del gasto, lo que, sin duda, es un logro destacable, y lo que representará un menor impulso a la demanda interna, pero que es c...",
-    "participant": "Claudio Raddatz",
-    "year": 2015,
-    "label": "hawkish",
-    "score": 0.73,
-    "date": "2015-10-15",
-    "formatted_date": "15 de Octubre, 2015"
-  },
-  {
-    "text": "mayor incertidumbre ciertamente no alcanza a dominar el efecto de primer orden que representa el aumento de la inflación. Efectivamente, indica, el aumento de la inflación se ha dado en energía y alimentos, y una vez que descontamos estos componentes del IPC, el registro de infla...",
-    "participant": "Vittorio Corbo",
-    "year": 2007,
-    "label": "hawkish",
-    "score": 0.72,
-    "date": "2007-09-13",
-    "formatted_date": "13 de Septiembre, 2007"
-  },
-  {
-    "text": "Comenta el señor García que, congruente con la interpretación del mercado de las implicancias de la sorpresa de febrero, las expectativas privadas para la Tasa de Política Monetaria se han empinado en el corto plazo, volviendo a un escenario similar al del I PoM, con entre 0 y 2 ...",
-    "participant": "Pablo García",
+    "text": "Señala el señor Desormeaux que está claro que pese a la incertidumbre que persiste en torno a la crisis financiera, sus efectos reales van a contribuir a la tarea de enfriar la economía chilena y a generar las holguras necesarias para garantizar la convergencia inflacionaria al 3%.",
+    "participant": "Jorge Desormeaux Jiménez",
     "year": 2008,
     "label": "hawkish",
-    "score": 0.59,
-    "date": "2008-03-13",
-    "formatted_date": "13 de Marzo, 2008"
-  },
-  {
-    "text": "El señor Gerente de División Estudios expresa que todos los elementos anteriores recomiendan amoniar el ritmo de retiro del estímulo monetario y subir la TPM en 25 puntos base en esta oportunidad, llevándola a 2,75% anual. Hace presente que esta es la...",
-    "participant": "Luis Óscar Herrera",
-    "year": 2010,
-    "label": "hawkish",
-    "score": 0.80,
-    "date": "2010-10-14",
-    "formatted_date": "14 de Octubre, 2010"
-  },
-  {
-    "text": "A juicio del Presidente señor Rodrigo Vergara, si bien es razonable considerar la opción de bajar 50 puntos base, implica un cambio de estrategia cuando ya la TPM está en niveles que son claramente expansivos, lo que la hace una opción inferior en las actuales condiciones a una r...",
-    "participant": "Rodrigo Vergara",
-    "year": 2014,
-    "label": "hawkish",
-    "score": 0.98,
-    "date": "2014-08-14",
-    "formatted_date": "14 de Agosto, 2014"
-  },
-  {
-    "text": "En el lado externo, la mayor noticia fue la ampliación de los spreads de riesgo de crédito en diferentes mercados, a partir del nerviosismo que ha generado la situación de los préstamos hipotecarios en Estados Unidos. Ello también provocó volatilidad y ajustes en bolsas, premios ...",
-    "participant": "Rodrigo Valdés",
-    "year": 2007,
-    "label": "hawkish",
-    "score": 0.75,
-    "date": "2007-08-09",
-    "formatted_date": "9 de Agosto, 2007"
-  },
-  {
-    "text": "En el frente interno, comenta el señor Consejero que la principal noticia ha deparado la inflación, con registros sobre los esperados con anterioridad. Indica que los agregados monetarios y crediticios mantienen tasas de crecimiento elevadas y por su parte, las tasas de interés c...",
-    "participant": "Vittorio Corbo",
-    "year": 2007,
-    "label": "hawkish",
-    "score": 0.72,
-    "date": "2007-09-13",
-    "formatted_date": "13 de Septiembre, 2007"
-  },
-  {
-    "text": "En segundo lugar, que el precio del petróleo ha retrocedido de manera importante, hasta niveles similares a los de hace cuatro meses, y tercero, que las últimas cifras nacionales de actividad superaron en algo las proyecciones previas, lo que reafirma el panorama de crecimiento p...",
-    "participant": "Manuel Marfán",
-    "year": 2008,
-    "label": "hawkish",
-    "score": 0.88,
-    "date": "2008-08-14",
-    "formatted_date": "14 de Agosto, 2008"
-  },
-  {
-    "text": "El señor García indica que en relación al segundo elemento, no se aprecian antecedentes que modifiquen las perspectivas de crecimiento hacia adelante. En términos de la generación eléctrica y costos energéticos, las noticias han sido favorables y los antecedentes sectoriales sigu...",
-    "participant": "Claudio Soto",
-    "year": 2008,
-    "label": "hawkish",
-    "score": 0.81,
-    "date": "2008-06-10",
-    "formatted_date": "10 de Junio, 2008"
-  },
-  {
-    "text": "un Comunicado que presente con gran claridad el compromiso del Consejo de hacer lo que sea necesario para que la inflación converja a la meta en el horizonte de política. Del mismo modo, debe informarse que, para asegurar dicha convergencia, el Consejo estima que se requerirá de ...",
-    "participant": "Manuel Marfán",
-    "year": 2008,
-    "label": "hawkish",
-    "score": 0.88,
-    "date": "2008-07-10",
-    "formatted_date": "10 de Julio, 2008"
-  },
-  {
-    "text": "En mérito de lo expuesto, el Consejero señor Enrique Marshall expresa que vota por ajustar la Tasa de Política Monetaria en 25 puntos base para dejarla en un nivel de 4,75%....",
-    "participant": "Sebastián Claro",
-    "year": 2013,
-    "label": "hawkish",
-    "score": 0.75,
-    "date": "2013-10-17",
-    "formatted_date": "17 de Octubre, 2013"
-  },
-  {
-    "text": "En consecuencia, el Presidente señor José De Gregorio señala que existe consenso por aumentar la tasa de política monetaria en 50pb, hasta 4,0% anual....",
-    "participant": "José De Gregorio",
-    "year": 2010,
-    "label": "hawkish",
-    "score": 0.91,
-    "date": "2010-12-16",
-    "formatted_date": "16 de Diciembre, 2010"
-  },
-  {
-    "text": "En estas circunstancias, manifiesta que las opciones que se presentan son las más razonables. A su juicio, mantener la TPM permite acumular mayor información sobre la evolución de la economía internacional y la inflación en Chile, en tanto que bajarla en 25 puntos base es más coh...",
-    "participant": "Manuel Marfán",
-    "year": 2012,
-    "label": "hawkish",
-    "score": 0.88,
-    "date": "2012-01-12",
-    "formatted_date": "12 de Enero, 2012"
-  },
-  {
-    "text": "El Gerente de División Estudios subraya que la principal consideración para la presente Reunión es la estrategia de política monetaria contenida en el IPoM de junio, además de los aspectos tácticos y comunicacionales, los que llevan a que las opciones más plausibles en esta ocasi...",
-    "participant": "Claudio Soto",
-    "year": 2010,
-    "label": "hawkish",
-    "score": 0.81,
-    "date": "2010-06-15",
-    "formatted_date": "15 de Junio, 2010"
-  },
-  {
-    "text": "Por lo anterior, el Presidente señor José De Gregorio expresa que su voto es por subir la TPM en 50 puntos base, para llevarla a 5%....",
-    "participant": "José De Gregorio",
-    "year": 2010,
-    "label": "hawkish",
-    "score": 0.91,
-    "date": "2010-12-16",
-    "formatted_date": "16 de Diciembre, 2010"
-  },
-  {
-    "text": "Menciona el señor Gerente de División Estudios que al igual que en ocasiones anteriores, en este proceso de desinflación la comunicación global de la política monetaria es tan relevante como la decisión misma. Agrega que en términos del Comunicado, dado que el mercado considera u...",
-    "participant": "Claudio Soto",
-    "year": 2008,
-    "label": "hawkish",
-    "score": 0.81,
-    "date": "2008-09-04",
-    "formatted_date": "4 de Septiembre, 2008"
-  },
-  {
-    "text": "Hace notar que la inflación comienza a ser un problema en países como Brasil, México y Perú. De hecho, menciona que en este último, supera en alrededor de un punto el rango alto de su meta, a pesar de que el sol peruano no se ha depreciado....",
-    "participant": "Joaquín Vial",
-    "year": 2014,
-    "label": "hawkish",
-    "score": 0.96,
-    "date": "2014-03-13",
-    "formatted_date": "13 de Marzo, 2014"
-  },
-  {
-    "text": "En razón de lo expuesto, el Presidente señor Rodrigo Vergara deja constancia que se acuerda por unanimidad de los señores Consejeros, aumentar la tasa de interés de política monetaria en 25 puntos base, hasta 3,25%, con un sesgo contractivo....",
-    "participant": "Claudio Raddatz",
-    "year": 2015,
-    "label": "hawkish",
-    "score": 0.73,
-    "date": "2015-10-15",
-    "formatted_date": "15 de Octubre, 2015"
-  },
-  {
-    "text": "En Chile, subraya que los registros de inflación y actividad se encuentran dentro de los rangos pronosticados, y que no ha habido sorpresas significativas al respecto. Por lo tanto, plantea que el escenario base, de seguir el retiro gradual del impulso monetario, continúa siendo ...",
-    "participant": "Manuel Marfán",
-    "year": 2011,
-    "label": "hawkish",
-    "score": 0.88,
-    "date": "2011-02-17",
-    "formatted_date": "17 de Febrero, 2011"
-  },
-  {
-    "text": "Política Monetaria, Sesión N° 165, 13.01.2011, BANCO CENTRAL DE CHILE. El documento analiza las proyecciones inflacionarias, las tasas de interés, la política monetaria y las expectativas del mercado. Se menciona que la inflación de diciembre superó las expectativas, y que las en...",
-    "participant": "Claudio Soto",
-    "year": 2011,
-    "label": "hawkish",
-    "score": 0.81,
-    "date": "2011-01-13",
-    "formatted_date": "13 de Enero, 2011"
-  },
-  {
-    "text": "5. En principio, los antecedentes acumulados son coherentes con mantener la estrategia de normalización pausada de la política monetaria aplicada desde septiembre pasado, pues ellos parecen insuficientes para modificar de manera significativa el escenario macroeconómico más proba...",
-    "participant": "Pablo García",
-    "year": 2005,
-    "label": "hawkish",
-    "score": 0.59,
-    "date": "2005-02-10",
-    "formatted_date": "10 de Febrero, 2005"
-  },
-  {
-    "text": "acotado significativamente los riesgos de desagregación respecto a la meta de inflación. Señala, que si bien la tasa de política monetaria se encuentra aún por debajo de su nivel neutral y la economía sigue reduciendo sus brechas de capacidad, todo parece indicar que al atenuarse...",
-    "participant": "Manuel Marfán",
-    "year": 2005,
-    "label": "hawkish",
-    "score": 0.88,
-    "date": "2005-12-13",
-    "formatted_date": "13 de Diciembre, 2005"
-  },
-  {
-    "text": "Siendo las 16:00 horas, se reanuda la Sesión de Política Monetaria N° 129. El Presidente señor José De Gregorio fija la Reunión de Política Monetaria del mes de abril de 2009, para el día jueves 9. Posteriormente, ofrece la palabra al Gerente de División Estudios señor Pablo Garc...",
-    "participant": "Andrés Velasco",
-    "year": 2008,
-    "label": "hawkish",
-    "score": 0.95,
+    "score": 0.7751,
     "date": "2008-10-09",
-    "formatted_date": "9 de Octubre, 2008"
+    "formatted_date": "9 de octubre, 2008"
   },
   {
-    "text": "El señor Luis Felipe Céspedes destaca que lo anterior permite tratar de obtener algunas claves respecto de dicho proceso de normalización, que pueden ser útiles en la actual coyuntura. Partiendo de un nivel mayor que el actual, señala que dicho proceso exhibió ajustes acotados de...",
-    "participant": "Luis Felipe Céspedes",
-    "year": 2010,
-    "label": "hawkish",
-    "score": 0.86,
-    "date": "2010-05-13",
-    "formatted_date": "13 de Mayo, 2010"
-  },
-  {
-    "text": "Dado lo anterior, manifiesta que ambas alternativas para esta Reunión son razonables, pero que se inclina esta por una alza de 50 puntos base, toda vez que existe el espacio para entrar a una zona de neutralidad de la política monetaria, en su opinión, se justifica ampliamente. I...",
-    "participant": "Sebastián Claro",
-    "year": 2011,
-    "label": "hawkish",
-    "score": 0.75,
-    "date": "2011-05-12",
-    "formatted_date": "12 de Mayo, 2011"
-  },
-  {
-    "text": "El señor Vicepresidente declara coincidir con la Minuta de Opciones en cuanto a que la decisión de la presente Reunión está entre mantener o subir en 25 puntos base la tasa de política o, lo que es lo mismo, entre mantener la política monetaria en su máxima instancia de expansivi...",
-    "participant": "Manuel Marfán",
-    "year": 2010,
-    "label": "hawkish",
-    "score": 0.88,
-    "date": "2010-05-13",
-    "formatted_date": "13 de Mayo, 2010"
-  },
-  {
-    "text": "Hace presente el señor García, que más que cargar la balanza hacia 75 puntos base o 100 puntos base, la consideración de los costos de que se materialicen escenarios alternativos como los planteados puede justificar considerar un ajuste de 50 puntos base o más abruptos que 100 pu...",
-    "participant": "Manuel Marfán",
-    "year": 2009,
-    "label": "hawkish",
-    "score": 0.88,
-    "date": "2009-01-08",
-    "formatted_date": "8 de Enero, 2009"
-  },
-  {
-    "text": "base del Banco considera una trayectoria esperada de tasa levemente en el Informe de Política Monetaria. A su juicio esa señal tiene que ser refrendada en esta oportunidad, a través de un aumento de la tasa de política monetaria, también por esa razón táctica, porque de lo contra...",
-    "participant": "Pablo García",
-    "year": 2005,
-    "label": "hawkish",
-    "score": 0.59,
-    "date": "2005-02-10",
-    "formatted_date": "10 de Febrero, 2005"
-  },
-  {
-    "text": "También se podría argumentar a favor de un alza de 50 puntos base a partir de (i) el nivel que ha alcanzado la inflación anual — en particular, el hecho de que se ubique por encima del rango meta—; (ii) el dinamismo que muestra el gasto interno; y (iii) los riesgos que, en este c...",
-    "participant": "Institucional",
-    "year": 2005,
-    "label": "hawkish",
-    "score": 0.59,
-    "date": "2005-11-10",
-    "formatted_date": "10 de Noviembre, 2005"
-  },
-  {
-    "text": "Siendo las 16:00 horas, se reanuda la Sesión de Política Monetaria N° 166. El Presidente señor José De Gregorio da la bienvenida al Ministro de Hacienda señor Felipe Larrain, y, a continuación, concede la palabra al Gerente de División Estudios Subrogante señor Claudio Soto para ...",
-    "participant": "Claudio Soto",
-    "year": 2011,
-    "label": "hawkish",
-    "score": 0.81,
-    "date": "2011-02-17",
-    "formatted_date": "17 de Febrero, 2011"
-  },
-  {
-    "text": "En tercer lugar, acorde con lo consignado en el IEF pasado y en la reciente revisión de resultados de empresas SVS, el endeudamiento de hogares y empresas se encuentra en niveles elevados. Sin embargo, la evolución reciente de los volúmenes reales de crédito, en un contexto de ba...",
-    "participant": "Sebastián Claro",
-    "year": 2014,
-    "label": "dovish",
-    "score": 0.86,
-    "date": "2014-08-14",
-    "formatted_date": "14 de Agosto, 2014"
-  },
-  {
-    "text": "En el frente externo, los mercados financieros denotan una mayor inclinación al riesgo, en tanto que los precios de las materias primas han vuelto a subir. Por su parte, las proyecciones de crecimiento han dejado de observar correcciones a la baja de la magnitud registrada en mes...",
-    "participant": "José De Gregorio",
+    "text": "Indica, que se está frente a una crisis internacional de proporciones, y que si bien se puede esperar que en el transcurso del año el panorama se debiera ir despejando, aún persisten enormes incertidumbres.",
+    "participant": "José De Gregorio Rebeco",
     "year": 2009,
     "label": "dovish",
-    "score": 0.88,
-    "date": "2009-05-07",
-    "formatted_date": "7 de Mayo, 2009"
+    "score": -0.8493,
+    "date": "2009-02-12",
+    "formatted_date": "12 de febrero, 2009"
   },
   {
-    "text": "En consecuencia, el Presidente señor Rodrigo Vergara señala que se acuerda con el voto del Vicepresidente señor Enrique Marshall, de los Consejeros señores Joaquín Vial y Pablo García, y el suyo propio, reducir la Tasa de Política Monetaria en 25 puntos base, a 4,00% anual....",
-    "participant": "Sebastián Claro",
-    "year": 2014,
-    "label": "dovish",
-    "score": 0.86,
-    "date": "2014-03-13",
-    "formatted_date": "13 de Marzo, 2014"
-  },
-  {
-    "text": "El Presidente, señor Vittorio Corbo señala que tal como lo ha mostrado la Gerencia de División Estudios, las últimas cifras de actividad no hacen más que confirmar que la economía está en una senda expansiva. Además, las perspectivas externas favorecen y un impulso macroeconómico...",
-    "participant": "Manuel Marfán",
-    "year": 2005,
-    "label": "dovish",
-    "score": 0.85,
-    "date": "2005-01-11",
-    "formatted_date": "11 de Enero, 2005"
-  },
-  {
-    "text": "En consecuencia, el Presidente señor Rodrigo Vergara deja constancia que se acuerda por unanimidad de los señores Consejeros reducir la tasa de política monetaria en 25 puntos base, a 3,5% anual....",
-    "participant": "Rodrigo Vergara",
-    "year": 2012,
-    "label": "dovish",
-    "score": 0.78,
-    "date": "2012-02-14",
-    "formatted_date": "14 de Febrero, 2012"
-  },
-  {
-    "text": "El señor Gerente de Investigación Económica da cuenta que en los últimos meses, en particular este último mes, se ha observado una importante reducción en los registros de inflación y en las proyecciones de corto plazo para la misma, y que similar comportamiento muestran las proy...",
-    "participant": "Pablo García",
-    "year": 2009,
-    "label": "dovish",
-    "score": 0.85,
-    "date": "2009-12-15",
-    "formatted_date": "15 de Diciembre, 2009"
-  },
-  {
-    "text": "cumplido con ciertos niveles mínimos y la presión por bajar las tasas empieza a disminuir. Indica que hay que recordar que en un contexto como éste, la competencia al interior de los bancos disminuye, por la existencia de clientes cautivos, situación que ya se observa a principio...",
-    "participant": "Manuel Marfán",
-    "year": 2009,
-    "label": "dovish",
-    "score": 0.85,
-    "date": "2009-07-09",
-    "formatted_date": "9 de Julio, 2009"
-  },
-  {
-    "text": "A su juicio, en el nuevo escenario central lo que corresponde es bajar la tasa de política monetaria, tal como lo muestra nuestro modelo de proyección. Es cierto que existen muchos riesgos, pero no hay un desbalance, tal como se ha mencionado en el lado inflacionario. Piensa que ...",
-    "participant": "Vittorio Corbo",
-    "year": 2007,
-    "label": "dovish",
-    "score": 0.59,
-    "date": "2007-01-11",
-    "formatted_date": "11 de Enero, 2007"
-  },
-  {
-    "text": "En tercer lugar, acorde con lo consignado en el IEF pasado y en la reciente revisión de resultados de empresas SVS, el endeudamiento de hogares y empresas se encuentra en niveles elevados. Sin embargo, la evolución reciente de los volúmenes reales de crédito, en un contexto de ba...",
-    "participant": "Sebastián Claro",
-    "year": 2014,
-    "label": "dovish",
-    "score": 0.86,
-    "date": "2014-08-14",
-    "formatted_date": "14 de Agosto, 2014"
-  },
-  {
-    "text": "La inflación subyacente también se mantiene acotada, ya que el IPCX y el IPCX1 se encuentran en niveles de 1,6% y 2%, respectivamente, lo que refleja que hay una contención generalizada de precios. Las expectativas de inflación apuntan a que este indicador se ubicaría en 2,5% a f...",
-    "participant": "Luis Óscar Herrera",
+    "text": "En lo concerniente a actividad y precios, indica que el mercado laboral de Estados Unidos de América mantiene un acotado dinamismo; que las perspectivas dan cuenta de que el ritmo no se alteraría mayormente en los próximos meses; y que los indicadores de actividad de corto plazo son algo más dinámicos.",
+    "participant": "Sergio Lehmann Beresi",
     "year": 2013,
-    "label": "dovish",
-    "score": 0.88,
-    "date": "2013-09-12",
-    "formatted_date": "12 de Septiembre, 2013"
+    "label": "neutral",
+    "score": -0.0119,
+    "date": "2013-01-17",
+    "formatted_date": "17 de enero, 2013"
   },
   {
-    "text": "En su opinión, reducir la TPM es más consistente con la desaceleración que se ha producido en la demanda; que la actividad \"resto\" crece un punto porcentual menos que el potencial por tres trimestres consecutivos; el contexto externo que sigue complejo; la moderación del déficit ...",
-    "participant": "Rodrigo Vergara",
-    "year": 2013,
-    "label": "dovish",
-    "score": 0.78,
-    "date": "2013-11-19",
-    "formatted_date": "19 de Noviembre, 2013"
-  },
-  {
-    "text": "El señor Pablo García sostiene que si los desarrollos coyunturales afectan la trayectoria de política monetaria, ello debería incidir principalmente en su ritmo de normalización en los trimestres venideros, y en menor medida, en el momento del inicio de este proceso. Especial men...",
-    "participant": "Pablo García",
-    "year": 2010,
-    "label": "dovish",
-    "score": 0.85,
-    "date": "2010-05-13",
-    "formatted_date": "13 de Mayo, 2010"
-  },
-  {
-    "text": "El señor Pablo García sostiene que si los desarrollos coyunturales afectan la trayectoria de política monetaria, ello debería incidir principalmente en su ritmo de normalización en los trimestres venideros, y en menor medida, en el momento del inicio de este proceso. Especial men...",
-    "participant": "Pablo García",
-    "year": 2010,
-    "label": "dovish",
-    "score": 0.85,
-    "date": "2010-05-13",
-    "formatted_date": "13 de Mayo, 2010"
-  },
-  {
-    "text": "El Consejero señor Enrique Marshall señala que en este contexto, las opciones de política razonables o plausibles son las de mantener o bajar la TPM en 25 puntos base, coincidiendo en tal sentido con la minuta de la Gerencia de División Estudios....",
-    "participant": "Enrique Marshall",
-    "year": 2013,
-    "label": "dovish",
-    "score": 0.64,
-    "date": "2013-08-13",
-    "formatted_date": "13 de Agosto, 2013"
-  },
-  {
-    "text": "Por su parte, la alternativa de recortar la TPM en 25 puntos base es consistente con el escenario base del IPoM, que contempla niveles de la tasa menores que 4,0% para asegurar la convergencia de la inflación a 3% en el horizonte de política. En su opinión, el que la proyección d...",
-    "participant": "Rodrigo Vergara",
-    "year": 2014,
-    "label": "dovish",
-    "score": 0.78,
-    "date": "2014-07-15",
-    "formatted_date": "15 de Julio, 2014"
-  },
-  {
-    "text": "Por las razones antedichas, plantea que si bien siempre es fundamental continuar evaluando la evolución del endeudamiento de hogares y empresas, la situación de los agentes oferentes de crédito y los riesgos que ello tiene para el sistema financiero, esa Gerencia de División cons...",
-    "participant": "Sebastián Claro",
-    "year": 2014,
-    "label": "dovish",
-    "score": 0.86,
-    "date": "2014-08-14",
-    "formatted_date": "14 de Agosto, 2014"
-  },
-  {
-    "text": "de un eventual nuevo cambio. Finalmente, agrega que con todo y dadas las implicancias de las noticias del mes, parecería más adecuado mantener el sesgo neutral. El Presidente señor Vittorio Corbo, ofrece la palabra a los asistentes para comentarios. Señala el Gerente de Investiga...",
-    "participant": "Manuel Marfán",
-    "year": 2007,
-    "label": "dovish",
-    "score": 0.85,
-    "date": "2007-02-08",
-    "formatted_date": "8 de Febrero, 2007"
-  },
-  {
-    "text": "Manifiesta que la política monetaria ha sido altamente expansiva por ya un largo período de tiempo, a pesar de registros inflacionarios sobre la meta; y que ello ha sucedido bajo la premisa de que se trata de un fenómeno transitorio y que la inflación volverá a su meta en un futu...",
-    "participant": "Sebastián Claro",
-    "year": 2015,
-    "label": "dovish",
-    "score": 0.86,
-    "date": "2015-08-13",
-    "formatted_date": "13 de Agosto, 2015"
-  },
-  {
-    "text": "aparentemente no finalizan por encima de la tasa de interés neutral, de modo que estas situaciones, aunque no generales ni desables, son del todo posibles. Más aún, el que no haya cambios de dirección transitorios, reflejaría que las noticias recibidas son coherentes con el escen...",
-    "participant": "Vittorio Corbo",
-    "year": 2007,
-    "label": "dovish",
-    "score": 0.59,
-    "date": "2007-01-11",
-    "formatted_date": "11 de Enero, 2007"
-  },
-  {
-    "text": "El Vicepresidente señor Jorge Desormeaux señala que en el plano interno, la mejoría de las expectativas externas se ha reflejado en diversos indicadores financieros, particularmente en el mercado accionario. Agrega que el mercado financiero opera con mayor normalidad, y las tasas...",
-    "participant": "Jorge Desormeaux",
-    "year": 2009,
-    "label": "dovish",
-    "score": 0.76,
-    "date": "2009-05-07",
-    "formatted_date": "7 de Mayo, 2009"
-  },
-  {
-    "text": "Por otra parte, señala que la opción de mantener se sustenta mayoritariamente en sostener la política monetaria en la senda que marcó el último IPoM, en un contexto de un escenario que, en términos gruesos, no ha cambiado mucho. También, en el convencimiento que el retiro del imp...",
-    "participant": "Rodrigo Vergara",
-    "year": 2015,
-    "label": "dovish",
-    "score": 0.78,
-    "date": "2015-11-12",
-    "formatted_date": "12 de Noviembre, 2015"
-  },
-  {
-    "text": "El Consejero señor Enrique Marshall señala que en este contexto, las opciones de política razonables o plausibles son las de mantener o bajar la TPM en 25 puntos base, coincidiendo en tal sentido con la minuta de la Gerencia de División Estudios....",
-    "participant": "Enrique Marshall",
-    "year": 2013,
-    "label": "dovish",
-    "score": 0.64,
-    "date": "2013-08-13",
-    "formatted_date": "13 de Agosto, 2013"
-  },
-  {
-    "text": "Expresa que la opción de llevar la TPM hasta 3,25%, manteniendo el sesgo a la baja, representa, por el contrario, una continuidad con la estrategia de recortes graduales llevada a cabo desde ya casi un año, la que ha permitido inyectar un importante estímulo monetario a la econom...",
-    "participant": "Enrique Marshall",
-    "year": 2014,
-    "label": "dovish",
-    "score": 0.64,
-    "date": "2014-09-11",
-    "formatted_date": "11 de Septiembre, 2014"
-  },
-  {
-    "text": "de la economía mundial se han deteriorado adicionalmente, previendo ahora una recesión en el mundo desarrollado y un menor crecimiento en el mundo emergente, por un período que se extendería hasta fines del año 2009. Agrega el señor Vicedirección que la mayor incertidumbre financ...",
-    "participant": "Manuel Marfán",
+    "text": "Indica que en el plano externo, los riesgos de una implosión del sistema financiero, especialmente en los Estados Unidos de América, han ido desapareciendo, debido a la decidida acción de las Autoridades, que han logrado evitar que se desarrolle un problema sistémico.",
+    "participant": "Jorge Desormeaux Jiménez",
     "year": 2008,
-    "label": "dovish",
-    "score": 0.85,
-    "date": "2008-11-13",
-    "formatted_date": "13 de Noviembre, 2008"
+    "label": "hawkish",
+    "score": 0.8086,
+    "date": "2008-08-14",
+    "formatted_date": "14 de agosto, 2008"
   },
   {
-    "text": "Por lo tanto, señala el Presidente señor De Gregorio que resulta prudente iniciar un ciclo de relajamiento de la política monetaria y anunciar como la trayectoria esperada al mercado. La caída de las expectativas de inflación y crecimiento sugieren seguir esta trayectoria con una...",
-    "participant": "Manuel Marfán",
+    "text": "Señala el Consejero señor Marshall que las perspectivas de crecimiento se han vuelto a ajustar a la baja y que el ambiente de recesión, que parecía bastante circunscrito a los países desarrollados, está alcanzando a las economías emergentes.",
+    "participant": "Enrique Marshall Rivera",
     "year": 2009,
     "label": "dovish",
-    "score": 0.85,
+    "score": -0.8361,
     "date": "2009-01-08",
-    "formatted_date": "8 de Enero, 2009"
+    "formatted_date": "8 de enero, 2009"
   },
   {
-    "text": "Por otra parte, señala que la opción de mantener se sustenta mayoritariamente en sostener la política monetaria en la senda que marcó el último IPoM, en un contexto de un escenario que, en términos gruesos, no ha cambiado mucho. También, en el convencimiento que el retiro del imp...",
-    "participant": "Rodrigo Vergara",
-    "year": 2015,
-    "label": "dovish",
-    "score": 0.78,
-    "date": "2015-11-12",
-    "formatted_date": "12 de Noviembre, 2015"
-  },
-  {
-    "text": "sea de 3 a 6 meses y que se ofrezca semanalmente a la última Tasa de Política Monetaria determinada por el Consejo hasta el término de la operación. Plantea que para que ello tenga éxito y el Banco no sea objeto de arbitrajes, necesariamente se tienen que mantener las ofertas col...",
-    "participant": "Pablo García",
-    "year": 2009,
-    "label": "dovish",
-    "score": 0.85,
-    "date": "2009-07-09",
-    "formatted_date": "9 de Julio, 2009"
-  },
-  {
-    "text": "Indica que hasta ahora las rebajas de tasas se han transmitido adecuadamente a las tasas de colocación, aunque en ellas persisten primas de riesgo que mantienen las condiciones financieras con ciertos grados de estrechez. Espera que en la medida que la incertidumbre se vaya despe...",
-    "participant": "Sebastián Claro",
-    "year": 2009,
-    "label": "dovish",
-    "score": 0.86,
-    "date": "2009-06-16",
-    "formatted_date": "16 de Junio, 2009"
-  },
-  {
-    "text": "A su juicio, en el nuevo escenario central lo que corresponde es bajar la tasa de política monetaria, tal como lo muestra nuestro modelo de proyección. Es cierto que existen muchos riesgos, pero no hay un desbalance, tal como se ha mencionado en el lado inflacionario. Piensa que ...",
-    "participant": "Vittorio Corbo",
-    "year": 2007,
-    "label": "dovish",
-    "score": 0.59,
-    "date": "2007-01-11",
-    "formatted_date": "11 de Enero, 2007"
-  },
-  {
-    "text": "Señala, asimismo, que justamente, la data dependencia debería condicionar la magnitud de la baja, pero no la decisión de mantener o bajar la tasa hoy. Agrega que si en los próximos meses sevieran registros de inflación subyacentes que no han bajado lo suficiente, la respuesta de ...",
-    "participant": "Jorge Desormeaux",
-    "year": 2008,
-    "label": "dovish",
-    "score": 0.76,
-    "date": "2008-12-11",
-    "formatted_date": "11 de Diciembre, 2008"
-  },
-  {
-    "text": "presente que, últimamente, las tasas de estos papeles han aumentado y las de los hipotecarios han caído, lo que podría estar obedeciendo a que las ventas de viviendas han caído, reflejando el menor precio de los créditos. Con relación a las colocaciones, destaca que los datos mes...",
-    "participant": "José De Gregorio",
-    "year": 2010,
-    "label": "dovish",
-    "score": 0.88,
-    "date": "2010-07-15",
-    "formatted_date": "15 de Julio, 2010"
-  },
-  {
-    "text": "En primer lugar, expresa que aunque los agregados crediticios han vuelto a crecer en lo más reciente y las tasas de interés de préstamos comerciales y de consumo continúan descendiendo mientras se mantienen las hipotecarias y de comercio exterior, las condiciones generales de cré...",
-    "participant": "Sebastián Claro",
-    "year": 2009,
-    "label": "dovish",
-    "score": 0.86,
-    "date": "2009-06-16",
-    "formatted_date": "16 de Junio, 2009"
-  },
-  {
-    "text": "aparentemente no finalizan por encima de la tasa de interés neutral, de modo que estas situaciones, aunque no generales ni desables, son del todo posibles. Más aún, el que no haya cambios de dirección transitorios, reflejaría que las noticias recibidas son coherentes con el escen...",
-    "participant": "Vittorio Corbo",
-    "year": 2007,
-    "label": "dovish",
-    "score": 0.59,
-    "date": "2007-01-11",
-    "formatted_date": "11 de Enero, 2007"
-  },
-  {
-    "text": "Expresa que la opción de llevar la TPM hasta 3,25%, manteniendo el sesgo a la baja, representa, por el contrario, una continuidad con la estrategia de recortes graduales llevada a cabo desde ya casi un año, la que ha permitido inyectar un importante estímulo monetario a la econom...",
-    "participant": "Enrique Marshall",
-    "year": 2014,
-    "label": "dovish",
-    "score": 0.64,
-    "date": "2014-09-11",
-    "formatted_date": "11 de Septiembre, 2014"
-  },
-  {
-    "text": "El Vicepresidente señor Enrique Marshall manifiesta que en este contexto, la opción que surge con bastante claridad es la de bajar la TPM en 25 puntos base....",
-    "participant": "Enrique Marshall",
-    "year": 2015,
-    "label": "dovish",
-    "score": 0.64,
-    "date": "2015-04-16",
-    "formatted_date": "16 de Abril, 2015"
-  },
-  {
-    "text": "El otro factor, indica, es las tasas de interés. En efecto, las tasas de interés reales hoy día han estado en cero y eso no ocurría desde hace diez años, por lo tanto, también cree que es un efecto que tampoco ha sido bien recogido por las proyecciones de algunos bancos de invers...",
-    "participant": "Institucional",
-    "year": 2001,
-    "label": "neutral",
-    "score": 0.82,
-    "date": "2001-10-08",
-    "formatted_date": "8 de Octubre, 2001"
-  },
-  {
-    "text": "El Consejero señor Sebastián Claro inicia su intervención destacando los siguientes aspectos que se han acumulado desde la Reunión anterior....",
-    "participant": "Sebastián Claro",
-    "year": 2013,
-    "label": "neutral",
-    "score": 0.61,
-    "date": "2013-04-11",
-    "formatted_date": "11 de Abril, 2013"
-  },
-  {
-    "text": "El señor Miguel Fuentes, antes de dar inicio a la presentación del escenario interno, hace propicia esta oportunidad para agradecer al Consejo por su designación en el cargo de Gerente de Análisis Macroeconómico, que fue acordada en la Sesión celebrada esta mañana, así como la co...",
-    "participant": "Miguel Fuentes",
-    "year": 2014,
-    "label": "neutral",
-    "score": 0.70,
-    "date": "2014-04-17",
-    "formatted_date": "17 de Abril, 2014"
-  },
-  {
-    "text": "El Presidente señor Rodrigo Vergara agradece la presentación del Consejero señor Pablo García y, a continuación, concede la palabra al Consejero señor Joaquín Vial. El Consejero señor Joaquín Vial inicia su intervención agradeciendo el análisis completo y actualizado de los perso...",
-    "participant": "Rodrigo Vergara",
-    "year": 2011,
-    "label": "neutral",
-    "score": 0.70,
-    "date": "2011-12-13",
-    "formatted_date": "13 de Diciembre, 2011"
-  },
-  {
-    "text": "En materia de exportaciones, señala que han caído en términos nominales y que también han registrado alta volatilidad en términos reales. Agrega que las exportaciones totales están estrechamente correlacionadas con el comportamiento de los envíos de cobre, que son muy volátiles, ...",
-    "participant": "Sebastián Claro",
+    "text": "De acuerdo con lo anterior, hace notar que se observan leves caídas en las expectativas de inflación que se derivan de los bonos, y que las expectativas de inflación, tanto a 12 meses como a 24 meses, se encuentran alineadas y estables en torno a la meta.",
+    "participant": "Claudio Soto Gamboa",
     "year": 2012,
     "label": "neutral",
-    "score": 0.61,
-    "date": "2012-06-14",
-    "formatted_date": "14 de Junio, 2012"
-  },
-  {
-    "text": "El Presidente señor José De Gregorio informa que el señor Ministro de Hacienda señor Felipe Larrain Bascuñán solo asistirá al análisis de las opciones y adopción de acuerdos de la presente Sesión, que se tratará en la tarde....",
-    "participant": "José De Gregorio",
-    "year": 2011,
-    "label": "neutral",
-    "score": 0.87,
-    "date": "2011-04-12",
-    "formatted_date": "12 de Abril, 2011"
-  },
-  {
-    "text": "El señor Miguel Fuentes agrega que, internamente, han surgido dudas sobre la lectura del mercado laboral, atendida la diversidad de posiciones de las distintas fuentes respecto de su evolución. Sin perjuicio de ello, precisa que la información disponible da cuenta de un dinamismo...",
-    "participant": "Miguel Fuentes",
-    "year": 2015,
-    "label": "neutral",
-    "score": 0.70,
-    "date": "2015-10-15",
-    "formatted_date": "15 de Octubre, 2015"
-  },
-  {
-    "text": "A continuación, el Presidente señor Rodrigo Vergara ofrece la palabra al Gerente de Análisis Internacional señor Sergio Lehmann para efectos de que presente el escenario externo. El señor Sergio Lehmann inicia su intervención refiriéndose a las principales noticias de índole polí...",
-    "participant": "Rodrigo Vergara",
-    "year": 2015,
-    "label": "neutral",
-    "score": 0.70,
-    "date": "2015-07-14",
-    "formatted_date": "14 de Julio, 2015"
-  },
-  {
-    "text": "Manifiesta que esta atenuación en el ritmo de expansión del empleo, junto con una cierta desaceleración del correspondiente a los salarios reales, se ha traducido en tasas de crecimiento de la masa salarial algo menores en el margen. Sin embargo, resalta que las ventas, particula...",
-    "participant": "Rodrigo Vergara",
-    "year": 2013,
-    "label": "neutral",
-    "score": 0.70,
-    "date": "2013-04-11",
-    "formatted_date": "11 de Abril, 2013"
-  },
-  {
-    "text": "El Consejero señor Joaquín Vial manifiesta que por las consideraciones antedichas, vota por bajar la TPM a 3% y por dar una clara señal de que con ello se cierra un ciclo, por lo que ajustes futuros de esta variable se evaluarán en función de desviaciones significativas de los es...",
-    "participant": "Joaquín Vial",
-    "year": 2014,
-    "label": "neutral",
-    "score": 0.84,
-    "date": "2014-10-16",
-    "formatted_date": "16 de Octubre, 2014"
-  },
-  {
-    "text": "El señor Presidente solicita, además, que se precise el comportamiento de la fuerza de trabajo, había consideración que, por una parte, se menciona que ha estado cayendo o estancada y, por tanto, que la tasa de desempleo efectiva o real sería algo mayor, mientras que la prensa de...",
-    "participant": "Rodrigo Vergara",
-    "year": 2012,
-    "label": "neutral",
-    "score": 0.70,
-    "date": "2012-01-12",
-    "formatted_date": "12 de Enero, 2012"
-  },
-  {
-    "text": "Con todo, advierte que persisten diferencias significativas en el comportamiento de los distintos componentes de la canasta del IPC y que todo ello introduce algún grado de incertidumbre al momento de calibrar la trayectoria inflacionaria....",
-    "participant": "Enrique Marshall",
-    "year": 2011,
-    "label": "neutral",
-    "score": 0.96,
-    "date": "2011-08-18",
-    "formatted_date": "18 de Agosto, 2011"
-  },
-  {
-    "text": "El señor Claudio Soto hace presente que el INE recoge el precio del pan de los supermercados y de las panaderías, en una proporción de 60% y 40%, respectivamente, en tanto que, internamente, solo se cuenta con seguimiento de precios de supermercados. Añade que una encuesta efectu...",
-    "participant": "Claudio Soto",
-    "year": 2011,
-    "label": "neutral",
-    "score": 0.93,
-    "date": "2011-05-12",
-    "formatted_date": "12 de Mayo, 2011"
-  },
-  {
-    "text": "la brecha es cercana a cero y en Europa negativa, y que, además, la recuperación europea es bastante más reciente que la americana. Hace notar que la evolución del mercado laboral también da cuenta de diferencias, con una relativa debilidad en la Zona Euro; en cambio, en Estados ...",
-    "participant": "Joaquín Vial",
-    "year": 2015,
-    "label": "neutral",
-    "score": 0.84,
-    "date": "2015-11-12",
-    "formatted_date": "12 de Noviembre, 2015"
-  },
-  {
-    "text": "Además agrega que tiene implicancias para la política monetaria, y para efectos de la inflación, y estima que debe hacerse una lectura correcta de niveles, de velocidades, y de tasa de variación, ya que de no ser así esta situación podría no ser interpretada correctamente. El Vic...",
-    "participant": "Manuel Marfán",
-    "year": 2009,
-    "label": "neutral",
-    "score": 0.92,
-    "date": "2009-03-12",
-    "formatted_date": "12 de Marzo, 2009"
-  },
-  {
-    "text": "A juicio del señor Rodrigo Vergara, las circunstancias indican que lo razonable es seguir en esta ocasión con el proceso de normalización de la política monetaria. Afirma que la actual política monetaria sigue siendo fuertemente expansiva y que un aumento, en esta oportunidad, in...",
-    "participant": "Rodrigo Vergara",
-    "year": 2010,
-    "label": "neutral",
-    "score": 0.70,
-    "date": "2010-07-15",
-    "formatted_date": "15 de Julio, 2010"
-  },
-  {
-    "text": "El Consejero señor Sebastián Claro plantea la conveniencia de realizar una evaluación algo más gruesa de la inflación y no sobredimensionar el último dato, que por cierto fue muy significativo....",
-    "participant": "Sebastián Claro",
-    "year": 2015,
-    "label": "neutral",
-    "score": 0.61,
-    "date": "2015-04-16",
-    "formatted_date": "16 de Abril, 2015"
-  },
-  {
-    "text": "El Presidente señor José De Gregorio da inicio a la Reunión de Política Monetaria Nº 160, indicando que, de conformidad con el Reglamento que rige estas Sesiones, fija la Reunión de Política Monetaria correspondiente al mes de marzo de 2011 para el día 17 de dicho mes....",
-    "participant": "José De Gregorio",
-    "year": 2010,
-    "label": "neutral",
-    "score": 0.87,
-    "date": "2010-09-16",
-    "formatted_date": "16 de Septiembre, 2010"
-  },
-  {
-    "text": "Mientras tanto, en Estados Unidos de América se comienza a retirar el estímulo monetario y en muchos países emergentes han comenzado a subir las tasas de interés de mercado, y en algunos de ellos, también las de política monetaria....",
-    "participant": "Joaquín Vial",
-    "year": 2014,
-    "label": "neutral",
-    "score": 0.84,
-    "date": "2014-05-15",
-    "formatted_date": "15 de Mayo, 2014"
-  },
-  {
-    "text": "En lo atinente a la Zona Euro, precisa que el PIB del cuarto trimestre creció 1,1% trimestre/trimestre anualizado, pese al menor dinamismo puntual registrado en el mes de diciembre. Además, hubo mejoras en las perspectivas de los consumidores y de las industrias....",
-    "participant": "Rodrigo Vergara",
-    "year": 2014,
-    "label": "neutral",
-    "score": 0.70,
-    "date": "2014-02-18",
-    "formatted_date": "18 de Febrero, 2014"
-  },
-  {
-    "text": "Respecto de inflación, señala el Consejero señor Marfán que tiene la impresión de que ese cuadro tiene un cambio más dramático respecto de lo que prevaleíamos en el IPoM de septiembre, puesto que en dicho Informe se consideraba una reducción en la proyección de inflación para est...",
-    "participant": "José De Gregorio",
-    "year": 2007,
-    "label": "neutral",
-    "score": 0.87,
-    "date": "2007-01-11",
-    "formatted_date": "11 de Enero, 2007"
-  },
-  {
-    "text": "El Presidente señor Rodrigo Vergara agradece los comentarios del Gerente de División Política Financiera señor Kevin Cowan y, a continuación, concede la palabra al Ministro de Hacienda señor Felipe Larrain. El señor Felipe Larrain inicia su exposición señalando que el escenario e...",
-    "participant": "Rodrigo Vergara",
-    "year": 2015,
-    "label": "neutral",
-    "score": 0.70,
-    "date": "2015-10-15",
-    "formatted_date": "15 de Octubre, 2015"
-  },
-  {
-    "text": "Asimismo, hace notar que la información sobre importaciones sugiere una desaceleración de la demanda interna. Sobre el particular, menciona que las importaciones de automóviles no siguieron cayendo, lo cual hubiera constituido una señal muy negativa de desaceleración de la demand...",
-    "participant": "Claudio Soto",
-    "year": 2011,
-    "label": "neutral",
-    "score": 0.93,
-    "date": "2011-12-13",
-    "formatted_date": "13 de Diciembre, 2011"
-  },
-  {
-    "text": "El Consejero señor Sebastián Claro se refiere en primer lugar a la situación por la que atravesía Europa, advirtiendo la probabilidad de un resurgimiento de las tensiones en esa región, atendido que las últimas cifras de Alemania darían cuenta de una incipiente recesión en esa ec...",
-    "participant": "Sebastián Claro",
-    "year": 2012,
-    "label": "neutral",
-    "score": 0.61,
+    "score": 0.0061,
     "date": "2012-11-13",
-    "formatted_date": "13 de Noviembre, 2012"
+    "formatted_date": "13 de noviembre, 2012"
   },
   {
-    "text": "Agrega que las tasas de interés de largo plazo en dicho país se han corregido a la baja de manera importante, mientras que las monedas de los países emergentes se han fortalecido. En particular, el peso chileno ha mostrado una apreciación cercana al 2% hasta esta fecha. A su juic...",
-    "participant": "Joaquín Vial",
-    "year": 2013,
+    "text": "En el ámbito externo, aunque la situación de iliquidez de los mercados se ha atenuado, ha aumentado el riesgo de una mayor desaceleración en los EE.UU., con posibles implicancias en otras economías desarrolladas.",
+    "participant": "Consejo del Banco Central de Chile",
+    "year": 2008,
+    "label": "hawkish",
+    "score": 0.784,
+    "date": "2008-01-10",
+    "formatted_date": "10 de enero, 2008"
+  },
+  {
+    "text": "Señala el expositor, que es relevante mencionar, como dato informativo, que la Tasa de Política Monetaria real, esperada, implícita en nuestra tasa de instancia, es significativamente más alta, cercana a 200 puntos base, comparada con otros países pequeños y abiertos a los flujos financieros que no se han visto afectados por esta crisis financiera, como es el caso de Nueva Zelanda, Noruega y Australia.",
+    "participant": "Kevin Cowan Logan",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.7728,
+    "date": "2009-02-12",
+    "formatted_date": "12 de febrero, 2009"
+  },
+  {
+    "text": "El señor Gerente de Análisis Macroeconómico señala que, en primer lugar la brecha grande entre crecimiento de la demanda y el crecimiento del PIB empieza a generarse justamente después de la apreciación del tipo de cambio real de fines del 2003.",
+    "participant": "Pablo García Silva",
+    "year": 2005,
     "label": "neutral",
-    "score": 0.84,
-    "date": "2013-10-17",
-    "formatted_date": "17 de Octubre, 2013"
+    "score": 0.0045,
+    "date": "2005-05-12",
+    "formatted_date": "12 de mayo, 2005"
   },
   {
-    "text": "Respecto de las tasas, señala que aunque es probable que se comience a hablar de alzas de tasas en Estados Unidos, resulta difícil pensar que en este escenario de tantas dificultades fiscales, se vuelva a tasas de Fed funds de 4% en un horizonte previsible. A su juicio, esto tien...",
-    "participant": "José De Gregorio",
-    "year": 2011,
-    "label": "neutral",
-    "score": 0.87,
-    "date": "2011-05-12",
-    "formatted_date": "12 de Mayo, 2011"
+    "text": "Agrega el Presidente señor De Gregorio que existen muchos riesgos, los cuales fueron mencionados recientemente, como por ejemplo, las turbulencias externas con implicancias cambiarias de distinto ciclo, cambios en precios de commodities, ajuste de la demanda interna en un escenario de incertidumbre, estrechez financiera global y caída en la percepción económica de los consumidores.",
+    "participant": "José De Gregorio Rebeco",
+    "year": 2008,
+    "label": "hawkish",
+    "score": 0.7372,
+    "date": "2008-08-14",
+    "formatted_date": "14 de agosto, 2008"
   },
   {
-    "text": "El Consejero señor Joaquín Vial señala que pese al alto nivel de confianza que le generan los modelos utilizados, podría haber una subestimación del crecimiento del PIB en los próximos meses. Lo expresado, a juzgar por el escenario presentado en términos de crecimiento de la acti...",
-    "participant": "Joaquín Vial",
+    "text": "Señala que desde la última Reunión de Política Monetaria el panorama externo ha experimentado un nuevo deterioro; las proyecciones de crecimiento global se han ajustado nuevamente a la baja; el clima de recesión se está manifestando con fuerza en las economías emergentes; los mayores ajustes en las proyecciones de crecimiento se han producido precisamente para estas economías; y, los mercados financieros no han presentado mayores novedades, ya que la provisión de créditos sigue siendo muy restringida debido a la debilidad de las instituciones intermediarias y a la desconfianza que aún prevalece en los mercados crediticios.",
+    "participant": "Enrique Marshall Rivera",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.8847,
+    "date": "2009-02-12",
+    "formatted_date": "12 de febrero, 2009"
+  },
+  {
+    "text": "Agrega que los datos de inflación muestran una estabilización en el margen; y que la inflación en moneda local ha moderado su caída por el repunte de los precios de los combustibles, pero se mantiene en niveles históricamente bajos.",
+    "participant": "Diego Gianelli Gómez",
     "year": 2015,
     "label": "neutral",
-    "score": 0.84,
-    "date": "2015-10-15",
-    "formatted_date": "15 de Octubre, 2015"
+    "score": -0.0088,
+    "date": "2015-06-11",
+    "formatted_date": "11 de junio, 2015"
   },
   {
-    "text": "Indica el señor Vipresidente que no se referirá en detalle al escenario internacional, el que sigue siendo vulnerable, a pesar de que el aumento del precio del petróleo tendrá un impacto en el corto plazo sobre la inflación del IPC y ciertamente se debe evitar que haya efectos de...",
-    "participant": "Jorge Desormeaux",
+    "text": "Hace presente el Consejero señor Claro, que en China la preocupación creciente es la inflación, que es consecuencia de que la flexibilización cambiaria no vino acompañada de una moderación en la expansión monetaria y del crédito, en el contexto de un sistema financiero bastante discreto.",
+    "participant": "Sebastián Claro Edwards",
+    "year": 2008,
+    "label": "hawkish",
+    "score": 0.6994,
+    "date": "2008-02-07",
+    "formatted_date": "7 de febrero, 2008"
+  },
+  {
+    "text": "En primer término, destaca que el deterioro externo ha llegado a niveles extremos tal como se señaló en la reunión de esta mañana y que en el ámbito internacional persiste la incertidumbre con motivo de la crisis financiera, por lo que la situación se ha tornado más negativa.",
+    "participant": "María Olivia Recart Herrera",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.7754,
+    "date": "2009-02-12",
+    "formatted_date": "12 de febrero, 2009"
+  },
+  {
+    "text": "Respecto a expectativas de mercado, el señor Magendzo indica que las mesas de dinero están esperando, a un año, inflaciones en torno a 4,7% y también la Encuesta de Expectativas aumenta su expectativa de inflación por sobre 4% a un año.",
+    "participant": "Igal Magendzo Weinberger",
+    "year": 2008,
+    "label": "neutral",
+    "score": 0.0042,
+    "date": "2008-03-13",
+    "formatted_date": "13 de marzo, 2008"
+  },
+  {
+    "text": "Sobre la base de estos antecedentes cree conveniente mantener el ritmo pausado de normalización de la política monetaria, por ello su voto es por elevar la tasa de política monetaria en 25 puntos base, de manera de situarla en 3% anual.",
+    "participant": "Manuel Marfán Lewis",
+    "year": 2005,
+    "label": "hawkish",
+    "score": 0.9628,
+    "date": "2005-04-07",
+    "formatted_date": "7 de abril, 2005"
+  },
+  {
+    "text": "Por último, considerando los riesgos de tener una curva quebrada, donde se tendría probablemente 0,50% hasta seis meses y de ahí en adelante, situación que con los precios actuales sería injustificado y además confuso de explicar al mercado, sugiere al Consejo que se suspenda la colocación de BCP-2, basado en lo poco profundo que es el mercado a plazos de 1 a 2 años, donde básicamente los bancos y los fondos mutuos sólo participan cuando se ofrecen tasas muy superiores a las que ellos estiman, en relación con su participación en el mercado nominal más corto en que las licitaciones a 30 y 90 días son muy cercanas a las proyecciones del Banco y por que además constituyen también una mejor alternativa que la establecida por la facilidad de liquidez de depósito, en que se restan 25 puntos base.",
+    "participant": "Beltrán de Ramón Acevedo",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.8564,
+    "date": "2009-07-09",
+    "formatted_date": "9 de julio, 2009"
+  },
+  {
+    "text": "El Consejero señor Desormeaux consulta si el Gerente señor Lehmann entregará alguna referencia acerca de las expectativas de inflación de Estados Unidos de América y agrega que le parece que en un país que no tiene metas de inflación no se aprecia una preocupación por el tema.",
+    "participant": "Jorge Desormeaux Jiménez",
     "year": 2006,
     "label": "neutral",
-    "score": 0.77,
-    "date": "2006-07-13",
-    "formatted_date": "13 de Julio, 2006"
+    "score": 0.0167,
+    "date": "2006-06-15",
+    "formatted_date": "15 de junio, 2006"
   },
   {
-    "text": "Sobre el particular, señala que, dependiendo de la tasa neutral que se considere, el ajuste realizado a la fecha es menor que el que se restará por realizar para devolver la TPM a su tasa neutral. Sostiene que como dicha tasa pueda haber sufrido modificaciones a la baja, dados lo...",
-    "participant": "Luis Felipe Céspedes",
+    "text": "Por su parte, tanto la inflación subyacente IPCX1 (que además excluye algunos servicios regulados), como otros indicadores de la tendencia inflacionaria, y las distintas medidas de expectativas de inflación, continúan bien ancladas en torno al centro del rango meta.",
+    "participant": "Consejo del Banco Central de Chile",
+    "year": 2006,
+    "label": "hawkish",
+    "score": 0.9271,
+    "date": "2006-04-13",
+    "formatted_date": "13 de abril, 2006"
+  },
+  {
+    "text": "En el ámbito externo, las condiciones crediticias siguen tensionadas, aunque la situación de iliquidez interbancaria ha tendido a aliviarse y la volatilidad financiera se ha reducido. Los datos más recientes confirman una desaceleración severa de la economía global en el cuarto trimestre.",
+    "participant": "Consejo del Banco Central de Chile",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.8628,
+    "date": "2009-01-08",
+    "formatted_date": "8 de enero, 2009"
+  },
+  {
+    "text": "El Consejero señor Manuel Marfán señala que quiere complementar este tema en el sentido que a la crisis del gas sumaría el tipo de cambio, porque para efectos prácticos se trata de precios relativos, entonces se pregunta cuánto de esta situación es explicado por precios relativos; porque le han subido los costos y no pueden vender a precios reales equivalentes.",
+    "participant": "Manuel Marfán Lewis",
+    "year": 2007,
+    "label": "neutral",
+    "score": 0.0122,
+    "date": "2007-12-13",
+    "formatted_date": "13 de diciembre, 2007"
+  },
+  {
+    "text": "En esta decisión se consideró que la inflación y la actividad económica exhibían un comportamiento coherente con el panorama previsto en el último Informe de Política Monetaria, lo cual validaba la estrategia de ajustes pausados de la tasa de política monetaria.",
+    "participant": "Rodrigo Valdés Pulido",
+    "year": 2005,
+    "label": "hawkish",
+    "score": 0.9402,
+    "date": "2005-07-12",
+    "formatted_date": "12 de julio, 2005"
+  },
+  {
+    "text": "Respecto del mínimo al cual podría llegar la TPM producto de la crisis financiera, plantea que, dado lo señalado en la Minuta de Opciones, no es difícil concluir que la vía de escape al problema de un límite inferior a la TPM, al menos inicialmente, sea incrementar el periodo de tiempo por el cual esta debiese mantenerse baja.",
+    "participant": "Luis Felipe Céspedes Cifuentes",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.7562,
+    "date": "2009-07-09",
+    "formatted_date": "9 de julio, 2009"
+  },
+  {
+    "text": "El Consejero señor Sebastián Claro sostiene que llama la atención que no se observe una diferencia significativa entre la inflación spot y la inflación promedio proyectada para este año, lo que significa que no se esperan aumentos de precios muy significativos en los meses venideros.",
+    "participant": "Sebastián Claro Edwards",
+    "year": 2011,
+    "label": "neutral",
+    "score": 0.0069,
+    "date": "2011-03-17",
+    "formatted_date": "17 de marzo, 2011"
+  },
+  {
+    "text": "Indica el señor Presidente, que en el frente inflacionario, hasta ahora los aumentos en los precios del petróleo y de otros productos primarios han repercutido principalmente en la inflación total sin tener efectos claros en las distintas medidas de tendencia inflacionaria, a pesar de las reducidas holguras de capacidad.",
+    "participant": "Vittorio Corbo Lioi",
+    "year": 2006,
+    "label": "hawkish",
+    "score": 0.9197,
+    "date": "2006-04-13",
+    "formatted_date": "13 de abril, 2006"
+  },
+  {
+    "text": "Agrega el Gerente de División Operaciones Financieras que sin embargo, en el contexto de esta desaceleración, mucho más llamativos son los datos de salarios reales, los que decrecen a tasas del 2%, y el aumento no revertido de las tasas de colocación del sistema financiero, de 400 puntos base en el último mes y medio.",
+    "participant": "Beltrán de Ramón Acevedo",
+    "year": 2008,
+    "label": "dovish",
+    "score": -0.6695,
+    "date": "2008-12-11",
+    "formatted_date": "11 de diciembre, 2008"
+  },
+  {
+    "text": "Agrega que después de las sorpresas inflacionarias de comienzos de año, la evolución de los precios de bienes que excluyen a los cigarrillos ha estado bastante en línea con lo anticipado, y que algunos alimentos que sorprendieron al alza comenzaron a mostrar una caída, lo que podría constituir un indicador de menor demanda.",
+    "participant": "Miguel Fuentes Díaz",
+    "year": 2014,
+    "label": "neutral",
+    "score": -0.0075,
+    "date": "2014-09-11",
+    "formatted_date": "11 de septiembre, 2014"
+  },
+  {
+    "text": "En este contexto, es de opinión que la política monetaria debe propiciar condiciones financieras más restrictivas, o de menor estímulo, para lograr la convergencia del crecimiento económico hacia tasas sostenibles, ya que, de esta manera, se evita incubar presiones inflacionarias futuras o desalinear las expectativas privadas.",
+    "participant": "Luis Óscar Herrera Barriga",
+    "year": 2010,
+    "label": "hawkish",
+    "score": 0.8744,
+    "date": "2010-11-16",
+    "formatted_date": "16 de noviembre, 2010"
+  },
+  {
+    "text": "En suma, el Consejero señor Marshall señala que más allá de algunas señales positivas que no imprimen tendencia, el cuadro macro sigue marcado por la severidad de la crisis financiera global, la debilidad de la actividad interna, y por la pronunciada declinación de la inflación.",
+    "participant": "Enrique Marshall Rivera",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.8826,
+    "date": "2009-04-09",
+    "formatted_date": "9 de abril, 2009"
+  },
+  {
+    "text": "Plantea que el crecimiento del dinero debiera ser igual al crecimiento real en el largo plazo y que llama la atención que en el período comprendido entre los años 2000 y el 2010, el crecimiento acumulado, de dos dígitos durante todos esos años, haya sido diez veces el crecimiento del producto.",
+    "participant": "José De Gregorio Rebeco",
     "year": 2010,
     "label": "neutral",
-    "score": 0.74,
-    "date": "2010-10-14",
-    "formatted_date": "14 de Octubre, 2010"
+    "score": 0.0051,
+    "date": "2010-06-15",
+    "formatted_date": "15 de junio, 2010"
+  },
+  {
+    "text": "Por lo expuesto anteriormente, el Consejero señor Jorge Desormeaux, aprueba la propuesta de la División de Estudios de elevar la tasa de política monetaria en 25 puntos base en la reunión de hoy, dejando establecido como siempre en el comunicado, que el Banco Central está atento a la evolución de las variables que influyen sobre la tendencia inflacionaria.",
+    "participant": "Jorge Desormeaux Jiménez",
+    "year": 2005,
+    "label": "hawkish",
+    "score": 0.9512,
+    "date": "2005-07-12",
+    "formatted_date": "12 de julio, 2005"
+  },
+  {
+    "text": "Además, hace notar que la baja inflación es un fenómeno mundial aparentemente más persistente que lo estimado inicialmente y, por lo tanto, no puede ser indiferente al Banco Central de Chile, y en este sentido, la forma tradicional de actuar cuando la inflación permanece baja, es la de reducir la TPM.",
+    "participant": "Beltrán de Ramón Acevedo",
+    "year": 2013,
+    "label": "dovish",
+    "score": -0.9246,
+    "date": "2013-11-19",
+    "formatted_date": "19 de noviembre, 2013"
+  },
+  {
+    "text": "Al respecto, el señor Ministro indica que si se proyecta la inflación a diciembre, y si se da esa secuencia de escalones, tienes una inflación. Si proyectas la inflación a diciembre sin esos escalones, tienes otra inflación que es más menos 0,6 inferior.",
+    "participant": "Andrés Velasco Brañes",
+    "year": 2009,
+    "label": "neutral",
+    "score": 0.0061,
+    "date": "2009-04-09",
+    "formatted_date": "9 de abril, 2009"
+  },
+  {
+    "text": "En virtud de lo anterior, el Consejo adoptó el siguiente Acuerdo: 171-01-110614 - Tasa de Política Monetaria En su reunión mensual de política monetaria, el Consejo del Banco Central de Chile acordó aumentar la tasa de interés de política monetaria en 25 puntos base, hasta 5,25% anual.",
+    "participant": "Consejo del Banco Central de Chile",
+    "year": 2011,
+    "label": "hawkish",
+    "score": 0.9024,
+    "date": "2011-06-14",
+    "formatted_date": "14 de junio, 2011"
+  },
+  {
+    "text": "En el plano interno, la información disponible para la actividad y la demanda del cuarto trimestre del 2008 y del primer trimestre de este año muestra una ampliación de holguras mayor a la considerada en el escenario base del reciente Informe de Política Monetaria.",
+    "participant": "Consejo del Banco Central de Chile",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.889,
+    "date": "2009-02-12",
+    "formatted_date": "12 de febrero, 2009"
+  },
+  {
+    "text": "El Gerente de División Estudios señor Luis Óscar Herrera plantea que la última entrega de resultados ha generado algún grado de mayor preocupación acerca del ritmo de crecimiento de la actividad y la demanda, como también sobre sus implicancias para el futuro.",
+    "participant": "Luis Óscar Herrera Barriga",
+    "year": 2012,
+    "label": "neutral",
+    "score": -0.0028,
+    "date": "2012-08-16",
+    "formatted_date": "16 de agosto, 2012"
+  },
+  {
+    "text": "No obstante, un alza de la tasa de política monetaria podría inducir la percepción que estamos reaccionando a noticias de aceleración inflacionaria que el mercado no tiene, en especial cuando el mercado mayoritariamente no espera movimientos, lo que podría, a su vez, servir de base para proponer la mantención de la tasa de política monetaria.",
+    "participant": "José De Gregorio Rebeco",
+    "year": 2005,
+    "label": "hawkish",
+    "score": 0.9342,
+    "date": "2005-02-10",
+    "formatted_date": "10 de febrero, 2005"
+  },
+  {
+    "text": "En materia de inflación, menciona que el registro del último mes no deparó sorpresas y resulta coherente con el diagnóstico de una inflación que ha subido transitoriamente debido a la devaluación del peso, pero que debe converger a la meta en los próximos trimestres, teniendo en cuenta principalmente que las presiones por el lado de la demanda se han debilitado en forma importante.",
+    "participant": "Enrique Marshall Rivera",
+    "year": 2014,
+    "label": "dovish",
+    "score": -0.9107,
+    "date": "2014-08-14",
+    "formatted_date": "14 de agosto, 2014"
+  },
+  {
+    "text": "Finalmente, agrega el señor Jadresic, que existe un efecto que venía desde antes y que dice relación con la fortaleza de la demanda por combustible. Dicha demanda continúa sin ceder a pesar de los altos precios, y una oferta que no reacciona.",
+    "participant": "Esteban Jadresic Marinovic",
+    "year": 2005,
+    "label": "neutral",
+    "score": 0.0213,
+    "date": "2005-09-08",
+    "formatted_date": "8 de septiembre, 2005"
+  },
+  {
+    "text": "Agrega el señor Consejero, que no le cabe ninguna duda que las mayores presiones inflacionarias futuras que se han comentado, que resultan tanto de alzas de precios específicos, como de un cierre más rápido de las holguras, conducirán a una modificación de la trayectoria óptima de la tasa de política monetaria, adelantando su normalización.",
+    "participant": "Jorge Desormeaux Jiménez",
+    "year": 2007,
+    "label": "hawkish",
+    "score": 0.865,
+    "date": "2007-06-14",
+    "formatted_date": "14 de junio, 2007"
+  },
+  {
+    "text": "En lo relativo al comportamiento reciente de la inflación y sus implicancias para la política monetaria, expresa que más allá de algunos elementos puntuales vinculados con alimentos perecibles y energía, la evaluación refleja el efecto de la depreciación del peso sobre los precios de bienes importables.",
+    "participant": "Luis Óscar Herrera Barriga",
+    "year": 2014,
+    "label": "dovish",
+    "score": -0.8695,
+    "date": "2014-01-16",
+    "formatted_date": "16 de enero, 2014"
+  },
+  {
+    "text": "En efecto, el PIB del cuarto trimestre de 2013 anotó un crecimiento menor que el esperado, cerrando el año con un crecimiento de 1,6% versus el 1,8% contemplado tanto en el Informe de Política Monetaria, IPoM, como por el mercado.",
+    "participant": "Miguel Ricaurte Bermúdez",
+    "year": 2014,
+    "label": "neutral",
+    "score": -0.0229,
+    "date": "2014-02-18",
+    "formatted_date": "18 de febrero, 2014"
+  },
+  {
+    "text": "Menciona también, que se debe tener en cuenta que, con la reciente decisión adoptada por la Reserva Federal de los Estados Unidos de América, la tasa de interés en dicho país ha quedado al mismo nivel que la tasa de política monetaria de Chile.",
+    "participant": "Enrique Marshall Rivera",
+    "year": 2006,
+    "label": "hawkish",
+    "score": 0.8538,
+    "date": "2006-02-09",
+    "formatted_date": "9 de febrero, 2006"
+  },
+  {
+    "text": "En su opinión, reducir la TPM es más consistente con la desaceleración que se ha producido en la demanda; que la actividad “resto” crece un punto porcentual menos que el potencial por tres trimestres consecutivos; el contexto externo que sigue complejo; la moderación del déficit de la cuenta corriente; una inflación que se ha mantenido particularmente baja, la que se espera que suba hacia la meta lenta y gradualmente; y, además, con expectativas inflacionarias ancladas en dicha meta.",
+    "participant": "Rodrigo Vergara Montes",
+    "year": 2013,
+    "label": "dovish",
+    "score": -0.8871,
+    "date": "2013-11-19",
+    "formatted_date": "19 de noviembre, 2013"
+  },
+  {
+    "text": "Manifiesta su prevención respecto de la incidencia de los precios de commodities en las proyecciones de crecimiento del PIB mundial, porque si bien los precios de todos ellos han caído por un factor común de carácter financiero, que está incorporado en el análisis, también hay elementos particulares que los afecta de distinta manera.",
+    "participant": "Alberto Naudon Dell'Oro",
+    "year": 2015,
+    "label": "neutral",
+    "score": -0.0013,
+    "date": "2015-08-13",
+    "formatted_date": "13 de agosto, 2015"
+  },
+  {
+    "text": "Más bien, es una medida preventiva que pretende conciliar el panorama de crecimiento con la convergencia a nuestro objetivo inflacionario, en el horizonte que nos interesa. Por ello vota por un alza de la TPM de 25 puntos base.",
+    "participant": "María Elena Ovalle Molina",
+    "year": 2005,
+    "label": "hawkish",
+    "score": 0.9214,
+    "date": "2005-05-12",
+    "formatted_date": "12 de mayo, 2005"
+  },
+  {
+    "text": "Comunicado “En su reunión mensual de política monetaria, el Consejo del Banco Central de Chile acordó reducir la tasa de interés de política monetaria en 250 puntos base, hasta 2,25% anual.",
+    "participant": "Consejo del Banco Central de Chile",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.9057,
+    "date": "2009-03-12",
+    "formatted_date": "12 de marzo, 2009"
+  },
+  {
+    "text": "En relación con la demanda de créditos, menciona que, en términos netos, el 30% de los gerentes comerciales de los bancos reportan percibir condiciones de demanda más expansivas para préstamos hipotecarios, de consumo y PYMES, en tanto que poco más del 25% de ellos informa condiciones de demanda más expansivas respecto al trimestre anterior para las empresas inmobiliarias y grandes empresas.",
+    "participant": "Kevin Cowan Logan",
+    "year": 2009,
+    "label": "neutral",
+    "score": -0.0194,
+    "date": "2009-10-13",
+    "formatted_date": "13 de octubre, 2009"
+  },
+  {
+    "text": "Agrega que las expectativas de inflación se han ido moderando, entre otros aspectos, por los menores registros efectivos de inflación, por los menores precios de las materias primas y por la política de normalización monetaria del Banco Central.",
+    "participant": "Rodrigo Vergara Montes",
+    "year": 2011,
+    "label": "hawkish",
+    "score": 0.8232,
+    "date": "2011-05-12",
+    "formatted_date": "12 de mayo, 2011"
+  },
+  {
+    "text": "En efecto, con un escenario de inflación subyacente idéntico al del mes de abril, pero con indicadores de actividad significativamente peores que en ese momento y expectativas privadas de inflación a mediano plazo incluso menores, estima que no es plausible considerar hoy las mismas opciones que dos meses atrás.",
+    "participant": "Pablo García Silva",
+    "year": 2014,
+    "label": "dovish",
+    "score": -0.8598,
+    "date": "2014-07-15",
+    "formatted_date": "15 de julio, 2014"
+  },
+  {
+    "text": "Al finalizar su presentación, subraya que la mayor debilidad de la demanda, producto de la desaceleración de la actividad, ha sido compensada por menores suministros o problemas de oferta en algunos commodities, dando algún grado de soporte a los precios actuales.",
+    "participant": "Sergio Lehmann Beresi",
+    "year": 2011,
+    "label": "neutral",
+    "score": 0.0021,
+    "date": "2011-09-15",
+    "formatted_date": "15 de septiembre, 2011"
+  },
+  {
+    "text": "Sin embargo, indica el señor Presidente, que con el deterioro de los mercados financieros internacionales y el resultante aumento en el riesgo a la baja en el crecimiento mundial, lo más prudente en esta ocasión es condicionar el curso futuro de la política monetaria a la evolución de la economía internacional y sus implicancias para la inflación proyectada.",
+    "participant": "Vittorio Corbo Lioi",
+    "year": 2007,
+    "label": "hawkish",
+    "score": 0.8661,
+    "date": "2007-09-13",
+    "formatted_date": "13 de septiembre, 2007"
+  },
+  {
+    "text": "Destaca que lo anterior ha contribuido con fuerza a la corrección de las expectativas de crecimiento para el próximo año en el mundo, a una corrección de los precios de los commodities y, en general, a cambios importantes de precios de activos.",
+    "participant": "Sebastián Claro Edwards",
+    "year": 2011,
+    "label": "dovish",
+    "score": -0.7758,
+    "date": "2011-10-13",
+    "formatted_date": "13 de octubre, 2011"
+  },
+  {
+    "text": "Señala que quisiera conocer si existen otros elementos que influyen o se trata al final, de una suma de pequeñas historias, pero en todo caso le parece poco convincente cuando se observa un crecimiento del consumo y de la demanda todavía relativamente rigurosos.",
+    "participant": "Enrique Marshall Rivera",
+    "year": 2008,
+    "label": "neutral",
+    "score": 0.0083,
+    "date": "2008-08-14",
+    "formatted_date": "14 de agosto, 2008"
+  },
+  {
+    "text": "En ese sentido, advierte que si se mantiene una trayectoria como la delineada en el IPoM pasado, no se podría descartar que la normalización no sea lo suficientemente intensa para asegurar la convergencia de la inflación a la meta en el horizonte de proyección, ya que procesos de este tipo vienen, por definición, acompañados de pérdidas de credibilidad de la política monetaria y, por lo tanto, de mayores costos para lograr el control de la inflación y la competitividad de la economía.",
+    "participant": "Luis Felipe Céspedes Cifuentes",
+    "year": 2010,
+    "label": "hawkish",
+    "score": 0.8221,
+    "date": "2010-08-12",
+    "formatted_date": "12 de agosto, 2010"
+  },
+  {
+    "text": "Asimismo, plantea que la inflación del mes de octubre sorprendió levemente al alza; que los salarios exhibieron un repunte, incididos por alzas en algunos sectores puntuales; y que hacia adelante, las expectativas siguen mostrando una trayectoria decreciente para la inflación, la que después de algunas oscilaciones se ubicaría en 3% en el horizonte de política del Banco.",
+    "participant": "Alejandro Micco",
+    "year": 2015,
+    "label": "dovish",
+    "score": -0.7683,
+    "date": "2015-11-12",
+    "formatted_date": "12 de noviembre, 2015"
+  },
+  {
+    "text": "El señor Ministro de Hacienda consulta, respecto a los mercados financieros, si existe alguna conjetura sobre si el efecto de las tasas externas tiende a ser más fuerte según el plazo respecto de las expectativas de curso de la TPM o es indiferente, o sólo influye la expectativa de la TPM.",
+    "participant": "Nicolás Eyzaguirre Guzmán",
+    "year": 2005,
+    "label": "neutral",
+    "score": 0.0026,
+    "date": "2005-08-11",
+    "formatted_date": "11 de agosto, 2005"
+  },
+  {
+    "text": "Indica que las expectativas privadas de inflación superan las proyecciones del Banco Central, y que las expectativas de crecimiento de la actividad, en el mediano plazo, también superarían las nuevas proyecciones de la Institución.",
+    "participant": "Manuel Marfán Lewis",
+    "year": 2008,
+    "label": "hawkish",
+    "score": 0.8107,
+    "date": "2008-09-04",
+    "formatted_date": "4 de septiembre, 2008"
+  },
+  {
+    "text": "Si éste no actuara ahora significaría aumentar la inestabilidad de la tasa de política monetaria y también los problemas de comunicación para el futuro, este riesgo existe incluso en el escenario central, pero obviamente que se acentúa si la inflación estuviera aún más por debajo.",
+    "participant": "Esteban Jadresic Marinovic",
+    "year": 2007,
+    "label": "dovish",
+    "score": -0.749,
+    "date": "2007-01-11",
+    "formatted_date": "11 de enero, 2007"
+  },
+  {
+    "text": "El Gerente de División Estudios señor Valdés cree que es un asunto de competitividad de un sector en particular como consecuencia de un shock de precios. Agrega que, de todos modos, ahora no es un shock de demanda interna.",
+    "participant": "Rodrigo Valdés Pulido",
+    "year": 2006,
+    "label": "neutral",
+    "score": 0.011,
+    "date": "2006-04-13",
+    "formatted_date": "13 de abril, 2006"
+  },
+  {
+    "text": "Señala, que de hacer una pausa, es posible que nos quedemos atrás de la curva si los efectos de segunda vuelta, los shocks del petróleo o las presiones sobre los precios de una actividad y demanda creciendo dudosamente, empiezan a repercutir sobre la inflación, antes de lo esperado.",
+    "participant": "José De Gregorio Rebeco",
+    "year": 2006,
+    "label": "hawkish",
+    "score": 0.8847,
+    "date": "2006-01-12",
+    "formatted_date": "12 de enero, 2006"
+  },
+  {
+    "text": "En segundo lugar, los datos de la Encuesta de Crédito Bancario indicarían que por el lado del canal del crédito, el efecto de una baja de tasa de interés sobre el dinamismo del consumo probablemente sea menor que sobre la inversión y el producto; y, por último, que la inflación del IPC y del IPCSAE se proyectan aún por debajo del nivel rango meta, respectivamente, lo cual permitiría absorber algún efecto temporal sobre la inflación.",
+    "participant": "Claudio Raddatz Kiefer",
+    "year": 2013,
+    "label": "dovish",
+    "score": -0.852,
+    "date": "2013-07-11",
+    "formatted_date": "11 de julio, 2013"
+  },
+  {
+    "text": "El Consejero señor Joaquín Vial hace notar el salto en las expectativas de inflación que se observa en lo más reciente en Colombia, y consulta si corresponden a precios de mercado o a encuestas.",
+    "participant": "Joaquín Vial Ruiz-Tagle",
+    "year": 2015,
+    "label": "neutral",
+    "score": 0.0052,
+    "date": "2015-11-12",
+    "formatted_date": "12 de noviembre, 2015"
+  },
+  {
+    "text": "De acuerdo con las proyecciones preparadas para el Informe de Política Monetaria, este cuadro de dinamismo del sector real, de inflación reducida aunque aumentando gradualmente, e incremento tenue de los costos implica que la inflación continuará siendo baja en el corto plazo, pero aumentará progresivamente más adelante.",
+    "participant": "Rodrigo Valdés Pulido",
+    "year": 2005,
+    "label": "hawkish",
+    "score": 0.9362,
+    "date": "2005-01-11",
+    "formatted_date": "11 de enero, 2005"
+  },
+  {
+    "text": "El Consejero señor Manuel Marfán prosigue con su análisis, señalando que el dilema de política monetaria que se enfrenta es singular y que para llevar la inflación a 3% en el horizonte de política se requiere un estímulo monetario significativamente superior al actual.",
+    "participant": "Manuel Marfán Lewis",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.8102,
+    "date": "2009-07-09",
+    "formatted_date": "9 de julio, 2009"
+  },
+  {
+    "text": "En el caso de los agregados monetarios, menciona que se sigue observando un fuerte crecimiento del dinero, sobre todo del M1, pero que no se advierte un crecimiento que sea particularmente intenso dado los fundamentales que explican dicho crecimiento.",
+    "participant": "Claudio Soto Gamboa",
+    "year": 2010,
+    "label": "neutral",
+    "score": 0.0049,
+    "date": "2010-04-15",
+    "formatted_date": "15 de abril, 2010"
+  },
+  {
+    "text": "Asimismo señala el Consejero señor Claro, que la trayectoria de la Tasa de Política Monetaria implícita en los precios de los activos financieros y en las encuestas, coincide con niveles de actividad algo inferiores a los esperados para este año, y con tasas de inflación sustancialmente por sobre el objetivo de estabilidad de precios.",
+    "participant": "Sebastián Claro Edwards",
+    "year": 2008,
+    "label": "hawkish",
+    "score": 0.7334,
+    "date": "2008-09-04",
+    "formatted_date": "4 de septiembre, 2008"
+  },
+  {
+    "text": "En lo relativo al comportamiento reciente de la inflación y sus implicancias para la política monetaria, expresa que más allá de algunos elementos puntuales vinculados con precios de combustibles, el aumento observado recientemente refleja el impacto de la depreciación del peso sobre los precios de bienes importados, lo que es parte del proceso de ajuste de la economía.",
+    "participant": "Claudio Soto Gamboa",
+    "year": 2014,
+    "label": "dovish",
+    "score": -0.8544,
+    "date": "2014-02-18",
+    "formatted_date": "18 de febrero, 2014"
+  },
+  {
+    "text": "El Gerente de Análisis Macroeconómico señala que las expectativas de inflación de corto plazo del sector privado apuntan a una inflación al mes de diciembre de este año, marginalmente mayor que las proyecciones internas y se mantienen cerca de 3% para el horizonte de largo plazo.",
+    "participant": "Igal Magendzo Weinberger",
+    "year": 2007,
+    "label": "neutral",
+    "score": 0.0104,
+    "date": "2007-09-13",
+    "formatted_date": "13 de septiembre, 2007"
+  },
+  {
+    "text": "Hace presente que si bien los aumentos son más intensos para las medidas de expectativas de corto plazo, esto es, hasta un año plazo, en línea con lo que serían los efectos transitorios de la depreciación del peso sobre la inflación, es necesario advertir también que se observan incrementos en las medidas de expectativas de inflación de mediano y largo plazo.",
+    "participant": "Luis Óscar Herrera Barriga",
+    "year": 2011,
+    "label": "hawkish",
+    "score": 0.8356,
+    "date": "2011-01-13",
+    "formatted_date": "13 de enero, 2011"
+  },
+  {
+    "text": "Además, comenta que la inflación subyacente se mantiene en niveles acotados en la parte inferior del rango de tolerancia de la meta del Banco Central, y que las expectativas de inflación a 12 y 24 meses siguen ancladas a la meta antedicha.",
+    "participant": "Rodrigo Vergara Montes",
+    "year": 2012,
+    "label": "dovish",
+    "score": -0.7898,
+    "date": "2012-01-12",
+    "formatted_date": "12 de enero, 2012"
+  },
+  {
+    "text": "El Consejero señor Sebastián Claro destaca el dinamismo de la demanda, el crecimiento del PIB Resto en torno a 5,5% por varios trimestres y el fuerte cambio de tendencia que exhibe la demanda, que se refleja en el análisis sobre la cuenta corriente.",
+    "participant": "Sebastián Claro Edwards",
+    "year": 2013,
+    "label": "neutral",
+    "score": -0.0149,
+    "date": "2013-03-14",
+    "formatted_date": "14 de marzo, 2013"
+  },
+  {
+    "text": "En virtud de lo anterior, el Consejo adoptó el siguiente Acuerdo: 163-01-101216 - Tasa de Política Monetaria En su reunión mensual de política monetaria, el Consejo del Banco Central de Chile acordó aumentar la tasa de interés de política monetaria en 25 puntos base, hasta 3,25% anual.",
+    "participant": "Consejo del Banco Central de Chile",
+    "year": 2010,
+    "label": "hawkish",
+    "score": 0.8809,
+    "date": "2010-12-16",
+    "formatted_date": "16 de diciembre, 2010"
+  },
+  {
+    "text": "El señor Enrique Marshall expresa que el aumento en los precios de las materias primas también es un factor de preocupación y que, en el último mes, los metales y la energía tuvieron incrementos muy significativos que, de persistir, podrían afectar las expectativas inflacionarias.",
+    "participant": "Enrique Marshall Rivera",
+    "year": 2010,
+    "label": "dovish",
+    "score": -0.7838,
+    "date": "2010-01-14",
+    "formatted_date": "14 de enero, 2010"
+  },
+  {
+    "text": "En este sentido, señala que si el sector no transable tiene precios que son relativamente rígidos en el corto plazo, este tipo de presiones afectarán al tipo de cambio, mientras que en la medida que este sector comience a ajustar precios, ello se traducirá en un ajuste del tipo de cambio hacia la depreciación y un aumento de la inflación del sector no transable.",
+    "participant": "Claudio Raddatz Kiefer",
+    "year": 2012,
+    "label": "neutral",
+    "score": -0.0078,
+    "date": "2012-08-16",
+    "formatted_date": "16 de agosto, 2012"
+  },
+  {
+    "text": "Han transcurrido cuatro trimestres, siendo el que estamos el cuarto, donde hay una tasa de crecimiento de gasto interno inhabitualmente alto y, se supone, que ya a partir del tercer trimestre del año, se empieza a normalizar la tasa de crecimiento de la demanda interna.",
+    "participant": "Camilo Carrasco Alfonso",
+    "year": 2005,
+    "label": "hawkish",
+    "score": 0.8518,
+    "date": "2005-05-12",
+    "formatted_date": "12 de mayo, 2005"
+  },
+  {
+    "text": "Agrega que si en los próximos meses se vieran registros de inflación subyacentes que no han bajado lo suficiente, la respuesta de política debiera ser bajar en 25 puntos base por Reunión de Política Monetaria, sabiendo que se tiene una cuenta de ahorro por haber llevado la Tasa de Política Monetaria al 8,25%, muy por sobre sus niveles de expansividad.",
+    "participant": "Beltrán de Ramón Acevedo",
+    "year": 2008,
+    "label": "dovish",
+    "score": -0.7999,
+    "date": "2008-12-11",
+    "formatted_date": "11 de diciembre, 2008"
+  },
+  {
+    "text": "Tratándose de América Latina, destaca la baja actividad y la mayor inflación en Brasil, así como una mayor restricción de sus condiciones crediticias, lo que se ha traducido en un alza de su tasa de política monetaria, TPM, y en el fortalecimiento del dólar.",
+    "participant": "Alfredo Pistelli",
+    "year": 2014,
+    "label": "neutral",
+    "score": -0.0385,
+    "date": "2014-11-18",
+    "formatted_date": "18 de noviembre, 2014"
+  },
+  {
+    "text": "Por una parte, a pesar de que las distintas medidas de expectativas de inflación a un año siguen considerando una importante reducción de la inflación anual en ese plazo —las medidas a un año muestran expectativas que fluctúan entre 3 y 3,7%, bien por debajo del 5% actual—, las expectativas a dos años han aumentado, con una masa relevante de encuestados y varios instrumentos financieros que indican que la convergencia de la inflación al 3% no ocurriría dentro del horizonte de política.",
+    "participant": "Alberto Naudon Dell'Oro",
+    "year": 2015,
+    "label": "hawkish",
+    "score": 0.6997,
+    "date": "2015-09-15",
+    "formatted_date": "15 de septiembre, 2015"
+  },
+  {
+    "text": "Señala que si bien la inflación medida en doce meses tendrá una volatilidad inusual debido en gran parte a los muy elevados registros mensuales del año pasado, una trayectoria de política monetaria con un mayor impulso, no debiera amenazar el cumplimiento de la meta de inflación en el horizonte de política.",
+    "participant": "José De Gregorio Rebeco",
+    "year": 2009,
+    "label": "dovish",
+    "score": -0.8042,
+    "date": "2009-04-09",
+    "formatted_date": "9 de abril, 2009"
+  },
+  {
+    "text": "El Gerente de Investigación Económica señor Klaus Schmidt-Hebbel, con respecto a la explicación del Gerente señor Lehmann acerca de la compensación inflacionaria en Estados Unidos de América señala que es efectivamente un cambio de compensación inflacionaria, no tanto por cambio de portafolio hacia o desde activos.",
+    "participant": "Klaus Schmidt-Hebbel Dunker",
+    "year": 2006,
+    "label": "neutral",
+    "score": 0.0143,
+    "date": "2006-06-15",
+    "formatted_date": "15 de junio, 2006"
+  },
+  {
+    "text": "Comenta que en el frente inflacionario, en tanto, se han producido algunos eventos de importancia, siendo el más relevante el que dice relación con el aumento en las expectativas de inflación en el horizonte de política monetaria.",
+    "participant": "Rodrigo Vergara Montes",
+    "year": 2011,
+    "label": "hawkish",
+    "score": 0.823,
+    "date": "2011-02-17",
+    "formatted_date": "17 de febrero, 2011"
+  },
+  {
+    "text": "En ese sentido, y dados los rezagos con que opera la política monetaria, considera razonable continuar con un ciclo de baja de tasas con el propósito de anticipar el efecto de estos shocks externos y, en ese sentido, mantener una demanda interna algo más estable que conduzca la inflación a la meta del Banco Central de Chile en el horizonte de política.",
+    "participant": "Kevin Cowan Logan",
+    "year": 2013,
+    "label": "dovish",
+    "score": -0.8147,
+    "date": "2013-11-19",
+    "formatted_date": "19 de noviembre, 2013"
+  },
+  {
+    "text": "Comenta que al respecto se hizo una estimación en que el impacto es un punto menos de crecimiento en las economías desarrolladas y menos de un punto negativo en economías emergentes, considerando la caída de precios de los commodities que es bastante abrupta, en lo más reciente.",
+    "participant": "Felipe Jaque",
+    "year": 2008,
+    "label": "neutral",
+    "score": 0.0033,
+    "date": "2008-10-09",
+    "formatted_date": "9 de octubre, 2008"
+  },
+  {
+    "text": "Indica, que cabe consignar que todavía la distancia entre la tasa de política monetaria actual y la tasa de política monetaria neutral estimada por el Banco excede de 250 puntos base, en una coyuntura en la cual la distancia entre el producto efectivo y el potencial es cercana a cero.",
+    "participant": "Klaus Schmidt-Hebbel Dunker",
+    "year": 2006,
+    "label": "hawkish",
+    "score": 0.7857,
+    "date": "2006-01-12",
+    "formatted_date": "12 de enero, 2006"
+  },
+  {
+    "text": "El señor Alberto Arenas señala que es precisamente el manejo basado en este marco el que le ha permitido al Banco Central efectuar una política monetaria contracíclica en la coyuntura actual, y que si bien la inflación aumentó por sobre el rango de tolerancia, nunca ha estado en cuestionamiento del cumplimiento en el horizonte de política.",
+    "participant": "Alberto Arenas de Mesa",
+    "year": 2015,
+    "label": "dovish",
+    "score": -0.7703,
+    "date": "2015-04-16",
+    "formatted_date": "16 de abril, 2015"
+  },
+  {
+    "text": "Menciona el señor De Ramón, que le llama la atención el gráfico que muestra la contribución al crecimiento del cuarto trimestre, donde el consumo tiene alrededor de tres puntos o la mitad del crecimiento de Estados Unidos de América.",
+    "participant": "Beltrán de Ramón Acevedo",
+    "year": 2007,
+    "label": "neutral",
+    "score": 0.0113,
+    "date": "2007-03-15",
+    "formatted_date": "15 de marzo, 2007"
+  },
+  {
+    "text": "Con todo, y con todas las incertidumbres que se tienen hacia delante, en particular si la situación externa empeora más y termina afectando el panorama interno de crecimiento e inflación, considera que lo más plausible es subir la Tasa de Política Monetaria en 25 puntos base y esa es su recomendación.",
+    "participant": "Beltrán de Ramón Acevedo",
+    "year": 2007,
+    "label": "hawkish",
+    "score": 0.7165,
+    "date": "2007-12-13",
+    "formatted_date": "13 de diciembre, 2007"
+  },
+  {
+    "text": "Expresa que lo consignado anteriormente se manifiesta en medio de una situación financiera relativamente holgada, con tasas de interés de largo plazo a niveles históricamente muy bajos y tasas de crecimiento del crédito a hogares a un ritmo consistente con la tendencia de crecimiento del PIB de largo plazo.",
+    "participant": "Joaquín Vial Ruiz-Tagle",
+    "year": 2014,
+    "label": "dovish",
+    "score": -0.8007,
+    "date": "2014-08-14",
+    "formatted_date": "14 de agosto, 2014"
+  },
+  {
+    "text": "Explica que para tal efecto se realiza un ajuste histórico entre la estimación de precios que se hace cada año y los precios efectivos, resultando una estimación promedio.",
+    "participant": "Ricardo Vicuña Poblete",
+    "year": 2013,
+    "label": "neutral",
+    "score": -0.0086,
+    "date": "2013-04-11",
+    "formatted_date": "11 de abril, 2013"
+  },
+  {
+    "text": "El Gerente de División Estudios señor Pablo García indica que en su reunión mensual de política monetaria de agosto, el Consejo del Banco Central de Chile acordó aumentar la tasa de interés de política monetaria en 50 puntos base, hasta 2,0% anual, y declaró, en ese momento, que continuaría reduciendo el significativo estímulo monetario prevaleciente a un ritmo que dependería de la evolución de las condiciones macroeconómicas internas y externas.",
+    "participant": "Pablo García Silva",
+    "year": 2010,
+    "label": "hawkish",
+    "score": 0.7597,
+    "date": "2010-09-16",
+    "formatted_date": "16 de septiembre, 2010"
+  },
+  {
+    "text": "Asimismo, menciona que de acuerdo con la última Encuesta de Expectativas Económicas, se espera que la inflación al mes de diciembre de 2014 se ubique en 2,8% anual, lo que refleja que las expectativas de inflación se mantienen ancladas.",
+    "participant": "Felipe Larraín Bascuñán",
+    "year": 2013,
+    "label": "dovish",
+    "score": -0.7987,
+    "date": "2013-12-12",
+    "formatted_date": "12 de diciembre, 2013"
+  },
+  {
+    "text": "Estima que la relación algo más débil entre crecimiento e inflación tiene que ver con la estructura del crecimiento que se ve reflejada en el comportamiento que se observa en los precios.",
+    "participant": "Mario Marcel Cullell",
+    "year": 2005,
+    "label": "neutral",
+    "score": 0.0263,
+    "date": "2005-02-10",
+    "formatted_date": "10 de febrero, 2005"
+  },
+  {
+    "text": "Las perspectivas de crecimiento mundial han mejorado en el margen, a pesar del aumento en las expectativas de normalización de la política monetaria en las principales economías, producto - en parte - de las mayores presiones inflacionarias existentes.",
+    "participant": "María Elena Ovalle Molina",
+    "year": 2005,
+    "label": "hawkish",
+    "score": 0.9222,
+    "date": "2005-10-11",
+    "formatted_date": "11 de octubre, 2005"
+  },
+  {
+    "text": "Destaca que es así, por lo demás, como ha reaccionado el mercado, ya que los mercados financieros y las distintas medidas de expectativas, ya sea de mercado o de las encuestas, muestran que no ha habido una modificación relevante en las expectativas inflacionarias de mediano plazo.",
+    "participant": "Manuel Marfán Lewis",
+    "year": 2012,
+    "label": "dovish",
+    "score": -0.7337,
+    "date": "2012-01-12",
+    "formatted_date": "12 de enero, 2012"
+  },
+  {
+    "text": "El Vicepresidente señor Manuel Marfán sugiere que se estudie la inflación no subyacente, porque si se tienen sistemas de protección internos, vinculados con los precios, estos se desalinean respecto de los precios internacionales.",
+    "participant": "Manuel Marfán Lewis",
+    "year": 2010,
+    "label": "neutral",
+    "score": 0.0143,
+    "date": "2010-02-11",
+    "formatted_date": "11 de febrero, 2010"
+  },
+  {
+    "text": "Comenta que, como resultado de todo ello, las expectativas de inflación se mantienen altas e incluso han vuelto a subir como lo recogen algunos indicadores, y que las expectativas para la TPM se han ajustado al alza en el corto plazo, sugiriendo un adelantamiento de la normalización monetaria.",
+    "participant": "Enrique Marshall Rivera",
+    "year": 2011,
+    "label": "hawkish",
+    "score": 0.8059,
+    "date": "2011-04-12",
+    "formatted_date": "12 de abril, 2011"
+  },
+  {
+    "text": "En segundo lugar, menciona el efecto del plan para fortalecer la inversión en el crecimiento, porque puede contribuir a acelerar la inversión como también por el efecto expectativas que pueda generar y que incrementa el riesgo que el cierre de brechas sea más rápido.",
+    "participant": "Esteban Jadresic Marinovic",
+    "year": 2007,
+    "label": "dovish",
+    "score": -0.7289,
+    "date": "2007-03-15",
+    "formatted_date": "15 de marzo, 2007"
+  },
+  {
+    "text": "El Presidente señor Rodrigo Vergara consigna que en las últimas Reuniones se han expuesto diversos análisis sobre la incidencia de la indexación en el crecimiento de los salarios nominales. Por otra parte, que la brecha en el desempleo, aunque es baja, sigue aportando al crecimiento de los salarios.",
+    "participant": "Rodrigo Vergara Montes",
+    "year": 2015,
+    "label": "neutral",
+    "score": -0.0111,
+    "date": "2015-05-14",
+    "formatted_date": "14 de mayo, 2015"
   }
 ];

@@ -180,6 +180,48 @@ const scrollHint = document.getElementById('scrollHint');
 const heroEl = document.getElementById('hero');
 const heroTitle = document.querySelector('.hero-title');
 
+/* En algunos teléfonos la captura física puede ser mucho más ancha que el
+   viewport CSS por el DPR/zoom. El CSS ve el ancho lógico, pero el titular se
+   percibe grande en la pantalla. Ajustamos solo ese caso usando el ancho
+   lógico efectivo y dejamos desktop bajo control de CSS. */
+function syncHeroTitleType() {
+  const title = heroTitle?.querySelector('h1');
+  if (!title) return;
+  const dpr = Math.max(window.devicePixelRatio || 1, 1);
+  const effectiveWidth = window.innerWidth / dpr;
+  if (effectiveWidth <= 900) {
+    const px = THREE.MathUtils.clamp(effectiveWidth * 0.04, 16, 24);
+    title.style.setProperty('font-size', `${px}px`, 'important');
+    title.style.setProperty('line-height', '1.16', 'important');
+  } else {
+    title.style.removeProperty('font-size');
+    title.style.removeProperty('line-height');
+  }
+}
+syncHeroTitleType();
+function syncCompactObjectiveType() {
+  const title = document.getElementById('stageObjectiveTitle');
+  const paragraph = document.getElementById('stageObjectiveParagraph');
+  const dpr = Math.max(window.devicePixelRatio || 1, 1);
+  const effectiveWidth = window.innerWidth / dpr;
+  const compact = effectiveWidth <= 900 || window.innerHeight <= 760;
+  if (compact) {
+    const titlePx = THREE.MathUtils.clamp(effectiveWidth * 0.04, 15, 20);
+    const paragraphPx = THREE.MathUtils.clamp(effectiveWidth * 0.032, 14, 17);
+    title?.style.setProperty('font-size', `${titlePx}px`, 'important');
+    paragraph?.style.setProperty('font-size', `${paragraphPx}px`, 'important');
+    paragraph?.style.setProperty('line-height', '1.32', 'important');
+  } else {
+    title?.style.removeProperty('font-size');
+    paragraph?.style.removeProperty('font-size');
+    paragraph?.style.removeProperty('line-height');
+  }
+}
+syncCompactObjectiveType();
+window.addEventListener('resize', syncHeroTitleType);
+window.addEventListener('resize', syncCompactObjectiveType);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', syncHeroTitleType);
+
 let currentStage = 1;
 function setStage(stage) {
   if (stage === currentStage) return;
@@ -1070,6 +1112,9 @@ function applyDoorTextStyle() {
     p.style.lineHeight = '1.38';
     p.style.fontWeight = '500';
   }
+  /* Reaplica el modo compacto después de los estilos base: esta función se
+     ejecuta al cargar y en resize, y antes podía sobrescribir la escala móvil. */
+  syncCompactObjectiveType();
 }
 applyDoorTextStyle();
 
@@ -1434,6 +1479,12 @@ let doorLocalHeight = 0;
     if (!proceduralDoorMats.includes(m)) proceduralDoorMats.push(m);
   });
   doorModelGroup.add(model);
+  /* La portada es un lockup: la puerta debe existir desde el primer frame,
+     no esperar al primer cruce de ScrollTrigger. `animate()` la volverá a
+     sincronizar con doorFade, pero esta inicialización evita el estado
+     transitorio invisible que ocurría antes de que el primer trigger de
+     #stageObjective se evaluara. */
+  if (HERO_DOOR_LOCKUP) doorGroup.visible = true;
 }
 
 const bcchStoneLow = new THREE.Color('#2e3741');
@@ -1902,6 +1953,17 @@ loader.load('Puerta_bcch_v3.glb?v=16', (gltf) => {
   bcchDoorModel = model;
   fitDoorModelToStage(model);
   doorModelGroup.add(model);
+  /* El GLB llega después del primer frame: sus materiales nacen con
+     opacity 0 y el caché de materiales ya estaba "limpio". Invalidarlo
+     obliga al siguiente frame a aplicar el tono y la opacidad de portada,
+     en vez de esperar a que el usuario llegue al Acto 2. */
+  doorMatCache.vis = -1;
+  doorMatCache.colorT = -1;
+  doorMatCache.crossT = -1;
+  doorMatCache.scatter = -1;
+  doorMatCache.exitT = -1;
+  doorMatCache.fade = -1;
+  if (HERO_DOOR_LOCKUP) doorGroup.visible = true;
 }, undefined, (err) => {
   console.warn('No se pudo cargar Puerta_bcch_v3.glb; se usa la puerta procedural:', err);
 });
@@ -2171,9 +2233,13 @@ const pMat = new THREE.PointsMaterial({
      NormalBlending y alfa bajo el oro no conseguía imponerse al azul del
      fondo y TODA la nube se veía gris. La textura conserva RGB blanco y es
      el alfa el que dibuja el degradado (ver createParticleTexture), así que
-     aditivo no levanta halos negros. */
+     aditivo no levanta halos negros. La profundidad queda activa para que la
+     moneda y la puerta oculten los puntos que pasan por detrás. */
   blending: THREE.AdditiveBlending,
-  depthTest: false,
+  /* La nube también debe respetar la profundidad en la portada: los
+     fragmentos que orbitan por detrás de la moneda quedan ocultos por ella,
+     en vez de dibujarse encima como si fueran una textura plana. */
+  depthTest: true,
   depthWrite: false,
   fog: false,
 });
@@ -2556,29 +2622,64 @@ function pickPoint(cx, cy, radiusMul = 1) {
    (cursor o tarjeta) en lugar de quedar siempre pegado a la derecha, y se
    corrige para no salirse del viewport. En móvil se usa el layout inferior
    de la media query. */
+function fitQuotePanel() {
+  const panelEl = document.getElementById('quotePanel');
+  if (!panelEl) return;
+  const vp = getViewportSize();
+  const maxHeight = Math.max(180, vp.height - 24);
+  panelEl.style.maxHeight = `${maxHeight}px`;
+  panelEl.classList.remove('is-compact', 'is-ultra-compact');
+  if (panelEl.scrollHeight > maxHeight) panelEl.classList.add('is-compact');
+  if (panelEl.scrollHeight > maxHeight) panelEl.classList.add('is-ultra-compact');
+}
+
 function positionQuotePanel(anchor) {
   const panelEl = document.getElementById('quotePanel');
   if (!panelEl) return;
-  if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
-    panelEl.style.left = '';
-    panelEl.style.top = '';
-    panelEl.style.right = '';
-    return;
-  }
+  fitQuotePanel();
   const vp = getViewportSize();
-  const w = panelEl.offsetWidth || 380;
-  const h = panelEl.offsetHeight || 220;
-  const margin = 16;
-  const ax = anchor && typeof anchor.x === 'number' ? anchor.x : lastPointerX;
-  const ay = anchor && typeof anchor.y === 'number' ? anchor.y : lastPointerY;
-  let left = ax + 22;
-  let top = ay - h / 2;
-  if (left + w > vp.width - margin) left = ax - w - 22;
-  if (left < margin) left = margin;
-  top = THREE.MathUtils.clamp(top, margin, Math.max(margin, vp.height - h - margin));
-  panelEl.style.left = left + 'px';
-  panelEl.style.top = top + 'px';
+  const w = panelEl.offsetWidth || vp.width * 0.38;
+  const h = panelEl.offsetHeight || vp.height * 0.34;
+  const margin = Math.max(12, Math.min(vp.width, vp.height) * 0.025);
+  const gap = Math.max(10, Math.min(vp.width, vp.height) * 0.018);
+  const ax = THREE.MathUtils.clamp(
+    anchor && typeof anchor.x === 'number' ? anchor.x : lastPointerX,
+    0,
+    vp.width
+  );
+  const ay = THREE.MathUtils.clamp(
+    anchor && typeof anchor.y === 'number' ? anchor.y : lastPointerY,
+    0,
+    vp.height
+  );
+  const candidates = [
+    { name: 'right', left: ax + gap, top: ay - h / 2 },
+    { name: 'left', left: ax - w - gap, top: ay - h / 2 },
+    { name: 'below', left: ax - w / 2, top: ay + gap },
+    { name: 'above', left: ax - w / 2, top: ay - h - gap },
+  ];
+  const fits = (candidate) =>
+    candidate.left >= margin &&
+    candidate.top >= margin &&
+    candidate.left + w <= vp.width - margin &&
+    candidate.top + h <= vp.height - margin;
+  const chosen = candidates.find(fits) || candidates
+    .map((candidate) => ({
+      ...candidate,
+      overflow:
+        Math.max(0, margin - candidate.left) +
+        Math.max(0, margin - candidate.top) +
+        Math.max(0, candidate.left + w - vp.width + margin) +
+        Math.max(0, candidate.top + h - vp.height + margin),
+    }))
+    .sort((a, b) => a.overflow - b.overflow)[0];
+  const left = THREE.MathUtils.clamp(chosen.left, margin, Math.max(margin, vp.width - w - margin));
+  const top = THREE.MathUtils.clamp(chosen.top, margin, Math.max(margin, vp.height - h - margin));
+  panelEl.style.left = `${left}px`;
+  panelEl.style.top = `${top}px`;
   panelEl.style.right = 'auto';
+  panelEl.style.bottom = 'auto';
+  panelEl.dataset.placement = chosen.name;
 }
 
 function syncAxesMarkFocus(index) {
@@ -2606,22 +2707,9 @@ function openQuote(i, anchor) {
   tag.className = 'tag ' + (q.label || 'neutral');
   document.getElementById('qpWhen').textContent = q.formatted_date || q.date || 'Fecha no especificada';
   document.getElementById('qpText').textContent = '\u201C' + (q.text || 'Sin texto disponible') + '\u201D';
-  const sourceLink = document.getElementById('qpSource');
-  if (sourceLink) {
-    const sourceDate = q.formatted_date || q.date || q.year || 'fecha no especificada';
-    sourceLink.textContent = q.source ? `Fuente: ${q.source}` : `Contexto de maqueta · ${sourceDate}`;
-    sourceLink.href = q.source_url || '#stageActs';
-    if (q.source_url) {
-      sourceLink.target = '_blank';
-      sourceLink.rel = 'noreferrer';
-    } else {
-      sourceLink.removeAttribute('target');
-      sourceLink.removeAttribute('rel');
-    }
-  }
   document.getElementById('qpYear').textContent = q.year ? 'Año ' + q.year : 'Año no especificado';
-  /* Puntuación hawk/dov del clasificador. En maqueta: valor de referencia 0–1
-     determinístico (ver js/data/quotes.js); el dato real la reemplaza al llegar. */
+  /* Puntuación continua del clasificador real, conservada como señal
+     orientativa para la lectura del fragmento. */
   const scoreRow = document.getElementById('qpScore');
   if (scoreRow) {
     const sc = (typeof q.score === 'number') ? q.score : null;
@@ -2629,11 +2717,27 @@ function openQuote(i, anchor) {
       scoreRow.style.display = 'none';
     } else {
       scoreRow.style.display = 'flex';
-      document.getElementById('qpScoreBar').style.width = (THREE.MathUtils.clamp(sc, 0, 1) * 100).toFixed(0) + '%';
+      const scoreBar = document.getElementById('qpScoreBar');
+      const scoreMagnitude = THREE.MathUtils.clamp(Math.abs(sc), 0, 1) * 50;
+      scoreBar.style.width = scoreMagnitude.toFixed(0) + '%';
+      scoreBar.parentElement.classList.toggle('negative', sc < 0);
+      scoreBar.parentElement.classList.toggle('positive', sc > 0);
+      scoreBar.parentElement.classList.toggle('neutral', sc === 0);
       document.getElementById('qpScoreVal').textContent = sc.toFixed(2);
     }
   }
   const quotePanel = document.getElementById('quotePanel');
+  const tone = q.label || 'neutral';
+  const score = typeof q.score === 'number' ? q.score : 0;
+  const borderColor = tone === 'hawkish'
+    ? 'var(--color-gold)'
+    : tone === 'dovish'
+      ? 'var(--color-dovish)'
+      : 'rgba(223, 229, 240, 0.96)';
+  const borderWidth = 1.9 + Math.min(Math.abs(score), 1) * 1.4;
+  quotePanel.dataset.tone = tone;
+  quotePanel.style.setProperty('--quote-border-color', borderColor);
+  quotePanel.style.setProperty('--quote-border-width', `${borderWidth.toFixed(2)}px`);
   quotePanel.hidden = false;
   quotePanel.setAttribute('aria-hidden', 'false');
   quotePanel.classList.add('visible');
@@ -2739,6 +2843,11 @@ window.addEventListener('particle-act-focus', (event) => {
 const DOOR_MODE = (CONFIG.door && CONFIG.door.transition === 'doorway') ? 'doorway' : 'classic';
 if (DOOR_MODE === 'classic') document.body.classList.add('mode-classic');
 let crossT = 0;      // 0 = afuera de la puerta · 1 = dentro de la sala
+/* Factor que conserva el tamaño exacto de la puerta en el instante en que
+   empieza el cruce. Evita que el tope responsive del plano estable se
+   deshaga en el primer frame del dolly. */
+let doorCrossScaleHold = 1;
+let lastDoorCrossT = 0;
 /* Salida de La Sala hacia El Método. Importante: NO invierte `crossT` ni
    reabre la puerta en sentido contrario; solo disuelve sala/puerta y devuelve
    la cámara a la coreografía general para que los overlays posteriores queden
@@ -3250,6 +3359,14 @@ function animate() {
   /* puerta: acto 2 — fade sutil + parallax de frente (sin giro 360°) */
   let doorVisOpacity = doorFade;
   if (doorGroup.children.length > 0) {
+    /* El lockup de portada es un estado válido desde el primer frame. Si un
+       ScrollTrigger se refresca antes de que la página termine de medir sus
+       alturas, no debe convertir ese estado inicial en una puerta invisible.
+       El scroll sigue pudiendo apagarla después, fuera de este umbral. */
+    if (HERO_DOOR_LOCKUP && scatterProgress < 0.02 && exitT < 0.01) {
+      doorTarget = 1;
+      doorFade = Math.max(doorFade, 0.98);
+    }
     doorFade = frameDamp(doorFade, doorTarget, 0.12, frameDt);
     if (doorTarget === 0 && doorFade < 0.03) doorFade = 0;
     /* La Sala (b1): la puerta se DISUELVE en la luz cálida al cruzar el umbral
@@ -3300,13 +3417,36 @@ function animate() {
           1 - THREE.MathUtils.smoothstep(scatterProgress, 0.18, 0.88)
         )
       : 1;
-    doorGroup.scale.setScalar((0.94 + 0.06 * doorEase) * heroMul);
+    /* En La Reunión la puerta debe ser protagonista; el hero conserva su
+       escala contenida. `lockupMix` vale 1 en Stage 1 y 0 al entrar en Stage 2,
+       por eso esta transición no altera el tamaño de la portada. */
+    const meetingMul = HERO_DOOR_LOCKUP
+      ? THREE.MathUtils.lerp(1.55, 1, lockupMix)
+      : 1;
+    const baseDoorScale = (0.94 + 0.06 * doorEase) * heroMul * meetingMul;
+    /* Captura la escala ya limitada del plano de La Reunión antes de que
+       empiece el dolly. Sin este latch, al pasar crossT=0 el código volvía a
+       escribir la escala base y la puerta daba un salto de tamaño. */
+    if (crossT < 0.001) {
+      doorCrossScaleHold = 1;
+    } else if (lastDoorCrossT <= 0.001 && crossT > 0.001) {
+      doorCrossScaleHold = doorGroup.scale.x / Math.max(baseDoorScale, 1e-6);
+    }
+    if (crossT < lastDoorCrossT - 0.01) {
+      doorCrossScaleHold = 1;
+    }
+    doorGroup.scale.setScalar(baseDoorScale * doorCrossScaleHold);
+    lastDoorCrossT = crossT;
     /* TOPE DE PORTADA: el pórtico completo (≈9,75 m de alto) no cabe en un
        viewport bajo con el factor del lockup, y se recortaba arriba mientras
        la escalinata caía sobre el titular. Se proyecta la figura y se encoge
        SOLO durante el lockup (lockupMix) para que quepa entre el borde
        superior y el tope del titular (band.bottom, en px, cacheado). */
-    if (HERO_DOOR_LOCKUP && lockupMix > 0.001 && doorModel && doorLocalHeight > 0) {
+    /* El límite solo protege el plano estable de La Reunión. En cuanto
+       comienza el cruce (`crossT`), la cámara debe acercarse libremente a la
+       puerta; aplicar aquí el tope responsive encogía la puerta mientras el
+       lector atravesaba el umbral y rompía la animación. */
+    if (HERO_DOOR_LOCKUP && crossT < 0.01 && doorModel && doorLocalHeight > 0) {
       const vpFit = getViewportSnapshot();
       const worldH = doorLocalHeight * doorModelGroup.scale.y * doorGroup.scale.y;
       const dist = Math.max(camera.position.distanceTo(doorGroup.position), 0.1);
@@ -3314,12 +3454,22 @@ function animate() {
         (2 * dist * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)));
       _doorFitV.copy(doorGroup.position).project(camera);
       const cyPx = (-_doorFitV.y * 0.5 + 0.5) * vpFit.height;
-      const maxScreenH = 2 * Math.max(80, Math.min(
+      const heroMaxH = 2 * Math.max(80, Math.min(
         cyPx - vpFit.height * 0.02,
         (heroCoinFrame?.band?.bottom ?? vpFit.height * 0.72) - cyPx
       ));
+      /* En La Reunión la puerta crece, pero nunca puede ocupar casi todo un
+         viewport bajo: el texto necesita conservar su jerarquía y la cornisa
+         no debe salir por arriba. El 52% deja espacio para título y párrafo.
+         Interpolamos el tope durante la transición para evitar un salto. */
+      const effectiveVpWidth = vpFit.width / Math.max(window.devicePixelRatio || 1, 1);
+      /* Algunos móviles/tablets entregan un viewport CSS ancho pero muy bajo
+         al rotar. En ese caso el ancho por sí solo no detecta el modo compacto. */
+      const compactScene = effectiveVpWidth <= 900 || vpFit.height <= 760;
+      const meetingMaxH = vpFit.height * (compactScene ? 0.30 : 0.52);
+      const maxScreenH = THREE.MathUtils.lerp(meetingMaxH, heroMaxH, lockupMix);
       if (screenH > maxScreenH) {
-        doorGroup.scale.multiplyScalar(1 - lockupMix * (1 - maxScreenH / screenH));
+        doorGroup.scale.multiplyScalar(maxScreenH / screenH);
       }
     }
     /* La puerta se APOYA, no flota: el pivote (centro de las hojas) se pone
@@ -3789,9 +3939,20 @@ function animate() {
     const enterY = CONFIG.door.approachCamY ?? 0.62;
     const enterZ = CONFIG.door.approachCamZ ?? CONFIG.camera.z;
     const crossEase = THREE.MathUtils.smoothstep(crossEff, 0, 1);
+    /* Trayectoria humana en cuatro gestos: aproximación frontal, subida
+       breve sobre los escalones, cruce del umbral y estabilización dentro de
+       la sala. Antes y sólo se interpolaba Z con Y prácticamente fija, así
+       que la cámara parecía atravesar la puerta a media altura. */
+    const stairT = THREE.MathUtils.smoothstep(crossEff, 0.04, 0.38);
+    const landingT = THREE.MathUtils.smoothstep(crossEff, 0.38, 0.72);
+    const stairLift = THREE.MathUtils.lerp(
+      0,
+      0,
+      landingT
+    );
     camera.position.set(
       THREE.MathUtils.lerp(0, CONFIG.camera.x, crossEase),
-      THREE.MathUtils.lerp(enterY, CONFIG.door.roomCamY ?? 0.62, crossEase),
+      THREE.MathUtils.lerp(enterY, CONFIG.door.roomCamY ?? 0.62, crossEase) + stairLift,
       THREE.MathUtils.lerp(enterZ, CONFIG.door.roomCamZ ?? -0.5, crossEase)
     );
     if (roomExitT > 0.001) camera.position.lerp(choreo.pos, roomExitT);
@@ -4068,6 +4229,9 @@ function closeQuotePanel() {
   if (focusReturn.card) { focusReturn.card.focus({ preventScroll: true }); focusReturn.card = null; }
 }
 document.getElementById('quotePanelClose').addEventListener('click', closeQuotePanel);
+window.addEventListener('resize', () => {
+  if (quotePanelEl.classList.contains('visible')) positionQuotePanel();
+});
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && quotePanelEl.classList.contains('visible')) closeQuotePanel();
 });
@@ -4685,18 +4849,14 @@ if (DOOR_MODE === 'doorway') {
   const roomTitle = document.getElementById('roomTitle');
   const roomLead = document.getElementById('roomLead');
   const roomSub = document.getElementById('roomSub');
-  const roomHint = document.getElementById('roomHint');
-  /* En pantallas táctiles no hay "cursor": el hint explica el tap directo. */
-  if (roomHint && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
-    /* En táctil el primer toque ya fija el panel (no hay hover previo);
-       lo que hay que explicar es cómo se cierra. */
-    roomHint.textContent = 'Toca una voz para leer lo que dijo · toca el fondo para cerrar';
-    /* La leyenda del mapa de intervenciones habla de "clic". */
+  /* La leyenda del mapa se adapta al tacto, aunque La Sala use una sola
+     línea de instrucción junto a la descripción de cada partícula. */
+  if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
     const axesTrace = document.querySelector('.axes-reading-trace');
     if (axesTrace) axesTrace.textContent = 'toca un punto → fecha · voz · fragmento';
   }
   const roomContainer = document.getElementById('stageRoomContainer');
-  if (roomTitle && roomLead && roomSub && roomHint) {
+  if (roomTitle && roomLead && roomSub) {
     /* La banda de sombra tras el copy (#stageRoomContainer::before) vive en
        la MISMA línea de tiempo que el texto: aparece con el título y se
        apaga con el hint, que es el último en irse. Así, cuando el sticky se
@@ -4743,19 +4903,14 @@ if (DOOR_MODE === 'doorway') {
          hint es el último en irse (279→285), junto con la sombra, justo
          antes de soltar el sticky. Si se vuelve a cambiar `+=250%` o el
          alto de la sección, hay que mover TODOS estos offsets a la vez. */
-      .fromTo(scrim, { v: 0 }, { v: 1, duration: 16 * V, ease: 'none', onUpdate: applyScrim }, 180 * V)
-      .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 183 * V)
-      .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 16 * V, ease: 'none' }, 193 * V)
-      .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 14 * V, ease: 'none' }, 203 * V)
-      .fromTo(roomHint,  { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 12 * V, ease: 'none' }, 213 * V)
+      .fromTo(scrim, { v: 0 }, { v: 1, duration: 16 * V, ease: 'none', onUpdate: applyScrim }, 72 * V)
+      .fromTo(roomTitle, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 14 * V, ease: 'none' }, 78 * V)
+      .fromTo(roomLead,  { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 14 * V, ease: 'none' }, 90 * V)
+      .fromTo(roomSub,   { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 14 * V, ease: 'none' }, 104 * V)
       .to(roomTitle, { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 255 * V)
       .to(roomLead,  { opacity: 0, y: -14, duration: 10 * V, ease: 'none' }, 259 * V)
       .to(roomSub,   { opacity: 0, y: -12, duration: 10 * V, ease: 'none' }, 263 * V)
-      /* La sombra baja a la mitad cuando ya solo queda el hint (menos texto,
-         menos base) y se apaga del todo con él, antes de que la sección
-         suelte el sticky (285vh = 1.0). */
       .to(scrim, { v: 0.5, duration: 10 * V, ease: 'none', onUpdate: applyScrim }, 263 * V)
-      .to(roomHint,  { opacity: 0, y: -10, duration: 6 * V, ease: 'none' }, 279 * V)
       .to(scrim, { v: 0, duration: 6 * V, ease: 'none', onUpdate: applyScrim }, 279 * V);
   }
 }

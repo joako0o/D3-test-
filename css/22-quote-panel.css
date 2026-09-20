@@ -1,104 +1,83 @@
 /* 22-quote-panel.css
-   Panel flotante de cita del enjambre de particulas.
-   Extraido de index.html — ver css/README.md para el orden de carga. */
+   Panel flotante de cita del enjambre de partículas. */
 
-/* ─── ENJAMBRE DE PARTÍCULAS · panel de cita (Frosted Glass & Multi-Channel Motion) ─── */
 #quotePanel {
   position: fixed;
-  right: 24px;
-  top: 50%;
-  z-index: 60; /* sobre el canvas y .stage-quotes para que nada lo tape */
-  width: min(380px, 88vw);
-  background: rgba(10, 14, 26, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 106, 0.18);
-  border-radius: 14px;
-  padding: 22px 24px;
+  z-index: 60;
+  width: min(38vw, 28rem);
+  max-width: calc(100vw - 2rem);
+  box-sizing: border-box;
+  padding: clamp(0.8rem, 1.7vw, 1.25rem) clamp(0.9rem, 1.9vw, 1.4rem);
+  background: linear-gradient(135deg, rgba(15, 21, 37, 0.96), rgba(7, 11, 23, 0.93));
+  backdrop-filter: blur(1.25rem);
+  -webkit-backdrop-filter: blur(1.25rem);
+  border: 1px solid var(--quote-border-color, rgba(255, 255, 255, 0.28));
+  border-left-width: var(--quote-border-width, 1px);
+  border-radius: 0.95rem;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(calc(-50% + 14px)) scale(0.96);
-  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.35s ease;
-  box-shadow: 0 15px 50px rgba(0,0,0,0.7), 0 0 20px rgba(255, 215, 106, 0.05);
-  box-sizing: border-box;
+  transform: translate(0, 0.6rem) scale(0.97);
+  transform-origin: center;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.28s ease;
+  box-shadow: 0 1.2rem 3.8rem rgba(0, 0, 0, 0.62), 0 0 1.6rem rgba(255, 215, 106, 0.06);
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
 }
 #quotePanel.visible {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(-50%) scale(1);
-  box-shadow: 0 20px 70px rgba(0,0,0,0.8), 0 0 35px rgba(255, 215, 106, 0.12);
+  transform: translate(0, 0) scale(1);
+  box-shadow: 0 1.5rem 4.5rem rgba(0, 0, 0, 0.72), 0 0 2rem rgba(255, 215, 106, 0.1);
 }
-/* Móvil: el layout inferior vive en 20-breakpoints.css, pero ese archivo
-   carga ANTES que este y el `translateY(-50%)` de arriba lo pisaba: el panel,
-   anclado con bottom:20px, subía además media altura y quedaba flotando a
-   mitad de pantalla tapando el gráfico. Se reafirma aquí, después. */
-@media (max-width: 768px) {
-  #quotePanel { transform: translateY(16px) scale(0.96); }
-  #quotePanel.visible { transform: translateY(0) scale(1); }
-}
-#quotePanel .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-#quotePanel .who { font-weight: 600; font-size: var(--fs-body); color: var(--color-text-primary); }
-#quotePanel .when { font-size: var(--fs-small); opacity: 0.6; }
-#quotePanel .tag { font-size: var(--fs-micro); letter-spacing: 2px; text-transform: uppercase; padding: 2px 9px; border-radius: 999px; }
-#quotePanel .tag.hawkish { background: rgba(255,215,106,0.16); color: var(--color-gold); }
-#quotePanel .tag.dovish  { background: rgba(138,180,248,0.16); color: var(--color-dovish); }
-#quotePanel .tag.neutral { background: rgba(255,255,255,0.1);  color: #cfd6e4; }
-#quotePanel .txt { font-size: var(--fs-small); line-height: 1.75; color: var(--color-text-primary); }
-#quotePanel .score { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
-#quotePanel .score-bar { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.12); overflow: hidden; }
-#quotePanel .score-bar i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--color-gold-dim), var(--color-gold)); }
-#quotePanel .score-val { font-size: var(--fs-micro); font-variant-numeric: tabular-nums; color: var(--color-text-primary); min-width: 30px; text-align: right; }
-#quotePanel .score-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-faint); }
-#quotePanel .year { margin-top: 10px; font-size: var(--fs-micro); letter-spacing: 1px; text-transform: uppercase; opacity: 0.62; /* AA */ }
-#quotePanel .source-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  color: var(--color-gold);
-  font-size: var(--fs-micro);
-  letter-spacing: 0.5px;
-  text-decoration: none;
-  opacity: 0.78;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-#quotePanel .source-link::before { content: '↗'; font-size: 12px; }
-#quotePanel .source-link:hover,
-#quotePanel .source-link:focus-visible { opacity: 1; transform: translateX(2px); }
-#quotePanel .close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--color-text-primary); font-size: var(--fs-body); cursor: pointer; opacity: 0.55; transition: opacity 0.2s, transform 0.2s; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
-#quotePanel .close:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+#quotePanel .head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.45rem; padding-right: 2rem; }
+#quotePanel .who { font-weight: 600; font-size: clamp(0.9rem, 1.35vw, 1.2rem); line-height: 1.15; color: var(--color-text-primary); }
+#quotePanel .when { font-size: clamp(0.72rem, 1vw, 0.9rem); opacity: 0.68; }
+#quotePanel .tag { font-size: clamp(0.62rem, 0.8vw, 0.72rem); letter-spacing: 0.12em; text-transform: uppercase; padding: 0.25em 0.7em; border-radius: 999px; }
+#quotePanel .tag.hawkish { background: rgba(255, 215, 106, 0.16); color: var(--color-gold); }
+#quotePanel .tag.dovish { background: rgba(138, 180, 248, 0.16); color: var(--color-dovish); }
+#quotePanel .tag.neutral { background: rgba(255, 255, 255, 0.1); color: #cfd6e4; }
+#quotePanel .txt { font-size: clamp(0.78rem, 1.05vw, 0.98rem); line-height: 1.48; color: var(--color-text-primary); }
+#quotePanel.is-compact .txt { font-size: clamp(0.74rem, 0.95vw, 0.9rem); line-height: 1.36; }
+#quotePanel.is-ultra-compact .txt { font-size: clamp(0.7rem, 0.86vw, 0.82rem); line-height: 1.25; }
+#quotePanel.is-compact { padding-block: clamp(0.65rem, 1.2vw, 0.9rem); }
+#quotePanel.is-ultra-compact { padding-block: clamp(0.55rem, 1vw, 0.75rem); }
+#quotePanel .score { display: flex; align-items: center; gap: 0.65rem; margin-top: 0.7rem; }
+#quotePanel .score-bar { position: relative; flex: 1; height: 0.2rem; border-radius: 2rem; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+#quotePanel .score-bar::before { content: ''; position: absolute; inset: -0.18rem auto -0.18rem 50%; width: 0.08rem; background: rgba(255, 255, 255, 0.58); z-index: 1; }
+#quotePanel .score-bar i { position: absolute; top: 0; left: 50%; display: block; width: 0; height: 100%; border-radius: 2rem; background: var(--color-gold); transform-origin: left center; }
+#quotePanel .score-bar.negative i { transform: translateX(-100%); background: var(--color-dovish); }
+#quotePanel .score-bar.positive i { background: var(--color-gold); }
+#quotePanel .score-bar.neutral i { background: #cfd6e4; }
+#quotePanel .score-val { font-size: clamp(0.72rem, 0.9vw, 0.85rem); font-variant-numeric: tabular-nums; color: var(--color-text-primary); min-width: 2.2em; text-align: right; }
+#quotePanel .score-label { font-size: clamp(0.58rem, 0.72vw, 0.68rem); letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-faint); white-space: nowrap; }
+#quotePanel .year { margin-top: 0.55rem; font-size: clamp(0.62rem, 0.78vw, 0.72rem); letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; }
+#quotePanel .close { position: absolute; top: clamp(0.45rem, 1vw, 0.75rem); right: clamp(0.45rem, 1vw, 0.75rem); width: clamp(2rem, 3.2vw, 2.35rem); height: clamp(2rem, 3.2vw, 2.35rem); display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; border-radius: 0.55rem; color: var(--color-text-primary); font-size: clamp(1.1rem, 1.7vw, 1.4rem); cursor: pointer; opacity: 0.62; transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease; }
+#quotePanel .close:hover, #quotePanel .close:focus-visible { opacity: 1; background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 215, 106, 0.3); }
 #quotePanel .close:active { transform: scale(0.95); }
+#quotePanel .close:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
 
-/* Modo 'classic' (puerta anterior): el stage de La Sala no existe en ese modo */
+@media (max-width: 768px) {
+  #quotePanel {
+    width: min(78vw, 25rem);
+    max-width: calc(100vw - 1.5rem);
+    max-height: calc(100dvh - 1.5rem);
+    padding: clamp(0.7rem, 3vw, 1rem) clamp(0.8rem, 3.5vw, 1.2rem);
+  }
+  #quotePanel .head { gap: 0.4rem; margin-bottom: 0.35rem; }
+  #quotePanel .who { font-size: clamp(0.82rem, 3.7vw, 1.08rem); }
+  #quotePanel .when { font-size: clamp(0.68rem, 2.7vw, 0.82rem); }
+  #quotePanel .txt { font-size: clamp(0.74rem, 3.25vw, 0.9rem); line-height: 1.38; }
+  #quotePanel .score { margin-top: 0.5rem; gap: 0.45rem; }
+  #quotePanel .score-label { font-size: clamp(0.5rem, 2vw, 0.62rem); letter-spacing: 0.08em; }
+  #quotePanel .year { margin-top: 0.4rem; font-size: clamp(0.58rem, 2.2vw, 0.68rem); }
+  #quotePanel.is-compact .txt { font-size: clamp(0.68rem, 2.9vw, 0.82rem); line-height: 1.27; }
+  #quotePanel.is-ultra-compact .txt { font-size: clamp(0.64rem, 2.6vw, 0.76rem); line-height: 1.18; }
+}
+
 body.mode-classic #stageRoom { display: none; }
-
 #canvas { cursor: grab; }
 #canvas.particle-hover { cursor: pointer; }
 
-
-/* Mismo criterio táctil / transparencia reducida que el bloque de
-   20-breakpoints.css, pero reafirmado aquí porque este archivo carga después
-   y el blur base de #quotePanel vive arriba. El desenfoque de 20 px corre
-   justo sobre La Sala, donde más trabaja la GPU; el panel ya era 88–92 %
-   opaco, así que se ve igual sin él (se sube ligeramente la opacidad). */
 @media (hover: none) and (pointer: coarse), (prefers-reduced-transparency: reduce) {
-  #quotePanel {
-    background: rgba(10, 14, 26, 0.95);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}
-
-  @supports (height: 100dvh) {
-  .hero, .stage-hook,
-  .pipeline-pin-wrapper, .timeline-pin-wrapper {
-    min-height: 100dvh;
-  }
-  .pipeline-pin-wrapper, .timeline-pin-wrapper { max-height: 100dvh; }
-  .sticky-container, .room-container { height: 100dvh !important; }
-  /* 100vh en móvil usa el viewport GRANDE (barra de URL plegada), así que
-     el pin se alarga por debajo de lo visible. 100dvh lo ajusta en tiempo
-     real a la barra de URL sin dejar un salto ni recortar el pin. */
-  .pipeline-pin-wrapper { height: 100dvh; }
-  .timeline-pin-wrapper { min-height: 100dvh; }
+  #quotePanel { background: linear-gradient(135deg, rgba(15, 21, 37, 0.98), rgba(7, 11, 23, 0.98)); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }

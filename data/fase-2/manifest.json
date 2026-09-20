@@ -1,0 +1,34 @@
+{
+  "version": "proyecto_esencial_v1",
+  "modelo_formal": "W+C+600",
+  "periodo": [
+    2005,
+    2015
+  ],
+  "commit_historico_pre_condensacion": "7aa63cc",
+  "sha256": {
+    "README.md": "f7c37a46c2f0fd9ae1ad1c407bedc4a5104db24ce93f8c71d374b81609dd44ec",
+    "requirements.txt": "1f434dbc7b26cd8ba04295593753f98a6e1fc4808f624d3f04b46e411d2b8862",
+    "scripts/modelo_final.py": "8a76abb1a9bdf262ee0d13ac6b9c7d196eee3b537058959174d3100f1c426db9",
+    "data/analisis_factorial.json": "5a31991659b4af8664222b7ebb023741c3cad68239d51f7e4441ebbc03c8fa44",
+    "data/benchmark_modelos.csv": "0e94eb1dd87188f6f95a0eadce6797a378c7d2b144030bd124078be9e4820653",
+    "data/benchmark_modelos.json": "5d136ecef404878b08b6e902799762d06d3229900b16977bc4bc0ffc750e158a",
+    "data/corpus_bcch_2005_2015.csv": "6ecf9cc07c2200e75acb6aa73d978e72e5a7aa45d03af16da5d8f913f1c436ac",
+    "data/entrenamiento_wc600.csv": "573bea960318d4e1a58cb92f69f93708385ac0166570c2be7cada01f2063d0a2",
+    "data/evaluacion_ciega_gold.csv": "7bed0b10c13d94e3b54d85f3f6ab7c6da6686c0e2fb9212ebd88efad1879b9d4",
+    "data/predicciones_evaluacion_ciega.csv": "919b3d0b1b4b5a79f8e492c0889989ae7ed0a8d6c7ac0148c9fcce98f556d0db",
+    "data/resultados_evaluacion_ciega.json": "1aadd083a4c411de021a0160251c06c13c9fa79ca1e576658c60c13b21784f55",
+    "scripts/analisis_resultados.py": "421c2fe8b3776c8b42188aa88261acdc96e28ee9899590dbdaa2153a4c8b9b53",
+    "data/README.md": "1344456eb5544092d51efd1ef86a2ca53bdbe321d8be2f308ae6574642b9a9a7",
+    "data/actores_metadata.csv": "e4c57ff710983ce4f2416289ad788a6ce404c7ac6033ed54d8a472f93f5f34bf",
+    "data/revision_votos_actores.csv": "99129ef26144683c1fb4a728160fac46f3517679e6e0c791db5ae1e5c4a80f8f",
+    "scripts/preparar_datos_web.py": "3bb3f937bc15045accbb275f09f29446899e6d409df13ee5566df1908f827ab7",
+    "docs/CODEBOOK.md": "c41cebf74ea73e57c48fae2c8606e5b555dc17ff1c65608fcf17d362dbbc39cf",
+    "docs/METODOLOGIA_Y_BENCHMARK.md": "2cbe646434ed01913e7f29351dc10e406619c37b3241e16d89d995955ec505fe",
+    "docs/RESULTADOS_LIMITACIONES.md": "9df7b5447dbb2b9b51b7926420442ed6f148c5bf985fccade9448eb9f43d1a41"
+  },
+  "verificaciones": {
+    "predicciones_ciegas_reproducidas_por_modelo_final": "300/300 en cada uno de los cinco miembros y voto final",
+    "prueba_smoke": "hawkish y dovish correctamente separados"
+  }
+}

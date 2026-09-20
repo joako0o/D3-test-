@@ -65,7 +65,10 @@ export const FIGURE_DEFS = [
        bounding box, la peana quedaba corrida sobre el pedestal. Se centra por
        la huella. */
     centerOn: 'base',
-    scale: 1.15,
+    /* La figura completa debe respirar entre el borde superior y el copy
+       de La Sala: 1.00 conserva presencia de retablo sin cortar la cabeza
+       en portátiles bajos. */
+    scale: 1.00,
     color: 0xffd76a,
     /* Acabado PIEDRA mate (limestone): la figura no compite con la moneda
        dorada del hero. `applyModel` respeta estos valores en vez de forzar
