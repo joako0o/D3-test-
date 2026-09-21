@@ -1,6 +1,8 @@
 # In the Room Where Monetary Policy Happens
 
-Exploración interactiva de 16 años de reuniones de política monetaria en Chile (2000-2015). Un scrollytelling que combina datos textuales con indicadores macroeconómicos tradicionales.
+Exploración interactiva de **11 años (2005–2015) de actas de las Reuniones de Política Monetaria del Banco Central de Chile**: 9.725 intervenciones y 132 reuniones, clasificadas en hawkish / dovish / neutral con un ensamble de cinco modelos lineales sobre TF-IDF. Un scrollytelling que combina datos textuales con indicadores macroeconómicos tradicionales.
+
+La pieza tiene dos capas de datos y no las mezcla: el **corpus** (9.725 intervenciones, 132 reuniones, 55 actores) sostiene las cifras, y la **muestra** (99 fragmentos de 37 participantes, balanceados 33/33/33) es lo que el lector puede abrir y verificar uno por uno. Que la muestra no reproduzca la proporción del corpus —un 9,2% de las intervenciones del corpus es direccional— se dice en pantalla, no se esconde.
 
 ## Stack
 
@@ -16,6 +18,7 @@ Exploración interactiva de 16 años de reuniones de política monetaria en Chil
 npm start            # servidor estático en http://localhost:8000 (regenera CSS y JS)
 npm run build:css    # rehace css/bundle.css a partir de css/*.css (lo corre npm start)
 npm run build:js     # bundlea js/main.js + three.js en js/app.js (lo corre npm start)
+npm run build:data   # regenera data/web/resumen.json desde los CSV de data/fase-2/
 npm run check        # arranca el sitio fuera del navegador y avisa si algo revienta
 npm run shots        # capturas reales de cada sección (necesita npm start)
 npm run hero:check   # mide la portada en 12 viewports y falla si la moneda pisa el título
@@ -99,7 +102,7 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 
 | Capa | Dónde | Qué es |
 |---|---|---|
-| **Datos** | `js/data/quotes.js` | Las 99 citas. Script clásico, publica `window.QUOTES`. |
+| **Datos** | `js/data/quotes.js`, `data/web/resumen.json` | La muestra editorial (99 citas, script clásico `window.QUOTES`) y los agregados del corpus (JSON derivado, ver `data/web/README.md`). |
 | **Configuración** | `js/core/config.js` | Todos los números de la escena. Ni una línea de lógica. |
 | **Funciones puras** | `js/data/topics.js`, `js/core/utils.js` | Sin DOM, sin Three.js. Testables tal cual. |
 | **Entorno** | `js/core/viewport.js` | El tamaño del lienzo. Lee el DOM, nada más. |
@@ -128,7 +131,8 @@ Cinco capas. La regla es que cada una solo puede depender de las de arriba.
 │   │   ├── config.js         · cámara, luces, moneda, puerta, órbitas, La Sala, HERO
 │   │   ├── interaction-state.js · el ÚNICO puente entre las secciones DOM y la escena 3D
 │   │   ├── viewport.js       · getViewportSize() / isCompactWidth(), el tamaño del lienzo
-│   │   └── utils.js          · particleRandom, clamp, getQuoteAxisSentiment (puros)
+│   │   ├── web-data.js       · loadWebData(): los agregados de data/web/, cacheados y sin rechazar
+│   │   └── utils.js          · particleRandom, clamp, getQuoteAxisSentiment, sampleYearWindow (puros)
 │   ├── scene/
 │   │   ├── figures.js        · sistema de figuras (carga GLB, apila sobre pedestal, placeholders)
 │   │   └── build-door.js     · puerta BCCh procedural: respaldo si el GLB no carga (port del .py de Blender)
@@ -985,18 +989,46 @@ sonda lo medía, así que leía los valores del relato en curso y no los suyos.)
 
 ## Secciones del scrollytelling
 
-1. **Hero** — Título con moneda 3D flotante
-2. **Puerta** — Transición hacia el interior del Banco Central
-3. **Hook** — "¿Qué dice el acta?"
-4. **Ejes + Contadores** — Sentimiento hawkish/dovish y estadísticas
-5. **Metodología** — Pipeline de procesamiento de texto a datos
-6. **Timeline** — Orientación de política monetaria en el tiempo
-7. **Citas** — Frases destacadas de los participantes
-8. **Cierre** — Conclusión del proyecto
+Orden real de `index.html`, con el kicker que ve el lector (`id` en paréntesis):
+
+1. **Hero** (`#hero`) — la moneda y la puerta.
+2. **La Reunión** (`#stageObjective`) — qué es una RPM y que de ahí sale un acta.
+3. **La Sala** (`#stageRoom`) — el acta contiene más de lo que parece.
+4. **El Método** (`#stageHook`) — el acta se convierte en señales.
+5. **Mapa de intervenciones** (`#stageAxes`) — el plano factual en D3.
+6. **El lenguaje cambia** (`#stageWordEvolution`) — el vocabulario que se desplaza.
+7. **Las voces** (`#stageVoices`) — quién habla, cuándo y con qué señales.
+8. **El navegador de actas** (`#stageActs`) — de la señal a la fuente.
+9. **Alcance de los datos** (`#stageCounters`) — las dos escalas: corpus y muestra.
+10. **Metodología** (`#stagePipeline`) — fuente, criterio, clasificación, trazabilidad.
+11. **Índice por año** (`#stageTimeline`) — la serie anual de la muestra.
+12. **Epílogo** (`#stageQuotes`) y **cierre** (`#stageClosing`).
+
+Pendiente de decisión (no de código): el reordenamiento de actos que propone
+`docs/NARRATIVA.md` y la portada de Resultados. Los kickers visibles ya no
+llevan número de acto hasta que ese esquema esté cerrado.
 
 ## Datos
 
-Los datos son preliminares (maquetación). El dataset real proviene de transcripciones de reuniones de política monetaria del Banco Central de Chile.
+Dos capas, generadas por scripts y nunca escritas a mano en el HTML:
+
+| Capa | Fuente | Generador | Salida |
+|---|---|---|---|
+| **Muestra editorial** | `data/fase-2/candidatos-*.csv` | `scripts/build-particle-quotes.py` | `js/data/quotes.js` (→ `window.QUOTES`, 99 fragmentos) |
+| **Agregados del corpus** | `data/fase-2/resultados/**` + `actores_metadata.csv` | `scripts/build-web-data.py` | `data/web/resumen.json` + `manifest.json` |
+
+El corpus es real, no maqueta: 9.725 intervenciones de 132 reuniones entre 2005
+y 2015, con la clasificación del modelo `W+C+600` (ensamble de cinco
+clasificadores lineales sobre TF-IDF de palabra y carácter, 1.596
+intervenciones usadas en entrenamiento y 300 reservadas como evaluación
+ciega). La procedencia —commit de `joako0o/FASE_2` y `sha256` de cada archivo
+de entrada y salida— vive en `data/fase-2/manifest.json` y
+`data/web/manifest.json`. El detalle está en `data/web/README.md` y en
+`data/fase-2/README.md`.
+
+**Regla:** ningún número del corpus se escribe a mano en `index.html`. Va como
+`<span data-corpus-stat="reuniones">132</span>` (respaldo sin red) y lo hidrata
+`js/main.js` desde el agregado; `npm run check` falla si los dos divergen.
 
 ## Licencia
 

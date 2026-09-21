@@ -14,7 +14,7 @@ import { pinQuote, axesState, focusReturn } from '../core/interaction-state.js';
 import { getViewportSize } from '../core/viewport.js?v=2';
 /* clamp llega de utils.js: se usaba THREE.MathUtils.clamp por costumbre, pero
    una sección de D3 no tiene por qué arrastrar Three.js para acotar un número. */
-import { clamp, getQuoteAxisSentiment } from '../core/utils.js';
+import { clamp, getQuoteAxisSentiment, sampleYearWindow } from '../core/utils.js';
 
 export function initD3Axes({ quotes, openQuote }) {
   const container = document.getElementById('d3-canvas');
@@ -46,8 +46,12 @@ export function initD3Axes({ quotes, openQuote }) {
   const innerW = width - margin.left - margin.right;
   const innerH = height - margin.top - margin.bottom;
 
+  /* La ventana sale de la muestra (2005–2015), no de una constante escrita a
+     mano: antes el eje reservaba un cuarto de su ancho a años sin un solo dato
+     y los 99 puntos se apiñaban en el resto. */
+  const sampleWindow = sampleYearWindow(quotes);
   const xScale = d3.scaleTime()
-    .domain([new Date(2000, 0, 1), new Date(2015, 11, 31)])
+    .domain([new Date(sampleWindow.start, 0, 1), new Date(sampleWindow.end, 11, 31)])
     .range([margin.left, width - margin.right]);
 
   const yScale = d3.scaleLinear()
@@ -91,10 +95,10 @@ export function initD3Axes({ quotes, openQuote }) {
     .attr('y1', axisY).attr('y2', axisY);
 
   /* Puntos de dato nítidos en SVG. El enjambre 3D queda como atmósfera; este
-     plano es la lectura precisa de las 99 intervenciones dentro del rango
-     2000–2015 y el radio recupera el score de orientación. */
-  const domainStart = new Date(2000, 0, 1).getTime();
-  const domainEnd = new Date(2015, 11, 31).getTime();
+     plano es la lectura precisa de las intervenciones dentro de la ventana de
+     la muestra y el radio recupera el score de orientación. */
+  const domainStart = new Date(sampleWindow.start, 0, 1).getTime();
+  const domainEnd = new Date(sampleWindow.end, 11, 31).getTime();
   const axisQuotes = quotes
     .map((q, index) => ({ q, index, date: new Date(q.date) }))
     .filter(({ date }) => date.getTime() >= domainStart && date.getTime() <= domainEnd);

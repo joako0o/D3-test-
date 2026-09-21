@@ -347,6 +347,94 @@ const orphanIds = [
 ];
 checks.push([`aria-labelledby/describedby sin destino: ${orphanIds.join(', ') || 'ninguno'}`, orphanIds.length === 0]);
 
+/* ── 5c. Coherencia entre lo que dice el HTML y el agregado del corpus ──
+   La pieza se contradecía a sí misma sin que ningún test lo notara: el
+   #stageCounters decía 16 años, 2000–2015, 182 reuniones y 17 participantes,
+   mientras el dataset tenía 11 años, 2005–2015, 132 reuniones y 37 voces. Los
+   números estaban escritos a mano en el HTML y el JS solo reescribía dos de
+   los cuatro, así que la sección que existe para avisar del tamaño de la
+   muestra se equivocaba en su propio dato, en la misma pantalla.
+
+   Ahora los del corpus salen de `data/web/resumen.json` (ver
+   scripts/build-web-data.py) y este bloque vigila las tres formas en que eso
+   puede volver a romperse: que el respaldo escrito en el HTML se desincronice
+   del agregado, que los contadores apunten a otro número, y que reaparezca
+   una cifra de la maqueta vieja. */
+const resumenPath = path.join(ROOT, 'data/web/resumen.json');
+if (!fs.existsSync(resumenPath)) {
+  checks.push(['data/web/resumen.json existe (corre: python3 scripts/build-web-data.py)', false]);
+} else {
+  const meta = JSON.parse(fs.readFileSync(resumenPath, 'utf8')).meta || {};
+  const htmlRaw = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  /* Los comentarios del HTML hablan de los números viejos a propósito
+     (documentan qué decía la maqueta): no cuentan como resto. */
+  const html = htmlRaw.replace(/<!--[\s\S]*?-->/g, '');
+  const fmt = (value) => Number(value).toLocaleString('es-CL');
+  const STAT = {
+    anios: meta.n_anios,
+    periodo: `${meta.periodo?.[0]}–${meta.periodo?.[1]}`,
+    intervenciones: meta.n_intervenciones,
+    reuniones: meta.n_reuniones,
+    actores: meta.n_actores,
+    direccionales: meta.n_direccionales,
+    hawkish: meta.n_hawkish,
+    dovish: meta.n_dovish,
+    neutrales: meta.n_neutral,
+    relevantes: meta.n_relevantes,
+    entrenamiento: meta.n_entrenamiento,
+    ciegas: meta.n_evaluacion_ciega,
+    acuerdo: meta.acuerdo_unanime_pct,
+  };
+
+  const desalineados = [];
+  for (const [, clave, texto] of html.matchAll(/data-corpus-stat="([a-z_]+)"[^>]*>([^<]*)</g)) {
+    const esperado = STAT[clave];
+    if (esperado === undefined) {
+      desalineados.push(`${clave} (clave sin equivalente en el agregado)`);
+      continue;
+    }
+    const valor = typeof esperado === 'number' ? fmt(esperado) : String(esperado);
+    if (texto.trim() !== valor) desalineados.push(`${clave}: html "${texto.trim()}" vs agregado "${valor}"`);
+  }
+  checks.push([
+    `huecos data-corpus-stat alineados con el agregado${desalineados.length ? ` → ${desalineados.join('; ')}` : ''}`,
+    desalineados.length === 0,
+  ]);
+
+  const targets = [...html.matchAll(/data-target="(\d+)"/g)].map((m) => Number(m[1]));
+  checks.push([
+    `contadores del corpus: html ${targets[0]} años / ${targets[1]} reuniones vs agregado ${meta.n_anios} / ${meta.n_reuniones}`,
+    targets[0] === meta.n_anios && targets[1] === meta.n_reuniones,
+  ]);
+
+  const LEGADO = [
+    '182 reuniones',
+    '16 años',
+    '2000–2015',
+    '2000-2015',
+    '17 participantes',
+    'dieciséis años',
+    'few-shot',
+    'modelo de lenguaje',
+  ];
+  const restos = LEGADO.filter((frase) => html.includes(frase));
+  checks.push([`index.html sin cifras de la maqueta vieja (${restos.join(', ') || 'ninguna'})`, restos.length === 0]);
+
+  /* Y el camino real: el loader tiene que haber hidratado el DOM en jsdom. */
+  const huecos = [...w.document.querySelectorAll('[data-corpus-stat]')];
+  const sinHidratar = huecos.filter((el) => {
+    const esperado = STAT[el.dataset.corpusStat];
+    const valor = typeof esperado === 'number' ? fmt(esperado) : String(esperado);
+    return el.textContent.trim() !== valor;
+  });
+  checks.push([
+    `data/web/resumen.json hidrata el DOM (${huecos.length - sinHidratar.length}/${huecos.length} huecos)${
+      sinHidratar.length ? ` → ${sinHidratar.map((el) => el.dataset.corpusStat).join(', ')}` : ''
+    }`,
+    huecos.length > 0 && sinHidratar.length === 0,
+  ]);
+}
+
 for (const [label, ok] of checks) {
   console.log(`${ok ? '  ok  ' : ' FALLA'} ${label}`);
   if (!ok) errors.push('comprobación fallida: ' + label);

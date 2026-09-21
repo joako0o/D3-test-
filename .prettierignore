@@ -3,6 +3,10 @@ js/lib/three/
 js/vendor/
 # Dato generado (CRLF, una línea por campo)
 js/data/quotes.js
+# Agregados generados por scripts/build-web-data.py: se pisan al reconstruir
+data/web/
+# Manifiesto de la fuente externa (FASE_2): no es nuestro, no se reformatea
+data/fase-2/manifest.json
 # Derivados de scripts/build-js.mjs: se pisan al reconstruir
 js/app.js
 js/**/*.min.js

@@ -67,13 +67,18 @@ export function initActBrowser({ quotes, openQuote }) {
     { key: 'inversión', label: 'inversión' },
   ].map((term) => ({ ...term, normalized: normalizeTopicText(term.key) }));
 
+  /* Eras del período que el corpus cubre de verdad (2005–2015). Antes
+     empezaban en 2000 y las dos primeras nunca podían alcanzarse: la muestra
+     no tiene un solo fragmento anterior a 2005. Los cortes son los mismos
+     episodios, recortados a la ventana disponible. */
   const eras = [
-    { id: 'E1', name: 'Despegue', from: 2000, to: 2003 },
-    { id: 'E2', name: 'Fiebre', from: 2004, to: 2007 },
-    { id: 'E3', name: 'Crisis', from: 2008, to: 2009 },
-    { id: 'E4', name: 'Normalización', from: 2010, to: 2014 },
-    { id: 'E5', name: 'Giro', from: 2015, to: 2015 },
+    { id: 'E1', name: 'Fiebre', from: 2005, to: 2007 },
+    { id: 'E2', name: 'Crisis', from: 2008, to: 2009 },
+    { id: 'E3', name: 'Normalización', from: 2010, to: 2014 },
+    { id: 'E4', name: 'Giro', from: 2015, to: 2015 },
   ];
+  const periodFrom = eras[0].from;
+  const periodTo = eras[eras.length - 1].to;
   const svgNS = 'http://www.w3.org/2000/svg';
   const makeSvg = (tag, attrs = {}) => {
     const node = document.createElementNS(svgNS, tag);
@@ -111,10 +116,10 @@ export function initActBrowser({ quotes, openQuote }) {
   let excludedRows = 0;
   quotes.forEach((q, index) => {
     const year = sourceYear(q);
-    /* El navegador respeta el período declarado de la pieza. El registro
-       1985 del fixture queda contabilizado como fuera de período, no
-       mezclado silenciosamente con las actas 2000–2015. */
-    if (!Number.isFinite(year) || year < 2000 || year > 2015) {
+    /* El navegador respeta el período que cubren las eras. Un registro fuera
+       de él (el fixture de 1985) queda contabilizado como fuera de período en
+       vez de mezclarse en silencio con las actas 2005–2015. */
+    if (!Number.isFinite(year) || year < periodFrom || year > periodTo) {
       excludedRows += 1;
       return;
     }

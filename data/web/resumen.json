@@ -1,0 +1,887 @@
+{
+  "meta": {
+    "generado": "2026-09-21T16:48:31Z",
+    "generador": "scripts/build-web-data.py",
+    "fuente": "joako0o/FASE_2",
+    "fuente_commit": "92986f008f8337a407b9d527c473a26747c0654a",
+    "fuente_version": "proyecto_esencial_v1",
+    "modelo": "W+C+600",
+    "modelo_descripcion": "ensamble de 5 clasificadores lineales sobre TF-IDF de palabra y carácter",
+    "etiquetas": [
+      "hawkish",
+      "dovish",
+      "neutral"
+    ],
+    "periodo": [
+      2005,
+      2015
+    ],
+    "n_anios": 11,
+    "anios": [
+      2005,
+      2006,
+      2007,
+      2008,
+      2009,
+      2010,
+      2011,
+      2012,
+      2013,
+      2014,
+      2015
+    ],
+    "n_intervenciones": 9725,
+    "n_reuniones": 132,
+    "n_actores": 55,
+    "n_direccionales": 893,
+    "n_hawkish": 513,
+    "n_dovish": 380,
+    "n_neutral": 8832,
+    "n_relevantes": 7806,
+    "n_no_relevantes": 1919,
+    "n_entrenamiento": 1596,
+    "n_evaluacion_ciega": 300,
+    "reparto_entrenamiento": {
+      "hawkish": 215,
+      "dovish": 143,
+      "neutral": 1238
+    },
+    "reparto_evaluacion_ciega": {
+      "hawkish": 46,
+      "dovish": 31,
+      "neutral": 223
+    },
+    "acuerdo_unanime": 9556,
+    "acuerdo_unanime_pct": 98.3,
+    "sha256_fuentes": {
+      "clasificacion": "5382a00b92362e44d2d8e492d7080ffe6c1756a4d22c496dbcac8bf22ebb9ed8",
+      "anual": "ffa63af1e3e678b89c5ae515d4fe00280613958371d1d2df8aa45d8b77995cbc",
+      "actores": "32b2864d24d11aa6fcb6b8ff80420b71896ee4ed2fb206d20e03625f1bdd2e8f",
+      "metadata_actores": "e4c57ff710983ce4f2416289ad788a6ce404c7ac6033ed54d8a472f93f5f34bf",
+      "manifest_fuente": "25e8c17acdb290c8d0d8a6a7bde8f7f7572c0402fba10669106ba4ba74cf87cd",
+      "readme_fuente": "b141305b56984a251ba11893ec3a0de26f0fa606b9e9696d294c31b344db1639"
+    }
+  },
+  "anual": [
+    {
+      "anio": 2005,
+      "n": 675,
+      "h": 113,
+      "d": 0,
+      "neu": 562,
+      "indice": 0.1674,
+      "cobertura_direccional": 0.1674,
+      "score_medio": 0.1485
+    },
+    {
+      "anio": 2006,
+      "n": 676,
+      "h": 74,
+      "d": 6,
+      "neu": 596,
+      "indice": 0.1006,
+      "cobertura_direccional": 0.1183,
+      "score_medio": 0.0942
+    },
+    {
+      "anio": 2007,
+      "n": 818,
+      "h": 70,
+      "d": 17,
+      "neu": 731,
+      "indice": 0.0648,
+      "cobertura_direccional": 0.1064,
+      "score_medio": 0.0462
+    },
+    {
+      "anio": 2008,
+      "n": 957,
+      "h": 73,
+      "d": 10,
+      "neu": 874,
+      "indice": 0.0658,
+      "cobertura_direccional": 0.0867,
+      "score_medio": 0.0442
+    },
+    {
+      "anio": 2009,
+      "n": 1093,
+      "h": 4,
+      "d": 91,
+      "neu": 998,
+      "indice": -0.0796,
+      "cobertura_direccional": 0.0869,
+      "score_medio": -0.0539
+    },
+    {
+      "anio": 2010,
+      "n": 1149,
+      "h": 78,
+      "d": 8,
+      "neu": 1063,
+      "indice": 0.0609,
+      "cobertura_direccional": 0.0748,
+      "score_medio": 0.0355
+    },
+    {
+      "anio": 2011,
+      "n": 1062,
+      "h": 59,
+      "d": 15,
+      "neu": 988,
+      "indice": 0.0414,
+      "cobertura_direccional": 0.0697,
+      "score_medio": 0.0253
+    },
+    {
+      "anio": 2012,
+      "n": 909,
+      "h": 0,
+      "d": 16,
+      "neu": 893,
+      "indice": -0.0176,
+      "cobertura_direccional": 0.0176,
+      "score_medio": -0.0286
+    },
+    {
+      "anio": 2013,
+      "n": 816,
+      "h": 1,
+      "d": 58,
+      "neu": 757,
+      "indice": -0.0699,
+      "cobertura_direccional": 0.0723,
+      "score_medio": -0.0734
+    },
+    {
+      "anio": 2014,
+      "n": 748,
+      "h": 1,
+      "d": 107,
+      "neu": 640,
+      "indice": -0.1417,
+      "cobertura_direccional": 0.1444,
+      "score_medio": -0.1165
+    },
+    {
+      "anio": 2015,
+      "n": 821,
+      "h": 26,
+      "d": 32,
+      "neu": 763,
+      "indice": -0.0073,
+      "cobertura_direccional": 0.0706,
+      "score_medio": -0.0226
+    }
+  ],
+  "actores": [
+    {
+      "actor": "José De Gregorio Rebeco",
+      "n": 1047,
+      "h": 59,
+      "d": 17,
+      "indice": 0.0401,
+      "cargos": [
+        "Presidente del Banco Central",
+        "Vicepresidente del Banco Central"
+      ],
+      "mandato": [
+        "2001-06-21",
+        "2011-12-07"
+      ],
+      "verificado": true
+    },
+    {
+      "actor": "Rodrigo Vergara Montes",
+      "n": 1026,
+      "h": 18,
+      "d": 48,
+      "indice": -0.0292,
+      "cargos": [
+        "Consejero",
+        "Presidente del Banco Central"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Manuel Marfán Lewis",
+      "n": 855,
+      "h": 55,
+      "d": 23,
+      "indice": 0.0374,
+      "cargos": [
+        "Consejero",
+        "Vicepresidente del Banco Central"
+      ],
+      "mandato": [
+        "2003-12-18",
+        "2013-12-17"
+      ],
+      "verificado": true
+    },
+    {
+      "actor": "Claudio Soto Gamboa",
+      "n": 808,
+      "h": 3,
+      "d": 2,
+      "indice": 0.0012,
+      "cargos": [
+        "Asesor del Ministerio de Hacienda",
+        "Asesor del Ministro de Hacienda",
+        "Gerente de Análisis Macroeconómico",
+        "Gerente de Análisis Macroeconómico Interino",
+        "Gerente de División Estudios (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Sergio Lehmann Beresi",
+      "n": 791,
+      "h": 1,
+      "d": 0,
+      "indice": 0.0013,
+      "cargos": [
+        "Gerente de Análisis Internacional"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Sebastián Claro Edwards",
+      "n": 592,
+      "h": 26,
+      "d": 29,
+      "indice": -0.0051,
+      "cargos": [
+        "Consejero",
+        "Vicepresidente del Banco Central"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Pablo García Silva",
+      "n": 565,
+      "h": 29,
+      "d": 23,
+      "indice": 0.0106,
+      "cargos": [
+        "Consejero",
+        "Gerente de Análisis Macroeconómico",
+        "Gerente de División Estudios",
+        "Gerente de División Política Financiera",
+        "Gerente de Estabilidad Financiera"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Consejo del Banco Central de Chile",
+      "n": 503,
+      "h": 57,
+      "d": 43,
+      "indice": 0.0278,
+      "cargos": [
+        "Consejo"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Enrique Marshall Rivera",
+      "n": 483,
+      "h": 39,
+      "d": 40,
+      "indice": -0.0021,
+      "cargos": [
+        "Consejero",
+        "Vicepresidente del Banco Central"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Vittorio Corbo Lioi",
+      "n": 455,
+      "h": 29,
+      "d": 1,
+      "indice": 0.0615,
+      "cargos": [
+        "Presidente del Banco Central"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Luis Óscar Herrera Barriga",
+      "n": 302,
+      "h": 21,
+      "d": 16,
+      "indice": 0.0166,
+      "cargos": [
+        "Gerente de División Estudios",
+        "Gerente de División Política Financiera"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Joaquín Vial Ruiz-Tagle",
+      "n": 231,
+      "h": 5,
+      "d": 7,
+      "indice": -0.0087,
+      "cargos": [
+        "Consejero"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Andrés Velasco Brañes",
+      "n": 222,
+      "h": 4,
+      "d": 6,
+      "indice": -0.009,
+      "cargos": [
+        "Ministro de Hacienda"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Jorge Desormeaux Jiménez",
+      "n": 221,
+      "h": 38,
+      "d": 13,
+      "indice": 0.1131,
+      "cargos": [
+        "Consejero",
+        "Vicepresidente del Banco Central"
+      ],
+      "mandato": [
+        "1999-12-07",
+        "2009-12-04"
+      ],
+      "verificado": true
+    },
+    {
+      "actor": "Rodrigo Valdés Pulido",
+      "n": 215,
+      "h": 28,
+      "d": 4,
+      "indice": 0.1116,
+      "cargos": [
+        "Gerente de División Estudios",
+        "Ministro de Hacienda"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Miguel Fuentes Díaz",
+      "n": 205,
+      "h": 0,
+      "d": 2,
+      "indice": -0.0098,
+      "cargos": [
+        "Gerente de Análisis Macroeconómico",
+        "Gerente de Análisis Macroeconómico (S)",
+        "Gerente de Análisis Macroeconómico Interino"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Beltrán de Ramón Acevedo",
+      "n": 183,
+      "h": 14,
+      "d": 26,
+      "indice": -0.0656,
+      "cargos": [
+        "Gerente de División Operaciones Financieras",
+        "Gerente de Mercados Financieros",
+        "Gerente de Mercados Financieros Nacionales"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Igal Magendzo Weinberger",
+      "n": 140,
+      "h": 3,
+      "d": 0,
+      "indice": 0.0214,
+      "cargos": [
+        "Asesor del Ministerio de Hacienda",
+        "Gerente de Análisis Macroeconómico",
+        "Gerente de División Estudios (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Alberto Naudon Dell'Oro",
+      "n": 116,
+      "h": 6,
+      "d": 8,
+      "indice": -0.0172,
+      "cargos": [
+        "Gerente de División Estudios"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Kevin Cowan Logan",
+      "n": 116,
+      "h": 2,
+      "d": 6,
+      "indice": -0.0345,
+      "cargos": [
+        "Gerente de División Política Financiera",
+        "Gerente de División de Política Financiera"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Esteban Jadresic Marinovic",
+      "n": 87,
+      "h": 11,
+      "d": 4,
+      "indice": 0.0805,
+      "cargos": [
+        "Gerente de División Internacional",
+        "Gerente de División Operaciones Financieras"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Nicolás Eyzaguirre Guzmán",
+      "n": 78,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Ministro de Hacienda"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Diego Gianelli Gómez",
+      "n": 62,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Jefe del Departamento Análisis Internacional"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Felipe Larraín Bascuñán",
+      "n": 56,
+      "h": 11,
+      "d": 10,
+      "indice": 0.0179,
+      "cargos": [
+        "Ministro de Hacienda"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Matías Bernier Bórquez",
+      "n": 45,
+      "h": 0,
+      "d": 3,
+      "indice": -0.0667,
+      "cargos": [
+        "Gerente de División Operaciones Financieras (S)",
+        "Gerente de Mercados Financieros Nacionales",
+        "Gerente de Mercados Nacionales"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Ricardo Vicuña Poblete",
+      "n": 44,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente de División Estadísticas",
+        "Gerente de División de Estadísticas",
+        "Gerente de Información e Investigación Estadística"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Klaus Schmidt-Hebbel Dunker",
+      "n": 40,
+      "h": 16,
+      "d": 0,
+      "indice": 0.4,
+      "cargos": [
+        "Gerente de Investigación Económica"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Luis Felipe Céspedes Cifuentes",
+      "n": 24,
+      "h": 5,
+      "d": 5,
+      "indice": 0.0,
+      "cargos": [
+        "Asesor del Ministerio de Hacienda",
+        "Asesor del Ministro de Hacienda",
+        "Gerente de Investigación Económica"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Alberto Arenas de Mesa",
+      "n": 21,
+      "h": 0,
+      "d": 9,
+      "indice": -0.4286,
+      "cargos": [
+        "Ministro de Hacienda",
+        "Ministro de Hacienda (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Miguel Ricaurte Bermúdez",
+      "n": 21,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Economista Senior",
+        "Gerente de Análisis Internacional (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Claudio Raddatz Kiefer",
+      "n": 20,
+      "h": 0,
+      "d": 5,
+      "indice": -0.25,
+      "cargos": [
+        "Gerente de División Política Financiera",
+        "Gerente de Investigación Económica"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Felipe Jaque",
+      "n": 20,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente de Análisis Internacional (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Rodrigo Cerda Norambuena",
+      "n": 20,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Asesor del Ministerio de Hacienda",
+        "Asesor del Ministro de Hacienda"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "María Elena Ovalle Molina",
+      "n": 17,
+      "h": 11,
+      "d": 0,
+      "indice": 0.6471,
+      "cargos": [
+        "Consejera"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Mario Marcel Cullell",
+      "n": 15,
+      "h": 2,
+      "d": 1,
+      "indice": 0.0667,
+      "cargos": [
+        "Consejero",
+        "Ministro de Hacienda (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "María Olivia Recart Herrera",
+      "n": 14,
+      "h": 0,
+      "d": 1,
+      "indice": -0.0714,
+      "cargos": [
+        "Ministra de Hacienda (S)",
+        "Ministro de Hacienda (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Alejandro Micco",
+      "n": 12,
+      "h": 0,
+      "d": 8,
+      "indice": -0.6667,
+      "cargos": [
+        "Ministro de Hacienda (S)",
+        "Subsecretario de Hacienda"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Luis Opazo Roco",
+      "n": 11,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente de División Política Financiera (S)",
+        "Gerente de Estabilidad Financiera"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Enrique Orellana Cifuentes",
+      "n": 7,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Economista Sénior",
+        "Gerente de Estrategia y Comunicación de Política Monetaria"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Miguel Ángel Nacrur Gazali",
+      "n": 7,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Fiscal y Ministro de Fe"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Camilo Carrasco Alfonso",
+      "n": 4,
+      "h": 2,
+      "d": 0,
+      "indice": 0.5,
+      "cargos": [
+        "Gerente General"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Jorge Pérez Etchegaray",
+      "n": 3,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente de Operaciones Monetarias"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Leonardo Hernández Tagle",
+      "n": 3,
+      "h": 2,
+      "d": 0,
+      "indice": 0.6667,
+      "cargos": [
+        "Subgerente General"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Alfredo Pistelli",
+      "n": 2,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Economista Senior"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Elías Albagli Iruretagoyena",
+      "n": 2,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente de Modelación y Análisis Económico"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Gloria Peña Tapia",
+      "n": 2,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente de División Estadísticas (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Julio Dittborn Cordua",
+      "n": 2,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Subsecretario de Hacienda"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Luis Alberto Álvarez Vallejos",
+      "n": 2,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente Asesor de Comunicaciones"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Ari Aisen",
+      "n": 1,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente de Estabilidad Financiera (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Juan Pablo Araya Marco",
+      "n": 1,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Fiscal y Ministro de Fe"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "María Eugenia Wagner Brizzi",
+      "n": 1,
+      "h": 1,
+      "d": 0,
+      "indice": 1.0,
+      "cargos": [
+        "Ministra de Hacienda (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Pablo Mattar Oyarzún",
+      "n": 1,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Fiscal y Ministro de Fe (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Pablo Pincheira Brown",
+      "n": 1,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente de Investigación Económica (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Rodrigo Alfaro",
+      "n": 1,
+      "h": 0,
+      "d": 0,
+      "indice": 0.0,
+      "cargos": [
+        "Gerente de División Política Financiera (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    },
+    {
+      "actor": "Rodrigo Álvarez Zenteno",
+      "n": 1,
+      "h": 1,
+      "d": 0,
+      "indice": 1.0,
+      "cargos": [
+        "Ministro de Hacienda (S)"
+      ],
+      "mandato": null,
+      "verificado": false
+    }
+  ]
+}

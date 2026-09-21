@@ -10,6 +10,7 @@
  */
 import { voiceFocus, pinQuote } from '../core/interaction-state.js';
 import { TOPIC_DEFINITIONS, normalizeTopicText, topicHasTerm } from '../data/topics.js';
+import { sampleYearWindow } from '../core/utils.js';
 
 
 export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
@@ -40,12 +41,13 @@ export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
   };
   const grouped = new Map();
   let excludedVoiceRows = 0;
+  /* Mismo criterio que el navegador de actas, pero con la ventana derivada de
+     la muestra (2005–2015) en vez de una constante: un registro fuera de ella
+     se contabiliza aparte y se informa en el meta del directorio. */
+  const voiceWindow = sampleYearWindow(quotes);
   quotes.forEach((q, index) => {
-    /* Mismo criterio que el navegador de actas: el registro 1985 del
-       fixture no se mezcla con el período declarado 2000–2015. Se
-       contabiliza aparte y se informa en el meta del directorio. */
     const year = getSourceYear(q);
-    if (!Number.isFinite(year) || year < 2000 || year > 2015) {
+    if (!Number.isFinite(year) || year < voiceWindow.start || year > voiceWindow.end) {
       excludedVoiceRows += 1;
       return;
     }

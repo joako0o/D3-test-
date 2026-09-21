@@ -12,6 +12,7 @@
 /* Misma URL (query incluida) que en main.js: con specifiers distintos el
    navegador instancia DOS módulos viewport.js, cada uno con su snapshot. */
 import { getViewportSize } from '../core/viewport.js?v=2';
+import { sampleYearWindow } from '../core/utils.js';
 
 let quotes = [];
 
@@ -74,7 +75,12 @@ export function initTimeline(quotesData = []) {
     /* El índice se agrega desde los registros visibles de quotes.js.
        Convención explícita: (hawkish − dovish) / total de fragmentos del año;
        neutral no desplaza el índice, pero sí permanece en el denominador. */
-    const years = d3.range(2000, 2016);
+    /* La ventana sale de la muestra (2005–2015). Con el rango fijo 2000–2015
+       el gráfico anotaba "sin muestra: 2000–2004" sobre años que nunca
+       estuvieron en el corpus, y los once años con datos se apretaban en dos
+       tercios del ancho. */
+    const { start: yearStart, end: yearEnd } = sampleYearWindow(quotes);
+    const years = d3.range(yearStart, yearEnd + 1);
     const byYear = new Map(years.map((year) => [year, { year, hawkish: 0, dovish: 0, neutral: 0, total: 0 }]));
     const sourceYear = (q) => {
       const match = String(q.date || '').match(/^(\d{4})/);
@@ -109,16 +115,16 @@ export function initTimeline(quotesData = []) {
       });
       return ranges.map(([from, to]) => from === to ? String(from) : `${from}–${to}`).join(', ');
     };
-    const domainStart = new Date(2000, 0, 1);
-    const domainEnd = new Date(2015, 11, 31);
+    const domainStart = new Date(yearStart, 0, 1);
+    const domainEnd = new Date(yearEnd, 11, 31);
     const x = d3.scaleTime().domain([domainStart, domainEnd]).range([0, innerW]);
     const y = d3.scaleLinear().domain([-1, 1]).range([innerH, 0]);
 
     g.append('g')
       .attr('transform', `translate(0,${innerH})`)
               .call(d3.axisBottom(x)
-        /* Un año cada 2 son 8 rótulos de 4 cifras: en 300 px de eje se
-           pisaban ("20002002200420062008…"). En estrecho, cada 4 años. */
+        /* Con 11 años de ventana, un rótulo cada 2 son 6 de 4 cifras: en 300
+           px de eje se pisaban. En estrecho, cada 4 años. */
         .ticks(d3.timeYear.every(width < 520 ? 4 : 2))
         .tickFormat(d3.timeFormat('%Y')))
       .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(14px, 1.25vw, 16px)');

@@ -10,6 +10,7 @@
  *     scripts clásicos ANTES del módulo, así que están disponibles.
  */
 import { normalizeTopicText } from '../data/topics.js';
+import { sampleYearWindow } from '../core/utils.js';
 
 let quotes = [];
 
@@ -44,7 +45,11 @@ export function initWordEvolution(quotesData = quotes) {
   d3.select(svg).selectAll('*').remove();
   svg.removeAttribute('viewBox');
 
-  const years = d3.range(2000, 2016);
+  /* El eje cubre la ventana real de la muestra (2005–2015). Antes iba de 2000
+     a 2015 y el gráfico abría cinco años vacíos a la izquierda: un cuarto del
+     ancho contaba una historia que no existe en los datos. */
+  const { start: yearStart, end: yearEnd } = sampleYearWindow(quotes);
+  const years = d3.range(yearStart, yearEnd + 1);
   const labels = ['hawkish', 'dovish'];
   const candidateTerms = [
     'inflación', 'precios', 'expectativas', 'tasa', 'tasas', 'aumento', 'subir', 'mantener', 'bajar', 'alza', 'riesgo',
@@ -122,7 +127,7 @@ export function initWordEvolution(quotesData = quotes) {
     : { top: 42, right: 128, bottom: 42, left: 72 };
   const laneGap = compactChart ? (H < 220 ? 25 : 34) : 42;
   const laneHeight = (H - margin.top - margin.bottom - laneGap) / 2;
-  const x = d3.scaleLinear().domain([2000, 2015]).range([margin.left, W - margin.right]);
+  const x = d3.scaleLinear().domain([yearStart, yearEnd]).range([margin.left, W - margin.right]);
   const svgEl = d3.select(svg)
     .attr('viewBox', `0 0 ${W} ${H}`)
     /* Si el ratio del contenedor cambia entre el init y el redibujo, 'meet'
@@ -132,7 +137,7 @@ export function initWordEvolution(quotesData = quotes) {
   const chartGroup = svgEl.append('g').attr('class', 'word-chart-group');
   const cursor = svgEl.append('line')
     .attr('class', 'word-cursor')
-    .attr('x1', x(2000)).attr('x2', x(2000))
+    .attr('x1', x(yearStart)).attr('x2', x(yearStart))
     .attr('y1', margin.top - 4).attr('y2', H - margin.bottom + 3);
   const series = [];
 
@@ -205,15 +210,18 @@ export function initWordEvolution(quotesData = quotes) {
   });
 
   years.forEach((year) => {
+    /* Rótulos de año: en estrecho, cada cinco años y los dos extremos; en
+       ancho, cada tres. Con 11 años de ventana no cabe el patrón fijo de
+       [2000, 2005, 2010, 2015], que era del eje viejo. */
     const tick = compactChart
-      ? [2000, 2005, 2010, 2015].includes(year)
-      : ((year - 2000) % 3 === 0 || year === 2015);
+      ? (year === yearStart || year === yearEnd || (year - yearStart) % 5 === 0)
+      : ((year - yearStart) % 3 === 0 || year === yearEnd);
     if (!tick) return;
     svgEl.append('text').attr('class', 'word-axis-label').attr('x', x(year)).attr('y', H - 12).attr('text-anchor', 'middle').text(year);
   });
 
   const updateYear = (year, reveal = 1) => {
-    const safeYear = Math.round(d3.max([2000, Math.min(2015, year)]));
+    const safeYear = Math.round(d3.max([yearStart, Math.min(yearEnd, year)]));
     yearEl.textContent = safeYear;
     cursor.attr('x1', x(safeYear)).attr('x2', x(safeYear));
     series.forEach((item) => {
@@ -231,13 +239,13 @@ export function initWordEvolution(quotesData = quotes) {
     readoutEl.textContent = readout || 'No hay términos suficientes en la muestra disponible.';
   };
 
-  updateYear(2000, 0);
+  updateYear(yearStart, 0);
   const onPointerMove = (event) => {
     const rect = svg.getBoundingClientRect();
     const localX = ((event.clientX - rect.left) / rect.width) * W;
     updateYear(x.invert(localX), 1);
   };
-  const onPointerLeave = () => updateYear(2000 + 15 * 0.5, 1);
+  const onPointerLeave = () => updateYear((yearStart + yearEnd) / 2, 1);
   svg.addEventListener('pointermove', onPointerMove);
   chartWrap?.addEventListener('pointerleave', onPointerLeave);
   wordEvolutionDisposers.push(() => {
@@ -268,7 +276,7 @@ export function initWordEvolution(quotesData = quotes) {
     scrub: true,
     onUpdate: (self) => {
       const reveal = d3.min([1, d3.max([0, (self.progress - 0.08) / 0.52])]);
-      updateYear(2000 + self.progress * 15, reveal);
+      updateYear(yearStart + self.progress * (yearEnd - yearStart), reveal);
     },
   });
   wordEvolutionDisposers.push(() => wordEvolutionST.kill());

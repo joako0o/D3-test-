@@ -57,3 +57,29 @@ export const frameDampT = (coef, dtMs) => {
 /* frameDamp — lerp amortiguado con el dt real del frame (ver frameDampT). */
 export const frameDamp = (current, target, coef, dtMs) =>
   current + (target - current) * frameDampT(coef, dtMs);
+
+/* sampleYearWindow — la ventana temporal de una muestra de citas, derivada
+ * de los datos y no de una constante.
+ *
+ * POR QUÉ EXISTE
+ *   Cuatro secciones (mapa de intervenciones, evolución del lenguaje, línea de
+ *   tiempo y navegador de actas) dibujaban su eje sobre 2000–2015 escrito a
+ *   mano. La muestra real es 2005–2015: el mapa repartía 99 puntos en los dos
+ *   tercios de la derecha, el gráfico de palabras abría cinco columnas vacías
+ *   y la línea de tiempo anotaba "sin muestra: 2000–2004" sobre años que nunca
+ *   estuvieron en el corpus.
+ *
+ *   La fecha documental (`date`) manda; `year` es el respaldo de los registros
+ *   que todavía no la traen. Si ninguna fila trae fecha utilizable se devuelve
+ *   el respaldo, para que un eje no quede en NaN.
+ */
+export const sampleYearWindow = (rows = [], fallback = [2005, 2015]) => {
+  const years = (rows || [])
+    .map((row) => {
+      const match = String(row?.date || '').match(/^(\d{4})/);
+      return match ? Number(match[1]) : Number(row?.year);
+    })
+    .filter((year) => Number.isFinite(year));
+  if (!years.length) return { start: fallback[0], end: fallback[1] };
+  return { start: Math.min(...years), end: Math.max(...years) };
+};

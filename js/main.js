@@ -35,6 +35,7 @@ import {
   deferBoot, onDeferredBootDone, deferredBootState, flushDeferredBoot, deferredBootDone,
 } from './core/deferred-boot.js';
 import { particleRandom, getQuoteAxisSentiment, frameDamp, frameDampT } from './core/utils.js';
+import { loadWebData } from './core/web-data.js?v=1';
 
 /* D3 a pedido.
    `js/vendor/d3.min.js` son 91 KiB (273 KB sin comprimir) que la portada no
@@ -2143,13 +2144,68 @@ for (let i = 0; i < PCOUNT; i++) {
 
 
 
+/* ── Alcance de los datos: las dos escalas de lectura ────────────────────
+   #stageCounters enfrenta dos escalas y por eso tiene dos fuentes distintas,
+   a propósito:
+     · contadores 3 y 4 → la MUESTRA. Salen de quotes.js, siempre, porque son
+       los fragmentos que el lector puede abrir uno por uno.
+     · contadores 1 y 2 → el CORPUS. Salen de data/web/resumen.json, que
+       scripts/build-web-data.py agrega desde data/fase-2/.
+   Antes los cuatro estaban escritos a mano en el HTML y los dos del corpus
+   quedaron con los números de una maqueta vieja (16 años y 182 reuniones)
+   mientras la muestra sí se calculaba: la sección que existe para avisar del
+   tamaño de la muestra se contradecía a sí misma en la misma pantalla.
+
+   El HTML trae el valor correcto escrito, para que la sección diga la verdad
+   sin red; el JSON solo lo confirma (y lo estira solo si el corpus cambia de
+   período). El test de coherencia de tools/smoke-test.mjs compara los dos. */
 const totalQuotes = quotes.length;
 const uniqueParticipants = new Set(quotes.map(q => q.participant)).size;
 const counterItems = document.querySelectorAll('[data-counter]');
+const counterNumber = (index) => counterItems[index]?.querySelector('.counter-number') || null;
 if (counterItems.length >= 4) {
-  counterItems[2].querySelector('.counter-number').dataset.target = totalQuotes.toString();
-  counterItems[3].querySelector('.counter-number').dataset.target = uniqueParticipants.toString();
+  counterNumber(2).dataset.target = totalQuotes.toString();
+  counterNumber(3).dataset.target = uniqueParticipants.toString();
+
+  loadWebData('resumen').then((data) => {
+    const meta = data?.meta;
+    if (!meta) return;
+    counterNumber(0).dataset.target = String(meta.n_anios);
+    counterNumber(1).dataset.target = String(meta.n_reuniones);
+  });
 }
+
+/* ── Los números del corpus dentro de la prosa ───────────────────────────
+   `<span data-corpus-stat="reuniones">132</span>` en index.html. Cada hueco
+   lleva su valor escrito (funciona sin JS y sin red) y esta función lo
+   reemplaza por el del agregado, con el mismo formato es-CL. */
+const CORPUS_STAT = {
+  anios: (m) => m.n_anios,
+  periodo: (m) => `${m.periodo[0]}–${m.periodo[1]}`,
+  intervenciones: (m) => m.n_intervenciones,
+  reuniones: (m) => m.n_reuniones,
+  actores: (m) => m.n_actores,
+  direccionales: (m) => m.n_direccionales,
+  hawkish: (m) => m.n_hawkish,
+  dovish: (m) => m.n_dovish,
+  neutrales: (m) => m.n_neutral,
+  relevantes: (m) => m.n_relevantes,
+  entrenamiento: (m) => m.n_entrenamiento,
+  ciegas: (m) => m.n_evaluacion_ciega,
+  acuerdo: (m) => m.acuerdo_unanime_pct,
+};
+loadWebData('resumen').then((data) => {
+  const meta = data?.meta;
+  if (!meta) return;
+  document.querySelectorAll('[data-corpus-stat]').forEach((el) => {
+    const read = CORPUS_STAT[el.dataset.corpusStat];
+    if (!read) return;
+    const value = read(meta);
+    if (value === undefined || value === null) return;
+    el.textContent = typeof value === 'number' ? value.toLocaleString('es-CL') : String(value);
+  });
+});
+
 
 function createParticleTexture() {
   const canvas = document.createElement('canvas');
@@ -4352,7 +4408,7 @@ function buildParticleStoryTargets() {
     const idx = index * 3;
     const date = /^\d{4}-\d{2}-\d{2}$/.test(String(q?.date || ''))
       ? new Date(`${q.date}T00:00:00Z`)
-      : new Date(`${Number(q?.year) || 2000}-01-01T00:00:00Z`);
+      : new Date(`${Number(q?.year) || 2005}-01-01T00:00:00Z`);
     const sentiment = getQuoteAxisSentiment(q);
     const axis = get3DPosFromData(date, sentiment);
     pAxisPos[idx] = axis.x;
@@ -4372,9 +4428,13 @@ function buildParticleStoryTargets() {
     pActFocusPos[idx + 1] = 0.60 + toneLift * 0.8 + (particleRandom(index, 15) - 0.5) * 0.15;
     pActFocusPos[idx + 2] = -1.05 + (particleRandom(index, 16) - 0.5) * 0.22;
 
+    /* La banda temporal de las partículas usa la ventana real del corpus
+       (2005–2015). Con el rango viejo 2000–2015 los once años con datos se
+       repartían sobre el 71% del ancho y el extremo izquierdo quedaba vacío en
+       una escena donde el vacío se nota: la cámara mira justo ahí. */
     const yearMatch = String(q?.date || '').match(/^(\d{4})/);
-    const year = THREE.MathUtils.clamp(Number(yearMatch ? yearMatch[1] : q?.year) || 2000, 2000, 2015);
-    const yearT = (year - 2000) / 15;
+    const year = THREE.MathUtils.clamp(Number(yearMatch ? yearMatch[1] : q?.year) || 2005, 2005, 2015);
+    const yearT = (year - 2005) / 10;
     pTimelinePos[idx] = -2.65 + yearT * 5.3 + (particleRandom(index, 17) - 0.5) * 0.11;
     pTimelinePos[idx + 1] = 0.66 + sentiment * 1.05 + (particleRandom(index, 18) - 0.5) * 0.12;
     pTimelinePos[idx + 2] = -0.32 + (particleRandom(index, 19) - 0.5) * 0.18;
@@ -4999,8 +5059,6 @@ hookLines.forEach((el, i) => {
 const counterEls = document.querySelectorAll('[data-counter]');
 counterEls.forEach((el) => {
   const numEl = el.querySelector('.counter-number');
-  const rawTarget = numEl.dataset.target;
-  const isTodo = rawTarget.startsWith('[TODO');
 
   gsap.fromTo(el,
     { opacity: 0, y: 24 },
@@ -5013,8 +5071,15 @@ counterEls.forEach((el) => {
         start: 'top 85%',
         toggleActions: 'play none none reverse',
         onEnter: () => {
-          if (isTodo) return;
+          /* El objetivo se lee AQUÍ, no al crear el ScrollTrigger: los dos
+             contadores del corpus se reescriben cuando llega
+             data/web/resumen.json, y con la lectura adelantada la sección
+             habría animado el número del respaldo aunque el dato ya estuviera
+             en casa. */
+          const rawTarget = numEl.dataset.target;
+          if (!rawTarget || rawTarget.startsWith('[TODO')) return;
           const target = parseInt(rawTarget, 10);
+          if (!Number.isFinite(target)) return;
           const obj = { val: 0 };
           gsap.to(obj, {
             val: target,
@@ -5056,16 +5121,28 @@ counterEls.forEach((el) => {
   const corpusYear = document.getElementById('corpusYear');
   const corpusPct  = document.getElementById('corpusPct');
   const corpusCoverageNote = document.getElementById('corpusCoverageNote');
-  const analysisYears = Array.from({ length: 16 }, (_, index) => 2000 + index);
+  /* La ventana es la del corpus real: 11 años, 2005–2015 (el respaldo es el
+     mismo período que declara quotes.js, así que sin red el panel no miente;
+     si el corpus se estira, `loadWebData` lo estira). Antes eran 16 años desde
+     2000 y el panel dibujaba cinco columnas vacías — el lector veía una
+     muestra de once años sobre un eje de dieciséis. */
+  const analysisYears = Array.from({ length: 11 }, (_, index) => 2005 + index);
   const sourceYear = (q) => {
     const match = String(q.date || '').match(/^(\d{4})/);
     return match ? Number(match[1]) : Number(q.year);
   };
-  const analysisRows = quotes.filter((q) => analysisYears.includes(sourceYear(q)));
-  const rowsByYear = new Map(analysisYears.map((year) => [year, []]));
-  analysisRows.forEach((q) => rowsByYear.get(sourceYear(q)).push(q));
-  const missingYears = analysisYears.filter((year) => rowsByYear.get(year).length === 0);
-  const outsidePeriod = quotes.length - analysisRows.length;
+  let analysisRows = [];
+  let rowsByYear = new Map();
+  let missingYears = [];
+  let outsidePeriod = 0;
+  const indexByYear = () => {
+    analysisRows = quotes.filter((q) => analysisYears.includes(sourceYear(q)));
+    rowsByYear = new Map(analysisYears.map((year) => [year, []]));
+    analysisRows.forEach((q) => rowsByYear.get(sourceYear(q)).push(q));
+    missingYears = analysisYears.filter((year) => rowsByYear.get(year).length === 0);
+    outsidePeriod = quotes.length - analysisRows.length;
+  };
+  indexByYear();
   let corpusCols = [], litCols = -1;
 
   const formatYearRanges = (years) => {
@@ -5077,6 +5154,8 @@ counterEls.forEach((el) => {
     });
     return ranges.map(([from, to]) => from === to ? String(from) : `${from}–${to}`).join(', ');
   };
+
+  const periodLabel = () => `${analysisYears[0]}–${analysisYears[analysisYears.length - 1]}`;
 
   function buildCorpus() {
     corpusGrid.innerHTML = '';
@@ -5105,11 +5184,27 @@ counterEls.forEach((el) => {
     if (corpusCoverageNote) {
       const parts = [];
       if (missingYears.length) parts.push(`sin muestra: ${formatYearRanges(missingYears)}`);
-      if (outsidePeriod) parts.push(`${outsidePeriod} fuera de 2000–2015`);
+      if (outsidePeriod) parts.push(`${outsidePeriod} fuera de ${periodLabel()}`);
       corpusCoverageNote.textContent = parts.length ? ` · ${parts.join(' · ')}` : '';
     }
   }
   buildCorpus();
+  if (corpusYear) corpusYear.textContent = String(analysisYears[0]);
+  document.querySelectorAll('.corpus-axis span').forEach((span, index, list) => {
+    span.textContent = String(index === 0 ? analysisYears[0] : analysisYears[analysisYears.length - 1]);
+  });
+
+  /* Si el agregado del corpus declara otro período, el panel se redibuja. */
+  loadWebData('resumen').then((data) => {
+    const years = data?.meta?.anios;
+    if (!Array.isArray(years) || !years.length || years.join() === analysisYears.join()) return;
+    analysisYears.splice(0, analysisYears.length, ...years);
+    indexByYear();
+    buildCorpus();
+    document.querySelectorAll('.corpus-axis span').forEach((span, index, list) => {
+      span.textContent = String(index === 0 ? analysisYears[0] : analysisYears[analysisYears.length - 1]);
+    });
+  });
 
   /* — Referencias — */
   const wordCount = document.getElementById('wordCount');
@@ -5247,7 +5342,7 @@ counterEls.forEach((el) => {
       debugEl.classList.add('visible');
       debugSection.textContent = 'Pipeline';
       debugProgress.textContent = Math.round(p * 100) + '%';
-      const panelNames = ['01 · Fuente', '02 · Muestra / criterio', '03 · Clasificación guiada', '04 · Revisión / trazabilidad'];
+      const panelNames = ['01 · Fuente', '02 · Muestra / criterio', '03 · Clasificación', '04 · Revisión / trazabilidad'];
       debugPanelInfo.textContent = panelNames[activeIdx] || '—';
       debugBar.style.transform = 'scaleX(' + p + ')';
     }

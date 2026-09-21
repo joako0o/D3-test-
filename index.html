@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>In the room where monetary policy happens: Learning from a Decade of Central Bank Deliberation in Chile</title>
 
-  <meta name="description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile. Un scrollytelling interactivo con datos, gráficos y citas del Banco Central." />
+  <meta name="description" content="Exploración interactiva de 11 años (2005–2015) de actas de las Reuniones de Política Monetaria del Banco Central de Chile: 9.725 intervenciones, 132 reuniones, clasificadas con un ensamble lineal sobre TF-IDF." />
   <meta name="theme-color" content="#0a0e1a" />
   <link rel="canonical" href="https://joako0o.github.io/D3-test-/" />
   <meta property="og:title" content="In the room where monetary policy happens: Learning from a Decade of Central Bank Deliberation in Chile" />
-  <meta property="og:description" content="Exploración interactiva de 16 años de reuniones de política monetaria en Chile." />
+  <meta property="og:description" content="Exploración interactiva de 11 años (2005–2015) de actas de política monetaria en Chile: 9.725 intervenciones y 132 reuniones, leídas con un ensamble lineal sobre TF-IDF." />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="es_CL" />
   <meta property="og:url" content="https://joako0o.github.io/D3-test-/" />
@@ -20,7 +20,7 @@
   <meta property="og:site_name" content="In the room where monetary policy happens" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="In the room where monetary policy happens" />
-  <meta name="twitter:description" content="Una década de deliberación del Banco Central de Chile (2005–2015), leída con un modelo de lenguaje: cada partícula es un fragmento de lo que se dijo a puerta cerrada." />
+  <meta name="twitter:description" content="Once años de deliberación del Banco Central de Chile (2005–2015), leídos con un ensamble lineal sobre TF-IDF: cada partícula es un fragmento de lo que se dijo a puerta cerrada." />
   <meta name="twitter:image" content="https://joako0o.github.io/D3-test-/og-image.jpg" />
   <meta name="twitter:image:alt" content="La puerta de bronce del Banco Central de Chile entreabierta sobre una moneda dorada, portada de la pieza." />
   <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -35,7 +35,7 @@
     "alternateName": "Una década de deliberación del Banco Central de Chile · 2005–2015",
     "url": "https://joako0o.github.io/D3-test-/",
     "inLanguage": "es-CL",
-    "description": "Exploración interactiva (scrollytelling 3D) de las actas de las Reuniones de Política Monetaria del Banco Central de Chile entre 2000 y 2015: quién habló, cuándo y con qué orientación (hawkish, dovish, neutral) según un modelo de lenguaje.",
+    "description": "Exploración interactiva (scrollytelling 3D) de las actas de las Reuniones de Política Monetaria del Banco Central de Chile entre 2005 y 2015 (11 años): quién habló, cuándo y con qué orientación (hawkish, dovish, neutral) según un ensamble lineal sobre TF-IDF entrenado con 1.596 intervenciones etiquetadas.",
     "image": "https://joako0o.github.io/D3-test-/og-image.jpg",
     "about": [
       { "@type": "Thing", "name": "Política monetaria" },
@@ -45,7 +45,7 @@
     "mainEntity": {
       "@type": "Dataset",
       "name": "Fragmentos de las actas de Reuniones de Política Monetaria del Banco Central de Chile, 2005–2015",
-      "description": "Muestra visual de 99 fragmentos atribuidos a 17 participantes, con fecha, orientación (hawkish/dovish/neutral) y puntaje del clasificador. El corpus de referencia reúne 182 reuniones.",
+      "description": "Muestra visual de 99 fragmentos atribuidos a 37 participantes, con fecha, orientación (hawkish/dovish/neutral) y score del clasificador. El corpus de referencia reúne 132 reuniones y 9.725 intervenciones entre 2005 y 2015.",
       "temporalCoverage": "2005/2015",
       "spatialCoverage": { "@type": "Place", "name": "Chile" },
       "inLanguage": "es",
@@ -389,7 +389,7 @@
           </article>
         </div>
 
-        <p class="hook-footnote">El mismo acta puede contener elementos hawkish y dovish. El an&aacute;lisis determina cu&aacute;l orientaci&oacute;n domina la decisi&oacute;n de pol&iacute;tica monetaria.</p>
+        <p class="hook-footnote">El mismo acta puede contener elementos hawkish y dovish. El an&aacute;lisis determina qu&eacute; orientaci&oacute;n domina la intervenci&oacute;n. El clasificador es un ensamble de cinco modelos lineales sobre TF-IDF de palabra y car&aacute;cter, entrenado con 1.596 intervenciones etiquetadas.</p>
       </div>
       
     </div>
@@ -417,7 +417,7 @@
     <div class="word-evolution-pin-wrapper">
       <div class="word-evolution-shell">
         <header class="word-evolution-intro">
-          <div class="word-evolution-kicker">Acto 4 · El lenguaje cambia</div>
+          <div class="word-evolution-kicker">El lenguaje cambia</div>
           <h2 class="word-evolution-title" id="wordEvolutionTitle">Las palabras tambi&eacute;n se mueven.</h2>
           <p class="word-evolution-lead">La orientaci&oacute;n de una deliberaci&oacute;n no vive solo en una etiqueta. Tambi&eacute;n aparece en el vocabulario que se repite, se desplaza y cambia de peso con el tiempo.</p>
         </header>
@@ -434,7 +434,7 @@
             <svg id="wordEvolutionSvg" viewBox="0 0 1000 450" role="img" aria-label="Evolución temporal de palabras asociadas a señales hawkish y dovish"></svg>
           </div>
           <div class="word-evolution-readout" aria-live="polite">
-            <span class="word-evolution-year" id="wordEvolutionYear">2000</span>
+            <span class="word-evolution-year" id="wordEvolutionYear">2005</span>
             <span class="word-evolution-readout-text" id="wordEvolutionReadout">Despl&aacute;zate para seguir las palabras que ganan presencia.</span>
           </div>
         </div>
@@ -448,15 +448,15 @@
     <div class="voices-pin-wrapper">
       <div class="voices-shell">
         <header class="voices-intro">
-          <div class="voices-kicker">Acto 5 · Las voces</div>
+          <div class="voices-kicker">Las voces</div>
           <h2 class="voices-title" id="voicesTitle">Las deliberaciones tambi&eacute;n tienen voces.</h2>
-          <p class="voices-lead">Hasta aqu&iacute; vimos el corpus. Ahora, una lectura por voz: qui&eacute;n aparece, cu&aacute;ndo, con qu&eacute; frecuencia y qu&eacute; se&ntilde;ales aparecen en sus intervenciones.</p>
+          <p class="voices-lead">Hasta aqu&iacute; vimos la muestra. Ahora, una lectura por voz: qui&eacute;n aparece, cu&aacute;ndo, con qu&eacute; frecuencia y qu&eacute; se&ntilde;ales aparecen en sus intervenciones.</p>
         </header>
 
         <div class="voice-explorer" id="voiceExplorer">
           <div class="voice-explorer-head">
             <span class="voice-explorer-label">Directorio de intervenciones</span>
-            <span class="voice-explorer-meta" id="voiceDirectoryMeta">Muestra visual · 17 voces · 99 fragmentos</span>
+            <span class="voice-explorer-meta" id="voiceDirectoryMeta">Muestra visual · 37 voces · 99 fragmentos</span>
           </div>
           <div class="voice-rail" id="voiceRail" role="list" aria-label="Participantes de la muestra"></div>
           <div class="voice-rail-hint">Desliza para recorrer las voces</div>
@@ -494,7 +494,7 @@
     <div class="acts-pin-wrapper">
       <div class="acts-shell">
         <header class="acts-intro">
-          <div class="acts-kicker">Acto 6 · Navegador de actas</div>
+          <div class="acts-kicker">El navegador de actas</div>
           <h2 class="acts-title" id="actsTitle">De la se&ntilde;al a la fuente</h2>
           <p class="acts-lead">Encuentra la reunión y abre la intervención que sostiene esta lectura.</p>
         </header>
@@ -575,20 +575,31 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 7 — Alcance de los datos ═══════ -->
+  <!-- ═══════ STAGE 8 — Alcance de los datos ═══════
+       Dos escalas, y la sección existe para que no se confundan:
+         · el CORPUS (9.725 intervenciones, 132 reuniones, 2005–2015) — lo que
+           sostiene las cifras del texto;
+         · la MUESTRA (99 fragmentos, 37 participantes) — lo que el lector
+           puede abrir y verificar uno por uno.
+       Los cuatro contadores se calculan: los dos de la muestra, de quotes.js
+       (js/main.js); los dos del corpus, de data/web/resumen.json
+       (scripts/build-web-data.py). Los valores escritos aquí son el respaldo
+       sin red, y tools/smoke-test.mjs verifica que coincidan con el agregado.
+       Antes decían 16 años / 2000–2015 / 182 reuniones / 17 participantes:
+       los cuatro eran de una maqueta anterior al corpus real. -->
   <section class="stage-counters" id="stageCounters">
     <div class="counters-wrap">
       <div class="counters-kicker">Antes de seguir: dos escalas de lectura</div>
       <div class="counters-grid">
         <div class="counter-item" data-counter>
           <div class="counter-kicker">Ventana del corpus</div>
-          <div class="counter-number" data-target="16" data-suffix="">0</div>
-          <div class="counter-label">a&ntilde;os declarados<br><small>2000&ndash;2015</small></div>
+          <div class="counter-number" data-target="11" data-suffix="">0</div>
+          <div class="counter-label">a&ntilde;os de actas<br><small>2005&ndash;2015</small></div>
         </div>
         <div class="counter-item" data-counter>
-          <div class="counter-kicker">Corpus total declarado</div>
-          <div class="counter-number" data-target="182" data-suffix="">0</div>
-          <div class="counter-label">reuniones de referencia</div>
+          <div class="counter-kicker">Corpus de referencia</div>
+          <div class="counter-number" data-target="132" data-suffix="">0</div>
+          <div class="counter-label">reuniones &middot; <span data-corpus-stat="intervenciones">9.725</span> intervenciones</div>
         </div>
         <div class="counter-item" data-counter>
           <div class="counter-kicker">Muestra visual</div>
@@ -597,15 +608,22 @@
         </div>
         <div class="counter-item" data-counter>
           <div class="counter-kicker">Muestra visual</div>
-          <div class="counter-number" data-target="17" data-suffix="">0</div>
+          <div class="counter-number" data-target="37" data-suffix="">0</div>
           <div class="counter-label">participantes representados</div>
         </div>
       </div>
-      <p class="counters-note">El corpus de referencia y la muestra interactiva no son la misma escala: esta pieza permite seguir 99 fragmentos de 17 participantes; no presenta las 182 reuniones completas.</p>
+      <p class="counters-note">El corpus y la muestra no son la misma escala, y la diferencia importa. El corpus re&uacute;ne <span data-corpus-stat="intervenciones">9.725</span> intervenciones de 132 reuniones entre 2005 y 2015; de ellas, <span data-corpus-stat="direccionales">893</span> (un 9,2%) quedaron clasificadas como direccionales. La muestra de esta pieza son 99 fragmentos de 37 participantes, elegidos para poder tocar las tres orientaciones &mdash;33 hawkish, 33 dovish, 33 neutral&mdash;, no para reproducir esa proporci&oacute;n: dos de cada tres fragmentos visibles son direccionales. Las cifras del corpus salen de <code>data/web/resumen.json</code>.</p>
     </div>
   </section>
 
-  <!-- ═══════ STAGE 8 — Pipeline ═══════ -->
+  <!-- ═══════ STAGE 9 — Pipeline (metodología) ═══════
+       La copia de esta sección decía "La guía few-shot usa ejemplos para la
+       consulta; no entrena un modelo general" — describía un prototipo
+       anterior. El modelo real, declarado en data/fase-2/manifest.json, es
+       W+C+600: un ensamble de cinco clasificadores lineales sobre TF-IDF de
+       palabra y carácter, entrenado con 1.596 intervenciones etiquetadas y
+       evaluado sobre 300 reservadas. Era el punto donde la pieza se equivocaba
+       sobre sí misma, y es lo primero que verifica un tribunal o un referee. -->
   <section class="stage-pipeline" id="stagePipeline">
     <div class="pipeline-pin-wrapper">
       <header class="pipe-header">
@@ -622,7 +640,7 @@
             <div class="pipe-body">
               <div class="pipe-label">Fuente</div>
               <h3>Las actas, tal como fueron registradas</h3>
-              <p class="pipe-p">El corpus de referencia reúne las reuniones; la pieza visible trabaja con una muestra de fragmentos, conservando fecha, participante y texto para volver a la fuente.</p>
+              <p class="pipe-p">El corpus de referencia son las actas de las 132 Reuniones de Pol&iacute;tica Monetaria de 2005 a 2015: <span data-corpus-stat="intervenciones">9.725</span> intervenciones con fecha, participante, cargo y orden de habla. La pieza visible trabaja con una muestra de esa fuente y conserva los tres datos que permiten volver a ella.</p>
               <div class="doc-card">
                 <div class="doc-head"><span>Acta &middot; Sesi&oacute;n de Pol&iacute;tica Monetaria</span><span>2007</span></div>
                 <span class="doc-line"><span>&hellip;el alza del IPC sorprendi&oacute; al alza y la lectura de</span></span>
@@ -641,8 +659,8 @@
             <span class="pipe-index">02</span>
             <div class="pipe-body">
               <div class="pipe-label">Muestra / criterio</div>
-              <h3>Ejemplos que orientan la lectura</h3>
-              <p class="pipe-p">Los 99 registros visibles ya llevan una etiqueta observable: hawkish, dovish o neutral. La guía few-shot usa ejemplos para la consulta; no entrena un modelo general.</p>
+              <h3>Una muestra para leer, no un muestreo</h3>
+              <p class="pipe-p">Los 99 fragmentos visibles llevan la etiqueta que el clasificador asign&oacute; a su intervenci&oacute;n completa. La selecci&oacute;n es editorial y est&aacute; balanceada a prop&oacute;sito &mdash;33 por orientaci&oacute;n, 37 participantes, 67 fechas&mdash;: sirve para que el lector pueda abrir las tres, no para estimar la proporci&oacute;n del corpus.</p>
               <div class="seed-grid" id="seedGrid" aria-hidden="true"></div>
               <div class="word-meter" style="margin-top:14px">
                 <strong id="seedCount">0</strong>
@@ -651,19 +669,19 @@
             </div>
           </article>
 
-          <!-- 03 · Clasificación guiada -->
+          <!-- 03 · Clasificación -->
           <article class="pipe-panel">
             <span class="pipe-index">03</span>
             <div class="pipe-body">
-              <div class="pipe-label">Clasificaci&oacute;n guiada</div>
-              <h3>Cada fragmento recibe una se&ntilde;al exploratoria</h3>
-              <p class="pipe-p">El modelo compara un fragmento nuevo con el criterio de referencia y devuelve una orientaci&oacute;n y un nivel de confianza. La confianza no es una validaci&oacute;n estad&iacute;stica.</p>
+              <div class="pipe-label">Clasificaci&oacute;n</div>
+              <h3>Cada intervenci&oacute;n recibe un score, no un veredicto</h3>
+              <p class="pipe-p">El modelo es un ensamble de cinco clasificadores lineales sobre TF-IDF de palabra y car&aacute;cter (W+C+600), entrenado con <span data-corpus-stat="entrenamiento">1.596</span> intervenciones etiquetadas y probado sobre <span data-corpus-stat="ciegas">300</span> reservadas como evaluaci&oacute;n ciega. El score continuo va de &minus;1 (dovish) a +1 (hawkish); la etiqueta es su signo. La coincidencia entre los cinco miembros mide estabilidad del ensamble, no certeza.</p>
               <div class="frag">&laquo;el riesgo de inflaci&oacute;n domina el panorama&raquo;</div>
               <div class="verdict-row">
                 <span class="verdict" id="verdictStamp">Hawkish</span>
                 <div class="confidence">
                   <div class="bar"><i id="confBar"></i></div>
-                  <div class="cap">confianza del ejemplo <span id="confVal">0.00</span></div>
+                  <div class="cap">score del ejemplo <span id="confVal">0.00</span></div>
                 </div>
               </div>
               <div class="pipe-meta">
@@ -680,13 +698,13 @@
             <div class="pipe-body">
               <div class="pipe-label">Revisi&oacute;n / trazabilidad</div>
               <h3>La salida vuelve a la fuente</h3>
-              <p class="pipe-p">El recorrido ordena la muestra por fecha; cada señal conserva el camino hasta el participante, el fragmento y el acta. Los a&ntilde;os sin registros no se rellenan.</p>
+              <p class="pipe-p">El recorrido ordena la muestra por fecha; cada se&ntilde;al conserva el camino hasta el participante, el fragmento y el acta. Los a&ntilde;os sin registros no se rellenan. La clasificaci&oacute;n publicada marca fila por fila qu&eacute; intervenciones entraron al entrenamiento y cu&aacute;les quedaron reservadas, y el corpus conserva el hash de sus archivos de origen.</p>
               <div class="corpus-wrap">
                 <div class="corpus-field">
                   <div class="corpus-grid" id="corpusGrid" aria-hidden="true"></div>
-                  <div class="corpus-head" id="corpusHead"><span class="corpus-year" id="corpusYear">2000</span></div>
+                  <div class="corpus-head" id="corpusHead"><span class="corpus-year" id="corpusYear">2005</span></div>
                 </div>
-                <div class="corpus-axis"><span>2000</span><span>2015</span></div>
+                <div class="corpus-axis"><span>2005</span><span>2015</span></div>
                 <div class="corpus-status"><strong id="corpusPct">0%</strong> de la muestra anal&iacute;tica recorrida <span class="corpus-status-note" id="corpusCoverageNote"></span></div>
               </div>
             </div>
@@ -736,7 +754,7 @@
     <p class="closing-text" data-closing>
       Convertir la palabra en dato abre una fuente nueva de informaci&oacute;n:
       lo que se dijo a puerta cerrada, cruzado con los indicadores macroecon&oacute;micos
-      de cada momento, para leer diecis&eacute;is a&ntilde;os de pol&iacute;tica
+      de cada momento, para leer once a&ntilde;os de pol&iacute;tica
       monetaria en una econom&iacute;a emergente.
     </p>
     <a href="#hero" class="closing-cta" data-closing>Volver al comienzo &uarr;</a>

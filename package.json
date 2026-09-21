@@ -1,7 +1,7 @@
 {
   "name": "central-bank-scrollytelling",
   "version": "1.0.0",
-  "description": "Exploración interactiva de 16 años de reuniones de política monetaria en Chile (2000-2015). Scrollytelling con Three.js, GSAP ScrollTrigger y D3.js.",
+  "description": "Exploración interactiva de 11 años (2005–2015) de actas de política monetaria del Banco Central de Chile: 9.725 intervenciones y 132 reuniones, clasificadas con TF-IDF. Scrollytelling con Three.js, GSAP ScrollTrigger y D3.js.",
   "scripts": {
     "build:css": "node scripts/build-css.mjs",
     "build:js": "node scripts/build-js.mjs",
@@ -9,7 +9,8 @@
     "predev": "npm run build:css && npm run build:js",
     "start": "python3 scripts/serve.py 8000",
     "dev": "python3 scripts/serve.py 8000",
-    "check": "node scripts/build-css.mjs --check && node scripts/build-js.mjs --check && node tools/smoke-test.mjs",
+    "check": "node scripts/build-css.mjs --check && node scripts/build-js.mjs --check && python3 scripts/build-web-data.py --check && node tools/smoke-test.mjs",
+    "build:data": "python3 scripts/build-web-data.py",
     "shots": "node scripts/screenshots/capture.mjs",
     "hero:check": "node scripts/screenshots/hero-check.mjs",
     "perf": "node scripts/perf/measure.mjs",

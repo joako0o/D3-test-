@@ -21,7 +21,7 @@ export const HERO_DOOR_LOCKUP = true;
  * arriba y el borde real del titular, medido del DOM en cada resize.
  *
  *     ┌──────────────────────────────┐  0
- *     │  2000–2015      PROTOTIPO    │
+ *     │  2005–2015      PROTOTIPO    │
  *     ├──────────────────────────────┤  banda.top    = safeTopRatio · alto
  *     │                              │
  *     │           ( moneda )         │  diámetro     = fillRatio · banda
