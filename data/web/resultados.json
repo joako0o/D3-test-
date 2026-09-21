@@ -1,0 +1,3561 @@
+{
+  "meta": {
+    "generado": "2026-09-21T19:39:18Z",
+    "generador": "scripts/build-resultados.py",
+    "fuente_commit": "7485d1d9e55a6ccbcfb30e7b9893f7c9c781e999",
+    "procedencia": "anual, actas y tópicos vienen de la tabla maestra de FASE_2 (prioriza etiqueta humana donde existe); el cruce y el score por reunión usan la predicción cruda del modelo, porque describen el modelo, no el corpus",
+    "sha256_fuentes": {
+      "clasificacion": "5382a00b92362e44d2d8e492d7080ffe6c1756a4d22c496dbcac8bf22ebb9ed8",
+      "anual": "ffa63af1e3e678b89c5ae515d4fe00280613958371d1d2df8aa45d8b77995cbc",
+      "reuniones": "86b3445daed9a522427054de23bff71eb90925f9c6387a19cdcf1aad06d0656c",
+      "topicos": "d36b93e38be2d23ea60be1e2308719d572c5766f5a15a93dff86a08d49636ab9",
+      "decisiones": "51f994d51e44b9a17a4721a38e37b5bdb9172d46e49ce6c3ff1b434e58d037e9",
+      "quotes": "e7420e614f22765727219960636966b5d642d16b1a36613698b46a49f7a6c2c1"
+    }
+  },
+  "anual": [
+    {
+      "anio": 2005,
+      "n": 675,
+      "h": 113,
+      "d": 0,
+      "neu": 562,
+      "direccionales": 113,
+      "balance": 1.0,
+      "balance_ic": [
+        0.9342,
+        1.0
+      ],
+      "score_hd": 0.1485333413437227,
+      "cobertura": 0.1674074074074074,
+      "relevancia_pct": 81.5
+    },
+    {
+      "anio": 2006,
+      "n": 676,
+      "h": 74,
+      "d": 6,
+      "neu": 596,
+      "direccionales": 80,
+      "balance": 0.85,
+      "balance_ic": [
+        0.6918,
+        0.9304
+      ],
+      "score_hd": 0.09418413779142817,
+      "cobertura": 0.11834319526627218,
+      "relevancia_pct": 78.3
+    },
+    {
+      "anio": 2007,
+      "n": 818,
+      "h": 70,
+      "d": 17,
+      "neu": 731,
+      "direccionales": 87,
+      "balance": 0.6091954022988506,
+      "balance_ic": [
+        0.4183,
+        0.7485
+      ],
+      "score_hd": 0.046208231633390426,
+      "cobertura": 0.10635696821515893,
+      "relevancia_pct": 78.9
+    },
+    {
+      "anio": 2008,
+      "n": 957,
+      "h": 73,
+      "d": 10,
+      "neu": 874,
+      "direccionales": 83,
+      "balance": 0.7590361445783133,
+      "balance_ic": [
+        0.5845,
+        0.8664
+      ],
+      "score_hd": 0.04421017099333221,
+      "cobertura": 0.08672936259143156,
+      "relevancia_pct": 84.6
+    },
+    {
+      "anio": 2009,
+      "n": 1093,
+      "h": 4,
+      "d": 91,
+      "neu": 998,
+      "direccionales": 95,
+      "balance": -0.9157894736842105,
+      "balance_ic": [
+        -0.967,
+        -0.7934
+      ],
+      "score_hd": -0.0539390562617205,
+      "cobertura": 0.08691674290942361,
+      "relevancia_pct": 85.8
+    },
+    {
+      "anio": 2010,
+      "n": 1149,
+      "h": 78,
+      "d": 8,
+      "neu": 1063,
+      "direccionales": 86,
+      "balance": 0.813953488372093,
+      "balance_ic": [
+        0.6541,
+        0.9042
+      ],
+      "score_hd": 0.03549966321774814,
+      "cobertura": 0.07484769364664925,
+      "relevancia_pct": 84.4
+    },
+    {
+      "anio": 2011,
+      "n": 1062,
+      "h": 59,
+      "d": 15,
+      "neu": 988,
+      "direccionales": 74,
+      "balance": 0.5945945945945946,
+      "balance_ic": [
+        0.3842,
+        0.7463
+      ],
+      "score_hd": 0.02532801677254979,
+      "cobertura": 0.0696798493408663,
+      "relevancia_pct": 81.5
+    },
+    {
+      "anio": 2012,
+      "n": 909,
+      "h": 0,
+      "d": 16,
+      "neu": 893,
+      "direccionales": 16,
+      "balance": -1.0,
+      "balance_ic": [
+        -1.0,
+        -0.6128
+      ],
+      "score_hd": -0.0285736128855929,
+      "cobertura": 0.0176017601760176,
+      "relevancia_pct": 76.5
+    },
+    {
+      "anio": 2013,
+      "n": 816,
+      "h": 1,
+      "d": 58,
+      "neu": 757,
+      "direccionales": 59,
+      "balance": -0.9661016949152542,
+      "balance_ic": [
+        -0.994,
+        -0.8201
+      ],
+      "score_hd": -0.07338181893644902,
+      "cobertura": 0.07230392156862746,
+      "relevancia_pct": 75.5
+    },
+    {
+      "anio": 2014,
+      "n": 748,
+      "h": 1,
+      "d": 107,
+      "neu": 640,
+      "direccionales": 108,
+      "balance": -0.9814814814814815,
+      "balance_ic": [
+        -0.9967,
+        -0.8988
+      ],
+      "score_hd": -0.11647241974184973,
+      "cobertura": 0.1443850267379679,
+      "relevancia_pct": 73.4
+    },
+    {
+      "anio": 2015,
+      "n": 821,
+      "h": 26,
+      "d": 32,
+      "neu": 763,
+      "direccionales": 58,
+      "balance": -0.10344827586206896,
+      "balance_ic": [
+        -0.345,
+        0.151
+      ],
+      "score_hd": -0.022613534345690134,
+      "cobertura": 0.07064555420219244,
+      "relevancia_pct": 77.6
+    }
+  ],
+  "actas": [
+    {
+      "id": "RPM-2005-01-11",
+      "fecha": "2005-01-11",
+      "anio": 2005,
+      "mes": 1,
+      "n": 58,
+      "h": 13,
+      "d": 0,
+      "neu": 45,
+      "balance": 1.0,
+      "cobertura": 0.22413793103448276,
+      "score_hd": 0.19225477029901425,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": null,
+        "tpm": 2.5
+      }
+    },
+    {
+      "id": "RPM-2005-02-10",
+      "fecha": "2005-02-10",
+      "anio": 2005,
+      "mes": 2,
+      "n": 82,
+      "h": 12,
+      "d": 0,
+      "neu": 70,
+      "balance": 1.0,
+      "cobertura": 0.14634146341463414,
+      "score_hd": 0.14894288686842633,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": null,
+        "tpm": 2.75
+      }
+    },
+    {
+      "id": "RPM-2005-03-10",
+      "fecha": "2005-03-10",
+      "anio": 2005,
+      "mes": 3,
+      "n": 62,
+      "h": 9,
+      "d": 0,
+      "neu": 53,
+      "balance": 1.0,
+      "cobertura": 0.14516129032258066,
+      "score_hd": 0.12894977691321047,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 2.75
+      }
+    },
+    {
+      "id": "RPM-2005-04-07",
+      "fecha": "2005-04-07",
+      "anio": 2005,
+      "mes": 4,
+      "n": 60,
+      "h": 8,
+      "d": 0,
+      "neu": 52,
+      "balance": 1.0,
+      "cobertura": 0.13333333333333333,
+      "score_hd": 0.12587460474129986,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2005-05-12",
+      "fecha": "2005-05-12",
+      "anio": 2005,
+      "mes": 5,
+      "n": 60,
+      "h": 13,
+      "d": 0,
+      "neu": 47,
+      "balance": 1.0,
+      "cobertura": 0.21666666666666667,
+      "score_hd": 0.2019609520074013,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 3.25
+      }
+    },
+    {
+      "id": "RPM-2005-06-09",
+      "fecha": "2005-06-09",
+      "anio": 2005,
+      "mes": 6,
+      "n": 38,
+      "h": 9,
+      "d": 0,
+      "neu": 29,
+      "balance": 1.0,
+      "cobertura": 0.23684210526315788,
+      "score_hd": 0.21134361468586105,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.25
+      }
+    },
+    {
+      "id": "RPM-2005-07-12",
+      "fecha": "2005-07-12",
+      "anio": 2005,
+      "mes": 7,
+      "n": 52,
+      "h": 8,
+      "d": 0,
+      "neu": 44,
+      "balance": 1.0,
+      "cobertura": 0.15384615384615385,
+      "score_hd": 0.15215218772178019,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 3.5
+      }
+    },
+    {
+      "id": "RPM-2005-08-11",
+      "fecha": "2005-08-11",
+      "anio": 2005,
+      "mes": 8,
+      "n": 56,
+      "h": 10,
+      "d": 0,
+      "neu": 46,
+      "balance": 1.0,
+      "cobertura": 0.17857142857142858,
+      "score_hd": 0.1515432989624647,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 3.75
+      }
+    },
+    {
+      "id": "RPM-2005-09-08",
+      "fecha": "2005-09-08",
+      "anio": 2005,
+      "mes": 9,
+      "n": 34,
+      "h": 8,
+      "d": 0,
+      "neu": 26,
+      "balance": 1.0,
+      "cobertura": 0.23529411764705882,
+      "score_hd": 0.18618420625967638,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 4.0
+      }
+    },
+    {
+      "id": "RPM-2005-10-11",
+      "fecha": "2005-10-11",
+      "anio": 2005,
+      "mes": 10,
+      "n": 50,
+      "h": 9,
+      "d": 0,
+      "neu": 41,
+      "balance": 1.0,
+      "cobertura": 0.18,
+      "score_hd": 0.13709298095301353,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 4.25
+      }
+    },
+    {
+      "id": "RPM-2005-11-10",
+      "fecha": "2005-11-10",
+      "anio": 2005,
+      "mes": 11,
+      "n": 58,
+      "h": 8,
+      "d": 0,
+      "neu": 50,
+      "balance": 1.0,
+      "cobertura": 0.13793103448275862,
+      "score_hd": 0.11620593059539468,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 4.5
+      }
+    },
+    {
+      "id": "RPM-2005-12-13",
+      "fecha": "2005-12-13",
+      "anio": 2005,
+      "mes": 12,
+      "n": 65,
+      "h": 6,
+      "d": 0,
+      "neu": 59,
+      "balance": 1.0,
+      "cobertura": 0.09230769230769231,
+      "score_hd": 0.07502523902172392,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 4.5
+      }
+    },
+    {
+      "id": "RPM-2006-01-12",
+      "fecha": "2006-01-12",
+      "anio": 2006,
+      "mes": 1,
+      "n": 50,
+      "h": 10,
+      "d": 0,
+      "neu": 40,
+      "balance": 1.0,
+      "cobertura": 0.2,
+      "score_hd": 0.16029666310760424,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 4.5
+      }
+    },
+    {
+      "id": "RPM-2006-02-09",
+      "fecha": "2006-02-09",
+      "anio": 2006,
+      "mes": 2,
+      "n": 47,
+      "h": 10,
+      "d": 0,
+      "neu": 37,
+      "balance": 1.0,
+      "cobertura": 0.2127659574468085,
+      "score_hd": 0.16735661013064965,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 4.75
+      }
+    },
+    {
+      "id": "RPM-2006-03-16",
+      "fecha": "2006-03-16",
+      "anio": 2006,
+      "mes": 3,
+      "n": 36,
+      "h": 8,
+      "d": 0,
+      "neu": 28,
+      "balance": 1.0,
+      "cobertura": 0.2222222222222222,
+      "score_hd": 0.17623383264462059,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 4.75
+      }
+    },
+    {
+      "id": "RPM-2006-04-13",
+      "fecha": "2006-04-13",
+      "anio": 2006,
+      "mes": 4,
+      "n": 78,
+      "h": 8,
+      "d": 0,
+      "neu": 70,
+      "balance": 1.0,
+      "cobertura": 0.10256410256410256,
+      "score_hd": 0.0993838101233682,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2006-05-11",
+      "fecha": "2006-05-11",
+      "anio": 2006,
+      "mes": 5,
+      "n": 42,
+      "h": 9,
+      "d": 0,
+      "neu": 33,
+      "balance": 1.0,
+      "cobertura": 0.21428571428571427,
+      "score_hd": 0.17648065353533887,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2006-06-15",
+      "fecha": "2006-06-15",
+      "anio": 2006,
+      "mes": 6,
+      "n": 71,
+      "h": 1,
+      "d": 0,
+      "neu": 70,
+      "balance": 1.0,
+      "cobertura": 0.014084507042253521,
+      "score_hd": 0.06491567316815312,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2006-07-13",
+      "fecha": "2006-07-13",
+      "anio": 2006,
+      "mes": 7,
+      "n": 72,
+      "h": 11,
+      "d": 0,
+      "neu": 61,
+      "balance": 1.0,
+      "cobertura": 0.1527777777777778,
+      "score_hd": 0.12520214246553862,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2006-08-10",
+      "fecha": "2006-08-10",
+      "anio": 2006,
+      "mes": 8,
+      "n": 47,
+      "h": 4,
+      "d": 0,
+      "neu": 43,
+      "balance": 1.0,
+      "cobertura": 0.0851063829787234,
+      "score_hd": 0.09026140523329948,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2006-09-07",
+      "fecha": "2006-09-07",
+      "anio": 2006,
+      "mes": 9,
+      "n": 53,
+      "h": 4,
+      "d": 0,
+      "neu": 49,
+      "balance": 1.0,
+      "cobertura": 0.07547169811320754,
+      "score_hd": 0.061963411493479136,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2006-10-12",
+      "fecha": "2006-10-12",
+      "anio": 2006,
+      "mes": 10,
+      "n": 68,
+      "h": 2,
+      "d": 1,
+      "neu": 65,
+      "balance": 0.3333333333333333,
+      "cobertura": 0.04411764705882353,
+      "score_hd": 0.03503990592859911,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2006-11-16",
+      "fecha": "2006-11-16",
+      "anio": 2006,
+      "mes": 11,
+      "n": 45,
+      "h": 4,
+      "d": 3,
+      "neu": 38,
+      "balance": 0.14285714285714285,
+      "cobertura": 0.15555555555555556,
+      "score_hd": 0.038097705522150485,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2006-12-14",
+      "fecha": "2006-12-14",
+      "anio": 2006,
+      "mes": 12,
+      "n": 67,
+      "h": 3,
+      "d": 2,
+      "neu": 62,
+      "balance": 0.2,
+      "cobertura": 0.07462686567164178,
+      "score_hd": 0.015407708103772727,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2007-01-11",
+      "fecha": "2007-01-11",
+      "anio": 2007,
+      "mes": 1,
+      "n": 53,
+      "h": 2,
+      "d": 10,
+      "neu": 41,
+      "balance": -0.6666666666666666,
+      "cobertura": 0.22641509433962265,
+      "score_hd": -0.09204730035005132,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": null,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2007-02-08",
+      "fecha": "2007-02-08",
+      "anio": 2007,
+      "mes": 2,
+      "n": 64,
+      "h": 0,
+      "d": 1,
+      "neu": 63,
+      "balance": -1.0,
+      "cobertura": 0.015625,
+      "score_hd": 0.019764433558007725,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2007-03-15",
+      "fecha": "2007-03-15",
+      "anio": 2007,
+      "mes": 3,
+      "n": 69,
+      "h": 3,
+      "d": 5,
+      "neu": 61,
+      "balance": -0.25,
+      "cobertura": 0.11594202898550725,
+      "score_hd": -0.0070129487206588145,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2007-04-12",
+      "fecha": "2007-04-12",
+      "anio": 2007,
+      "mes": 4,
+      "n": 73,
+      "h": 5,
+      "d": 1,
+      "neu": 67,
+      "balance": 0.6666666666666666,
+      "cobertura": 0.0821917808219178,
+      "score_hd": 0.02755107580122005,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2007-05-10",
+      "fecha": "2007-05-10",
+      "anio": 2007,
+      "mes": 5,
+      "n": 52,
+      "h": 3,
+      "d": 0,
+      "neu": 49,
+      "balance": 1.0,
+      "cobertura": 0.057692307692307696,
+      "score_hd": 0.06108684098322312,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2007-06-14",
+      "fecha": "2007-06-14",
+      "anio": 2007,
+      "mes": 6,
+      "n": 63,
+      "h": 6,
+      "d": 0,
+      "neu": 57,
+      "balance": 1.0,
+      "cobertura": 0.09523809523809523,
+      "score_hd": 0.06859268579893024,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2007-07-12",
+      "fecha": "2007-07-12",
+      "anio": 2007,
+      "mes": 7,
+      "n": 64,
+      "h": 11,
+      "d": 0,
+      "neu": 53,
+      "balance": 1.0,
+      "cobertura": 0.171875,
+      "score_hd": 0.11136406345781677,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2007-08-09",
+      "fecha": "2007-08-09",
+      "anio": 2007,
+      "mes": 8,
+      "n": 65,
+      "h": 14,
+      "d": 0,
+      "neu": 51,
+      "balance": 1.0,
+      "cobertura": 0.2153846153846154,
+      "score_hd": 0.10611532368451275,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 5.5
+      }
+    },
+    {
+      "id": "RPM-2007-09-13",
+      "fecha": "2007-09-13",
+      "anio": 2007,
+      "mes": 9,
+      "n": 88,
+      "h": 9,
+      "d": 0,
+      "neu": 79,
+      "balance": 1.0,
+      "cobertura": 0.10227272727272728,
+      "score_hd": 0.07073607301545244,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 5.75
+      }
+    },
+    {
+      "id": "RPM-2007-10-11",
+      "fecha": "2007-10-11",
+      "anio": 2007,
+      "mes": 10,
+      "n": 71,
+      "h": 3,
+      "d": 0,
+      "neu": 68,
+      "balance": 1.0,
+      "cobertura": 0.04225352112676056,
+      "score_hd": 0.04449693838628751,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.75
+      }
+    },
+    {
+      "id": "RPM-2007-11-13",
+      "fecha": "2007-11-13",
+      "anio": 2007,
+      "mes": 11,
+      "n": 76,
+      "h": 5,
+      "d": 0,
+      "neu": 71,
+      "balance": 1.0,
+      "cobertura": 0.06578947368421052,
+      "score_hd": 0.03248609939781536,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.75
+      }
+    },
+    {
+      "id": "RPM-2007-12-13",
+      "fecha": "2007-12-13",
+      "anio": 2007,
+      "mes": 12,
+      "n": 80,
+      "h": 9,
+      "d": 0,
+      "neu": 71,
+      "balance": 1.0,
+      "cobertura": 0.1125,
+      "score_hd": 0.08136162416144976,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 6.0
+      }
+    },
+    {
+      "id": "RPM-2008-01-10",
+      "fecha": "2008-01-10",
+      "anio": 2008,
+      "mes": 1,
+      "n": 49,
+      "h": 12,
+      "d": 0,
+      "neu": 37,
+      "balance": 1.0,
+      "cobertura": 0.24489795918367346,
+      "score_hd": 0.16926532382965662,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 6.25
+      }
+    },
+    {
+      "id": "RPM-2008-02-07",
+      "fecha": "2008-02-07",
+      "anio": 2008,
+      "mes": 2,
+      "n": 68,
+      "h": 6,
+      "d": 0,
+      "neu": 62,
+      "balance": 1.0,
+      "cobertura": 0.08823529411764706,
+      "score_hd": 0.05606819345744559,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 125.0,
+        "tpm": 6.25
+      }
+    },
+    {
+      "id": "RPM-2008-03-13",
+      "fecha": "2008-03-13",
+      "anio": 2008,
+      "mes": 3,
+      "n": 110,
+      "h": 8,
+      "d": 0,
+      "neu": 102,
+      "balance": 1.0,
+      "cobertura": 0.07272727272727272,
+      "score_hd": 0.04041266280898762,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 6.25
+      }
+    },
+    {
+      "id": "RPM-2008-04-10",
+      "fecha": "2008-04-10",
+      "anio": 2008,
+      "mes": 4,
+      "n": 43,
+      "h": 1,
+      "d": 0,
+      "neu": 42,
+      "balance": 1.0,
+      "cobertura": 0.023255813953488372,
+      "score_hd": 0.03392423057421703,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 6.25
+      }
+    },
+    {
+      "id": "RPM-2008-05-08",
+      "fecha": "2008-05-08",
+      "anio": 2008,
+      "mes": 5,
+      "n": 95,
+      "h": 2,
+      "d": 0,
+      "neu": 93,
+      "balance": 1.0,
+      "cobertura": 0.021052631578947368,
+      "score_hd": 0.016627064180396268,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 6.25
+      }
+    },
+    {
+      "id": "RPM-2008-06-10",
+      "fecha": "2008-06-10",
+      "anio": 2008,
+      "mes": 6,
+      "n": 107,
+      "h": 9,
+      "d": 0,
+      "neu": 98,
+      "balance": 1.0,
+      "cobertura": 0.08411214953271028,
+      "score_hd": 0.0597931245102936,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 6.75
+      }
+    },
+    {
+      "id": "RPM-2008-07-10",
+      "fecha": "2008-07-10",
+      "anio": 2008,
+      "mes": 7,
+      "n": 97,
+      "h": 10,
+      "d": 0,
+      "neu": 87,
+      "balance": 1.0,
+      "cobertura": 0.10309278350515463,
+      "score_hd": 0.06687675178473,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 7.25
+      }
+    },
+    {
+      "id": "RPM-2008-08-14",
+      "fecha": "2008-08-14",
+      "anio": 2008,
+      "mes": 8,
+      "n": 99,
+      "h": 7,
+      "d": 0,
+      "neu": 92,
+      "balance": 1.0,
+      "cobertura": 0.0707070707070707,
+      "score_hd": 0.05134868523530171,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 7.75
+      }
+    },
+    {
+      "id": "RPM-2008-09-04",
+      "fecha": "2008-09-04",
+      "anio": 2008,
+      "mes": 9,
+      "n": 74,
+      "h": 10,
+      "d": 0,
+      "neu": 64,
+      "balance": 1.0,
+      "cobertura": 0.13513513513513514,
+      "score_hd": 0.09503806694521941,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 8.25
+      }
+    },
+    {
+      "id": "RPM-2008-10-09",
+      "fecha": "2008-10-09",
+      "anio": 2008,
+      "mes": 10,
+      "n": 45,
+      "h": 6,
+      "d": 1,
+      "neu": 38,
+      "balance": 0.7142857142857143,
+      "cobertura": 0.15555555555555556,
+      "score_hd": 0.041180945572486895,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 8.25
+      }
+    },
+    {
+      "id": "RPM-2008-11-13",
+      "fecha": "2008-11-13",
+      "anio": 2008,
+      "mes": 11,
+      "n": 60,
+      "h": 1,
+      "d": 1,
+      "neu": 58,
+      "balance": 0.0,
+      "cobertura": 0.03333333333333333,
+      "score_hd": -0.002504372787479972,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 8.25
+      }
+    },
+    {
+      "id": "RPM-2008-12-11",
+      "fecha": "2008-12-11",
+      "anio": 2008,
+      "mes": 12,
+      "n": 110,
+      "h": 1,
+      "d": 8,
+      "neu": 101,
+      "balance": -0.7777777777777778,
+      "cobertura": 0.08181818181818182,
+      "score_hd": -0.03623033204029645,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 8.25
+      }
+    },
+    {
+      "id": "RPM-2009-01-08",
+      "fecha": "2009-01-08",
+      "anio": 2009,
+      "mes": 1,
+      "n": 67,
+      "h": 1,
+      "d": 7,
+      "neu": 59,
+      "balance": -0.75,
+      "cobertura": 0.11940298507462686,
+      "score_hd": -0.054245814615923454,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 100.0,
+        "tpm": 7.25
+      }
+    },
+    {
+      "id": "RPM-2009-02-12",
+      "fecha": "2009-02-12",
+      "anio": 2009,
+      "mes": 2,
+      "n": 102,
+      "h": 0,
+      "d": 15,
+      "neu": 87,
+      "balance": -1.0,
+      "cobertura": 0.14705882352941177,
+      "score_hd": -0.10642429511248527,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 250.0,
+        "tpm": 4.75
+      }
+    },
+    {
+      "id": "RPM-2009-03-12",
+      "fecha": "2009-03-12",
+      "anio": 2009,
+      "mes": 3,
+      "n": 81,
+      "h": 0,
+      "d": 8,
+      "neu": 73,
+      "balance": -1.0,
+      "cobertura": 0.09876543209876543,
+      "score_hd": -0.08027344912715649,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 250.0,
+        "tpm": 2.25
+      }
+    },
+    {
+      "id": "RPM-2009-04-09",
+      "fecha": "2009-04-09",
+      "anio": 2009,
+      "mes": 4,
+      "n": 147,
+      "h": 0,
+      "d": 10,
+      "neu": 137,
+      "balance": -1.0,
+      "cobertura": 0.06802721088435375,
+      "score_hd": -0.053436598240185124,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 50.0,
+        "tpm": 1.75
+      }
+    },
+    {
+      "id": "RPM-2009-05-07",
+      "fecha": "2009-05-07",
+      "anio": 2009,
+      "mes": 5,
+      "n": 91,
+      "h": 0,
+      "d": 9,
+      "neu": 82,
+      "balance": -1.0,
+      "cobertura": 0.0989010989010989,
+      "score_hd": -0.04937813791190813,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 50.0,
+        "tpm": 1.25
+      }
+    },
+    {
+      "id": "RPM-2009-06-16",
+      "fecha": "2009-06-16",
+      "anio": 2009,
+      "mes": 6,
+      "n": 99,
+      "h": 0,
+      "d": 9,
+      "neu": 90,
+      "balance": -1.0,
+      "cobertura": 0.09090909090909091,
+      "score_hd": -0.040630162996985394,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 50.0,
+        "tpm": 0.75
+      }
+    },
+    {
+      "id": "RPM-2009-07-09",
+      "fecha": "2009-07-09",
+      "anio": 2009,
+      "mes": 7,
+      "n": 115,
+      "h": 0,
+      "d": 11,
+      "neu": 104,
+      "balance": -1.0,
+      "cobertura": 0.09565217391304348,
+      "score_hd": -0.0756783175878716,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2009-08-13",
+      "fecha": "2009-08-13",
+      "anio": 2009,
+      "mes": 8,
+      "n": 79,
+      "h": 0,
+      "d": 4,
+      "neu": 75,
+      "balance": -1.0,
+      "cobertura": 0.05063291139240506,
+      "score_hd": -0.04264054535344406,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2009-09-08",
+      "fecha": "2009-09-08",
+      "anio": 2009,
+      "mes": 9,
+      "n": 70,
+      "h": 0,
+      "d": 5,
+      "neu": 65,
+      "balance": -1.0,
+      "cobertura": 0.07142857142857142,
+      "score_hd": -0.04776487100119199,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2009-10-13",
+      "fecha": "2009-10-13",
+      "anio": 2009,
+      "mes": 10,
+      "n": 82,
+      "h": 2,
+      "d": 4,
+      "neu": 76,
+      "balance": -0.3333333333333333,
+      "cobertura": 0.07317073170731707,
+      "score_hd": -0.03384941209509869,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2009-11-12",
+      "fecha": "2009-11-12",
+      "anio": 2009,
+      "mes": 11,
+      "n": 81,
+      "h": 0,
+      "d": 6,
+      "neu": 75,
+      "balance": -1.0,
+      "cobertura": 0.07407407407407407,
+      "score_hd": -0.023339376903539866,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2009-12-15",
+      "fecha": "2009-12-15",
+      "anio": 2009,
+      "mes": 12,
+      "n": 79,
+      "h": 1,
+      "d": 3,
+      "neu": 75,
+      "balance": -0.5,
+      "cobertura": 0.05063291139240506,
+      "score_hd": -0.019129403916866843,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2010-01-14",
+      "fecha": "2010-01-14",
+      "anio": 2010,
+      "mes": 1,
+      "n": 69,
+      "h": 0,
+      "d": 3,
+      "neu": 66,
+      "balance": -1.0,
+      "cobertura": 0.043478260869565216,
+      "score_hd": -0.038236618739971265,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2010-02-11",
+      "fecha": "2010-02-11",
+      "anio": 2010,
+      "mes": 2,
+      "n": 133,
+      "h": 0,
+      "d": 1,
+      "neu": 132,
+      "balance": -1.0,
+      "cobertura": 0.007518796992481203,
+      "score_hd": -0.004079705335890496,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2010-03-18",
+      "fecha": "2010-03-18",
+      "anio": 2010,
+      "mes": 3,
+      "n": 84,
+      "h": 3,
+      "d": 0,
+      "neu": 81,
+      "balance": 1.0,
+      "cobertura": 0.03571428571428571,
+      "score_hd": 0.007629024177736684,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2010-04-15",
+      "fecha": "2010-04-15",
+      "anio": 2010,
+      "mes": 4,
+      "n": 91,
+      "h": 4,
+      "d": 2,
+      "neu": 85,
+      "balance": 0.3333333333333333,
+      "cobertura": 0.06593406593406594,
+      "score_hd": 0.026754575955130484,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2010-05-13",
+      "fecha": "2010-05-13",
+      "anio": 2010,
+      "mes": 5,
+      "n": 76,
+      "h": 11,
+      "d": 0,
+      "neu": 65,
+      "balance": 1.0,
+      "cobertura": 0.14473684210526316,
+      "score_hd": 0.042963173280344956,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 50.0,
+        "tpm": 0.5
+      }
+    },
+    {
+      "id": "RPM-2010-06-15",
+      "fecha": "2010-06-15",
+      "anio": 2010,
+      "mes": 6,
+      "n": 100,
+      "h": 9,
+      "d": 0,
+      "neu": 91,
+      "balance": 1.0,
+      "cobertura": 0.09,
+      "score_hd": 0.06271362806529217,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 1.0
+      }
+    },
+    {
+      "id": "RPM-2010-07-15",
+      "fecha": "2010-07-15",
+      "anio": 2010,
+      "mes": 7,
+      "n": 103,
+      "h": 8,
+      "d": 0,
+      "neu": 95,
+      "balance": 1.0,
+      "cobertura": 0.07766990291262135,
+      "score_hd": 0.0577446364571309,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 1.5
+      }
+    },
+    {
+      "id": "RPM-2010-08-12",
+      "fecha": "2010-08-12",
+      "anio": 2010,
+      "mes": 8,
+      "n": 96,
+      "h": 11,
+      "d": 1,
+      "neu": 84,
+      "balance": 0.8333333333333334,
+      "cobertura": 0.125,
+      "score_hd": 0.06374588810001951,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 2.0
+      }
+    },
+    {
+      "id": "RPM-2010-09-16",
+      "fecha": "2010-09-16",
+      "anio": 2010,
+      "mes": 9,
+      "n": 128,
+      "h": 8,
+      "d": 0,
+      "neu": 120,
+      "balance": 1.0,
+      "cobertura": 0.0625,
+      "score_hd": 0.04062202824186875,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 2.5
+      }
+    },
+    {
+      "id": "RPM-2010-10-14",
+      "fecha": "2010-10-14",
+      "anio": 2010,
+      "mes": 10,
+      "n": 89,
+      "h": 10,
+      "d": 0,
+      "neu": 79,
+      "balance": 1.0,
+      "cobertura": 0.11235955056179775,
+      "score_hd": 0.06301828028210757,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 2.75
+      }
+    },
+    {
+      "id": "RPM-2010-11-16",
+      "fecha": "2010-11-16",
+      "anio": 2010,
+      "mes": 11,
+      "n": 108,
+      "h": 8,
+      "d": 0,
+      "neu": 100,
+      "balance": 1.0,
+      "cobertura": 0.07407407407407407,
+      "score_hd": 0.04380414686869782,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2010-12-16",
+      "fecha": "2010-12-16",
+      "anio": 2010,
+      "mes": 12,
+      "n": 72,
+      "h": 6,
+      "d": 1,
+      "neu": 65,
+      "balance": 0.7142857142857143,
+      "cobertura": 0.09722222222222222,
+      "score_hd": 0.05210520675929701,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 3.25
+      }
+    },
+    {
+      "id": "RPM-2011-01-13",
+      "fecha": "2011-01-13",
+      "anio": 2011,
+      "mes": 1,
+      "n": 89,
+      "h": 9,
+      "d": 0,
+      "neu": 80,
+      "balance": 1.0,
+      "cobertura": 0.10112359550561797,
+      "score_hd": 0.06106368309573563,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.25
+      }
+    },
+    {
+      "id": "RPM-2011-02-17",
+      "fecha": "2011-02-17",
+      "anio": 2011,
+      "mes": 2,
+      "n": 111,
+      "h": 8,
+      "d": 1,
+      "neu": 102,
+      "balance": 0.7777777777777778,
+      "cobertura": 0.08108108108108109,
+      "score_hd": 0.05013669495100453,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 3.5
+      }
+    },
+    {
+      "id": "RPM-2011-03-17",
+      "fecha": "2011-03-17",
+      "anio": 2011,
+      "mes": 3,
+      "n": 95,
+      "h": 10,
+      "d": 0,
+      "neu": 85,
+      "balance": 1.0,
+      "cobertura": 0.10526315789473684,
+      "score_hd": 0.05044208792825863,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 4.0
+      }
+    },
+    {
+      "id": "RPM-2011-04-12",
+      "fecha": "2011-04-12",
+      "anio": 2011,
+      "mes": 4,
+      "n": 83,
+      "h": 7,
+      "d": 0,
+      "neu": 76,
+      "balance": 1.0,
+      "cobertura": 0.08433734939759036,
+      "score_hd": 0.0616216696968244,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 4.5
+      }
+    },
+    {
+      "id": "RPM-2011-05-12",
+      "fecha": "2011-05-12",
+      "anio": 2011,
+      "mes": 5,
+      "n": 102,
+      "h": 11,
+      "d": 0,
+      "neu": 91,
+      "balance": 1.0,
+      "cobertura": 0.10784313725490197,
+      "score_hd": 0.06903460456663661,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 50.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2011-06-14",
+      "fecha": "2011-06-14",
+      "anio": 2011,
+      "mes": 6,
+      "n": 80,
+      "h": 8,
+      "d": 0,
+      "neu": 72,
+      "balance": 1.0,
+      "cobertura": 0.1,
+      "score_hd": 0.061229063237444925,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2011-07-14",
+      "fecha": "2011-07-14",
+      "anio": 2011,
+      "mes": 7,
+      "n": 103,
+      "h": 5,
+      "d": 1,
+      "neu": 97,
+      "balance": 0.6666666666666666,
+      "cobertura": 0.05825242718446602,
+      "score_hd": 0.02393405996224475,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2011-08-18",
+      "fecha": "2011-08-18",
+      "anio": 2011,
+      "mes": 8,
+      "n": 84,
+      "h": 1,
+      "d": 2,
+      "neu": 81,
+      "balance": -0.3333333333333333,
+      "cobertura": 0.03571428571428571,
+      "score_hd": -0.010447969161848557,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2011-09-15",
+      "fecha": "2011-09-15",
+      "anio": 2011,
+      "mes": 9,
+      "n": 69,
+      "h": 0,
+      "d": 0,
+      "neu": 69,
+      "balance": null,
+      "cobertura": 0.0,
+      "score_hd": -0.007425573846032363,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2011-10-13",
+      "fecha": "2011-10-13",
+      "anio": 2011,
+      "mes": 10,
+      "n": 86,
+      "h": 0,
+      "d": 1,
+      "neu": 85,
+      "balance": -1.0,
+      "cobertura": 0.011627906976744186,
+      "score_hd": -0.02200312966507249,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2011-11-15",
+      "fecha": "2011-11-15",
+      "anio": 2011,
+      "mes": 11,
+      "n": 89,
+      "h": 0,
+      "d": 5,
+      "neu": 84,
+      "balance": -1.0,
+      "cobertura": 0.056179775280898875,
+      "score_hd": -0.02363675909883549,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2011-12-13",
+      "fecha": "2011-12-13",
+      "anio": 2011,
+      "mes": 12,
+      "n": 71,
+      "h": 0,
+      "d": 5,
+      "neu": 66,
+      "balance": -1.0,
+      "cobertura": 0.07042253521126761,
+      "score_hd": -0.04263679219147506,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.25
+      }
+    },
+    {
+      "id": "RPM-2012-01-12",
+      "fecha": "2012-01-12",
+      "anio": 2012,
+      "mes": 1,
+      "n": 70,
+      "h": 0,
+      "d": 6,
+      "neu": 64,
+      "balance": -1.0,
+      "cobertura": 0.08571428571428572,
+      "score_hd": -0.06393554031834497,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-02-14",
+      "fecha": "2012-02-14",
+      "anio": 2012,
+      "mes": 2,
+      "n": 90,
+      "h": 0,
+      "d": 1,
+      "neu": 89,
+      "balance": -1.0,
+      "cobertura": 0.011111111111111112,
+      "score_hd": -0.023663655894461903,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-03-15",
+      "fecha": "2012-03-15",
+      "anio": 2012,
+      "mes": 3,
+      "n": 98,
+      "h": 0,
+      "d": 1,
+      "neu": 97,
+      "balance": -1.0,
+      "cobertura": 0.01020408163265306,
+      "score_hd": -0.014052308881336682,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-04-17",
+      "fecha": "2012-04-17",
+      "anio": 2012,
+      "mes": 4,
+      "n": 81,
+      "h": 0,
+      "d": 0,
+      "neu": 81,
+      "balance": null,
+      "cobertura": 0.0,
+      "score_hd": -0.016828603821662822,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-05-17",
+      "fecha": "2012-05-17",
+      "anio": 2012,
+      "mes": 5,
+      "n": 71,
+      "h": 0,
+      "d": 1,
+      "neu": 70,
+      "balance": -1.0,
+      "cobertura": 0.014084507042253521,
+      "score_hd": -0.018864290801226185,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-06-14",
+      "fecha": "2012-06-14",
+      "anio": 2012,
+      "mes": 6,
+      "n": 57,
+      "h": 0,
+      "d": 0,
+      "neu": 57,
+      "balance": null,
+      "cobertura": 0.0,
+      "score_hd": -0.02456160186524941,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-07-12",
+      "fecha": "2012-07-12",
+      "anio": 2012,
+      "mes": 7,
+      "n": 89,
+      "h": 0,
+      "d": 1,
+      "neu": 88,
+      "balance": -1.0,
+      "cobertura": 0.011235955056179775,
+      "score_hd": -0.02480900219136818,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-08-16",
+      "fecha": "2012-08-16",
+      "anio": 2012,
+      "mes": 8,
+      "n": 73,
+      "h": 0,
+      "d": 1,
+      "neu": 72,
+      "balance": -1.0,
+      "cobertura": 0.0136986301369863,
+      "score_hd": -0.035908183846260606,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-09-13",
+      "fecha": "2012-09-13",
+      "anio": 2012,
+      "mes": 9,
+      "n": 65,
+      "h": 0,
+      "d": 2,
+      "neu": 63,
+      "balance": -1.0,
+      "cobertura": 0.03076923076923077,
+      "score_hd": -0.04530024535232346,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-10-18",
+      "fecha": "2012-10-18",
+      "anio": 2012,
+      "mes": 10,
+      "n": 82,
+      "h": 0,
+      "d": 1,
+      "neu": 81,
+      "balance": -1.0,
+      "cobertura": 0.012195121951219513,
+      "score_hd": -0.028039325038124348,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-11-13",
+      "fecha": "2012-11-13",
+      "anio": 2012,
+      "mes": 11,
+      "n": 76,
+      "h": 0,
+      "d": 1,
+      "neu": 75,
+      "balance": -1.0,
+      "cobertura": 0.013157894736842105,
+      "score_hd": -0.026956520035297273,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2012-12-13",
+      "fecha": "2012-12-13",
+      "anio": 2012,
+      "mes": 12,
+      "n": 57,
+      "h": 0,
+      "d": 1,
+      "neu": 56,
+      "balance": -1.0,
+      "cobertura": 0.017543859649122806,
+      "score_hd": -0.0309972524134677,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-01-17",
+      "fecha": "2013-01-17",
+      "anio": 2013,
+      "mes": 1,
+      "n": 73,
+      "h": 0,
+      "d": 0,
+      "neu": 73,
+      "balance": null,
+      "cobertura": 0.0,
+      "score_hd": -0.01847634913854542,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-02-14",
+      "fecha": "2013-02-14",
+      "anio": 2013,
+      "mes": 2,
+      "n": 84,
+      "h": 0,
+      "d": 2,
+      "neu": 82,
+      "balance": -1.0,
+      "cobertura": 0.023809523809523808,
+      "score_hd": -0.02779269147178791,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-03-14",
+      "fecha": "2013-03-14",
+      "anio": 2013,
+      "mes": 3,
+      "n": 65,
+      "h": 1,
+      "d": 1,
+      "neu": 63,
+      "balance": 0.0,
+      "cobertura": 0.03076923076923077,
+      "score_hd": -0.03737777736539935,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-04-11",
+      "fecha": "2013-04-11",
+      "anio": 2013,
+      "mes": 4,
+      "n": 71,
+      "h": 0,
+      "d": 2,
+      "neu": 69,
+      "balance": -1.0,
+      "cobertura": 0.028169014084507043,
+      "score_hd": -0.04312255375849777,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-05-16",
+      "fecha": "2013-05-16",
+      "anio": 2013,
+      "mes": 5,
+      "n": 60,
+      "h": 0,
+      "d": 4,
+      "neu": 56,
+      "balance": -1.0,
+      "cobertura": 0.06666666666666667,
+      "score_hd": -0.082558614688311,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-06-13",
+      "fecha": "2013-06-13",
+      "anio": 2013,
+      "mes": 6,
+      "n": 77,
+      "h": 0,
+      "d": 5,
+      "neu": 72,
+      "balance": -1.0,
+      "cobertura": 0.06493506493506493,
+      "score_hd": -0.07433680059043765,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-07-11",
+      "fecha": "2013-07-11",
+      "anio": 2013,
+      "mes": 7,
+      "n": 76,
+      "h": 0,
+      "d": 6,
+      "neu": 70,
+      "balance": -1.0,
+      "cobertura": 0.07894736842105263,
+      "score_hd": -0.0904681472579213,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-08-13",
+      "fecha": "2013-08-13",
+      "anio": 2013,
+      "mes": 8,
+      "n": 67,
+      "h": 0,
+      "d": 4,
+      "neu": 63,
+      "balance": -1.0,
+      "cobertura": 0.05970149253731343,
+      "score_hd": -0.08163242781118916,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-09-12",
+      "fecha": "2013-09-12",
+      "anio": 2013,
+      "mes": 9,
+      "n": 72,
+      "h": 0,
+      "d": 4,
+      "neu": 68,
+      "balance": -1.0,
+      "cobertura": 0.05555555555555555,
+      "score_hd": -0.06156279320504421,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 5.0
+      }
+    },
+    {
+      "id": "RPM-2013-10-17",
+      "fecha": "2013-10-17",
+      "anio": 2013,
+      "mes": 10,
+      "n": 51,
+      "h": 0,
+      "d": 10,
+      "neu": 41,
+      "balance": -1.0,
+      "cobertura": 0.19607843137254902,
+      "score_hd": -0.12652938778928804,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 4.75
+      }
+    },
+    {
+      "id": "RPM-2013-11-19",
+      "fecha": "2013-11-19",
+      "anio": 2013,
+      "mes": 11,
+      "n": 56,
+      "h": 0,
+      "d": 12,
+      "neu": 44,
+      "balance": -1.0,
+      "cobertura": 0.21428571428571427,
+      "score_hd": -0.1886346695073591,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 4.5
+      }
+    },
+    {
+      "id": "RPM-2013-12-12",
+      "fecha": "2013-12-12",
+      "anio": 2013,
+      "mes": 12,
+      "n": 64,
+      "h": 0,
+      "d": 8,
+      "neu": 56,
+      "balance": -1.0,
+      "cobertura": 0.125,
+      "score_hd": -0.09739818865079788,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 4.5
+      }
+    },
+    {
+      "id": "RPM-2014-01-16",
+      "fecha": "2014-01-16",
+      "anio": 2014,
+      "mes": 1,
+      "n": 53,
+      "h": 0,
+      "d": 11,
+      "neu": 42,
+      "balance": -1.0,
+      "cobertura": 0.20754716981132076,
+      "score_hd": -0.16083945281765272,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 4.5
+      }
+    },
+    {
+      "id": "RPM-2014-02-18",
+      "fecha": "2014-02-18",
+      "anio": 2014,
+      "mes": 2,
+      "n": 73,
+      "h": 0,
+      "d": 10,
+      "neu": 63,
+      "balance": -1.0,
+      "cobertura": 0.136986301369863,
+      "score_hd": -0.1369153191235057,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 4.25
+      }
+    },
+    {
+      "id": "RPM-2014-03-13",
+      "fecha": "2014-03-13",
+      "anio": 2014,
+      "mes": 3,
+      "n": 72,
+      "h": 0,
+      "d": 12,
+      "neu": 60,
+      "balance": -1.0,
+      "cobertura": 0.16666666666666666,
+      "score_hd": -0.10349453467796997,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 4.0
+      }
+    },
+    {
+      "id": "RPM-2014-04-17",
+      "fecha": "2014-04-17",
+      "anio": 2014,
+      "mes": 4,
+      "n": 86,
+      "h": 0,
+      "d": 6,
+      "neu": 80,
+      "balance": -1.0,
+      "cobertura": 0.06976744186046512,
+      "score_hd": -0.07119438960372877,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 4.0
+      }
+    },
+    {
+      "id": "RPM-2014-05-15",
+      "fecha": "2014-05-15",
+      "anio": 2014,
+      "mes": 5,
+      "n": 65,
+      "h": 0,
+      "d": 5,
+      "neu": 60,
+      "balance": -1.0,
+      "cobertura": 0.07692307692307693,
+      "score_hd": -0.0874791140232318,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 4.0
+      }
+    },
+    {
+      "id": "RPM-2014-06-12",
+      "fecha": "2014-06-12",
+      "anio": 2014,
+      "mes": 6,
+      "n": 78,
+      "h": 1,
+      "d": 7,
+      "neu": 70,
+      "balance": -0.75,
+      "cobertura": 0.10256410256410256,
+      "score_hd": -0.09089906488747905,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 4.0
+      }
+    },
+    {
+      "id": "RPM-2014-07-15",
+      "fecha": "2014-07-15",
+      "anio": 2014,
+      "mes": 7,
+      "n": 56,
+      "h": 0,
+      "d": 11,
+      "neu": 45,
+      "balance": -1.0,
+      "cobertura": 0.19642857142857142,
+      "score_hd": -0.17375778971545033,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 3.75
+      }
+    },
+    {
+      "id": "RPM-2014-08-14",
+      "fecha": "2014-08-14",
+      "anio": 2014,
+      "mes": 8,
+      "n": 59,
+      "h": 0,
+      "d": 11,
+      "neu": 48,
+      "balance": -1.0,
+      "cobertura": 0.1864406779661017,
+      "score_hd": -0.15051506827635666,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 3.5
+      }
+    },
+    {
+      "id": "RPM-2014-09-11",
+      "fecha": "2014-09-11",
+      "anio": 2014,
+      "mes": 9,
+      "n": 61,
+      "h": 0,
+      "d": 9,
+      "neu": 52,
+      "balance": -1.0,
+      "cobertura": 0.14754098360655737,
+      "score_hd": -0.09395814667979609,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 3.25
+      }
+    },
+    {
+      "id": "RPM-2014-10-16",
+      "fecha": "2014-10-16",
+      "anio": 2014,
+      "mes": 10,
+      "n": 65,
+      "h": 0,
+      "d": 12,
+      "neu": 53,
+      "balance": -1.0,
+      "cobertura": 0.18461538461538463,
+      "score_hd": -0.15008799168690412,
+      "decision": {
+        "accion": "bajar",
+        "magnitud_pb": 25.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2014-11-18",
+      "fecha": "2014-11-18",
+      "anio": 2014,
+      "mes": 11,
+      "n": 42,
+      "h": 0,
+      "d": 7,
+      "neu": 35,
+      "balance": -1.0,
+      "cobertura": 0.16666666666666666,
+      "score_hd": -0.0931397716321046,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2014-12-11",
+      "fecha": "2014-12-11",
+      "anio": 2014,
+      "mes": 12,
+      "n": 38,
+      "h": 0,
+      "d": 6,
+      "neu": 32,
+      "balance": -1.0,
+      "cobertura": 0.15789473684210525,
+      "score_hd": -0.11162118758024125,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-01-15",
+      "fecha": "2015-01-15",
+      "anio": 2015,
+      "mes": 1,
+      "n": 55,
+      "h": 0,
+      "d": 3,
+      "neu": 52,
+      "balance": -1.0,
+      "cobertura": 0.05454545454545454,
+      "score_hd": -0.039072462240523576,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-02-12",
+      "fecha": "2015-02-12",
+      "anio": 2015,
+      "mes": 2,
+      "n": 54,
+      "h": 0,
+      "d": 3,
+      "neu": 51,
+      "balance": -1.0,
+      "cobertura": 0.05555555555555555,
+      "score_hd": -0.04956546895827212,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-03-19",
+      "fecha": "2015-03-19",
+      "anio": 2015,
+      "mes": 3,
+      "n": 57,
+      "h": 2,
+      "d": 4,
+      "neu": 51,
+      "balance": -0.3333333333333333,
+      "cobertura": 0.10526315789473684,
+      "score_hd": -0.055366579245088844,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-04-16",
+      "fecha": "2015-04-16",
+      "anio": 2015,
+      "mes": 4,
+      "n": 76,
+      "h": 0,
+      "d": 3,
+      "neu": 73,
+      "balance": -1.0,
+      "cobertura": 0.039473684210526314,
+      "score_hd": -0.04485245712679763,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-05-14",
+      "fecha": "2015-05-14",
+      "anio": 2015,
+      "mes": 5,
+      "n": 72,
+      "h": 0,
+      "d": 1,
+      "neu": 71,
+      "balance": -1.0,
+      "cobertura": 0.013888888888888888,
+      "score_hd": -0.023606687206966376,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-06-11",
+      "fecha": "2015-06-11",
+      "anio": 2015,
+      "mes": 6,
+      "n": 73,
+      "h": 0,
+      "d": 2,
+      "neu": 71,
+      "balance": -1.0,
+      "cobertura": 0.0273972602739726,
+      "score_hd": -0.03716002154297245,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-07-14",
+      "fecha": "2015-07-14",
+      "anio": 2015,
+      "mes": 7,
+      "n": 63,
+      "h": 0,
+      "d": 2,
+      "neu": 61,
+      "balance": -1.0,
+      "cobertura": 0.031746031746031744,
+      "score_hd": -0.054659835222079706,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-08-13",
+      "fecha": "2015-08-13",
+      "anio": 2015,
+      "mes": 8,
+      "n": 69,
+      "h": 1,
+      "d": 4,
+      "neu": 64,
+      "balance": -0.6,
+      "cobertura": 0.07246376811594203,
+      "score_hd": -0.04678522917811603,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-09-15",
+      "fecha": "2015-09-15",
+      "anio": 2015,
+      "mes": 9,
+      "n": 84,
+      "h": 6,
+      "d": 2,
+      "neu": 76,
+      "balance": 0.5,
+      "cobertura": 0.09523809523809523,
+      "score_hd": 0.019864694314220336,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.0
+      }
+    },
+    {
+      "id": "RPM-2015-10-15",
+      "fecha": "2015-10-15",
+      "anio": 2015,
+      "mes": 10,
+      "n": 79,
+      "h": 5,
+      "d": 3,
+      "neu": 71,
+      "balance": 0.25,
+      "cobertura": 0.10126582278481013,
+      "score_hd": 0.00992863181729268,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 3.25
+      }
+    },
+    {
+      "id": "RPM-2015-11-12",
+      "fecha": "2015-11-12",
+      "anio": 2015,
+      "mes": 11,
+      "n": 58,
+      "h": 5,
+      "d": 3,
+      "neu": 50,
+      "balance": 0.25,
+      "cobertura": 0.13793103448275862,
+      "score_hd": 0.0037943310656347908,
+      "decision": {
+        "accion": "mantener",
+        "magnitud_pb": 0.0,
+        "tpm": 3.25
+      }
+    },
+    {
+      "id": "RPM-2015-12-17",
+      "fecha": "2015-12-17",
+      "anio": 2015,
+      "mes": 12,
+      "n": 81,
+      "h": 7,
+      "d": 2,
+      "neu": 72,
+      "balance": 0.5555555555555556,
+      "cobertura": 0.1111111111111111,
+      "score_hd": 0.015253541405218793,
+      "decision": {
+        "accion": "subir",
+        "magnitud_pb": 25.0,
+        "tpm": 3.5
+      }
+    }
+  ],
+  "cruce_decision": {
+    "con_frase_acuerdo": [
+      {
+        "accion": "subir",
+        "n": 35,
+        "tono": 0.0948,
+        "tono_mediana": 0.0707,
+        "signo_coherente": 35,
+        "signo_esperado": "positivo"
+      },
+      {
+        "accion": "mantener",
+        "n": 80,
+        "tono": -0.0046,
+        "tono_mediana": -0.0206,
+        "signo_coherente": 50,
+        "signo_esperado": null
+      },
+      {
+        "accion": "bajar",
+        "n": 17,
+        "tono": -0.1023,
+        "tono_mediana": -0.094,
+        "signo_coherente": 17,
+        "signo_esperado": "negativo"
+      }
+    ],
+    "sin_frase_acuerdo": [
+      {
+        "accion": "subir",
+        "n": 35,
+        "tono": 0.0849,
+        "tono_mediana": 0.0628,
+        "signo_coherente": 35,
+        "signo_esperado": "positivo"
+      },
+      {
+        "accion": "mantener",
+        "n": 80,
+        "tono": -0.0039,
+        "tono_mediana": -0.0163,
+        "signo_coherente": 50,
+        "signo_esperado": null
+      },
+      {
+        "accion": "bajar",
+        "n": 17,
+        "tono": -0.0926,
+        "tono_mediana": -0.0816,
+        "signo_coherente": 17,
+        "signo_esperado": "negativo"
+      }
+    ],
+    "diferencia_subir_bajar": {
+      "valor": 0.1971,
+      "ic95_y_p": [
+        0.1705,
+        0.2255,
+        1.0
+      ],
+      "sin_frase_acuerdo": 0.1776
+    }
+  },
+  "senal": {
+    "intervenciones_acuerdo": 132,
+    "pct_filas": 1.36,
+    "pct_masa_score": 10.2,
+    "pct_direccionales": 11.3,
+    "tono_abs_medio_acuerdo": 0.5352,
+    "tono_abs_medio_resto": 0.065
+  },
+  "topicos": [
+    {
+      "anio": 2005,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 99.0,
+      "proporcion": 0.2017,
+      "cambio": null
+    },
+    {
+      "anio": 2005,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 77.8,
+      "proporcion": 0.2514,
+      "cambio": null
+    },
+    {
+      "anio": 2005,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 118.1,
+      "proporcion": 0.1316,
+      "cambio": null
+    },
+    {
+      "anio": 2005,
+      "eje": "mercado_laboral_empleo",
+      "indice": 103.7,
+      "proporcion": 0.1784,
+      "cambio": null
+    },
+    {
+      "anio": 2005,
+      "eje": "tasas_interes_plazos",
+      "indice": 140.5,
+      "proporcion": 0.1219,
+      "cambio": null
+    },
+    {
+      "anio": 2005,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 111.6,
+      "proporcion": 0.115,
+      "cambio": null
+    },
+    {
+      "anio": 2006,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 90.0,
+      "proporcion": 0.1835,
+      "cambio": -0.01826048163721053
+    },
+    {
+      "anio": 2006,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 96.8,
+      "proporcion": 0.3126,
+      "cambio": 0.061205422312965
+    },
+    {
+      "anio": 2006,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 102.3,
+      "proporcion": 0.114,
+      "cambio": -0.017602149782264098
+    },
+    {
+      "anio": 2006,
+      "eje": "mercado_laboral_empleo",
+      "indice": 111.2,
+      "proporcion": 0.1913,
+      "cambio": 0.012961412378318188
+    },
+    {
+      "anio": 2006,
+      "eje": "tasas_interes_plazos",
+      "indice": 104.2,
+      "proporcion": 0.0904,
+      "cambio": -0.031474782570505816
+    },
+    {
+      "anio": 2006,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 105.0,
+      "proporcion": 0.1082,
+      "cambio": -0.0068294207013027824
+    },
+    {
+      "anio": 2007,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 86.7,
+      "proporcion": 0.1767,
+      "cambio": -0.00678028082375301
+    },
+    {
+      "anio": 2007,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 109.6,
+      "proporcion": 0.354,
+      "cambio": 0.04148883775674195
+    },
+    {
+      "anio": 2007,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 104.3,
+      "proporcion": 0.1162,
+      "cambio": 0.0021857692027480308
+    },
+    {
+      "anio": 2007,
+      "eje": "mercado_laboral_empleo",
+      "indice": 93.5,
+      "proporcion": 0.1609,
+      "cambio": -0.03043916100891883
+    },
+    {
+      "anio": 2007,
+      "eje": "tasas_interes_plazos",
+      "indice": 92.5,
+      "proporcion": 0.0802,
+      "cambio": -0.010190693426884362
+    },
+    {
+      "anio": 2007,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 108.6,
+      "proporcion": 0.1119,
+      "cambio": 0.0037355283000662515
+    },
+    {
+      "anio": 2008,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 80.4,
+      "proporcion": 0.1639,
+      "cambio": -0.012763590038108091
+    },
+    {
+      "anio": 2008,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 111.3,
+      "proporcion": 0.3594,
+      "cambio": 0.005402160055992256
+    },
+    {
+      "anio": 2008,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 97.6,
+      "proporcion": 0.1088,
+      "cambio": -0.007414245786987295
+    },
+    {
+      "anio": 2008,
+      "eje": "mercado_laboral_empleo",
+      "indice": 97.8,
+      "proporcion": 0.1682,
+      "cambio": 0.007275561474267528
+    },
+    {
+      "anio": 2008,
+      "eje": "tasas_interes_plazos",
+      "indice": 90.1,
+      "proporcion": 0.0782,
+      "cambio": -0.0020356636569592163
+    },
+    {
+      "anio": 2008,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 117.9,
+      "proporcion": 0.1214,
+      "cambio": 0.009535777951794819
+    },
+    {
+      "anio": 2009,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 121.3,
+      "proporcion": 0.2471,
+      "cambio": 0.08320578314365498
+    },
+    {
+      "anio": 2009,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 89.5,
+      "proporcion": 0.2891,
+      "cambio": -0.07037447207555608
+    },
+    {
+      "anio": 2009,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 96.6,
+      "proporcion": 0.1076,
+      "cambio": -0.0011533105719388481
+    },
+    {
+      "anio": 2009,
+      "eje": "mercado_laboral_empleo",
+      "indice": 99.7,
+      "proporcion": 0.1714,
+      "cambio": 0.003280670600285529
+    },
+    {
+      "anio": 2009,
+      "eje": "tasas_interes_plazos",
+      "indice": 101.6,
+      "proporcion": 0.0882,
+      "cambio": 0.009953584515752609
+    },
+    {
+      "anio": 2009,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 93.7,
+      "proporcion": 0.0965,
+      "cambio": -0.02491225561219819
+    },
+    {
+      "anio": 2010,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 96.5,
+      "proporcion": 0.1966,
+      "cambio": -0.05057432027099337
+    },
+    {
+      "anio": 2010,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 93.5,
+      "proporcion": 0.3021,
+      "cambio": 0.013060269184756446
+    },
+    {
+      "anio": 2010,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 99.2,
+      "proporcion": 0.1106,
+      "cambio": 0.002906346581558625
+    },
+    {
+      "anio": 2010,
+      "eje": "mercado_laboral_empleo",
+      "indice": 101.1,
+      "proporcion": 0.1738,
+      "cambio": 0.002382445955560003
+    },
+    {
+      "anio": 2010,
+      "eje": "tasas_interes_plazos",
+      "indice": 104.9,
+      "proporcion": 0.091,
+      "cambio": 0.0028897050961657206
+    },
+    {
+      "anio": 2010,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 122.2,
+      "proporcion": 0.1259,
+      "cambio": 0.029335553452952454
+    },
+    {
+      "anio": 2011,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 93.3,
+      "proporcion": 0.1902,
+      "cambio": -0.006357037719149028
+    },
+    {
+      "anio": 2011,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 117.7,
+      "proporcion": 0.3801,
+      "cambio": 0.07798311215722903
+    },
+    {
+      "anio": 2011,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 99.5,
+      "proporcion": 0.1109,
+      "cambio": 0.000392092096836022
+    },
+    {
+      "anio": 2011,
+      "eje": "mercado_laboral_empleo",
+      "indice": 89.8,
+      "proporcion": 0.1544,
+      "cambio": -0.019415957037123205
+    },
+    {
+      "anio": 2011,
+      "eje": "tasas_interes_plazos",
+      "indice": 88.8,
+      "proporcion": 0.0771,
+      "cambio": -0.013948937942573639
+    },
+    {
+      "anio": 2011,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 84.7,
+      "proporcion": 0.0872,
+      "cambio": -0.038653271555219026
+    },
+    {
+      "anio": 2012,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 109.9,
+      "proporcion": 0.2239,
+      "cambio": 0.03371772344439669
+    },
+    {
+      "anio": 2012,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 108.0,
+      "proporcion": 0.3488,
+      "cambio": -0.031307142925179776
+    },
+    {
+      "anio": 2012,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 84.6,
+      "proporcion": 0.0942,
+      "cambio": -0.016708453683949173
+    },
+    {
+      "anio": 2012,
+      "eje": "mercado_laboral_empleo",
+      "indice": 106.9,
+      "proporcion": 0.1838,
+      "cambio": 0.029400327241959734
+    },
+    {
+      "anio": 2012,
+      "eje": "tasas_interes_plazos",
+      "indice": 89.0,
+      "proporcion": 0.0772,
+      "cambio": 0.0001223498234602799
+    },
+    {
+      "anio": 2012,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 69.9,
+      "proporcion": 0.072,
+      "cambio": -0.015224803900687867
+    },
+    {
+      "anio": 2013,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 114.4,
+      "proporcion": 0.2332,
+      "cambio": 0.009269978020049502
+    },
+    {
+      "anio": 2013,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 101.5,
+      "proporcion": 0.3277,
+      "cambio": -0.021141559012032685
+    },
+    {
+      "anio": 2013,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 76.9,
+      "proporcion": 0.0857,
+      "cambio": -0.008510273373500007
+    },
+    {
+      "anio": 2013,
+      "eje": "mercado_laboral_empleo",
+      "indice": 97.1,
+      "proporcion": 0.167,
+      "cambio": -0.01685763123337522
+    },
+    {
+      "anio": 2013,
+      "eje": "tasas_interes_plazos",
+      "indice": 107.0,
+      "proporcion": 0.0929,
+      "cambio": 0.015636419311617564
+    },
+    {
+      "anio": 2013,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 90.9,
+      "proporcion": 0.0936,
+      "cambio": 0.021603066287240846
+    },
+    {
+      "anio": 2014,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 106.9,
+      "proporcion": 0.2178,
+      "cambio": -0.015389891397020738
+    },
+    {
+      "anio": 2014,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 96.5,
+      "proporcion": 0.3115,
+      "cambio": -0.016148777346375487
+    },
+    {
+      "anio": 2014,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 104.8,
+      "proporcion": 0.1168,
+      "cambio": 0.03109509325750759
+    },
+    {
+      "anio": 2014,
+      "eje": "mercado_laboral_empleo",
+      "indice": 98.8,
+      "proporcion": 0.1699,
+      "cambio": 0.0029923089346403087
+    },
+    {
+      "anio": 2014,
+      "eje": "tasas_interes_plazos",
+      "indice": 107.1,
+      "proporcion": 0.093,
+      "cambio": 0.00010576892724867282
+    },
+    {
+      "anio": 2014,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 88.3,
+      "proporcion": 0.0909,
+      "cambio": -0.0026545023760004005
+    },
+    {
+      "anio": 2015,
+      "eje": "actividad_demanda_ciclo",
+      "indice": 100.9,
+      "proporcion": 0.2056,
+      "cambio": -0.012159726882132266
+    },
+    {
+      "anio": 2015,
+      "eje": "entorno_externo_commodities_economias",
+      "indice": 88.2,
+      "proporcion": 0.2849,
+      "cambio": -0.026664115281742673
+    },
+    {
+      "anio": 2015,
+      "eje": "inflacion_expectativas_meta",
+      "indice": 124.9,
+      "proporcion": 0.1392,
+      "cambio": 0.022384702632200548
+    },
+    {
+      "anio": 2015,
+      "eje": "mercado_laboral_empleo",
+      "indice": 106.8,
+      "proporcion": 0.1837,
+      "cambio": 0.013724185479122686
+    },
+    {
+      "anio": 2015,
+      "eje": "tasas_interes_plazos",
+      "indice": 90.4,
+      "proporcion": 0.0784,
+      "cambio": -0.014522431149754642
+    },
+    {
+      "anio": 2015,
+      "eje": "tipo_cambio_real_nominal",
+      "indice": 105.0,
+      "proporcion": 0.1082,
+      "cambio": 0.01723738520230636
+    }
+  ],
+  "disenso": {
+    "actas": 132,
+    "actas_mixtas": 26,
+    "actas_con_direccional": 128,
+    "actas_sin_direccional": 4,
+    "miembros_unanimes": 9556,
+    "miembros_desacuerdo": 169,
+    "decisiones": {
+      "subir": 35,
+      "mantener": 80,
+      "bajar": 17
+    }
+  },
+  "puente_muestra": {
+    "fragmentos": 99,
+    "fechas": 67,
+    "por_acta": {
+      "RPM-2005-01-11": {
+        "n": 1,
+        "indices": [
+          63
+        ]
+      },
+      "RPM-2005-02-10": {
+        "n": 2,
+        "indices": [
+          36,
+          92
+        ]
+      },
+      "RPM-2005-04-07": {
+        "n": 1,
+        "indices": [
+          15
+        ]
+      },
+      "RPM-2005-05-12": {
+        "n": 3,
+        "indices": [
+          8,
+          45,
+          75
+        ]
+      },
+      "RPM-2005-07-12": {
+        "n": 2,
+        "indices": [
+          21,
+          30
+        ]
+      },
+      "RPM-2005-08-11": {
+        "n": 1,
+        "indices": [
+          56
+        ]
+      },
+      "RPM-2005-09-08": {
+        "n": 1,
+        "indices": [
+          38
+        ]
+      },
+      "RPM-2005-10-11": {
+        "n": 1,
+        "indices": [
+          93
+        ]
+      },
+      "RPM-2006-01-12": {
+        "n": 2,
+        "indices": [
+          60,
+          84
+        ]
+      },
+      "RPM-2006-02-09": {
+        "n": 1,
+        "indices": [
+          42
+        ]
+      },
+      "RPM-2006-04-13": {
+        "n": 3,
+        "indices": [
+          18,
+          24,
+          59
+        ]
+      },
+      "RPM-2006-06-15": {
+        "n": 2,
+        "indices": [
+          17,
+          80
+        ]
+      },
+      "RPM-2007-01-11": {
+        "n": 1,
+        "indices": [
+          58
+        ]
+      },
+      "RPM-2007-03-15": {
+        "n": 2,
+        "indices": [
+          86,
+          97
+        ]
+      },
+      "RPM-2007-06-14": {
+        "n": 1,
+        "indices": [
+          39
+        ]
+      },
+      "RPM-2007-09-13": {
+        "n": 2,
+        "indices": [
+          51,
+          68
+        ]
+      },
+      "RPM-2007-12-13": {
+        "n": 2,
+        "indices": [
+          20,
+          87
+        ]
+      },
+      "RPM-2008-01-10": {
+        "n": 1,
+        "indices": [
+          6
+        ]
+      },
+      "RPM-2008-02-07": {
+        "n": 1,
+        "indices": [
+          12
+        ]
+      },
+      "RPM-2008-03-13": {
+        "n": 1,
+        "indices": [
+          14
+        ]
+      },
+      "RPM-2008-08-14": {
+        "n": 3,
+        "indices": [
+          3,
+          9,
+          53
+        ]
+      },
+      "RPM-2008-09-04": {
+        "n": 2,
+        "indices": [
+          57,
+          66
+        ]
+      },
+      "RPM-2008-10-09": {
+        "n": 2,
+        "indices": [
+          0,
+          83
+        ]
+      },
+      "RPM-2008-12-11": {
+        "n": 2,
+        "indices": [
+          25,
+          76
+        ]
+      },
+      "RPM-2009-01-08": {
+        "n": 2,
+        "indices": [
+          4,
+          19
+        ]
+      },
+      "RPM-2009-02-12": {
+        "n": 5,
+        "indices": [
+          1,
+          7,
+          10,
+          13,
+          34
+        ]
+      },
+      "RPM-2009-03-12": {
+        "n": 1,
+        "indices": [
+          46
+        ]
+      },
+      "RPM-2009-04-09": {
+        "n": 3,
+        "indices": [
+          28,
+          32,
+          79
+        ]
+      },
+      "RPM-2009-07-09": {
+        "n": 3,
+        "indices": [
+          16,
+          22,
+          64
+        ]
+      },
+      "RPM-2009-10-13": {
+        "n": 1,
+        "indices": [
+          47
+        ]
+      },
+      "RPM-2010-01-14": {
+        "n": 1,
+        "indices": [
+          73
+        ]
+      },
+      "RPM-2010-02-11": {
+        "n": 1,
+        "indices": [
+          95
+        ]
+      },
+      "RPM-2010-04-15": {
+        "n": 1,
+        "indices": [
+          65
+        ]
+      },
+      "RPM-2010-06-15": {
+        "n": 1,
+        "indices": [
+          29
+        ]
+      },
+      "RPM-2010-08-12": {
+        "n": 1,
+        "indices": [
+          54
+        ]
+      },
+      "RPM-2010-09-16": {
+        "n": 1,
+        "indices": [
+          90
+        ]
+      },
+      "RPM-2010-11-16": {
+        "n": 1,
+        "indices": [
+          27
+        ]
+      },
+      "RPM-2010-12-16": {
+        "n": 1,
+        "indices": [
+          72
+        ]
+      },
+      "RPM-2011-01-13": {
+        "n": 1,
+        "indices": [
+          69
+        ]
+      },
+      "RPM-2011-02-17": {
+        "n": 1,
+        "indices": [
+          81
+        ]
+      },
+      "RPM-2011-03-17": {
+        "n": 1,
+        "indices": [
+          23
+        ]
+      },
+      "RPM-2011-04-12": {
+        "n": 1,
+        "indices": [
+          96
+        ]
+      },
+      "RPM-2011-05-12": {
+        "n": 1,
+        "indices": [
+          48
+        ]
+      },
+      "RPM-2011-06-14": {
+        "n": 1,
+        "indices": [
+          33
+        ]
+      },
+      "RPM-2011-09-15": {
+        "n": 1,
+        "indices": [
+          50
+        ]
+      },
+      "RPM-2011-10-13": {
+        "n": 1,
+        "indices": [
+          52
+        ]
+      },
+      "RPM-2012-01-12": {
+        "n": 2,
+        "indices": [
+          70,
+          94
+        ]
+      },
+      "RPM-2012-08-16": {
+        "n": 2,
+        "indices": [
+          35,
+          74
+        ]
+      },
+      "RPM-2012-11-13": {
+        "n": 1,
+        "indices": [
+          5
+        ]
+      },
+      "RPM-2013-01-17": {
+        "n": 1,
+        "indices": [
+          2
+        ]
+      },
+      "RPM-2013-03-14": {
+        "n": 1,
+        "indices": [
+          71
+        ]
+      },
+      "RPM-2013-04-11": {
+        "n": 1,
+        "indices": [
+          89
+        ]
+      },
+      "RPM-2013-07-11": {
+        "n": 1,
+        "indices": [
+          61
+        ]
+      },
+      "RPM-2013-11-19": {
+        "n": 3,
+        "indices": [
+          31,
+          43,
+          82
+        ]
+      },
+      "RPM-2013-12-12": {
+        "n": 1,
+        "indices": [
+          91
+        ]
+      },
+      "RPM-2014-01-16": {
+        "n": 1,
+        "indices": [
+          40
+        ]
+      },
+      "RPM-2014-02-18": {
+        "n": 2,
+        "indices": [
+          41,
+          67
+        ]
+      },
+      "RPM-2014-07-15": {
+        "n": 1,
+        "indices": [
+          49
+        ]
+      },
+      "RPM-2014-08-14": {
+        "n": 2,
+        "indices": [
+          37,
+          88
+        ]
+      },
+      "RPM-2014-09-11": {
+        "n": 1,
+        "indices": [
+          26
+        ]
+      },
+      "RPM-2014-11-18": {
+        "n": 1,
+        "indices": [
+          77
+        ]
+      },
+      "RPM-2015-04-16": {
+        "n": 1,
+        "indices": [
+          85
+        ]
+      },
+      "RPM-2015-05-14": {
+        "n": 1,
+        "indices": [
+          98
+        ]
+      },
+      "RPM-2015-06-11": {
+        "n": 1,
+        "indices": [
+          11
+        ]
+      },
+      "RPM-2015-08-13": {
+        "n": 1,
+        "indices": [
+          44
+        ]
+      },
+      "RPM-2015-09-15": {
+        "n": 1,
+        "indices": [
+          78
+        ]
+      },
+      "RPM-2015-11-12": {
+        "n": 2,
+        "indices": [
+          55,
+          62
+        ]
+      }
+    },
+    "fechas_sin_reunion": []
+  }
+}

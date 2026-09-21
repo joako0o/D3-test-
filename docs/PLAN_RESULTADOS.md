@@ -403,6 +403,7 @@ repo `FASE_2`, que **no están en este checkout**.
 | §0.4 la fórmula `balance_direccional` | válido |
 | §0.5 prueba de la métrica | válido, con la corrección del conteo (102, no 106) |
 | §0.6 | **retractado** y reemplazado por esta sección |
+| §0.8 | el cruce tono↔decisión, con prueba de circularidad: **verificado** |
 
 ### 0.7 Los números del paper, verificados contra la fuente
 
@@ -450,6 +451,65 @@ para agregación descriptiva y **no deben presentarse como calibradas**.
 1.092 `base_v3` · 437 de las dos tandas post-cuarentena (asistidas por IA y
 validadas por personas) · 67 `ia89`. Eso responde tu recuerdo de "~1.000 + 600":
 la partición real es 1.092 / 437 / 67, y conviene describirla así en el paper.
+
+### 0.8 El cruce que faltaba: tono de la deliberación ↔ decisión de tasa
+
+`data/fase-2/fuente/resultados/analisis_descriptivo/acuerdo_consejo_por_reunion.csv`
+trae, por reunión, **si el Consejo subió, mantuvo o bajó la tasa**, con su magnitud
+en puntos base y la TPM resultante. No hacía falta traer la serie de TPM del banco
+desde afuera: la decisión está registrada en el acta, y la fuente ya la extrajo.
+Con eso el índice textual tiene contra qué compararse, que es lo que le faltaba
+para dejar de ser un número sin referencia.
+
+| decisión | n | tono medio | mediana | signo coherente |
+|---|---|---|---|---|
+| subir | 35 | **+0,0948** | +0,0707 | **35/35** |
+| mantener | 80 | −0,0046 | −0,0206 | 50/80 con tono < 0 |
+| bajar | 17 | **−0,1023** | −0,0940 | **17/17** |
+
+`subir − bajar = +0,1971` · **IC95 [+0,1705, +0,2255]** · P(dif > 0) = 1,000.
+**Las 52 reuniones con decisión direccional coinciden en signo con el tono: 52 de 52.**
+
+#### La prueba de circularidad (esto es lo importante)
+
+El acta **contiene la frase de la decisión** —*"se acuerda aumentar la tasa de
+interés de política monetaria a 2,5% anual"*—. Si el tono de la reunión refleja esa
+frase, la correlación es tautológica y no dice nada sobre la deliberación. Así que
+se midió otra vez **excluyendo la intervención del acuerdo**:
+
+```
+subir     +0,0746   35/35
+bajar     −0,0850   17/17
+subir − bajar = +0,1776   (vs +0,1971 con la frase)
+```
+
+**El signo se sostiene sin la frase.** La señal no es solo el anuncio de la decisión.
+
+#### El límite, que va junto al hallazgo
+
+| | valor |
+|---|---|
+| Las 132 intervenciones del acuerdo son | **1,4%** de las filas |
+| … y concentran | **11,3%** de las direccionales y **10,2%** de la masa de \|score\| |
+| \|tono\| medio de la intervención del acuerdo | **0,535** |
+| \|tono\| medio del resto de la reunión | **0,065** (8× menos) |
+
+O sea: **el modelo acierta mucho más donde el acta anuncia la decisión que donde se
+delibera.** Cualquier lectura que presente el índice como "el ánimo de la sala" tiene
+que decir esto. Y para la muestra editorial: **7 de los 99 fragmentos** son el párrafo
+del acuerdo; los otros 92 son deliberación de verdad, así que la selección está bien
+sesgada hacia el debate.
+
+#### Qué habilita en la pieza
+
+Un panel de Resultados que **no existía y ahora se puede dibujar**: el tono de cada
+acta contra la decisión que tomó, con las 132 reuniones. Es el gráfico que convierte
+un índice exploratorio en una validación, y es la figura que un paper de este tema
+pondría primero.
+
+Todo esto vive ya en `data/web/resultados.json` (`cruce_decision`, `senal`,
+`actas[].decision`), generado por `scripts/build-resultados.py` con su IC y su
+prueba de circularidad incluidas, y verificado en `npm run check`.
 
 ---
 

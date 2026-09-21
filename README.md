@@ -1017,6 +1017,7 @@ Dos capas, generadas por scripts y nunca escritas a mano en el HTML:
 | **Muestra editorial** | `data/fase-2/candidatos-*.csv` | `scripts/build-particle-quotes.py` | `js/data/quotes.js` (→ `window.QUOTES`, 99 fragmentos) |
 | **Agregados del corpus** | `data/fase-2/resultados/**` + `actores_metadata.csv` | `scripts/build-web-data.py` | `data/web/resumen.json` + `manifest.json` |
 | **Fuente de FASE_2** | `joako0o/FASE_2` @ commit pinneado | `scripts/import-fase2.py` | `data/fase-2/fuente/**` + `PINS.json` (42 archivos, 865 KB) |
+| **Agregados analíticos** | `data/fase-2/resultados/**` + las decisiones por reunión | `scripts/build-resultados.py` | `data/web/resultados.json` (72 KB) |
 
 El corpus es real, no maqueta: 9.725 intervenciones de 132 reuniones entre 2005
 y 2015, con la clasificación del modelo `W+C+600` (ensamble de cinco
@@ -1030,6 +1031,12 @@ de entrada y salida— vive en `data/fase-2/manifest.json` y
 **Regla:** ningún número del corpus se escribe a mano en `index.html`. Va como
 `<span data-corpus-stat="reuniones">132</span>` (respaldo sin red) y lo hidrata
 `js/main.js` desde el agregado; `npm run check` falla si los dos divergen.
+
+`resultados.json` trae lo que dibujan las tres secciones de Resultados —las 132
+actas con su decisión de tasa, las dos métricas anuales con su intervalo, los 6 ejes
+temáticos y el disenso— y además **el cruce tono ↔ decisión con su prueba de
+circularidad**: el acta contiene la frase de la decisión, así que el script mide el
+cruce con esa frase y sin ella. Detalle en `data/web/README.md`.
 
 **La pieza cita, y lo que cita está adentro.** `data/fase-2/fuente/` trae —byte
 por byte y con `sha256`— lo liviano de `FASE_2`: el codebook, la metodología, el
