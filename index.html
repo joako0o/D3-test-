@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=49" />
+  <link rel="stylesheet" href="css/bundle.css?v=52" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=14" />
+  <link rel="modulepreload" href="js/app.js?v=16" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -368,28 +368,6 @@
              Acá queda el gesto: qué hace, y las dos señales con su ejemplo. -->
         <p class="hook-intro">Una se&ntilde;al por intervenci&oacute;n. Cuenta la <em>postura</em>, no el diagn&oacute;stico.</p>
 
-        <!-- EL DATO A LA VISTA, LA EXPLICACI&Oacute;N A DEMANDA
-             Mostrar que el modelo es TF&middot;IDF da credibilidad, pero explicarlo en
-             pantalla llenaba la secci&oacute;n de texto. Ac&aacute; queda el nombre con un
-             signo de interrogaci&oacute;n: el lector que quiere saber m&aacute;s lo abre; el
-             que no, sigue. Es un bot&oacute;n de verdad (no un tooltip de CSS con
-             title) para que funcione con teclado y en t&aacute;ctil.
-             Traps del repo cubiertos: es un <button> (ya est&aacute; en
-             isInteractiveTarget) y el wrapper declara pointer-events: auto,
-             porque .stage-hook lo tiene en none y si no el clic no llega. -->
-        <div class="model-note">
-          <button class="model-note-toggle" type="button" aria-expanded="false" aria-controls="modelNotePanel">
-            <span class="model-note-label">TF&middot;IDF</span>
-            <span class="model-note-q" aria-hidden="true">?</span>
-            <span class="sr-only">Qu&eacute; es y c&oacute;mo se usa en esta pieza</span>
-          </button>
-          <div class="model-note-panel" id="modelNotePanel" hidden>
-            <p><strong>Qu&eacute; es.</strong> Una forma de pesar palabras: la que aparece mucho en un fragmento y poco en el resto del corpus pesa m&aacute;s. As&iacute; &laquo;subyacente&raquo; mueve la aguja y &laquo;reuni&oacute;n&raquo; no. Es de 1972 y sigue siendo la l&iacute;nea base de este tipo de tareas.</p>
-            <p><strong>C&oacute;mo se usa ac&aacute;.</strong> Se calcula sobre las 1.596 intervenciones ya clasificadas, dos veces y por separado: en palabras y en pedazos de palabra. Cinco clasificadores votan, y su score va de &minus;1 (dovish) a +1 (hawkish).</p>
-            <p><strong>Qu&eacute; no es.</strong> No entiende el texto: cuenta vocabulario, no lee el contexto de la frase. Por eso el score no es una probabilidad calibrada.</p>
-          </div>
-        </div>
-
         <!-- EL MODELO, APLICADO A DOS INTERVENCIONES REALES
              Antes acá había dos sintagmas inventados ('riesgo de inflación',
              'holgura económica') sin fecha, sin autor y sin número — y uno de
@@ -429,6 +407,28 @@
         </div>
 
         <p class="hook-bridge">Siete meses entre esas dos intervenciones. La misma sala, la orientaci&oacute;n al rev&eacute;s.</p>
+
+        <!-- DE D&Oacute;NDE SALEN LOS DOS N&Uacute;MEROS
+             Antes esto era una p&iacute;ldora 'TF-IDF (?)' arriba de las tarjetas: un
+             acr&oacute;nimo flotando, sin que nadie dijera que el modelo ES eso ni
+             para qu&eacute; se us&oacute;. El lector ve&iacute;a +0,81 y -0,88 sin saber de d&oacute;nde
+             sal&iacute;an, y la explicaci&oacute;n aparec&iacute;a antes de que existiera la pregunta.
+             Ahora la frase dice el m&eacute;todo y lo ata a los dos puntajes que est&aacute;n
+             en pantalla. -->
+        <div class="model-note">
+          <p class="model-note-line">
+            Esos dos puntajes salen de pesar las palabras de cada fragmento: el m&eacute;todo se llama <strong>TF&middot;IDF</strong>.
+            <button class="model-note-toggle" type="button" aria-expanded="false" aria-controls="modelNotePanel">
+              <span class="model-note-q" aria-hidden="true">?</span>
+              <span class="sr-only">Qu&eacute; es TF&middot;IDF y c&oacute;mo se usa en esta pieza</span>
+            </button>
+          </p>
+          <div class="model-note-panel" id="modelNotePanel" hidden>
+            <p><strong>Qu&eacute; es.</strong> Una forma de pesar palabras: la que aparece mucho en un fragmento y poco en el resto del corpus pesa m&aacute;s. As&iacute; &laquo;subyacente&raquo; mueve la aguja y &laquo;reuni&oacute;n&raquo; no. Es de 1972 y sigue siendo la l&iacute;nea base de este tipo de tareas.</p>
+            <p><strong>C&oacute;mo se usa ac&aacute;.</strong> Se calcula sobre las 1.596 intervenciones ya clasificadas, dos veces y por separado: en palabras y en pedazos de palabra. Cinco clasificadores votan, y el puntaje de cada tarjeta es el promedio de esos votos, de &minus;1 (dovish) a +1 (hawkish).</p>
+            <p><strong>Qu&eacute; no es.</strong> No entiende el texto: cuenta vocabulario, no lee el contexto de la frase. Por eso el puntaje no es una probabilidad calibrada.</p>
+          </div>
+        </div>
 
       </div>
       
@@ -849,7 +849,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=14"></script>
+  <script type="module" src="js/app.js?v=16"></script>
 
 
 </body>

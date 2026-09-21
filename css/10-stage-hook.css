@@ -71,6 +71,11 @@
   flex-direction: column;
   align-items: center;
   width: min(780px, 90vw);
+  /* `top` (no transform) para que el desplazamiento al abrir el panel de
+     TF·IDF no pelee con la animación de salida de GSAP, que sí usa transform. */
+  position: relative;
+  top: 0;
+  transition: top 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .hook-lead {
   max-width: 740px;
@@ -233,22 +238,43 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 22px;
+  margin-top: 18px;
   pointer-events: auto;
 }
+/* La frase que dice el método, con el '?' pegado al final del renglón: así el
+   botón deja de ser una píldora suelta y queda referido a algo concreto. */
+.model-note-line {
+  max-width: 620px;
+  text-align: center;
+  font-size: var(--fs-small);
+  line-height: 1.7;
+  font-weight: 300;
+  color: var(--color-text-secondary);
+  text-wrap: balance;
+}
+.model-note-line strong {
+  color: var(--color-gold);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+/* Botón circular, EN LÍNEA con el texto. Antes era una píldora con la sigla
+   adentro; ahora la sigla está en la frase y el botón solo abre. */
 .model-note-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  padding: 6px 13px 6px 15px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.035);
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  padding: 0;
+  vertical-align: -3px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: transparent;
   color: var(--color-text-secondary);
   font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 1.6px;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
   transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
 }
@@ -262,32 +288,60 @@
   border-color: rgba(255,215,106,0.38);
   color: var(--color-gold);
 }
+/* El signo: es el contenido del botón, así que hereda color y tamaño de él. */
 .model-note-q {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  border: 1px solid currentColor;
-  font-size: 10px;
   line-height: 1;
   letter-spacing: 0;
-  opacity: 0.85;
 }
-/* `display: flex` le GANABA al `hidden` del navegador: `[hidden]` es
-   `display: none` en la hoja del user-agent, y cualquier `display` del autor lo
-   pisa. El panel medía 249px con el atributo puesto, o sea que se veía siempre
-   (lo detectó el test, no el ojo). Este selector lo devuelve al estado oculto y
-   tiene que estar DESPUÉS de la regla del display. */
+/* POPOVER, no bloque en el flujo. Como bloque medía 273px y la sección vive
+   dentro de un contenedor sticky: lo que no entra queda cortado para siempre
+   (scrollear no lo revela). Medido: abría a 1067px de un viewport de 900. Y
+   arriba no había espacio para empujar el contenido, porque el titular ocupa
+   ese lugar.
+   Se abre anclado al botón, sobre las tarjetas, con fondo opaco. Es el patrón
+   que corresponde a un '?' y no mueve un solo píxel del layout.
+   `display: flex` le GANABA al `hidden` del navegador ([hidden] es display:none
+   en la hoja del user-agent y cualquier display del autor lo pisa): el panel
+   medía 249px con el atributo puesto, o sea que se veía siempre. El selector
+   [hidden] va DESPUÉS y lo devuelve al estado oculto. */
 .model-note-panel[hidden] { display: none; }
+.model-note {
+  position: relative;
+}
 .model-note-panel {
-  max-width: 560px;
-  margin-top: 14px;
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: min(560px, 88vw);
+  max-height: min(50vh, 320px);
+  overflow-y: auto;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   text-align: left;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.13);
+  background: rgba(9, 13, 24, 0.97);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+/* La flecha que lo ata al botón: sin ella el popover parece flotar. */
+.model-note-panel::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  transform: rotate(45deg);
+  border-right: 1px solid rgba(255,255,255,0.13);
+  border-bottom: 1px solid rgba(255,255,255,0.13);
+  background: rgba(9, 13, 24, 0.97);
 }
 .model-note-panel p {
   font-size: var(--fs-small);
@@ -317,7 +371,7 @@
     font-size: clamp(13px, 1.8vw, 15px);
   }
   .signal-list { margin-top: 22px; gap: 10px; }
-  .model-note { margin-top: 16px; }
+  .model-note { margin-top: 14px; }
   .model-note-panel { margin-top: 12px; }
   .signal-card { padding: 15px 20px; }
   .signal-phrase { font-size: clamp(13.5px, 1.7vw, 17px); line-height: 1.4; }
@@ -333,7 +387,8 @@
     max-width: 100%;
   }
   .signal-list { margin-top: 20px; gap: 10px; }
-  .model-note { margin-top: 14px; }
+  .model-note { margin-top: 12px; }
+  .model-note-line { font-size: 12.5px; line-height: 1.5; }
   .model-note-panel { margin-top: 11px; }
   .model-note-panel p { font-size: 12.5px; line-height: 1.55; }
   .signal-card { padding: 14px 16px; }
