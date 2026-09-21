@@ -342,10 +342,19 @@ html, body {
     margin-bottom: 8px;
   }
 
+  /* En pantallas bajas la nota se compacta pero NO se esconde: la fórmula
+     entra en una línea y la advertencia en dos, en el mismo tamaño legible. */
   #stageTimeline .timeline-note {
-    margin: -2px auto 12px;
-    font-size: 11px;
-    line-height: 1.35;
+    margin: -2px auto 10px;
+  }
+  #stageTimeline .timeline-formula {
+    padding: 5px 12px;
+    font-size: clamp(11.5px, 1.5vw, 13px);
+  }
+  #stageTimeline .timeline-caveat {
+    margin-top: 9px;
+    font-size: clamp(11px, 1.6vw, 13px);
+    line-height: 1.45;
   }
 }
 

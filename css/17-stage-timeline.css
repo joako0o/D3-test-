@@ -25,17 +25,38 @@
   opacity: 0;
   transform: translateY(20px);
 }
+/* La nota del índice: dejó de ser letra chica. La fórmula es EL dato que el
+   lector necesita para interpretar la serie, así que va en su propio renglón,
+   en dorado y con el mismo ancho que el gráfico; la advertencia —que con 5 a 15
+   fragmentos por año una etiqueta mueve el índice 0,07 a 0,20— va debajo, en
+   texto legible, porque es lo que separa una lectura de una sobrelectura. */
 .timeline-note {
   max-width: 760px;
-  margin: -30px auto 32px;
-  color: var(--color-text-faint);
-  font-size: var(--fs-small);
-  line-height: 1.5;
+  margin: -26px auto 30px;
   text-align: center;
 }
-.timeline-note strong {
-  color: var(--color-text-secondary);
+.timeline-formula {
+  display: inline-block;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 215, 106, 0.20);
+  background: rgba(255, 215, 106, 0.055);
+  color: rgba(255, 215, 106, 0.94);
+  font-family: var(--font-body);
+  font-size: clamp(13px, 1.15vw, 15px);
   font-weight: 500;
+  letter-spacing: 0.4px;
+}
+.timeline-caveat {
+  max-width: 680px;
+  margin: 14px auto 0;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+}
+.timeline-note strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
 }
 .timeline-note code {
   color: var(--color-gold);

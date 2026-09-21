@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=30" />
+  <link rel="stylesheet" href="css/bundle.css?v=31" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -754,7 +754,17 @@
   <section class="stage-timeline" id="stageTimeline">
     <div class="timeline-pin-wrapper">
       <h2 class="timeline-title" data-timeline-title>&Iacute;ndice exploratorio de orientaci&oacute;n por a&ntilde;o</h2>
-      <p class="timeline-note" id="timelineNote">Se calcula como <strong>(hawkish &minus; dovish) / fragmentos con etiqueta</strong>; los fragmentos neutrales no desplazan el &iacute;ndice. Solo aparecen a&ntilde;os con muestra en <code>quotes.js</code>.</p>
+      <!-- LA DEFINICIÓN DEL ÍNDICE, LEGIBLE
+           Estaba en una línea de letra chica gris, y era ambigua: decía
+           '(hawkish − dovish) / fragmentos con etiqueta' cuando el denominador
+           son TODOS los fragmentos del año, neutrales incluidos — que es
+           justo lo que el lector necesita saber para leer la serie. Y callaba
+           lo que más pesa: con 5 a 15 fragmentos por año, una sola etiqueta
+           mueve el índice entre 0,07 y 0,20. -->
+      <div class="timeline-note" id="timelineNote">
+        <p class="timeline-formula">&iacute;ndice del a&ntilde;o = (hawkish &minus; dovish) &divide; fragmentos del a&ntilde;o</p>
+        <p class="timeline-caveat">Un fragmento neutral no empuja hacia ning&uacute;n lado, pero s&iacute; diluye: entra en el denominador. Y con <strong>5 a 15 fragmentos por a&ntilde;o</strong>, una sola etiqueta mueve el &iacute;ndice entre 0,07 y 0,20 &mdash; esta serie es la de la muestra visible, no la del corpus, que tiene <span data-corpus-stat="intervenciones">9.725</span> intervenciones repartidas en 11 a&ntilde;os.</p>
+      </div>
       <div class="timeline-container" id="timelineContainer"></div>
     </div>
   </section>
