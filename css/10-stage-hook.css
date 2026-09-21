@@ -87,6 +87,23 @@
   font-style: italic;
   color: var(--color-gold);
 }
+/* La frase que dice qué hace el modelo. Va entre el epígrafe y las tarjetas,
+   en el mismo ancho que ellas y con peso de lectura (15–16px, no letra chica):
+   es la que le permite a alguien que no sabe economía entender el resto. */
+.hook-intro {
+  max-width: 640px;
+  margin-top: 14px;
+  text-align: center;
+  font-size: clamp(14px, 1.35vw, 16px);
+  line-height: 1.55;
+  font-weight: 300;
+  color: var(--color-text-secondary);
+  text-wrap: balance;
+}
+.hook-intro strong {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
 .hook-caption {
   margin-top: 18px;
   text-align: center;
@@ -98,7 +115,7 @@
 .hook-divider {
   width: min(600px, 78vw);
   height: 1px;
-  margin: 30px auto 0;
+  margin: 20px auto 0;
   overflow: hidden;
 }
 .hook-divider span {
@@ -109,7 +126,7 @@
 }
 .signal-list {
   width: min(680px, 90vw);
-  margin-top: 20px;
+  margin-top: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -207,8 +224,8 @@
    protagonistas de la sección siguen siendo las dos señales de arriba. */
 .hook-method {
   width: min(680px, 90vw);
-  margin-top: 24px;
-  padding: 16px 24px 18px;
+  margin-top: 16px;
+  padding: 15px 24px 17px;
   border-radius: 14px;
   background:
     linear-gradient(135deg, rgba(255,255,255,0.040), rgba(255,255,255,0.010)),
@@ -283,7 +300,13 @@
     font-size: clamp(24px, 3vw, 38px);
     line-height: 1.22;
   }
-  .hook-caption { margin-top: 12px; }
+  .hook-caption { margin-top: 10px; }
+  .hook-intro {
+    max-width: 620px;
+    margin-top: 8px;
+    font-size: clamp(12.5px, 1.7vw, 14.5px);
+    line-height: 1.4;
+  }
   .hook-divider { margin-top: 16px; }
   .signal-list {
     margin-top: 14px;
@@ -297,6 +320,7 @@
   }
   .hook-method-head { margin-bottom: 11px; }
   .hook-method-key { font-size: 11px; }
+  .hook-method-item br { display: none; }
   .hook-method-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
   /* Con dos columnas, los bordes izquierdos tienen que quedar solo en la
      columna derecha (los impares) o aparecería una línea colgando. */
@@ -311,8 +335,16 @@
 }
 
 @media (max-width: 600px) {
-  .hook-lead { font-size: clamp(24px, 3vw, 36px); }
-  .hook-divider { margin-top: 32px; }
+  .hook-lead { font-size: clamp(21px, 5.6vw, 32px); }
+  /* En un teléfono el divisor es decoración: cuesta 20px de alto y el
+     contenido —título, frase, dos señales y el método— no entra con él. */
+  .hook-divider { display: none; }
+  .hook-intro { font-size: 13px; line-height: 1.4; margin-top: 8px; }
+  .hook-caption { margin-top: 8px; }
+  .signal-list { gap: 6px; }
+  .signal-card { padding: 11px 14px; }
+  .hook-method { margin-top: 12px; padding: 11px 14px 12px; }
+  .hook-method-caveat { margin-top: 9px; padding-top: 8px; font-size: 12px; line-height: 1.45; }
   .signal-card { grid-template-columns: 32px 1fr; }
   .signal-result {
     grid-column: 1 / -1;
@@ -329,6 +361,7 @@
     padding: 13px 15px 14px;
   }
   .hook-method-key { font-size: 11px; }
+  .hook-method-item br { display: none; }
   .hook-method-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
   .hook-method-item + .hook-method-item { border-left: none; }
   .hook-method-item:nth-child(2n) { border-left: 1px solid rgba(255,255,255,0.075); }

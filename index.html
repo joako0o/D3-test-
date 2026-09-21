@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=31" />
+  <link rel="stylesheet" href="css/bundle.css?v=34" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -361,6 +361,18 @@
 
         <p class="hook-caption">Dos lecturas, un mismo texto</p>
 
+        <!-- QUÉ HACE, EN UNA FRASE
+             La sección entraba directo a las dos tarjetas: el lector veía
+             'hawkish' y 'dovish' por primera vez en el sitio —y sin
+             definición— y nunca se le decía qué es el modelo ni de dónde saca
+             su criterio. Estas dos frases son el piso mínimo: qué entra, qué
+             sale, y que aprendió de ejemplos. -->
+        <p class="hook-intro">
+          Es un programa: aprendi&oacute; de ejemplos, no tiene reglas escritas.
+          Entra una intervenci&oacute;n y sale una orientaci&oacute;n &mdash; empuja a
+          <strong>subir la tasa</strong>, a <strong>bajarla</strong>, o no dice nada.
+        </p>
+
         <div class="hook-divider"><span></span></div>
 
         <div class="signal-list">
@@ -372,7 +384,7 @@
             </div>
             <div class="signal-result">
               <span class="signal-tag">Hawkish</span>
-              <span class="signal-note">alerta restrictiva</span>
+              <span class="signal-note">subir la tasa o frenar</span>
             </div>
           </article>
 
@@ -384,42 +396,48 @@
             </div>
             <div class="signal-result">
               <span class="signal-tag">Dovish</span>
-              <span class="signal-note">lectura expansiva</span>
+              <span class="signal-note">bajarla o dar est&iacute;mulo</span>
             </div>
           </article>
         </div>
 
-        <!-- CÓMO SE CONVIERTE EL TEXTO EN SEÑAL
-             Los cuatro datos del modelo estaban en una sola línea de letra chica
-             gris al 55%: el sitio donde menos se lee era justo el que sostiene la
-             credibilidad de toda la pieza. Ahora van como datos, con el mismo
-             peso visual que el resto del sitio le da a sus cifras.
+        <!-- DE DÓNDE SACA EL CRITERIO
+             Los cuatro datos iban con el vocabulario del que los produjo
+             ('modelos lineales en ensamble', 'TF·IDF palabra y carácter',
+             'intervenciones etiquetadas', 'evaluación ciega'). Para un lector
+             sin NLP eso es una lista de palabras desconocidas: decía con qué
+             está hecho el modelo, no de dónde saca su criterio.
+             Ahora van en el orden en que se entiende —aprende de ejemplos,
+             mira las palabras, cinco votan, se prueba con casos que no vio— y
+             cada clave explica su valor en castellano llano. El nombre técnico
+             (TF·IDF) se conserva porque es la firma del método y el paper lo
+             cita; lo que cambió es que ya no es lo único que se dice.
              Los dos números se hidratan del agregado (data-corpus-stat), así que
              no pueden quedar viejos respecto de data/web/resumen.json. -->
         <div class="hook-method">
           <div class="hook-method-head">
-            <span class="hook-method-label">C&oacute;mo se convierte</span>
+            <span class="hook-method-label">De d&oacute;nde saca el criterio</span>
             <span class="hook-method-line" aria-hidden="true"></span>
           </div>
           <ul class="hook-method-grid">
             <li class="hook-method-item">
-              <span class="hook-method-value">5</span>
-              <span class="hook-method-key">modelos lineales<br>en ensamble</span>
+              <span class="hook-method-value" data-corpus-stat="entrenamiento">1.596</span>
+              <span class="hook-method-key">ejemplos clasificados por personas</span>
             </li>
             <li class="hook-method-item">
               <span class="hook-method-value">TF&middot;IDF</span>
-              <span class="hook-method-key">palabra y car&aacute;cter</span>
+              <span class="hook-method-key">pesa las palabras distintivas de cada fragmento</span>
             </li>
             <li class="hook-method-item">
-              <span class="hook-method-value" data-corpus-stat="entrenamiento">1.596</span>
-              <span class="hook-method-key">intervenciones<br>etiquetadas</span>
+              <span class="hook-method-value">5</span>
+              <span class="hook-method-key">clasificadores que votan por separado</span>
             </li>
             <li class="hook-method-item">
               <span class="hook-method-value" data-corpus-stat="ciegas">300</span>
-              <span class="hook-method-key">apartadas para<br>evaluaci&oacute;n ciega</span>
+              <span class="hook-method-key">casos que nunca vio, para probarlo</span>
             </li>
           </ul>
-          <p class="hook-method-caveat">La etiqueta es el voto mayoritario de los cinco; que coincidan mide estabilidad del ensamble, no certeza. Y el mismo acta puede tener elementos hawkish y dovish: el an&aacute;lisis dice cu&aacute;l domina la intervenci&oacute;n.</p>
+          <p class="hook-method-caveat">Cuando los cinco no coinciden decide la mayor&iacute;a, y como un acta puede discutir las dos cosas a la vez, el modelo marca la orientaci&oacute;n de cada intervenci&oacute;n, no la de la reuni&oacute;n. Que los cinco coincidan mide estabilidad, no acierto.</p>
         </div>
       </div>
       
