@@ -4526,7 +4526,7 @@ function initTextToParticlePOC() {
     .fromTo('.hook-lead',
       { opacity: 0, y: 18, filter: 'blur(8px)' },
       { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.14, ease: 'none' }, 0.14)
-    .fromTo(intro,
+    .fromTo([intro, '.model-note'],
       { opacity: 0, y: 12 },
       { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.26)
     /* Las dos señales son lo único que queda debajo: entran juntas, sin
@@ -4550,6 +4550,31 @@ function initTextToParticlePOC() {
 
 
 initTextToParticlePOC();
+
+/* ── TF·IDF, con su explicación a demanda ────────────────────────────────
+   Un botón que abre y cierra un panel. Nada de tooltip con `title` (el CSS de
+   .jargon-term existe desde el principio y nunca se usó: no funciona en
+   táctil ni con teclado). Acá el estado vive en aria-expanded, el panel en
+   `hidden`, y Escape cierra. El botón ya está en isInteractiveTarget() por ser
+   un <button>, así que el hit-test de partículas no se lo come. */
+function initModelNote() {
+  const toggle = document.querySelector('.model-note-toggle');
+  const panel = document.getElementById('modelNotePanel');
+  if (!toggle || !panel) return;
+
+  const setOpen = (open) => {
+    toggle.setAttribute('aria-expanded', String(open));
+    panel.hidden = !open;
+  };
+  toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+}
+initModelNote();
 
 /* Los estados posteriores a los ejes reutilizan la misma nube como una
    capa de profundidad. El texto y los gráficos HTML/SVG siguen encima; la

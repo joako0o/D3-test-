@@ -200,6 +200,83 @@
   color: rgba(255,255,255,0.45);
 }
 
+/* ── TF·IDF, con su explicación a demanda ────────────────────────────────
+   El dato a la vista (que el modelo es TF·IDF da credibilidad), la explicación
+   escondida detrás de un signo de interrogación. Cerrado no pesa nada: es una
+   píldora gris del tamaño de una palabra. Abierto, tres párrafos cortos.
+   pointer-events: auto es obligatorio acá: .stage-hook lo tiene en none y sin
+   esto el clic no llegaría nunca (es el trap documentado en el repo). */
+.model-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 22px;
+  pointer-events: auto;
+}
+.model-note-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 13px 6px 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.035);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1.6px;
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+.model-note-toggle:hover,
+.model-note-toggle:focus-visible {
+  border-color: rgba(255,215,106,0.38);
+  background: rgba(255,215,106,0.06);
+  color: var(--color-gold);
+}
+.model-note-toggle[aria-expanded="true"] {
+  border-color: rgba(255,215,106,0.38);
+  color: var(--color-gold);
+}
+.model-note-q {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+  opacity: 0.85;
+}
+/* `display: flex` le GANABA al `hidden` del navegador: `[hidden]` es
+   `display: none` en la hoja del user-agent, y cualquier `display` del autor lo
+   pisa. El panel medía 249px con el atributo puesto, o sea que se veía siempre
+   (lo detectó el test, no el ojo). Este selector lo devuelve al estado oculto y
+   tiene que estar DESPUÉS de la regla del display. */
+.model-note-panel[hidden] { display: none; }
+.model-note-panel {
+  max-width: 560px;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+.model-note-panel p {
+  font-size: var(--fs-small);
+  line-height: 1.65;
+  font-weight: 300;
+  color: var(--color-text-secondary);
+}
+.model-note-panel strong {
+  color: var(--color-gold);
+  font-weight: 500;
+}
+
 /* ── Ajustes por alto y ancho ─────────────────────────────────────────────
    La sección quedó en titular + una línea + dos tarjetas: ya no hay que
    apretar nada para que entre, así que solo se ajusta la escala tipográfica
@@ -217,6 +294,8 @@
     font-size: clamp(13px, 1.8vw, 15px);
   }
   .signal-list { margin-top: 22px; gap: 10px; }
+  .model-note { margin-top: 16px; }
+  .model-note-panel { margin-top: 12px; }
   .signal-card { padding: 15px 20px; }
 }
 
@@ -229,5 +308,8 @@
     max-width: 100%;
   }
   .signal-list { margin-top: 20px; gap: 10px; }
+  .model-note { margin-top: 14px; }
+  .model-note-panel { margin-top: 11px; }
+  .model-note-panel p { font-size: 12.5px; line-height: 1.55; }
   .signal-card { padding: 14px 16px; }
 }
