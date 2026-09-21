@@ -88,7 +88,7 @@
   color: var(--color-gold);
 }
 .hook-caption {
-  margin-top: 26px;
+  margin-top: 18px;
   text-align: center;
   font-size: var(--fs-micro);
   letter-spacing: 3px;
@@ -98,7 +98,7 @@
 .hook-divider {
   width: min(600px, 78vw);
   height: 1px;
-  margin: 42px auto 0;
+  margin: 30px auto 0;
   overflow: hidden;
 }
 .hook-divider span {
@@ -109,7 +109,7 @@
 }
 .signal-list {
   width: min(680px, 90vw);
-  margin-top: 26px;
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -119,7 +119,7 @@
   grid-template-columns: 46px 1fr auto;
   gap: 18px;
   align-items: center;
-  padding: 22px 24px;
+  padding: 18px 24px;
   border-radius: 14px;
   background:
     linear-gradient(135deg, rgba(255,255,255,0.070), rgba(255,255,255,0.018)),
@@ -197,15 +197,83 @@
   letter-spacing: 1px;
   color: rgba(255,255,255,0.45);
 }
-.hook-footnote {
-  max-width: 620px;
-  margin-top: 38px;
-  text-align: center;
-  font-size: var(--fs-small);
-  line-height: 1.7;
-  font-weight: 300;
+/* ── Cómo se convierte ────────────────────────────────────────────────────
+   Los cuatro datos del modelo. Antes eran una línea de letra chica gris al
+   55% de opacidad —tres líneas al final de la sección, separadas de todo— y
+   son los que sostienen la credibilidad del resto de la pieza: el modelo es
+   un ensamble lineal sobre TF-IDF, con 1.596 intervenciones etiquetadas y 300
+   apartadas. Un dato así se muestra como dato.
+   El bloque es de vidrio, igual que las tarjetas, pero MÁS callado: los
+   protagonistas de la sección siguen siendo las dos señales de arriba. */
+.hook-method {
+  width: min(680px, 90vw);
+  margin-top: 24px;
+  padding: 16px 24px 18px;
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.040), rgba(255,255,255,0.010)),
+    rgba(6, 10, 20, 0.28);
+  border: 1px solid rgba(255,255,255,0.075);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.055);
+  text-align: left;
+}
+.hook-method-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 15px;
+}
+.hook-method-label {
+  font-size: var(--fs-micro);
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
   color: var(--color-text-muted);
-  text-wrap: balance;
+  white-space: nowrap;
+}
+.hook-method-line {
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,215,106,0.30), transparent);
+}
+.hook-method-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hook-method-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 14px;
+}
+.hook-method-item:first-child { padding-left: 0; }
+.hook-method-item:last-child { padding-right: 0; }
+.hook-method-item + .hook-method-item { border-left: 1px solid rgba(255,255,255,0.075); }
+.hook-method-value {
+  font-family: var(--font-display);
+  font-size: clamp(21px, 2.1vw, 27px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: rgba(255, 215, 106, 0.92);
+}
+.hook-method-key {
+  font-size: 11.5px;
+  line-height: 1.35;
+  letter-spacing: 0.2px;
+  color: rgba(255,255,255,0.55);
+}
+.hook-method-caveat {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  font-weight: 300;
+  color: var(--color-text-secondary);
 }
 
 @media (max-height: 740px) {
@@ -215,17 +283,30 @@
     font-size: clamp(24px, 3vw, 38px);
     line-height: 1.22;
   }
-  .hook-caption { margin-top: 18px; }
-  .hook-divider { margin-top: 24px; }
+  .hook-caption { margin-top: 12px; }
+  .hook-divider { margin-top: 16px; }
   .signal-list {
-    margin-top: 18px;
-    gap: 10px;
+    margin-top: 14px;
+    gap: 8px;
   }
-  .signal-card { padding: 16px 20px; }
+  .signal-card { padding: 13px 20px; }
   .signal-caption { margin-bottom: 4px; }
-  .hook-footnote {
-    margin-top: 22px;
-    line-height: 1.55;
+  .hook-method {
+    margin-top: 12px;
+    padding: 11px 16px 12px;
+  }
+  .hook-method-head { margin-bottom: 11px; }
+  .hook-method-key { font-size: 11px; }
+  .hook-method-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
+  /* Con dos columnas, los bordes izquierdos tienen que quedar solo en la
+     columna derecha (los impares) o aparecería una línea colgando. */
+  .hook-method-item + .hook-method-item { border-left: none; }
+  .hook-method-item:nth-child(2n) { border-left: 1px solid rgba(255,255,255,0.075); }
+  .hook-method-item:nth-child(odd) { padding-left: 0; }
+  .hook-method-caveat {
+    margin-top: 12px;
+    padding-top: 10px;
+    line-height: 1.5;
   }
 }
 
@@ -242,5 +323,16 @@
     padding-left: 0;
     border-left: none;
   }
-  .hook-footnote { margin-top: 30px; }
+  .hook-method {
+    width: 100%;
+    margin-top: 18px;
+    padding: 13px 15px 14px;
+  }
+  .hook-method-key { font-size: 11px; }
+  .hook-method-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
+  .hook-method-item + .hook-method-item { border-left: none; }
+  .hook-method-item:nth-child(2n) { border-left: 1px solid rgba(255,255,255,0.075); }
+  .hook-method-item:nth-child(odd) { padding-left: 0; }
+  .hook-method-value { font-size: 20px; }
+  .hook-method-caveat { font-size: 12.5px; line-height: 1.5; }
 }

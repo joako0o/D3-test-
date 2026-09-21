@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=26" />
+  <link rel="stylesheet" href="css/bundle.css?v=30" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=6" />
+  <link rel="modulepreload" href="js/app.js?v=9" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -389,7 +389,38 @@
           </article>
         </div>
 
-        <p class="hook-footnote">El mismo acta puede contener elementos hawkish y dovish. El an&aacute;lisis determina qu&eacute; orientaci&oacute;n domina la intervenci&oacute;n. El clasificador es un ensamble de cinco modelos lineales sobre TF-IDF de palabra y car&aacute;cter, entrenado con 1.596 intervenciones etiquetadas.</p>
+        <!-- CÓMO SE CONVIERTE EL TEXTO EN SEÑAL
+             Los cuatro datos del modelo estaban en una sola línea de letra chica
+             gris al 55%: el sitio donde menos se lee era justo el que sostiene la
+             credibilidad de toda la pieza. Ahora van como datos, con el mismo
+             peso visual que el resto del sitio le da a sus cifras.
+             Los dos números se hidratan del agregado (data-corpus-stat), así que
+             no pueden quedar viejos respecto de data/web/resumen.json. -->
+        <div class="hook-method">
+          <div class="hook-method-head">
+            <span class="hook-method-label">C&oacute;mo se convierte</span>
+            <span class="hook-method-line" aria-hidden="true"></span>
+          </div>
+          <ul class="hook-method-grid">
+            <li class="hook-method-item">
+              <span class="hook-method-value">5</span>
+              <span class="hook-method-key">modelos lineales<br>en ensamble</span>
+            </li>
+            <li class="hook-method-item">
+              <span class="hook-method-value">TF&middot;IDF</span>
+              <span class="hook-method-key">palabra y car&aacute;cter</span>
+            </li>
+            <li class="hook-method-item">
+              <span class="hook-method-value" data-corpus-stat="entrenamiento">1.596</span>
+              <span class="hook-method-key">intervenciones<br>etiquetadas</span>
+            </li>
+            <li class="hook-method-item">
+              <span class="hook-method-value" data-corpus-stat="ciegas">300</span>
+              <span class="hook-method-key">apartadas para<br>evaluaci&oacute;n ciega</span>
+            </li>
+          </ul>
+          <p class="hook-method-caveat">La etiqueta es el voto mayoritario de los cinco; que coincidan mide estabilidad del ensamble, no certeza. Y el mismo acta puede tener elementos hawkish y dovish: el an&aacute;lisis dice cu&aacute;l domina la intervenci&oacute;n.</p>
+        </div>
       </div>
       
     </div>
@@ -797,7 +828,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=6"></script>
+  <script type="module" src="js/app.js?v=9"></script>
 
 
 </body>

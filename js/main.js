@@ -4502,7 +4502,10 @@ function initTextToParticlePOC() {
   if (!hookContent) return;
   const rows = gsap.utils.toArray(hookContent.querySelectorAll('.signal-card'));
   const dividerSpan = hookContent.querySelector('.hook-divider > span');
-  const footnote = hookContent.querySelector('.hook-footnote');
+  /* El bloque del método: la cabeza y los cuatro datos entran primero, la
+     advertencia después. Antes era un solo párrafo de letra chica. */
+  const method = gsap.utils.toArray(hookContent.querySelectorAll('.hook-method-head, .hook-method-item'));
+  const methodCaveat = hookContent.querySelector('.hook-method-caveat');
 
   gsap.timeline({
     scrollTrigger: {
@@ -4531,15 +4534,28 @@ function initTextToParticlePOC() {
       { opacity: 1, y: 0, duration: 0.12, ease: 'none' }, 0.26)
     .fromTo(dividerSpan,
       { scaleX: 0 },
-      { scaleX: 1, duration: 0.14, ease: 'none' }, 0.38)
+      { scaleX: 1, duration: 0.14, ease: 'none' }, 0.36)
     .fromTo(rows,
       { opacity: 0, y: 28 },
-      { opacity: 1, y: 0, duration: 0.16, ease: 'none', stagger: 0.08 }, 0.46)
-    .fromTo(footnote,
+      { opacity: 1, y: 0, duration: 0.15, ease: 'none', stagger: 0.07 }, 0.40)
+    /* DÓNDE TIENE QUE ESTAR TERMINADO
+       El centro de la sección cae en el progreso 0,655 —((H/2 + 0,45H) / 1,45H,
+       indiferente del alto— y es ahí donde el lector se detiene a leer: el
+       contenedor sticky lleva rato fijo y todo el contenido está en pantalla.
+       'npm run shots' captura exactamente ese punto. Así que el bloque tiene que
+       estar COMPLETO en 0,655, no después: con los tiempos viejos el cuarto dato
+       terminaba en 0,94 (invisible incluso en la captura del arnés) y con los
+       intermedios en 0,80 seguía a medias en la foto oficial.
+       Ahora cierra en 0,63 y el desvanecido arranca en 0,88: quedan ~25vh de
+       scroll con la sección entera y quieta. */
+    .fromTo(method,
       { opacity: 0, y: 14 },
-      { opacity: 1, y: 0, duration: 0.14, ease: 'none' }, 0.70)
+      { opacity: 1, y: 0, duration: 0.10, ease: 'none', stagger: 0.03 }, 0.44)
+    .fromTo(methodCaveat,
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.10, ease: 'none' }, 0.55)
     .to(['#stageHook h2[data-hook]', hookContent],
-      { opacity: 0, y: -18, duration: 0.12, ease: 'none' }, 0.86);
+      { opacity: 0, y: -18, duration: 0.12, ease: 'none' }, 0.88);
 }
 
 

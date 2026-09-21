@@ -291,10 +291,29 @@ html, body {
     white-space: nowrap;
   }
 
-  #stageHook .hook-footnote {
-    margin-top: 14px;
-    font-size: clamp(11px, 2.2vw, 14px);
-    line-height: 1.35;
+  /* En pantallas bajas (paisaje, teléfonos chicos) el bloque del método pasa a
+     una fila de cuatro datos en línea: los cuatro valores en fila, las claves
+     debajo, y la advertencia en una línea. Así el contenido entero del hook
+     —título, dos señales y método— cabe en el viewport durante su reveal. */
+  #stageHook .hook-method {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 14px 11px;
+  }
+  #stageHook .hook-method-head { margin-bottom: 8px; gap: 10px; }
+  #stageHook .hook-method-label { font-size: 10px; letter-spacing: 1.6px; }
+  #stageHook .hook-method-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 0; }
+  #stageHook .hook-method-item { padding: 0 8px; gap: 3px; }
+  #stageHook .hook-method-item + .hook-method-item { border-left: 1px solid rgba(255,255,255,0.075); }
+  #stageHook .hook-method-item:nth-child(odd) { padding-left: 8px; }
+  #stageHook .hook-method-item:first-child { padding-left: 0; }
+  #stageHook .hook-method-value { font-size: clamp(15px, 2.1vw, 19px); }
+  #stageHook .hook-method-key { font-size: 10px; line-height: 1.25; }
+  #stageHook .hook-method-caveat {
+    margin-top: 8px;
+    padding-top: 7px;
+    font-size: clamp(10.5px, 1.9vw, 12.5px);
+    line-height: 1.4;
   }
 
   /* La gráfica tiene que caber junto con su título en un móvil horizontal;
