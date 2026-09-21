@@ -14,6 +14,7 @@
     "import:fase2": "python3 scripts/import-fase2.py --clone",
     "shots": "node scripts/screenshots/capture.mjs",
     "hero:check": "node scripts/screenshots/hero-check.mjs",
+    "hook:check": "node scripts/screenshots/hook-check.mjs",
     "perf": "node scripts/perf/measure.mjs",
     "startup": "node scripts/perf/startup.mjs",
     "perf:early": "node scripts/perf/early-scroll.mjs",
