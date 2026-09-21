@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=34" />
+  <link rel="stylesheet" href="css/bundle.css?v=41" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -368,9 +368,11 @@
              su criterio. Estas dos frases son el piso mínimo: qué entra, qué
              sale, y que aprendió de ejemplos. -->
         <p class="hook-intro">
-          Es un programa: aprendi&oacute; de ejemplos, no tiene reglas escritas.
-          Entra una intervenci&oacute;n y sale una orientaci&oacute;n &mdash; empuja a
-          <strong>subir la tasa</strong>, a <strong>bajarla</strong>, o no dice nada.
+          Es un programa: aprendi&oacute; de ejemplos, sin reglas escritas. Entra una
+          intervenci&oacute;n y sale una orientaci&oacute;n &mdash; <strong>subir la tasa</strong>,
+          <strong>bajarla</strong>, o ninguna de las dos. Y cuenta la <em>postura</em>, no el
+          diagn&oacute;stico: describir la inflaci&oacute;n no es se&ntilde;al; proponer qu&eacute;
+          hacer con la tasa, s&iacute;.
         </p>
 
         <div class="hook-divider"><span></span></div>
@@ -384,7 +386,7 @@
             </div>
             <div class="signal-result">
               <span class="signal-tag">Hawkish</span>
-              <span class="signal-note">subir la tasa o frenar</span>
+              <span class="signal-note">pedir subirla, ahora o despu&eacute;s</span>
             </div>
           </article>
 
@@ -396,7 +398,7 @@
             </div>
             <div class="signal-result">
               <span class="signal-tag">Dovish</span>
-              <span class="signal-note">bajarla o dar est&iacute;mulo</span>
+              <span class="signal-note">pedir bajarla o dar est&iacute;mulo</span>
             </div>
           </article>
         </div>
@@ -437,7 +439,7 @@
               <span class="hook-method-key">casos que nunca vio, para probarlo</span>
             </li>
           </ul>
-          <p class="hook-method-caveat">Cuando los cinco no coinciden decide la mayor&iacute;a, y como un acta puede discutir las dos cosas a la vez, el modelo marca la orientaci&oacute;n de cada intervenci&oacute;n, no la de la reuni&oacute;n. Que los cinco coincidan mide estabilidad, no acierto.</p>
+          <p class="hook-method-caveat">Cuando los cinco no coinciden decide la mayor&iacute;a; y como un acta puede discutir las dos cosas a la vez, el modelo marca cada intervenci&oacute;n, no la reuni&oacute;n. Mantener la tasa tampoco es neutral por defecto: con un sesgo al alza pedido, es hawkish. Que los cinco coincidan mide estabilidad, no acierto.</p>
         </div>
       </div>
       
