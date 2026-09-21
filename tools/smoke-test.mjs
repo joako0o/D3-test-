@@ -381,6 +381,7 @@ if (!fs.existsSync(resumenPath)) {
     dovish: meta.n_dovish,
     neutrales: meta.n_neutral,
     relevantes: meta.n_relevantes,
+    no_relevantes: meta.n_no_relevantes,
     entrenamiento: meta.n_entrenamiento,
     ciegas: meta.n_evaluacion_ciega,
     acuerdo: meta.acuerdo_unanime_pct,

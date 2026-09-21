@@ -2190,6 +2190,7 @@ const CORPUS_STAT = {
   dovish: (m) => m.n_dovish,
   neutrales: (m) => m.n_neutral,
   relevantes: (m) => m.n_relevantes,
+  no_relevantes: (m) => m.n_no_relevantes,
   entrenamiento: (m) => m.n_entrenamiento,
   ciegas: (m) => m.n_evaluacion_ciega,
   acuerdo: (m) => m.acuerdo_unanime_pct,
