@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=42" />
+  <link rel="stylesheet" href="css/bundle.css?v=45" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=10" />
+  <link rel="modulepreload" href="js/app.js?v=12" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -359,23 +359,14 @@
           La convierte en <span class="hook-signal">se&ntilde;ales.</span>
         </p>
 
-        <p class="hook-caption">Dos lecturas, un mismo texto</p>
-
-        <!-- QUÉ HACE, EN UNA FRASE
-             La sección entraba directo a las dos tarjetas: el lector veía
-             'hawkish' y 'dovish' por primera vez en el sitio —y sin
-             definición— y nunca se le decía qué es el modelo ni de dónde saca
-             su criterio. Estas dos frases son el piso mínimo: qué entra, qué
-             sale, y que aprendió de ejemplos. -->
-        <p class="hook-intro">
-          Es un programa: aprendi&oacute; de ejemplos, sin reglas escritas. Entra una
-          intervenci&oacute;n y sale una orientaci&oacute;n &mdash; <strong>subir la tasa</strong>,
-          <strong>bajarla</strong>, o ninguna de las dos. Y cuenta la <em>postura</em>, no el
-          diagn&oacute;stico: describir la inflaci&oacute;n no es se&ntilde;al; proponer qu&eacute;
-          hacer con la tasa, s&iacute;.
-        </p>
-
-        <div class="hook-divider"><span></span></div>
+        <!-- UNA LÍNEA, Y LAS DOS SEÑALES.
+             Antes de acá había cuatro bloques apilados (epígrafe, frase base,
+             tarjetas, panel de método con cuatro cifras y una advertencia de
+             tres líneas): 176 palabras y tres cajas en un viewport. Se leía como
+             un dashboard. El Método no es el paper: el detalle del modelo vive
+             en la stage de Metodología, que existe para eso y está más abajo.
+             Acá queda el gesto: qué hace, y las dos señales con su ejemplo. -->
+        <p class="hook-intro">Una se&ntilde;al por intervenci&oacute;n. Cuenta la <em>postura</em>, no el diagn&oacute;stico.</p>
 
         <div class="signal-list">
           <article class="signal-card signal-card--hawkish">
@@ -403,44 +394,7 @@
           </article>
         </div>
 
-        <!-- DE DÓNDE SACA EL CRITERIO
-             Los cuatro datos iban con el vocabulario del que los produjo
-             ('modelos lineales en ensamble', 'TF·IDF palabra y carácter',
-             'intervenciones etiquetadas', 'evaluación ciega'). Para un lector
-             sin NLP eso es una lista de palabras desconocidas: decía con qué
-             está hecho el modelo, no de dónde saca su criterio.
-             Ahora van en el orden en que se entiende —aprende de ejemplos,
-             mira las palabras, cinco votan, se prueba con casos que no vio— y
-             cada clave explica su valor en castellano llano. El nombre técnico
-             (TF·IDF) se conserva porque es la firma del método y el paper lo
-             cita; lo que cambió es que ya no es lo único que se dice.
-             Los dos números se hidratan del agregado (data-corpus-stat), así que
-             no pueden quedar viejos respecto de data/web/resumen.json. -->
-        <div class="hook-method">
-          <div class="hook-method-head">
-            <span class="hook-method-label">De d&oacute;nde saca el criterio</span>
-            <span class="hook-method-line" aria-hidden="true"></span>
-          </div>
-          <ul class="hook-method-grid">
-            <li class="hook-method-item">
-              <span class="hook-method-value" data-corpus-stat="entrenamiento">1.596</span>
-              <span class="hook-method-key">ejemplos clasificados por personas</span>
-            </li>
-            <li class="hook-method-item">
-              <span class="hook-method-value">TF&middot;IDF</span>
-              <span class="hook-method-key">pesa las palabras distintivas de cada fragmento</span>
-            </li>
-            <li class="hook-method-item">
-              <span class="hook-method-value">5</span>
-              <span class="hook-method-key">clasificadores que votan por separado</span>
-            </li>
-            <li class="hook-method-item">
-              <span class="hook-method-value" data-corpus-stat="ciegas">300</span>
-              <span class="hook-method-key">casos que nunca vio, para probarlo</span>
-            </li>
-          </ul>
-          <p class="hook-method-caveat">Cuando los cinco no coinciden decide la mayor&iacute;a; y como un acta puede discutir las dos cosas a la vez, el modelo marca cada intervenci&oacute;n, no la reuni&oacute;n. Mantener la tasa tampoco es neutral por defecto: con un sesgo al alza pedido, es hawkish. Que los cinco coincidan mide estabilidad, no acierto.</p>
-        </div>
+
       </div>
       
     </div>
@@ -728,7 +682,7 @@
             <div class="pipe-body">
               <div class="pipe-label">Clasificaci&oacute;n</div>
               <h3>Cada intervenci&oacute;n recibe un score, no un veredicto</h3>
-              <p class="pipe-p">El modelo decide en dos etapas: primero si la intervenci&oacute;n habla de pol&iacute;tica monetaria o es un formalismo &mdash;y esa no recibe orientaci&oacute;n&mdash;, y despu&eacute;s, entre las que hablan, cu&aacute;l es su postura. Es un ensamble de cinco clasificadores lineales sobre TF-IDF de palabra y car&aacute;cter (W+C+600), entrenado con <span data-corpus-stat="entrenamiento">1.596</span> intervenciones etiquetadas y probado sobre <span data-corpus-stat="ciegas">300</span> reservadas como evaluaci&oacute;n ciega. El score continuo va de &minus;1 (dovish) a +1 (hawkish). La etiqueta de tres clases es el <strong>voto mayoritario de los cinco miembros</strong> (desempate H, D, N), no el signo del score: hay fragmentos neutrales con score de orientaci&oacute;n no trivial. La coincidencia entre los cinco mide estabilidad del ensamble, no certeza.</p>
+              <p class="pipe-p">El modelo decide en dos etapas: primero si la intervenci&oacute;n habla de pol&iacute;tica monetaria o es un formalismo &mdash;y esa no recibe orientaci&oacute;n&mdash;, y despu&eacute;s, entre las que hablan, cu&aacute;l es su postura. Es un ensamble de cinco clasificadores lineales sobre TF-IDF de palabra y car&aacute;cter (W+C+600), entrenado con <span data-corpus-stat="entrenamiento">1.596</span> intervenciones etiquetadas y probado sobre <span data-corpus-stat="ciegas">300</span> reservadas como evaluaci&oacute;n ciega. El score continuo va de &minus;1 (dovish) a +1 (hawkish). La etiqueta de tres clases es el <strong>voto mayoritario de los cinco miembros</strong> (desempate H, D, N), no el signo del score: hay fragmentos neutrales con score de orientaci&oacute;n no trivial. La coincidencia entre los cinco mide estabilidad del ensamble, no certeza. Y mantener la tasa tampoco es neutral por defecto: con un sesgo al alza pedido en el texto, la intervenci&oacute;n es hawkish.</p>
               <div class="frag">&laquo;el riesgo de inflaci&oacute;n domina el panorama&raquo;</div>
               <div class="verdict-row">
                 <span class="verdict" id="verdictStamp">Hawkish</span>
@@ -860,7 +814,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=10"></script>
+  <script type="module" src="js/app.js?v=12"></script>
 
 
 </body>

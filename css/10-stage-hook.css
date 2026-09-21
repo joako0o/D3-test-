@@ -109,26 +109,6 @@
   color: var(--color-gold);
   font-weight: 500;
 }
-.hook-caption {
-  margin-top: 14px;
-  text-align: center;
-  font-size: var(--fs-micro);
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-.hook-divider {
-  width: min(600px, 78vw);
-  height: 1px;
-  margin: 14px auto 0;
-  overflow: hidden;
-}
-.hook-divider span {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,215,106,0.45), transparent);
-  transform-origin: center center;
-}
 .signal-list {
   width: min(680px, 90vw);
   margin-top: 12px;
@@ -219,84 +199,11 @@
   letter-spacing: 1px;
   color: rgba(255,255,255,0.45);
 }
-/* ── Cómo se convierte ────────────────────────────────────────────────────
-   Los cuatro datos del modelo. Antes eran una línea de letra chica gris al
-   55% de opacidad —tres líneas al final de la sección, separadas de todo— y
-   son los que sostienen la credibilidad del resto de la pieza: el modelo es
-   un ensamble lineal sobre TF-IDF, con 1.596 intervenciones etiquetadas y 300
-   apartadas. Un dato así se muestra como dato.
-   El bloque es de vidrio, igual que las tarjetas, pero MÁS callado: los
-   protagonistas de la sección siguen siendo las dos señales de arriba. */
-.hook-method {
-  width: min(680px, 90vw);
-  margin-top: 12px;
-  padding: 14px 24px 16px;
-  border-radius: 14px;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.040), rgba(255,255,255,0.010)),
-    rgba(6, 10, 20, 0.28);
-  border: 1px solid rgba(255,255,255,0.075);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.055);
-  text-align: left;
-}
-.hook-method-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 15px;
-}
-.hook-method-label {
-  font-size: var(--fs-micro);
-  letter-spacing: 2.4px;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-.hook-method-line {
-  flex: 1 1 auto;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(255,215,106,0.30), transparent);
-}
-.hook-method-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.hook-method-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 0 14px;
-}
-.hook-method-item:first-child { padding-left: 0; }
-.hook-method-item:last-child { padding-right: 0; }
-.hook-method-item + .hook-method-item { border-left: 1px solid rgba(255,255,255,0.075); }
-.hook-method-value {
-  font-family: var(--font-display);
-  font-size: clamp(21px, 2.1vw, 27px);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.01em;
-  color: rgba(255, 215, 106, 0.92);
-}
-.hook-method-key {
-  font-size: 11.5px;
-  line-height: 1.35;
-  letter-spacing: 0.2px;
-  color: rgba(255,255,255,0.55);
-}
-.hook-method-caveat {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  font-size: var(--fs-small);
-  line-height: 1.6;
-  font-weight: 300;
-  color: var(--color-text-secondary);
-}
+
+/* ── Ajustes por alto y ancho ─────────────────────────────────────────────
+   La sección quedó en titular + una línea + dos tarjetas: ya no hay que
+   apretar nada para que entre, así que solo se ajusta la escala tipográfica
+   y el aire de las tarjetas. */
 
 @media (max-height: 740px) {
   #stageHook h2[data-hook] { margin-bottom: 0.6rem !important; }
@@ -305,77 +212,22 @@
     font-size: clamp(23px, 2.9vw, 36px);
     line-height: 1.14;
   }
-  .hook-caption { margin-top: 8px; }
-  .hook-divider { display: none; }
   .hook-intro {
-    max-width: 660px;
-    margin-top: 6px;
-    font-size: clamp(12.5px, 1.7vw, 14.5px);
-    line-height: 1.32;
-  }
-  .hook-divider { margin-top: 16px; }
-  .signal-list {
     margin-top: 14px;
-    gap: 8px;
+    font-size: clamp(13px, 1.8vw, 15px);
   }
-  .signal-card { padding: 11px 20px; }
-  .signal-caption { margin-bottom: 4px; }
-  .hook-method {
-    margin-top: 9px;
-    padding: 10px 16px 11px;
-  }
-  .hook-method-head { margin-bottom: 11px; }
-  .hook-method-key { font-size: 11px; }
-  .hook-method-item br { display: none; }
-  .hook-method-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
-  /* Con dos columnas, los bordes izquierdos tienen que quedar solo en la
-     columna derecha (los impares) o aparecería una línea colgando. */
-  .hook-method-item + .hook-method-item { border-left: none; }
-  .hook-method-item:nth-child(2n) { border-left: 1px solid rgba(255,255,255,0.075); }
-  .hook-method-item:nth-child(odd) { padding-left: 0; }
-  .hook-method-caveat {
-    margin-top: 12px;
-    padding-top: 10px;
-    line-height: 1.5;
-  }
+  .signal-list { margin-top: 22px; gap: 10px; }
+  .signal-card { padding: 15px 20px; }
 }
 
 @media (max-width: 600px) {
   .hook-lead { font-size: clamp(21px, 5.6vw, 32px); }
-  /* En un teléfono el divisor es decoración: cuesta 20px de alto y el
-     contenido —título, frase, dos señales y el método— no entra con él. */
-  .hook-divider { display: none; }
-  .hook-intro { font-size: 12.5px; line-height: 1.3; margin-top: 5px; max-width: 100%; }
-  /* En un teléfono el epígrafe 'DOS LECTURAS, UN MISMO TEXTO' es redundante: la
-     frase de arriba ya explica qué entra y qué sale, y las dos tarjetas se
-     explican solas. Con el alto que libera, el bloque entero entra sin recortar
-     el titular ni empujar la advertencia fuera de la pantalla. */
-  .hook-caption { display: none; }
-  .signal-list { gap: 5px; margin-top: 10px; }
-  .signal-card { padding: 10px 14px; }
-  .hook-method { margin-top: 9px; padding: 10px 14px 11px; }
-  .hook-method-caveat { margin-top: 7px; padding-top: 6px; font-size: 11.5px; line-height: 1.32; }
-  .signal-card { grid-template-columns: 32px 1fr; }
-  .signal-result {
-    grid-column: 1 / -1;
-    align-items: flex-start;
-    flex-direction: row;
-    gap: 12px;
-    margin-top: 8px;
-    padding-left: 0;
-    border-left: none;
+  .hook-intro {
+    margin-top: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    max-width: 100%;
   }
-  .hook-method {
-    width: 100%;
-    margin-top: 18px;
-    padding: 13px 15px 14px;
-  }
-  .hook-method-key { font-size: 11px; }
-  .hook-method-item br { display: none; }
-  .hook-method-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
-  .hook-method-item + .hook-method-item { border-left: none; }
-  .hook-method-item:nth-child(2n) { border-left: 1px solid rgba(255,255,255,0.075); }
-  .hook-method-item:nth-child(odd) { padding-left: 0; }
-  .hook-method-value { font-size: 20px; }
-  .hook-method-caveat { font-size: 12.5px; line-height: 1.5; }
+  .signal-list { margin-top: 20px; gap: 10px; }
+  .signal-card { padding: 14px 16px; }
 }
