@@ -43,7 +43,6 @@ import argparse
 import csv
 import hashlib
 import json
-import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -63,8 +62,13 @@ FUENTES = {
     "actores": DESCRIPTIVO / "indices_por_actor.csv",
     "metadata_actores": FASE2 / "actores_metadata.csv",
     "manifest_fuente": FASE2 / "manifest.json",
-    "readme_fuente": FASE2 / "README.md",
 }
+
+# El commit de origen ya no se busca en el README (leerlo obligaba a hashear
+# documentación, y entonces editar un .md invalidaba el agregado). Lo declara
+# scripts/import-fase2.py en PINS.json, que es el registro autoritativo de qué
+# commit de FASE_2 está importado.
+PINS_FUENTE = FASE2 / "fuente" / "PINS.json"
 
 
 def sha256(path: Path) -> str:
@@ -92,14 +96,15 @@ def count(rows: list[dict], column: str, value: str) -> int:
 
 
 def fuente_commit() -> str | None:
-    """El commit de FASE_2 lo declara el README de la carpeta, no un archivo de
-    configuración: se lee de ahí y si no está, se omite (mejor null que inventar
-    una procedencia)."""
-    readme = FUENTES["readme_fuente"]
-    if not readme.exists():
+    """El commit de FASE_2 importado, según PINS.json (ver scripts/import-fase2.py).
+    Si no hay pines (todavía no se corrió la importación), se omite: mejor null
+    que inventar una procedencia."""
+    if not PINS_FUENTE.exists():
         return None
-    match = re.search(r"Commit incorporado:\s*`?([0-9a-f]{7,40})`?", readme.read_text(encoding="utf-8"))
-    return match.group(1) if match else None
+    try:
+        return json.loads(PINS_FUENTE.read_text(encoding="utf-8")).get("commit")
+    except (OSError, ValueError):
+        return None
 
 
 def git_commit() -> str | None:

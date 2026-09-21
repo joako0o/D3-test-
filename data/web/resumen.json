@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generado": "2026-09-21T16:48:31Z",
+    "generado": "2026-09-21T18:53:14Z",
     "generador": "scripts/build-web-data.py",
     "fuente": "joako0o/FASE_2",
-    "fuente_commit": "92986f008f8337a407b9d527c473a26747c0654a",
+    "fuente_commit": "7485d1d9e55a6ccbcfb30e7b9893f7c9c781e999",
     "fuente_version": "proyecto_esencial_v1",
     "modelo": "W+C+600",
     "modelo_descripcion": "ensamble de 5 clasificadores lineales sobre TF-IDF de palabra y carácter",
@@ -58,8 +58,7 @@
       "anual": "ffa63af1e3e678b89c5ae515d4fe00280613958371d1d2df8aa45d8b77995cbc",
       "actores": "32b2864d24d11aa6fcb6b8ff80420b71896ee4ed2fb206d20e03625f1bdd2e8f",
       "metadata_actores": "e4c57ff710983ce4f2416289ad788a6ce404c7ac6033ed54d8a472f93f5f34bf",
-      "manifest_fuente": "25e8c17acdb290c8d0d8a6a7bde8f7f7572c0402fba10669106ba4ba74cf87cd",
-      "readme_fuente": "b141305b56984a251ba11893ec3a0de26f0fa606b9e9696d294c31b344db1639"
+      "manifest_fuente": "25e8c17acdb290c8d0d8a6a7bde8f7f7572c0402fba10669106ba4ba74cf87cd"
     }
   },
   "anual": [

@@ -1,0 +1,222 @@
+{
+  "fuente": "https://github.com/joako0o/FASE_2.git",
+  "rama": "arena/01a0c4da-fase-2",
+  "commit": "7485d1d9e55a6ccbcfb30e7b9893f7c9c781e999",
+  "commit_fecha": "2026-09-21",
+  "importado": "2026-09-21T18:52:53Z",
+  "importador": "scripts/import-fase2.py",
+  "regla": "Solo entra lo que usa un script de la pieza, una figura, o es la prueba de un número que la pieza muestra. Los datasets grandes (corpus con texto, tabla_maestra.csv, entrenamiento_wc600.csv, gold ciega, .joblib) no viajan: se consiguen con git clone del repo de la fuente.",
+  "pin_fuente": "true  = el sha256 lo declara el manifest de FASE_2 (prueba contra la fuente). false = FASE_2 no lo declara y el hash quedó registrado en la importación (sirve para detectar ediciones locales, no como prueba de origen).",
+  "archivos": {
+    "README.md": {
+      "sha256": "7973bcdceba5a83129d62ddd8bb95f85e9962cee177935db095a024b23074d11",
+      "pin_fuente": true,
+      "bytes": 31900
+    },
+    "data/README.md": {
+      "sha256": "1344456eb5544092d51efd1ef86a2ca53bdbe321d8be2f308ae6574642b9a9a7",
+      "pin_fuente": true,
+      "bytes": 1209
+    },
+    "docs/CODEBOOK.md": {
+      "sha256": "c41cebf74ea73e57c48fae2c8606e5b555dc17ff1c65608fcf17d362dbbc39cf",
+      "pin_fuente": true,
+      "bytes": 7693
+    },
+    "docs/METODOLOGIA_Y_BENCHMARK.md": {
+      "sha256": "2cbe646434ed01913e7f29351dc10e406619c37b3241e16d89d995955ec505fe",
+      "pin_fuente": true,
+      "bytes": 3352
+    },
+    "docs/RESULTADOS_LIMITACIONES.md": {
+      "sha256": "9df7b5447dbb2b9b51b7926420442ed6f148c5bf985fccade9448eb9f43d1a41",
+      "pin_fuente": true,
+      "bytes": 3198
+    },
+    "data/benchmark_modelos.csv": {
+      "sha256": "0e94eb1dd87188f6f95a0eadce6797a378c7d2b144030bd124078be9e4820653",
+      "pin_fuente": true,
+      "bytes": 3686
+    },
+    "data/benchmark_modelos.json": {
+      "sha256": "5d136ecef404878b08b6e902799762d06d3229900b16977bc4bc0ffc750e158a",
+      "pin_fuente": true,
+      "bytes": 12875
+    },
+    "data/resultados_evaluacion_ciega.json": {
+      "sha256": "1aadd083a4c411de021a0160251c06c13c9fa79ca1e576658c60c13b21784f55",
+      "pin_fuente": true,
+      "bytes": 26640
+    },
+    "data/predicciones_evaluacion_ciega.csv": {
+      "sha256": "919b3d0b1b4b5a79f8e492c0889989ae7ed0a8d6c7ac0148c9fcce98f556d0db",
+      "pin_fuente": true,
+      "bytes": 41942
+    },
+    "data/manifest.json": {
+      "sha256": "79656469939b656a44de95c51ca0cba0ae3241d1ddafa30051b42a1ca3d6fe75",
+      "pin_fuente": false,
+      "bytes": 2970
+    },
+    "data/analisis_factorial.json": {
+      "sha256": "5a31991659b4af8664222b7ebb023741c3cad68239d51f7e4441ebbc03c8fa44",
+      "pin_fuente": true,
+      "bytes": 26071
+    },
+    "resultados/robustez_supervisada/curvas_aprendizaje.json": {
+      "sha256": "c166f34b8226ea7a16a8da04d035e642f435727c36886fbf517f74e386f3f87a",
+      "pin_fuente": false,
+      "bytes": 28894
+    },
+    "resultados/robustez_supervisada/estabilidad_lineal.json": {
+      "sha256": "a5de0ee16c908ce9ceecc239cf198e0067b5e7910c36a7e5bed0119bb6dc5ed3",
+      "pin_fuente": false,
+      "bytes": 8225
+    },
+    "resultados/analisis_descriptivo/acuerdo_consejo_por_reunion.csv": {
+      "sha256": "51f994d51e44b9a17a4721a38e37b5bdb9172d46e49ce6c3ff1b434e58d037e9",
+      "pin_fuente": false,
+      "bytes": 360051
+    },
+    "resultados/analisis_descriptivo/indices_por_tipo_y_actor.csv": {
+      "sha256": "f45ed52951925340ac524104ab7d4241059e1d6a00f1c30c330736f62cebbc9f",
+      "pin_fuente": false,
+      "bytes": 8822
+    },
+    "resultados/analisis_descriptivo/variacion_anual_por_actor.csv": {
+      "sha256": "d83a57b345d25848643b81bcaeca5b115a77b2a3db30e18cb03bbe377664370c",
+      "pin_fuente": false,
+      "bytes": 6699
+    },
+    "resultados/analisis_descriptivo/topicos_modelo_por_anio.csv": {
+      "sha256": "d2cbda1b16b210ab087507bfbd1068842afb8814de6a463fd3bc232fd8767ff6",
+      "pin_fuente": false,
+      "bytes": 9399
+    },
+    "resultados/analisis_descriptivo/topicos_modelo_nmf.csv": {
+      "sha256": "db9e50253414714076d691d0cdd8baf2c4fb25d1f01236186c5d7e917d0ee5f4",
+      "pin_fuente": false,
+      "bytes": 6536
+    },
+    "resultados/analisis_descriptivo/radar_tematico_actores_ancho.csv": {
+      "sha256": "7dd40247858ed0f122456d53b237f7a987561da4f5ffe152c268eb9e50dddf5c",
+      "pin_fuente": false,
+      "bytes": 3787
+    },
+    "resultados/analisis_descriptivo/vocabulario_frecuente_por_actor.csv": {
+      "sha256": "115dcb77a803bb4a5ed6383a7ad6a854b674cafe1cd1c04d63a1b599fc9157df",
+      "pin_fuente": false,
+      "bytes": 25060
+    },
+    "resultados/analisis_descriptivo/auditoria_nombres_topicos_nmf.csv": {
+      "sha256": "5adfc949523de56aa7a569b5d988332aa7105645bbcf911ecf67c9e0049166d5",
+      "pin_fuente": false,
+      "bytes": 20176
+    },
+    "resultados/analisis_descriptivo/evolucion_topicos_modelo_resumen.csv": {
+      "sha256": "9e8e7c1b5614e90ec9c15643851bb402260637e73621efbb82f4e94ea1ced3f4",
+      "pin_fuente": false,
+      "bytes": 1091
+    },
+    "resultados/analisis_descriptivo/evolucion_topicos_modelo_metodo.json": {
+      "sha256": "a37664e715325d4788c88be987ae5fa9e2f7c550084a680d1a4a2938bdaad361",
+      "pin_fuente": false,
+      "bytes": 820
+    },
+    "resultados/analisis_descriptivo/radar_tematico_metodo.json": {
+      "sha256": "e74c6f6abaf2da79748cb313b4c5424fd8bb3c072dff5020bb0f81bc51c6e96f",
+      "pin_fuente": false,
+      "bytes": 1503
+    },
+    "resultados/analisis_descriptivo/topicos_modelo_metodo.json": {
+      "sha256": "bec3c752b19313822eb60bd9ff15bf0b6d56820844bd242fd7ebdf8d98eb0a59",
+      "pin_fuente": false,
+      "bytes": 763
+    },
+    "resultados/analisis_descriptivo/segmentacion_nmf_benchmark.csv": {
+      "sha256": "84dba3cf429f6e152f607a43e9394035f1681b167935b134698e5e0d31e82bd5",
+      "pin_fuente": false,
+      "bytes": 2232
+    },
+    "resultados/analisis_descriptivo/segmentacion_nmf_k6_topicos.csv": {
+      "sha256": "31f33b28551f2ac131701571ba9aac7cf1c017ab7dc20fc9733143e8ee46ac4d",
+      "pin_fuente": false,
+      "bytes": 2012
+    },
+    "resultados/analisis_descriptivo/segmentacion_nmf_seleccion.json": {
+      "sha256": "e000306f8495680115fbb3c5781aa297f273790219fcd521ab27bacbe798d673",
+      "pin_fuente": false,
+      "bytes": 2189
+    },
+    "resultados/analisis_descriptivo/segmentacion_nmf_unidades.csv": {
+      "sha256": "509e4bf17525b9f6b8d77654799e14feecb1de5f6b589752ac823fd6e29a6cf6",
+      "pin_fuente": false,
+      "bytes": 815
+    },
+    "resultados/analisis_descriptivo/resumen.json": {
+      "sha256": "b3777d82332c6ef730ebb2ca8141982be3c50f3e977e2bfbfa1a65b7ec41793f",
+      "pin_fuente": false,
+      "bytes": 1572
+    },
+    "resultados/analisis_descriptivo/manifest.json": {
+      "sha256": "9fc7fee4f8bc833f91582a9c1d7f64ada001ef9a1946078827d5fcaae7e78deb",
+      "pin_fuente": false,
+      "bytes": 3832
+    },
+    "resultados/manifest.json": {
+      "sha256": "f58c4dcc4a83d40318571470099f3d2acb48040df69b040974073c3fca59ebdf",
+      "pin_fuente": false,
+      "bytes": 467
+    },
+    "resultados/resumen_clasificacion.json": {
+      "sha256": "c8bcd902077d459f9a2206c88174c8b2cae4ec989e685dc06c100655272e526a",
+      "pin_fuente": false,
+      "bytes": 2245
+    },
+    "data/revision_votos_actores.csv": {
+      "sha256": "99129ef26144683c1fb4a728160fac46f3517679e6e0c791db5ae1e5c4a80f8f",
+      "pin_fuente": true,
+      "bytes": 6235
+    },
+    "requirements.txt": {
+      "sha256": "1f434dbc7b26cd8ba04295593753f98a6e1fc4808f624d3f04b46e411d2b8862",
+      "pin_fuente": true,
+      "bytes": 61
+    },
+    "scripts/modelo_final.py": {
+      "sha256": "8a76abb1a9bdf262ee0d13ac6b9c7d196eee3b537058959174d3100f1c426db9",
+      "pin_fuente": true,
+      "bytes": 8178
+    },
+    "scripts/analisis_resultados.py": {
+      "sha256": "421c2fe8b3776c8b42188aa88261acdc96e28ee9899590dbdaa2153a4c8b9b53",
+      "pin_fuente": true,
+      "bytes": 55465
+    },
+    "scripts/verificar_procedencia.py": {
+      "sha256": "57e90437f695cd29951e65adac21b0893cb4aa8602c50a4e7259d606e515da31",
+      "pin_fuente": true,
+      "bytes": 4730
+    },
+    "scripts/curvas_aprendizaje.py": {
+      "sha256": "e46938037bcb1d767343ec1f43f48732e2c83d4127463b21e6901a098b005a8e",
+      "pin_fuente": true,
+      "bytes": 9411
+    },
+    "scripts/bootstrap_ciega_pareado.py": {
+      "sha256": "843044aebc346990b9f5340da57a3d2bae1382482c25c848c25dd4b7764f5d9b",
+      "pin_fuente": true,
+      "bytes": 8093
+    },
+    "scripts/estabilidad_lineal.py": {
+      "sha256": "acc3fadec7a06750328d526f0ae732ceb4f08098e5733c131caa31cac38f245b",
+      "pin_fuente": true,
+      "bytes": 6812
+    },
+    "scripts/preparar_datos_web.py": {
+      "sha256": "3bb3f937bc15045accbb275f09f29446899e6d409df13ee5566df1908f827ab7",
+      "pin_fuente": true,
+      "bytes": 15935
+    }
+  }
+}

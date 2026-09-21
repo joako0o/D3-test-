@@ -5,8 +5,10 @@ js/vendor/
 js/data/quotes.js
 # Agregados generados por scripts/build-web-data.py: se pisan al reconstruir
 data/web/
-# Manifiesto de la fuente externa (FASE_2): no es nuestro, no se reformatea
+# Fuente externa (FASE_2): no es nuestra, no se reformatea. `manifiesto` y todo lo
+# importado por scripts/import-fase2.py, que viaja byte por byte desde el commit pinneado.
 data/fase-2/manifest.json
+data/fase-2/fuente/
 # Derivados de scripts/build-js.mjs: se pisan al reconstruir
 js/app.js
 js/**/*.min.js

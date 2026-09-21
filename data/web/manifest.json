@@ -1,17 +1,16 @@
 {
   "generador": "scripts/build-web-data.py",
-  "generado": "2026-09-21T16:48:31Z",
-  "commit_sitio": "1b2213e",
-  "fuente": "joako0o/FASE_2@92986f008f8337a407b9d527c473a26747c0654a",
+  "generado": "2026-09-21T18:53:14Z",
+  "commit_sitio": "cb04274",
+  "fuente": "joako0o/FASE_2@7485d1d9e55a6ccbcfb30e7b9893f7c9c781e999",
   "salidas": {
-    "data/web/resumen.json": "f24d64db46a1d7f30eb702d6313cc3918cc1768033fb262d299fb575201af0e4"
+    "data/web/resumen.json": "282ee1a510e6d52a7b491bd2498e1bc045791dc87c61261fb2ba3159ff4d0a0c"
   },
   "sha256_fuentes": {
     "clasificacion": "5382a00b92362e44d2d8e492d7080ffe6c1756a4d22c496dbcac8bf22ebb9ed8",
     "anual": "ffa63af1e3e678b89c5ae515d4fe00280613958371d1d2df8aa45d8b77995cbc",
     "actores": "32b2864d24d11aa6fcb6b8ff80420b71896ee4ed2fb206d20e03625f1bdd2e8f",
     "metadata_actores": "e4c57ff710983ce4f2416289ad788a6ce404c7ac6033ed54d8a472f93f5f34bf",
-    "manifest_fuente": "25e8c17acdb290c8d0d8a6a7bde8f7f7572c0402fba10669106ba4ba74cf87cd",
-    "readme_fuente": "b141305b56984a251ba11893ec3a0de26f0fa606b9e9696d294c31b344db1639"
+    "manifest_fuente": "25e8c17acdb290c8d0d8a6a7bde8f7f7572c0402fba10669106ba4ba74cf87cd"
   }
 }

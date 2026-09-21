@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=5" />
+  <link rel="modulepreload" href="js/app.js?v=6" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -675,7 +675,7 @@
             <div class="pipe-body">
               <div class="pipe-label">Clasificaci&oacute;n</div>
               <h3>Cada intervenci&oacute;n recibe un score, no un veredicto</h3>
-              <p class="pipe-p">El modelo es un ensamble de cinco clasificadores lineales sobre TF-IDF de palabra y car&aacute;cter (W+C+600), entrenado con <span data-corpus-stat="entrenamiento">1.596</span> intervenciones etiquetadas y probado sobre <span data-corpus-stat="ciegas">300</span> reservadas como evaluaci&oacute;n ciega. El score continuo va de &minus;1 (dovish) a +1 (hawkish); la etiqueta es su signo. La coincidencia entre los cinco miembros mide estabilidad del ensamble, no certeza.</p>
+              <p class="pipe-p">El modelo es un ensamble de cinco clasificadores lineales sobre TF-IDF de palabra y car&aacute;cter (W+C+600), entrenado con <span data-corpus-stat="entrenamiento">1.596</span> intervenciones etiquetadas y probado sobre <span data-corpus-stat="ciegas">300</span> reservadas como evaluaci&oacute;n ciega. El score continuo va de &minus;1 (dovish) a +1 (hawkish). La etiqueta de tres clases es el <strong>voto mayoritario de los cinco miembros</strong> (desempate H, D, N), no el signo del score: hay fragmentos neutrales con score de orientaci&oacute;n no trivial. La coincidencia entre los cinco mide estabilidad del ensamble, no certeza.</p>
               <div class="frag">&laquo;el riesgo de inflaci&oacute;n domina el panorama&raquo;</div>
               <div class="verdict-row">
                 <span class="verdict" id="verdictStamp">Hawkish</span>
@@ -797,7 +797,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=5"></script>
+  <script type="module" src="js/app.js?v=6"></script>
 
 
 </body>

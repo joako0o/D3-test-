@@ -120,12 +120,19 @@ export function initTimeline(quotesData = []) {
     const x = d3.scaleTime().domain([domainStart, domainEnd]).range([0, innerW]);
     const y = d3.scaleLinear().domain([-1, 1]).range([innerH, 0]);
 
+    /* Rótulos de año explícitos y anclados al PRIMER año de la ventana.
+       Con `d3.timeYear.every(2)` sobre una ventana que empieza en impar, los
+       rótulos caían en los años pares y los dos extremos (2005 y 2015) no
+       aparecían nunca: el lector no veía dónde empieza ni dónde termina la
+       serie. Se generan del conjunto de años reales. */
+    const yearStep = width < 520 ? 4 : 2;
+    const yearTicks = years
+      .filter((year, index) => index % yearStep === 0 || year === yearEnd)
+      .map((year) => new Date(year, 6, 1));
     g.append('g')
       .attr('transform', `translate(0,${innerH})`)
-              .call(d3.axisBottom(x)
-        /* Con 11 años de ventana, un rótulo cada 2 son 6 de 4 cifras: en 300
-           px de eje se pisaban. En estrecho, cada 4 años. */
-        .ticks(d3.timeYear.every(width < 520 ? 4 : 2))
+      .call(d3.axisBottom(x)
+        .tickValues(yearTicks)
         .tickFormat(d3.timeFormat('%Y')))
       .selectAll('text').style('fill', '#e8ecf5').style('font-size', 'clamp(14px, 1.25vw, 16px)');
     g.selectAll('.domain, .tick line').style('stroke', 'rgba(255,255,255,0.12)');

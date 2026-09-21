@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1040" viewBox="0 0 1400 1040" font-family="Helvetica, Arial, sans-serif">
+<rect width="1400" height="1040" fill="#0a0e1a"/>
+<text x="60" y="54" fill="#f0f3fa" font-size="28" font-weight="bold">Prueba de la métrica: contar votos vs promediar puntajes</text>
+<text x="60" y="84" fill="#9aa4bd" font-size="16">bootstrap agrupado por reunión (400 remuestreos) · los neutrales fuera en B y D, presentes en E</text>
+<text x="60" y="106" fill="#6f7a93" font-size="13">FUENTE POR PREGUNTA: contar votos sale de la tabla maestra (prioriza etiqueta humana) · promediar puntajes, de la predicción cruda. Entre ambas el balance se mueve ≤ 0,05.</text>
+<rect x="60" y="120" width="610.0" height="400" rx="12" fill="#111726" stroke="rgba(255,255,255,0.08)"/>
+<text x="86" y="158" fill="#f0f3fa" font-size="18" font-weight="bold">1 · La serie, con su intervalo</text>
+<text x="86" y="182" fill="#8891a8" font-size="13">B cuenta votos (naranjo) · D promedia puntajes (dorado) · barras = IC95</text>
+<line x1="120" y1="235.7" x2="640.0" y2="235.7" stroke="rgba(255,255,255,0.06)"/>
+<text x="114" y="240.7" fill="#8891a8" font-size="13" text-anchor="end">+1.0</text>
+<line x1="120" y1="287.8" x2="640.0" y2="287.8" stroke="rgba(255,255,255,0.06)"/>
+<text x="114" y="292.8" fill="#8891a8" font-size="13" text-anchor="end">+0.5</text>
+<line x1="120" y1="340.0" x2="640.0" y2="340.0" stroke="rgba(255,255,255,0.2)"/>
+<text x="114" y="345.0" fill="#8891a8" font-size="13" text-anchor="end">+0.0</text>
+<line x1="120" y1="392.2" x2="640.0" y2="392.2" stroke="rgba(255,255,255,0.06)"/>
+<text x="114" y="397.2" fill="#8891a8" font-size="13" text-anchor="end">-0.5</text>
+<line x1="120" y1="444.3" x2="640.0" y2="444.3" stroke="rgba(255,255,255,0.06)"/>
+<text x="114" y="449.3" fill="#8891a8" font-size="13" text-anchor="end">-1.0</text>
+<line x1="130.0" y1="242.5" x2="130.0" y2="235.7" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="125.0" y1="261.2" x2="135.0" y2="261.2" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="125.0" y1="253.3" x2="135.0" y2="253.3" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="181.0" y1="261.2" x2="181.0" y2="240.6" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="176.0" y1="291.5" x2="186.0" y2="291.5" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="176.0" y1="266.2" x2="186.0" y2="266.2" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="232.0" y1="295.1" x2="232.0" y2="261.3" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="227.0" y1="335.2" x2="237.0" y2="335.2" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="227.0" y1="284.4" x2="237.0" y2="284.4" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="283.0" y1="278.1" x2="283.0" y2="249.3" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="278.0" y1="317.8" x2="288.0" y2="317.8" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="278.0" y1="278.9" x2="288.0" y2="278.9" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="334.0" y1="439.8" x2="334.0" y2="420.8" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="329.0" y1="405.4" x2="339.0" y2="405.4" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="329.0" y1="383.1" x2="339.0" y2="383.1" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="385.0" y1="271.4" x2="385.0" y2="245.5" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="380.0" y1="309.2" x2="390.0" y2="309.2" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="380.0" y1="282.2" x2="390.0" y2="282.2" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="436.0" y1="301.5" x2="436.0" y2="262.9" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="431.0" y1="325.6" x2="441.0" y2="325.6" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="431.0" y1="282.4" x2="441.0" y2="282.4" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="487.0" y1="444.3" x2="487.0" y2="407.6" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="482.0" y1="402.5" x2="492.0" y2="402.5" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="482.0" y1="372.3" x2="492.0" y2="372.3" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="538.0" y1="443.8" x2="538.0" y2="427.7" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="533.0" y1="406.1" x2="543.0" y2="406.1" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="533.0" y1="389.7" x2="543.0" y2="389.7" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="589.0" y1="444.3" x2="589.0" y2="437.5" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="584.0" y1="412.5" x2="594.0" y2="412.5" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="584.0" y1="398.9" x2="594.0" y2="398.9" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="640.0" y1="380.5" x2="640.0" y2="329.4" stroke="#ff9d5c" stroke-width="1.5" opacity="0.5"/>
+<line x1="635.0" y1="370.9" x2="645.0" y2="370.9" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<line x1="635.0" y1="330.7" x2="645.0" y2="330.7" stroke="#ffd76a" stroke-width="1" opacity="0.45"/>
+<polyline fill="none" stroke="#ff9d5c" stroke-width="1.2" opacity="0.5" stroke-dasharray="3,3" points="130.0,235.7 181.0,247.1 232.0,275.5 283.0,260.2 334.0,433.8 385.0,254.8 436.0,279.1 487.0,444.3 538.0,441.2 589.0,444.3 640.0,355.9"/>
+<polyline fill="none" stroke="#ff9d5c" stroke-width="2.2" points="130.0,235.7 181.0,251.3 232.0,276.4 283.0,260.8 334.0,435.6 385.0,255.1 436.0,278.0 487.0,444.3 538.0,440.8 589.0,442.4 640.0,350.8"/>
+<polyline fill="none" stroke="#ffd76a" stroke-width="3" points="130.0,257.0 181.0,276.7 232.0,307.1 283.0,294.5 334.0,394.7 385.0,292.7 436.0,298.3 487.0,389.4 538.0,398.4 589.0,405.4 640.0,347.5"/>
+<rect x="126.5" y="232.2" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="130.0" cy="257.0" r="4.5" fill="#ffd76a"/>
+<text x="130.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2005</text>
+<rect x="177.5" y="247.8" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="181.0" cy="276.7" r="4.5" fill="#ffd76a"/>
+<text x="181.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2006</text>
+<rect x="228.5" y="272.9" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="232.0" cy="307.1" r="4.5" fill="#ffd76a"/>
+<text x="232.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2007</text>
+<rect x="279.5" y="257.3" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="283.0" cy="294.5" r="4.5" fill="#ffd76a"/>
+<text x="283.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2008</text>
+<rect x="330.5" y="432.1" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="334.0" cy="394.7" r="4.5" fill="#ffd76a"/>
+<text x="334.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2009</text>
+<rect x="381.5" y="251.6" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="385.0" cy="292.7" r="4.5" fill="#ffd76a"/>
+<text x="385.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2010</text>
+<rect x="432.5" y="274.5" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="436.0" cy="298.3" r="4.5" fill="#ffd76a"/>
+<text x="436.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2011</text>
+<rect x="483.5" y="440.8" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="487.0" cy="389.4" r="4.5" fill="#ffd76a"/>
+<text x="487.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2012</text>
+<rect x="534.5" y="437.3" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="538.0" cy="398.4" r="4.5" fill="#ffd76a"/>
+<text x="538.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2013</text>
+<rect x="585.5" y="438.9" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="589.0" cy="405.4" r="4.5" fill="#ffd76a"/>
+<text x="589.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2014</text>
+<rect x="636.5" y="347.3" width="7" height="7" fill="#ff9d5c"/>
+<circle cx="640.0" cy="347.5" r="4.5" fill="#ffd76a"/>
+<text x="640.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2015</text>
+<text x="130" y="508" fill="#6f7a93" font-size="12">B llega a ±1,00 exacto en 2005, 2012, 2014 y se queda a menos de 0,10 en 2009, 2013.</text>
+<text x="130" y="526" fill="#6f7a93" font-size="12">En 2007 pasa al revés: B dice +0,61 y D dice +0,32. La punteada es B con la predicción cruda.</text>
+<rect x="700.0" y="120" width="610.0" height="400" rx="12" fill="#111726" stroke="rgba(255,255,255,0.08)"/>
+<text x="726.0" y="158" fill="#f0f3fa" font-size="18" font-weight="bold">2 · ¿Depende del umbral que elijamos?</text>
+<text x="726.0" y="182" fill="#8891a8" font-size="13">media del score sobre filas con |score| ≥ t · si las líneas van juntas, la métrica no es frágil</text>
+<polyline fill="none" stroke="#ffd76a" stroke-width="3" opacity="1" points="770.0,326.4 821.0,335.6 872.0,343.6 923.0,344.0 974.0,360.5 1025.0,345.4 1076.0,347.1 1127.0,356.2 1178.0,363.7 1229.0,371.0 1280.0,355.2"/>
+<polyline fill="none" stroke="#f0c14b" stroke-width="1.8" opacity="0.75" points="770.0,284.1 821.0,302.0 872.0,326.8 923.0,324.2 974.0,385.4 1025.0,325.4 1076.0,329.7 1127.0,366.7 1178.0,381.0 1229.0,395.2 1280.0,361.4"/>
+<polyline fill="none" stroke="#e0a94a" stroke-width="1.8" opacity="0.75" points="770.0,256.3 821.0,277.2 872.0,315.6 923.0,302.7 974.0,410.4 1025.0,302.4 1076.0,313.8 1127.0,378.3 1178.0,394.9 1229.0,416.0 1280.0,367.3"/>
+<polyline fill="none" stroke="#c8903f" stroke-width="1.8" opacity="0.75" points="770.0,231.8 821.0,260.4 872.0,304.5 923.0,289.1 974.0,431.4 1025.0,286.9 1076.0,299.8 1127.0,392.9 1178.0,412.7 1229.0,435.6 1280.0,370.5"/>
+<polyline fill="none" stroke="#a87534" stroke-width="1.8" opacity="0.75" points="770.0,225.7 821.0,248.3 872.0,295.7 923.0,277.3 974.0,451.1 1025.0,269.8 1076.0,275.8 1127.0,414.7 1178.0,432.9 1229.0,453.6 1280.0,374.5"/>
+<polyline fill="none" stroke="#7d5626" stroke-width="1.8" opacity="0.75" points="770.0,220.0 821.0,240.1 872.0,290.9 923.0,266.0 974.0,458.4 1025.0,259.9 1076.0,266.7 1127.0,433.8 1178.0,444.9 1229.0,460.0 1280.0,366.9"/>
+<text x="770.0" y="208" fill="#8891a8" font-size="12">t = 0 (todas, línea gruesa) → t = 0,30</text>
+<text x="770.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2005</text>
+<text x="821.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2006</text>
+<text x="872.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2007</text>
+<text x="923.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2008</text>
+<text x="974.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2009</text>
+<text x="1025.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2010</text>
+<text x="1076.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2011</text>
+<text x="1127.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2012</text>
+<text x="1178.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2013</text>
+<text x="1229.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2014</text>
+<text x="1280.0" y="486" fill="#8891a8" font-size="12" text-anchor="middle">2015</text>
+<text x="770.0" y="508" fill="#6f7a93" font-size="12">Spearman vs t=0: t=0.02: +0.96 · t=0.05: +0.93 · t=0.1: +0.93  → el ranking de años no cambia.</text>
+<rect x="60" y="550" width="610.0" height="400" rx="12" fill="#111726" stroke="rgba(255,255,255,0.08)"/>
+<text x="86" y="588" fill="#f0f3fa" font-size="18" font-weight="bold">3 · A nivel acta, contar votos se rompe</text>
+<text x="86" y="612" fill="#8891a8" font-size="13">132 actas · balance = (H−D)/(H+D) contra media del score</text>
+<rect x="130.0" y="650.0" width="22.3" height="240.0" fill="#ff6b6b" opacity="0.85"/>
+<rect x="178.6" y="876.2" width="22.3" height="13.8" fill="#ff9d5c" opacity="0.85"/>
+<rect x="202.9" y="885.4" width="22.3" height="4.6" fill="#ff9d5c" opacity="0.85"/>
+<rect x="227.1" y="885.4" width="22.3" height="4.6" fill="#ff9d5c" opacity="0.85"/>
+<rect x="251.4" y="885.4" width="22.3" height="4.6" fill="#ff9d5c" opacity="0.85"/>
+<rect x="275.7" y="876.2" width="22.3" height="13.8" fill="#ff9d5c" opacity="0.85"/>
+<rect x="300.0" y="885.4" width="22.3" height="4.6" fill="#ff9d5c" opacity="0.85"/>
+<rect x="372.9" y="880.8" width="22.3" height="9.2" fill="#ff9d5c" opacity="0.85"/>
+<rect x="397.1" y="885.4" width="22.3" height="4.6" fill="#ff9d5c" opacity="0.85"/>
+<rect x="421.4" y="876.2" width="22.3" height="13.8" fill="#ff9d5c" opacity="0.85"/>
+<rect x="445.7" y="880.8" width="22.3" height="9.2" fill="#ff9d5c" opacity="0.85"/>
+<rect x="494.3" y="880.8" width="22.3" height="9.2" fill="#ff9d5c" opacity="0.85"/>
+<rect x="518.6" y="880.8" width="22.3" height="9.2" fill="#ff9d5c" opacity="0.85"/>
+<rect x="542.9" y="876.2" width="22.3" height="13.8" fill="#ff9d5c" opacity="0.85"/>
+<rect x="567.1" y="885.4" width="22.3" height="4.6" fill="#ff9d5c" opacity="0.85"/>
+<rect x="615.7" y="659.2" width="22.3" height="230.8" fill="#ff6b6b" opacity="0.85"/>
+<text x="130" y="638" fill="#8891a8" font-size="12">balance por acta — las barras rojas son ±1,000 exacto</text>
+<text x="130.0" y="910" fill="#8891a8" font-size="12" text-anchor="middle">-1</text>
+<text x="190.7" y="910" fill="#8891a8" font-size="12" text-anchor="middle"></text>
+<text x="251.4" y="910" fill="#8891a8" font-size="12" text-anchor="middle">-0,5</text>
+<text x="312.1" y="910" fill="#8891a8" font-size="12" text-anchor="middle"></text>
+<text x="372.9" y="910" fill="#8891a8" font-size="12" text-anchor="middle">0</text>
+<text x="433.6" y="910" fill="#8891a8" font-size="12" text-anchor="middle"></text>
+<text x="494.3" y="910" fill="#8891a8" font-size="12" text-anchor="middle">+0,5</text>
+<text x="555.0" y="910" fill="#8891a8" font-size="12" text-anchor="middle"></text>
+<text x="615.7" y="910" fill="#8891a8" font-size="12" text-anchor="middle">+1</text>
+<text x="130" y="936" fill="#ff6b6b" font-size="13">102 de 132 actas dan ±1,000 exacto; 4 más no tienen balance. No por extremas: por construcción.</text>
+<text x="130" y="956" fill="#9aa4bd" font-size="13">basta con que una clase tenga cero filas, aunque la otra tenga 100.</text>
+<text x="130" y="976" fill="#9aa4bd" font-size="13">La media del score reparte las 132 en todo el rango (máx |valor| = 0,21).</text>
+<rect x="700.0" y="550" width="610.0" height="400" rx="12" fill="#111726" stroke="rgba(255,255,255,0.08)"/>
+<text x="726.0" y="588" fill="#f0f3fa" font-size="18" font-weight="bold">4 · Qué se gana al promediar</text>
+<text x="726.0" y="612" fill="#8891a8" font-size="13">los dos casos de borde, con la misma escala</text>
+<text x="760.0" y="664" fill="#f0f3fa" font-size="17" font-weight="bold">2005</text>
+<text x="830.0" y="664" fill="#8891a8" font-size="14">113 intervenciones direccionales</text>
+<rect x="760.0" y="678" width="440.0" height="26" rx="5" fill="rgba(255,255,255,0.05)"/>
+<rect x="760.0" y="678" width="440.0" height="26" rx="5" fill="#ffd76a" opacity="0.75"/>
+<text x="760.0" y="730" fill="#ff9d5c" font-size="15">contar votos:  +1.00</text>
+<text x="760.0" y="754" fill="#ffd76a" font-size="15">promediar:     +0.80</text>
+<text x="1210.0" y="730" fill="#9aa4bd" font-size="13">+1,00 vs +0,80</text>
+<text x="760.0" y="784" fill="#f0f3fa" font-size="17" font-weight="bold">2012</text>
+<text x="830.0" y="784" fill="#8891a8" font-size="14">16 intervenciones direccionales</text>
+<rect x="760.0" y="798" width="440.0" height="26" rx="5" fill="rgba(255,255,255,0.05)"/>
+<rect x="760.0" y="798" width="62.3" height="26" rx="5" fill="#ff6b6b" opacity="0.75"/>
+<text x="760.0" y="850" fill="#ff9d5c" font-size="15">contar votos:  -1.00</text>
+<text x="760.0" y="874" fill="#ffd76a" font-size="15">promediar:     -0.47</text>
+<text x="1210.0" y="850" fill="#9aa4bd" font-size="13">−1,00 vs −0,47</text>
+<text x="760.0" y="930" fill="#6f7a93" font-size="13">La barra es la cantidad de casos detrás. Contar votos da −1,00 a los dos: el gráfico</text>
+<text x="760.0" y="950" fill="#6f7a93" font-size="13">los pinta igual de extremos aunque uno tenga 7 veces más evidencia que el otro.</text>
+</svg>

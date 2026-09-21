@@ -1016,6 +1016,7 @@ Dos capas, generadas por scripts y nunca escritas a mano en el HTML:
 |---|---|---|---|
 | **Muestra editorial** | `data/fase-2/candidatos-*.csv` | `scripts/build-particle-quotes.py` | `js/data/quotes.js` (→ `window.QUOTES`, 99 fragmentos) |
 | **Agregados del corpus** | `data/fase-2/resultados/**` + `actores_metadata.csv` | `scripts/build-web-data.py` | `data/web/resumen.json` + `manifest.json` |
+| **Fuente de FASE_2** | `joako0o/FASE_2` @ commit pinneado | `scripts/import-fase2.py` | `data/fase-2/fuente/**` + `PINS.json` (42 archivos, 865 KB) |
 
 El corpus es real, no maqueta: 9.725 intervenciones de 132 reuniones entre 2005
 y 2015, con la clasificación del modelo `W+C+600` (ensamble de cinco
@@ -1029,6 +1030,16 @@ de entrada y salida— vive en `data/fase-2/manifest.json` y
 **Regla:** ningún número del corpus se escribe a mano en `index.html`. Va como
 `<span data-corpus-stat="reuniones">132</span>` (respaldo sin red) y lo hidrata
 `js/main.js` desde el agregado; `npm run check` falla si los dos divergen.
+
+**La pieza cita, y lo que cita está adentro.** `data/fase-2/fuente/` trae —byte
+por byte y con `sha256`— lo liviano de `FASE_2`: el codebook, la metodología, el
+benchmark, la evaluación ciega, las curvas de aprendizaje, los agregados que
+alimentan Resultados y los scripts que producen esos números. Los datasets
+grandes (corpus con texto, `tabla_maestra.csv`, `entrenamiento_wc600.csv`, gold
+ciega, `.joblib`) **no viajan**: los lee el entrenamiento, no la pieza, y el
+`PINS.json` dice de qué commit salir a buscarlos. Reimportar:
+`npm run import:fase2`; verificar: `python3 scripts/import-fase2.py --check`
+(corre dentro de `npm run check`).
 
 ## Licencia
 

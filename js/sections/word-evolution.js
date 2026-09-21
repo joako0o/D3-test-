@@ -170,7 +170,10 @@ export function initWordEvolution(quotesData = quotes) {
     const labelMaxY = laneBottom - (compactChart ? 3 : 4);
     const labelPositions = new Map();
     const labelSpecs = laneTerms.map((item, rank) => {
-      const finalValue = formatValue(label, item, 2015);
+      /* El valor final es el del ÚLTIMO año de la ventana, no 2015 escrito a
+         mano: con la ventana derivada de los datos, un año fijo convertiría
+         todas las etiquetas en 0 en cuanto la muestra cambiara de período. */
+      const finalValue = formatValue(label, item, yearEnd);
       return { rank, desired: y(finalValue) + (rank - 1) * labelGap };
     }).sort((a, b) => a.desired - b.desired);
     let nextLabelY = labelMinY;
