@@ -161,12 +161,13 @@
 }
 .signal-phrase {
   font-family: var(--font-display);
-  font-size: clamp(17px, 2vw, 26px);
-  font-weight: 500;
-  line-height: 1.35;
+  font-size: clamp(15px, 1.55vw, 20px);
+  font-weight: 400;
+  line-height: 1.45;
   color: #ffffff;
 }
 .signal-card--hawkish .signal-phrase strong { color: var(--color-gold); font-weight: 600; }
+.signal-card .signal-phrase strong { white-space: nowrap; }
 .signal-card--dovish .signal-phrase strong { color: var(--color-dovish); font-weight: 600; }
 .signal-result {
   display: flex;
@@ -196,8 +197,30 @@
 }
 .signal-note {
   font-size: var(--fs-micro);
-  letter-spacing: 1px;
-  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.6px;
+  line-height: 1.5;
+  text-align: right;
+  color: rgba(255,255,255,0.5);
+}
+.signal-note strong { color: rgba(255,255,255,0.72); font-weight: 500; }
+/* La tarjeta ahora abre la cita completa: tiene que parecer clickeable. */
+.signal-card[role="button"] { cursor: pointer; }
+.signal-card[role="button"]:focus-visible {
+  outline: 2px solid rgba(255,215,106,0.55);
+  outline-offset: 3px;
+}
+/* El puente entre las dos intervenciones: la frase que convierte dos ejemplos
+   en un hallazgo. Sin caja, en el dorado del sistema y centrada. */
+.hook-bridge {
+  max-width: 620px;
+  margin-top: 18px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(14px, 1.3vw, 17px);
+  font-style: italic;
+  line-height: 1.5;
+  color: rgba(255,215,106,0.86);
+  text-wrap: balance;
 }
 
 /* ── TF·IDF, con su explicación a demanda ────────────────────────────────
@@ -297,6 +320,8 @@
   .model-note { margin-top: 16px; }
   .model-note-panel { margin-top: 12px; }
   .signal-card { padding: 15px 20px; }
+  .signal-phrase { font-size: clamp(13.5px, 1.7vw, 17px); line-height: 1.4; }
+  .hook-bridge { margin-top: 14px; font-size: clamp(12.5px, 1.5vw, 15px); }
 }
 
 @media (max-width: 600px) {
@@ -312,4 +337,6 @@
   .model-note-panel { margin-top: 11px; }
   .model-note-panel p { font-size: 12.5px; line-height: 1.55; }
   .signal-card { padding: 14px 16px; }
+  .signal-phrase { font-size: 14px; line-height: 1.42; }
+  .hook-bridge { margin-top: 12px; font-size: 13px; }
 }

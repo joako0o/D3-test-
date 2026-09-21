@@ -4551,6 +4551,38 @@ function initTextToParticlePOC() {
 
 initTextToParticlePOC();
 
+/* ── Las dos intervenciones del Método abren su cita completa ─────────────
+   Las tarjetas muestran el texto recortado; el lector tiene que poder ver la
+   intervención entera, que es donde el recorte se verifica. El índice se busca
+   por fecha y participante en la MISMA muestra que alimenta el panel de cita
+   (no se escribe a mano: si un fragmento cambia de lugar, el vínculo se
+   recoloca solo). Si no se encuentra, la tarjeta queda sin acción en vez de
+   abrir la cita equivocada.
+   Mismo patrón que axes-map: pinQuote + openQuote, y el ancla del panel en el
+   centro de la pantalla para que no quede debajo del cursor. */
+function initMethodQuotes() {
+  const cards = document.querySelectorAll('#stageHook .signal-card[data-quote-index]');
+  if (!cards.length) return;
+
+  const abrir = (card) => {
+    const index = Number(card.dataset.quoteIndex);
+    if (!Number.isFinite(index) || !quotes[index]) return;
+    focusReturn.card = card;
+    pinQuote(index);
+    openQuote(index, { x: window.innerWidth * 0.62, y: window.innerHeight * 0.58 });
+  };
+
+  cards.forEach((card) => {
+    card.addEventListener('click', () => abrir(card));
+    card.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      abrir(card);
+    });
+  });
+}
+initMethodQuotes();
+
 /* ── TF·IDF, con su explicación a demanda ────────────────────────────────
    Un botón que abre y cierra un panel. Nada de tooltip con `title` (el CSS de
    .jargon-term existe desde el principio y nunca se usó: no funciona en

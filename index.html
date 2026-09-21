@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=47" />
+  <link rel="stylesheet" href="css/bundle.css?v=49" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=13" />
+  <link rel="modulepreload" href="js/app.js?v=14" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -390,32 +390,45 @@
           </div>
         </div>
 
+        <!-- EL MODELO, APLICADO A DOS INTERVENCIONES REALES
+             Antes acá había dos sintagmas inventados ('riesgo de inflación',
+             'holgura económica') sin fecha, sin autor y sin número — y uno de
+             los dos no existía en el corpus. Ahora son dos intervenciones
+             textuales de la muestra, con su fecha, su autor, su score y la
+             decisión de tasa que tomó esa reunión. Las dos se pueden abrir en
+             el panel de cita (índices 57 y 28 de quotes.js).
+             Cuentan el momento más dramático del corpus: en septiembre de 2008
+             la sala discutía inflación y subió la tasa a 8,25%; en abril de
+             2009 la misma sala hablaba de crisis global y la bajó a 1,75%. -->
         <div class="signal-list">
-          <article class="signal-card signal-card--hawkish">
+          <article class="signal-card signal-card--hawkish" data-quote-index="57" role="button" tabindex="0"
+                   aria-label="Abrir la intervención completa de Manuel Marfán, 4 de septiembre de 2008">
             <span class="signal-num">01</span>
             <div class="signal-text">
-              <span class="signal-caption">Mencionar un</span>
-              <span class="signal-phrase"><strong>riesgo de inflaci&oacute;n</strong></span>
+              <span class="signal-caption">4 de septiembre, 2008</span>
+              <span class="signal-phrase"><strong>Manuel Marf&aacute;n</strong>: &laquo;las expectativas privadas de inflaci&oacute;n superan las proyecciones del Banco Central&raquo;</span>
             </div>
             <div class="signal-result">
               <span class="signal-tag">Hawkish</span>
-              <span class="signal-note">pedir subirla, ahora o despu&eacute;s</span>
+              <span class="signal-note">+0,81<br>la tasa sube a 8,25%</span>
             </div>
           </article>
 
-          <article class="signal-card signal-card--dovish">
+          <article class="signal-card signal-card--dovish" data-quote-index="28" role="button" tabindex="0"
+                   aria-label="Abrir la intervención completa de Enrique Marshall, 9 de abril de 2009">
             <span class="signal-num">02</span>
             <div class="signal-text">
-              <span class="signal-caption">Preocuparse por la</span>
-              <span class="signal-phrase"><strong>holgura econ&oacute;mica</strong></span>
+              <span class="signal-caption">9 de abril, 2009</span>
+              <span class="signal-phrase"><strong>Enrique Marshall</strong>: &laquo;el cuadro macro sigue marcado por la severidad de la crisis financiera global&raquo;</span>
             </div>
             <div class="signal-result">
               <span class="signal-tag">Dovish</span>
-              <span class="signal-note">pedir bajarla o dar est&iacute;mulo</span>
+              <span class="signal-note">&minus;0,88<br>la tasa baja a 1,75%</span>
             </div>
           </article>
         </div>
 
+        <p class="hook-bridge">Siete meses entre esas dos intervenciones. La misma sala, la orientaci&oacute;n al rev&eacute;s.</p>
 
       </div>
       
@@ -836,7 +849,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=13"></script>
+  <script type="module" src="js/app.js?v=14"></script>
 
 
 </body>
