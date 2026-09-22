@@ -2808,6 +2808,22 @@ let hoveredPoint = false;
 let lastHoverAt = 0;
 let hoverTimer = null;
 
+/* ── Resaltar una partícula SIN abrir su cita ─────────────────────────────
+   El hover de la nube abría el panel a los 90 ms y lo cerraba al alejarse: la
+   nube ocupa toda la pantalla durante varias secciones, así que cualquier
+   movimiento del cursor que la cruzara abría un panel sin que nadie lo pidiera
+   (medido con `npm run particle:hover`: cruzar la nube una vez alcanza).
+   Ahora el cursor solo RESALTA la partícula y el panel se abre con el clic.
+   El resaltado sigue usando el mismo estado que el foco de una cita fijada
+   (`particleFocus.index`), que es lo que ilumina el punto en la nube y marca su
+   equivalente en el mapa de intervenciones: pasar el cursor por encima sigue
+   diciendo "esto es clickeable", sin invadir la lectura. */
+function highlightParticle(index) {
+  if (particleFocus.index === index) return;
+  particleFocus.index = index;
+  syncAxesMarkFocus(index);
+}
+
 function syncQuotePanel() {
   const idx = activeQuoteIndex();
   if (idx >= 0) openQuote(idx);
@@ -2836,15 +2852,15 @@ function updateHover(cx, cy) {
     if (hitIdx === selection.hover && selection.hover >= 0) return;
     if (hoverTimer) clearTimeout(hoverTimer);
     hoverTimer = setTimeout(() => {
-      peekQuote(hitIdx);
-      syncQuotePanel();
+      peekQuote(hitIdx);        // deja constancia de qué está señalado
+      highlightParticle(hitIdx); // y lo ilumina: sin panel
     }, CONFIG.interaction?.hoverDelayMs ?? 90);
-  } else if (selection.hover >= 0) {
+  } else if (selection.hover >= 0 || particleFocus.index >= 0) {
+    /* Al salir de la nube se retira el resaltado del hover. El panel no se toca:
+       si está abierto es porque alguien hizo clic, y entonces isPinned() ya
+       habría salido arriba. */
     clearPeek();
-    syncQuotePanel();
-  } else if (quotePanelEl.classList.contains('visible')) {
-    /* Al alejar el cursor sin que haya click fijado, el panel se cierra. */
-    closeQuotePanel();
+    highlightParticle(-1);
   }
 }
 

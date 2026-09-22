@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=18" />
+  <link rel="modulepreload" href="js/app.js?v=19" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -321,7 +321,7 @@
         Dentro de la sala se ve m&aacute;s que solo una decisi&oacute;n: el contenido de las actas puede tener <span>se&ntilde;ales</span> m&aacute;s all&aacute; de lo evidente.
       </p>
       <p id="roomSub" data-room style="font-size: var(--fs-small); color: var(--color-text-secondary); font-family: var(--font-display); line-height: var(--lh-normal); text-align: center; max-width: 560px; text-shadow: 0 2px 10px rgba(0,0,0,0.9); margin: 0.9rem 20px 0; opacity: 0;">
-        Cada part&iacute;cula de luz es una intervenci&oacute;n. Haz clic o pulsa para leer su voz.
+        Cada part&iacute;cula de luz es una intervenci&oacute;n. Pasa el cursor para reconocerla y haz clic para leer su voz.
       </p>
     </div>
 
@@ -331,7 +331,7 @@
       Las partículas viven en el <canvas> y solo responden a puntero (raycast
       sobre THREE.Points), así que sin esta lista serían inalcanzables para
       quien navega con teclado o lector de pantalla. Cada botón corresponde a
-      un orbitador y abre exactamente la misma cita que el hover.
+      un orbitador y abre exactamente la misma cita que el clic.
       Está oculta visualmente pero NO para la accesibilidad, y se revela al
       recibir foco para que quien usa teclado vea dónde está.
       La rellena `initRoomVoiceNav()` en el modulo JS de la escena.
@@ -858,7 +858,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=18"></script>
+  <script type="module" src="js/app.js?v=19"></script>
 
 
 </body>
