@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=53" />
+  <link rel="stylesheet" href="css/bundle.css?v=54" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=17" />
+  <link rel="modulepreload" href="js/app.js?v=18" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -426,15 +426,15 @@
              en pantalla. -->
         <div class="model-note">
           <p class="model-note-line">
-            Esos dos puntajes salen de pesar las palabras de cada fragmento: el m&eacute;todo se llama <strong>TF&middot;IDF</strong>.
+            Para encontrar esos dos puntajes se usa <strong>TF&middot;IDF</strong>, que pesa las palabras de cada fragmento seg&uacute;n cu&aacute;nto lo distinguen del resto.
             <button class="model-note-toggle" type="button" aria-expanded="false" aria-controls="modelNotePanel">
               <span class="model-note-q" aria-hidden="true">?</span>
               <span class="sr-only">Qu&eacute; es TF&middot;IDF y c&oacute;mo se usa en esta pieza</span>
             </button>
           </p>
           <div class="model-note-panel" id="modelNotePanel" hidden>
-            <p><strong>Qu&eacute; es.</strong> Una forma de pesar palabras: la que aparece mucho en un fragmento y poco en el resto del corpus pesa m&aacute;s. As&iacute; &laquo;subyacente&raquo; mueve la aguja y &laquo;reuni&oacute;n&raquo; no. Es de 1972 y sigue siendo la l&iacute;nea base de este tipo de tareas.</p>
-            <p><strong>C&oacute;mo se usa ac&aacute;.</strong> Se calcula sobre las 1.596 intervenciones ya clasificadas, dos veces y por separado: en palabras y en pedazos de palabra. Cinco clasificadores votan, y el puntaje de cada tarjeta es el promedio de esos votos, de &minus;1 (dovish) a +1 (hawkish).</p>
+            <p><strong>Qu&eacute; es.</strong> Cada palabra recibe un peso seg&uacute;n cu&aacute;nto distingue a ese fragmento del resto. &laquo;Subyacente&raquo; mueve la aguja porque es rara en el corpus; &laquo;reuni&oacute;n&raquo; aparece en todas las actas y casi no pesa. La t&eacute;cnica es de 1972 y sigue siendo la l&iacute;nea base de este tipo de tareas.</p>
+            <p><strong>C&oacute;mo se usa ac&aacute;.</strong> Se calcula sobre las 1.596 intervenciones ya clasificadas, dos veces y por separado: en palabras y en pedazos de palabra. Cinco clasificadores votan la etiqueta, y el puntaje de cada tarjeta es otra cosa: la probabilidad que el modelo le da a &laquo;hawkish&raquo; menos la que le da a &laquo;dovish&raquo;, entre &minus;1 y +1.</p>
             <p><strong>Qu&eacute; no es.</strong> No entiende el texto: cuenta vocabulario, no lee el contexto de la frase. Por eso el puntaje no es una probabilidad calibrada.</p>
           </div>
         </div>
@@ -858,7 +858,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=17"></script>
+  <script type="module" src="js/app.js?v=18"></script>
 
 
 </body>
