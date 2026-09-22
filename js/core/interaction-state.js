@@ -66,6 +66,16 @@ export function clearSelection() {
    `quoteIndex` es la cita concreta que el panel de detalle tiene abierta. */
 export const voiceFocus = { participant: null, rendered: null, quoteIndex: -1 };
 
+/* ── Dejar de enfocar una voz ─────────────────────────────────────────────
+   Faltaba: el único modo de salir del foco de una voz era volver a hacer clic
+   en la MISMA tarjeta, algo que nadie adivina. Ahora lo usan el botón visible
+   del explorador de voces y la tecla Escape. */
+export function clearVoiceFocus() {
+  voiceFocus.participant = null;
+  voiceFocus.rendered = null;
+  voiceFocus.quoteIndex = -1;
+}
+
 /* ── Escalas del mapa de intervenciones ──────────────────────────────────
    Las calcula la sección de D3 y las reutiliza la nube de partículas para
    colocarse sobre las mismas coordenadas: así el paso del plano factual a la

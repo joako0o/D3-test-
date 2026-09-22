@@ -15,6 +15,18 @@ export function initActBrowser({ quotes, openQuote }) {
   const list = document.getElementById('actsList');
   const meta = document.getElementById('actsIndexMeta');
   const yearFilter = document.getElementById('actYearFilter');
+  const reader = document.getElementById('actReader');
+  const readerEmpty = document.getElementById('actReaderEmpty');
+  let activeActId = null;
+  /* Deja el lector en blanco y la escena sin foco: es el estado "ninguna
+     reunión elegida", que antes no existía. */
+  const clearSelectionState = () => {
+    activeActId = null;
+    reader.classList.add('is-empty');
+    if (readerEmpty) readerEmpty.hidden = false;
+    listItems.forEach(({ button }) => button.setAttribute('aria-current', 'false'));
+    window.dispatchEvent(new CustomEvent('particle-act-focus', { detail: { date: null } }));
+  };
   const dateEl = document.getElementById('actDate');
   const dateSubEl = document.getElementById('actDateSub');
   const eraEl = document.getElementById('actEra');
@@ -303,8 +315,20 @@ export function initActBrowser({ quotes, openQuote }) {
     listItems.forEach(({ button, act: listAct }) => button.setAttribute('aria-current', String(listAct.id === act.id)));
   };
 
-  const selectAct = (act) => {
+  /* Elegir un acta. Si es la que ya estaba elegida, se DESELECCIONA: hasta ahora
+     no había ningún modo de volver atrás —el foco del acta no se limpiaba en
+     ningún punto del código— y quien la tocaba quedaba con la escena enfocada
+     sin forma de verla entera de nuevo. Con el acta afuera, el lector muestra
+     una invitación en vez de quedar con datos viejos. */
+  const selectAct = (act, { alternar = false } = {}) => {
     if (!act) return;
+    if (alternar && activeActId === act.id) {
+      clearSelectionState();
+      return;
+    }
+    activeActId = act.id;
+    reader.classList.remove('is-empty');
+    readerEmpty.hidden = true;
     activeRowIndex = 0;
     renderAct(act);
     window.dispatchEvent(new CustomEvent('particle-act-focus', { detail: { date: act.date } }));
@@ -360,7 +384,7 @@ export function initActBrowser({ quotes, openQuote }) {
       tone.className = 'act-list-signal';
       tone.textContent = toneText[act.dominantTone];
       button.append(dot, body, tone);
-      button.addEventListener('click', () => selectAct(act));
+      button.addEventListener('click', () => selectAct(act, { alternar: true }));
       list.appendChild(button);
       listItems.push({ button, act });
     });
@@ -377,6 +401,8 @@ export function initActBrowser({ quotes, openQuote }) {
     const firstVisible = acts.find((act) => yearFilter.value === 'all' || String(act.year) === yearFilter.value);
     if (firstVisible) selectAct(firstVisible);
   });
+
+  window.addEventListener('focus-clear', clearSelectionState);
 
   renderList('all');
   const defaultAct = acts.find((act) => act.date === '2010-05-13') || acts.slice().sort((a, b) => b.count - a.count || a.date.localeCompare(b.date))[0] || acts[0];

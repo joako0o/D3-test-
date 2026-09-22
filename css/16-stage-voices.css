@@ -755,3 +755,24 @@ body.voice-profile-modal-open { overflow-y: hidden; }
   .voice-detail-note { display: none; }
   .voice-detail-open { padding: 7px 9px; }
 }
+
+/* El botón de quitar la selección de una voz. Antes solo se podía salir
+   volviendo a hacer clic en la misma tarjeta, algo que nadie adivina: existe
+   desde que el autor reportó quedar atrapado con el foco puesto. */
+.voice-detail-clear {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  cursor: pointer;
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+.voice-detail-clear:hover,
+.voice-detail-clear:focus-visible {
+  border-color: rgba(255,255,255,0.34);
+  background: rgba(255,255,255,0.05);
+  color: var(--color-text-primary);
+}

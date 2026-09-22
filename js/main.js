@@ -20,7 +20,7 @@ import { CONFIG, HERO_DOOR_LOCKUP, HERO } from './core/config.js?v=21';
 import { getViewportSize, getViewportSnapshot, isCompactWidth } from './core/viewport.js?v=2';
 import {
   selection, activeQuoteIndex, isPinned, peekQuote, clearPeek, pinQuote, clearSelection,
-  voiceFocus, axesState, focusReturn, particleFocus,
+  voiceFocus, axesState, focusReturn, particleFocus, clearVoiceFocus,
 } from './core/interaction-state.js';
 /* Las cinco secciones de datos (mapa de intervenciones, evolución del
    lenguaje, navegador de actas, voces y línea de tiempo) NO se importan aquí.
@@ -4307,7 +4307,26 @@ window.addEventListener('resize', () => {
   if (quotePanelEl.classList.contains('visible')) positionQuotePanel();
 });
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && quotePanelEl.classList.contains('visible')) closeQuotePanel();
+  if (e.key !== 'Escape') return;
+  /* Escape hace dos cosas, en orden: cierra el panel de cita si está abierto, y
+     si no hay panel, QUITA EL FOCO de lo que esté seleccionado. Antes solo
+     existía lo primero: quien enfocaba una voz o un acta quedaba atrapado —el
+     foco de las actas no se limpiaba en ningún punto del código, y el de las
+     voces solo se iba volviendo a hacer clic en la misma tarjeta.
+     La limpieza se avisa por evento para que cada sección borre SU parte de la
+     interfaz (aria-pressed, el lector, el rail): el DOM de una sección lo toca
+     su módulo, no este archivo. */
+  if (quotePanelEl.classList.contains('visible')) {
+    closeQuotePanel();
+    return;
+  }
+  const habiaFoco = !!(voiceFocus.participant || selectedActDate || particleFocus.index >= 0);
+  if (!habiaFoco) return;
+  clearVoiceFocus();
+  selectedActDate = null;
+  particleFocus.index = -1;
+  syncAxesMarkFocus(-1);
+  window.dispatchEvent(new CustomEvent('focus-clear'));
 });
 
 /* Un único handler de tamaño para la cámara, el renderer y los objetos 3D.

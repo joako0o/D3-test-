@@ -8,7 +8,7 @@
  * Las dependencias se declaran en la firma de init: quien la llame tiene que
  * dárselas. Nada de leer variables de otro archivo por la puerta de atrás.
  */
-import { voiceFocus, pinQuote } from '../core/interaction-state.js';
+import { voiceFocus, pinQuote, clearVoiceFocus } from '../core/interaction-state.js';
 import { TOPIC_DEFINITIONS, normalizeTopicText, topicHasTerm } from '../data/topics.js';
 import { sampleYearWindow } from '../core/utils.js';
 
@@ -231,6 +231,7 @@ export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
   });
 
   function updateDetail(voice) {
+    if (clearBtn) clearBtn.hidden = !voice;
     if (!voice) {
       empty.hidden = false;
       content.hidden = true;
@@ -257,6 +258,8 @@ export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
     voiceFocus.quoteIndex = sample.index;
   }
 
+  /* El toggle por segundo clic ya existía, pero nadie lo adivina: ahora hay un
+     botón a la vista ("Quitar selección") y Escape también sale. */
   function selectVoice(name) {
     activeName = activeName === name ? null : name;
     voiceFocus.participant = activeName;
@@ -270,6 +273,23 @@ export function initVoiceExplorer({ quotes, openQuote, closeQuotePanel }) {
        no debe dejar un panel perteneciente a otra voz flotando sobre el rail. */
     if (typeof closeQuotePanel === 'function') closeQuotePanel();
   }
+
+  const clearBtn = document.getElementById('voiceDetailClear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      selectVoice(activeName);
+      clearBtn.focus({ preventScroll: true });
+    });
+  }
+  /* Escape (desde main.js) avisa por evento: acá se limpia la parte de esta
+     sección sin que otro módulo tenga que tocar su DOM. */
+  window.addEventListener('focus-clear', () => {
+    if (!activeName) return;
+    activeName = null;
+    clearVoiceFocus();
+    cards.forEach(({ card }) => card.setAttribute('aria-pressed', 'false'));
+    updateDetail(null);
+  });
 
   profileOpen.addEventListener('click', () => {
     const voice = activeName ? voices.find((item) => item.name === activeName) : null;

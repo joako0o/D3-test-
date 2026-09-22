@@ -716,3 +716,23 @@
   .act-evidence-quote { font-size: 11px; line-height: 1.25; -webkit-line-clamp: 2; }
   .acts-browser-note { display: none; }
 }
+
+/* ── Estado sin selección del lector ──────────────────────────────────────
+   Hasta ahora el lector de actas SIEMPRE tenía una reunión elegida y no había
+   modo de volver atrás: el foco del acta no se limpiaba en ningún punto del
+   código. Ahora volver a elegir la misma acta (o Escape) deja el lector en
+   blanco y la escena sin foco, con esta invitación en lugar de datos viejos. */
+.act-reader.is-empty .act-reader-head,
+.act-reader.is-empty .act-facts,
+.act-reader.is-empty .act-reading { display: none; }
+.act-reader-empty {
+  max-width: 42ch;
+  margin: auto;
+  padding: 40px 8px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  text-wrap: balance;
+}

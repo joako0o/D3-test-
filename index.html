@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=55" />
+  <link rel="stylesheet" href="css/bundle.css?v=56" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=22" />
+  <link rel="modulepreload" href="js/app.js?v=23" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -529,6 +529,7 @@
               <div class="voice-detail-actions">
                 <button class="voice-profile-open" id="voiceProfileOpen" type="button">Ver perfil tem&aacute;tico <span aria-hidden="true">↗</span></button>
                 <button class="voice-detail-open" id="voiceDetailOpen" type="button">Leer intervenci&oacute;n <span aria-hidden="true">↗</span></button>
+                <button class="voice-detail-clear" id="voiceDetailClear" type="button" hidden>Quitar selecci&oacute;n</button>
               </div>
               <p class="voice-detail-note">La clasificaci&oacute;n describe la orientaci&oacute;n detectada en el fragmento, no una identidad pol&iacute;tica permanente.</p>
             </div>
@@ -566,6 +567,7 @@
           </aside>
 
           <article class="act-reader" id="actReader" aria-live="polite">
+            <p class="act-reader-empty" id="actReaderEmpty" hidden>Elige una reunión del &iacute;ndice para ver su se&ntilde;al y su evidencia. Si vuelves a elegir la misma, se quita la selecci&oacute;n y la escena vuelve a mostrarse entera.</p>
             <div class="act-reader-head">
               <div>
                 <div class="act-reader-kicker">02 · Sigue la señal <span>Acta seleccionada</span></div>
@@ -881,7 +883,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=22"></script>
+  <script type="module" src="js/app.js?v=23"></script>
 
 
 </body>
