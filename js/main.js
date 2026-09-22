@@ -1990,7 +1990,7 @@ function onPointerUp() { isDragging = false; }
    bloquear el contenido ni el scroll. En touch sólo se usa pointerdown para
    fijar el panel; el hover queda reservado al mouse. */
 const isInteractiveTarget = (e) => !!(e.target && e.target.closest &&
-  e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term, .axes-data-mark, .voice-explorer, .voice-card, .voice-detail, .voice-profile-panel, .acts-browser, .act-list-item, .act-term-chip, .act-evidence-row, .act-open-evidence, .stage-results'));
+  e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term, .axes-data-mark, .voice-explorer, .voice-card, .voice-detail, .voice-profile-panel, .acts-browser, .act-list-item, .act-term-chip, .act-evidence-row, .act-open-evidence, .stage-results, .stage-results-series'));
 window.addEventListener('pointermove', (e) => {
   if (e.pointerType === 'touch' || isInteractiveTarget(e)) return;
   lastPointerX = e.clientX;
@@ -3067,8 +3067,8 @@ const cameraChoreographyStops = [
   { id: 'stageActs',          pos: [-1.10, 0.74, 5.20], look: [0.00, 0.68, 0.00] },
   { id: 'stageCounters',      pos: [0.00, 0.68, 5.50], look: [0.00, 0.70, 0.00] },
   { id: 'stagePipeline',      pos: [1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
+  { id: 'stageResultsSeries', pos: [-1.20, 0.78, 5.10], look: [0.00, 0.68, 0.00] },  // la tasa y el tono
   { id: 'stageResults',       pos: [0.00, 0.76, 5.20], look: [0.00, 0.68, 0.00] },   // resultados: el gráfico manda
-  { id: 'stageTimeline',      pos: [-1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
   { id: 'stageQuotes',        pos: [0.00, 0.72, 5.40], look: [0.00, 0.70, 0.00] },
   { id: 'stageClosing',       pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // base
 ];
@@ -4668,7 +4668,7 @@ function initParticleStoryScroll() {
 
   stageFor('#stageVoices', 'voices');
   stageFor('#stageActs', 'acts');
-  stageFor('#stageTimeline', 'timeline');
+  stageFor('#stageResultsSeries', 'timeline');
   stageFor('#stageQuotes', 'quotes');
 }
 
@@ -5492,6 +5492,14 @@ counterEls.forEach((el) => {
    (sin red), no dibuja nada: la sección queda con su titular y su nota, que es
    mejor que un gráfico vacío. */
 deferBoot(async () => {
+  const [{ initResultsSeries }, [data]] = await Promise.all([
+    import('./sections/results-series.js?v=1'),
+    Promise.all([loadWebData('resultados'), loadD3()]),
+  ]);
+  if (data) initResultsSeries({ data, openQuote });
+});
+
+deferBoot(async () => {
   const [{ initResultsDecision }, [data]] = await Promise.all([
     import('./sections/results-decision.js?v=1'),
     Promise.all([loadWebData('resultados'), loadD3()]),
@@ -5499,10 +5507,9 @@ deferBoot(async () => {
   if (data) initResultsDecision({ data, openQuote });
 });
 
-deferBoot(async () => {
-  const [{ initTimeline }] = await Promise.all([import('./sections/timeline.js?v=3'), loadD3()]);
-  initTimeline(quotes);
-});
+/* La timeline se retiró: su índice anual salía de la muestra (11 puntos) y la
+   sección de Resultados lo calcula sobre el corpus (132 reuniones). El módulo
+   js/sections/timeline.js queda en el repo sin usar, por si se quiere volver. */
 
 /* ────────────────────────────────
    Acto 4: Sincronización de visibilidad para #d3-canvas
@@ -5616,7 +5623,7 @@ const bgSections = [
   { trigger: '#stageVoices', color: '#0b101c' },
   { trigger: '#stageCounters', color: '#0a0e1a' },
   { trigger: '#stagePipeline', color: '#0c1020' },
-  { trigger: '#stageTimeline', color: '#0a0e1a' },
+  { trigger: '#stageResultsSeries', color: '#0a0e1a' },
   { trigger: '#stageQuotes', color: '#0d1225' },
   { trigger: '#stageClosing', color: '#0a0e1a' },
 ];
@@ -5663,7 +5670,7 @@ const ambientStates = [
   { trigger: '#stageVoices',   alpha: 0.035 },
   { trigger: '#stageCounters', alpha: 0.025 },
   { trigger: '#stagePipeline', alpha: 0.018 },
-  { trigger: '#stageTimeline', alpha: 0.035 },
+  { trigger: '#stageResultsSeries', alpha: 0.035 },
   { trigger: '#stageQuotes',   alpha: 0.018 },
   { trigger: '#stageClosing',  alpha: 0.08 },
 ];
@@ -5751,7 +5758,7 @@ document.querySelectorAll('.quote-card').forEach((card) => {
 
 /* 7. TIMELINE PATH DRAWING — ELIMINADO: código muerto. timelinePath es
    undefined al evaluarse (el timeline se construye lazy) y el dibujo real
-   ya lo hace el onUpdate del pin de #stageTimeline. */
+   ya lo hace el onUpdate del pin de la sección de Resultados. */
 
 /* ────────────────────────────────
    Refresh de ScrollTrigger tras carga completa

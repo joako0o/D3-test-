@@ -86,7 +86,7 @@
        y `npm run check` avisa si quedó viejo. Ver scripts/build-css.mjs y
        css/README.md. Las fuentes siguen siendo self-hosted: sin Google Fonts,
        el render no cambia entre local, CI y producción y funciona offline. -->
-  <link rel="stylesheet" href="css/bundle.css?v=56" />
+  <link rel="stylesheet" href="css/bundle.css?v=58" />
 
   <!-- UNA SOLA ENTRADA DE JS: js/app.js es el bundle de main.js + three.js
        (tree-shaken desde el fuente modular) + addons + core/scene/sections,
@@ -102,7 +102,7 @@
        El <script type=module> real vive al final del <body> (el bundle
        depende de los vendor con `defer`, que se ejecutan en orden de
        documento); aquí solo se ADELANTA la descarga. -->
-  <link rel="modulepreload" href="js/app.js?v=23" />
+  <link rel="modulepreload" href="js/app.js?v=26" />
 
   <!-- Los dos GLB que siempre se usan (moneda y puerta): se empiezan a bajar
        mientras el JS aún se está parseando, no después. La URL (query
@@ -795,27 +795,35 @@
     </div>
   </section>
 
-  <!-- ═══════ STAGE 9 — Timeline ═══════ -->
-  <section class="stage-timeline" id="stageTimeline">
-    <div class="timeline-pin-wrapper">
-      <h2 class="timeline-title" data-timeline-title>&Iacute;ndice exploratorio de orientaci&oacute;n por a&ntilde;o</h2>
-      <!-- LA DEFINICIÓN DEL ÍNDICE, LEGIBLE
-           Estaba en una línea de letra chica gris, y era ambigua: decía
-           '(hawkish − dovish) / fragmentos con etiqueta' cuando el denominador
-           son TODOS los fragmentos del año, neutrales incluidos — que es
-           justo lo que el lector necesita saber para leer la serie. Y callaba
-           lo que más pesa: con 5 a 15 fragmentos por año, una sola etiqueta
-           mueve el índice entre 0,07 y 0,20. -->
-      <div class="timeline-note" id="timelineNote">
-        <p class="timeline-formula">&iacute;ndice del a&ntilde;o = (hawkish &minus; dovish) &divide; fragmentos del a&ntilde;o</p>
-        <p class="timeline-caveat">Un fragmento neutral no empuja hacia ning&uacute;n lado, pero s&iacute; diluye: entra en el denominador. Y con <strong>5 a 15 fragmentos por a&ntilde;o</strong>, una sola etiqueta mueve el &iacute;ndice entre 0,07 y 0,20 &mdash; esta serie es la de la muestra visible, no la del corpus, que tiene <span data-corpus-stat="intervenciones">9.725</span> intervenciones repartidas en 11 a&ntilde;os.</p>
+  <!-- ═══════ RESULTADOS · la tasa y la sala ═══════
+       Abre Resultados con el panorama completo: la TPM como terreno de fondo y
+       el tono de cada deliberación encima, en un solo plano y con el eje del
+       tiempo compartido. Reemplaza a la timeline vieja, que dibujaba el índice
+       anual de la MUESTRA (11 puntos): dos series del mismo dato con números
+       distintos era la contradicción que quedaba en la pieza.
+       La serie de tasa está completa: las 132 reuniones tienen su TPM
+       registrada en el corpus (0,50% a 8,25%). -->
+  <section class="stage-results-series" id="stageResultsSeries" aria-labelledby="resultsSeriesTitle">
+    <div class="results-shell">
+      <div class="results-kicker">Resultados</div>
+      <h2 class="results-title results-title--series" id="resultsSeriesTitle">Once a&ntilde;os de tasa, y lo que la sala dec&iacute;a <em>mientras tanto</em>.</h2>
+
+      <div class="results-board results-board--series">
+        <div id="resultsSeriesChart"></div>
+        <p class="results-readout" id="resultsSeriesReadout" aria-live="polite"></p>
       </div>
-      <div class="timeline-container" id="timelineContainer"></div>
+
+      <p class="results-note">El <strong>terreno</strong> es la Tasa de Pol&iacute;tica Monetaria que fij&oacute; cada una de las 132 reuniones; los <strong>puntos</strong>, el tono de su deliberaci&oacute;n. En 2009 la tasa cae 675 puntos base en siete meses &mdash;de 7,25% a 0,50%&mdash; y el tono cae con ella: es el &uacute;nico a&ntilde;o del corpus con m&aacute;s dovish que hawkish. Los cuatro puntos huecos son reuniones donde el modelo no encontr&oacute; ninguna intervenci&oacute;n con orientaci&oacute;n: su tono es cero <em>por ausencia de se&ntilde;al</em>, no por acuerdo.</p>
     </div>
   </section>
 
-  <!-- ═══════ STAGE 11 — Volver a la evidencia ═══════ -->
-  <section class="stage-quotes" id="stageQuotes" aria-labelledby="quotesTitle">
+  <!-- La timeline vieja vivía acá. Mostraba el índice anual calculado sobre la
+       MUESTRA (11 puntos, 5 a 15 fragmentos por año) mientras la sección de
+       Resultados lo calcula sobre el CORPUS (132 reuniones). Dos series del
+       mismo dato con números distintos es peor que una serie mala: se retiró.
+       Su reemplazo es #stageResultsSeries, arriba. -->
+
+<section class="stage-quotes" id="stageQuotes" aria-labelledby="quotesTitle">
     <div class="quotes-shell">
       <div class="quotes-kicker">Ep&iacute;logo &middot; Volver a la evidencia</div>
       <h2 class="quotes-title" id="quotesTitle">La lectura termina donde empez&oacute;: en la voz.</h2>
@@ -883,7 +891,7 @@
   <!-- quotes.min.js es DERIVADO de js/data/quotes.js (script clásico, define
        window.QUOTES): lo regenera `npm run build:js` y `npm run check` avisa
        si quedó viejo. En el repo se edita siempre el .js. -->
-  <script type="module" src="js/app.js?v=23"></script>
+  <script type="module" src="js/app.js?v=26"></script>
 
 
 </body>

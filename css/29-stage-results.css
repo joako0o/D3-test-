@@ -142,3 +142,64 @@
   .results-readout { font-size: 12.5px; }
   .results-note { font-size: 12.5px; line-height: 1.55; }
 }
+
+/* ══════════ La serie: la tasa como terreno, el tono encima ══════════════
+   Un solo plano, dos capas y dos escalas rotuladas. El terreno va detrás y más
+   apagado (es contexto); los puntos delante (son el dato). */
+
+.stage-results-series {
+  position: relative;
+  z-index: 4;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-section) 6%;
+  pointer-events: none;
+}
+
+.results-title--series { max-width: 24ch; font-size: clamp(24px, 2.9vw, 40px); }
+
+.results-board--series { margin-top: clamp(14px, 2.4vh, 26px); }
+
+#resultsSeriesChart { width: 100%; }
+#resultsSeriesChart svg { display: block; overflow: visible; pointer-events: auto; }
+
+/* El terreno: relleno tenue + escalón. El relleno da la silueta (se lee la
+   subida y el derrumbe de 2009 de un vistazo); el escalón marca cada decisión. */
+.series-rate-fill { fill: rgba(255, 215, 106, 0.07); }
+.series-rate-line { fill: none; stroke: rgba(255, 215, 106, 0.55); stroke-width: 1.6; }
+.series-rate-tick {
+  fill: rgba(255, 255, 255, 0.34);
+  font-size: 11px;
+  font-family: var(--font-body);
+}
+.series-rate-mark {
+  fill: rgba(255, 215, 106, 0.8);
+  font-size: 11.5px;
+  font-family: var(--font-body);
+  letter-spacing: 0.2px;
+}
+
+/* El tono: cero, ejes y puntos. */
+.series-zero { stroke: rgba(255, 255, 255, 0.2); stroke-dasharray: 3, 4; }
+.series-zero-label,
+.series-axis text,
+.series-axis-title {
+  fill: rgba(255, 255, 255, 0.42);
+  font-size: 11px;
+  font-family: var(--font-body);
+}
+.series-axis-title { fill: rgba(255, 255, 255, 0.5); letter-spacing: 1.6px; text-transform: uppercase; font-size: 10px; }
+
+.series-dot-hit { cursor: pointer; }
+.series-dot-mark { transition: r 0.15s ease, fill-opacity 0.15s ease; }
+.series-dot:hover .series-dot-mark { r: 5.2; }
+.series-dot.is-active .series-dot-mark { r: 5.6; stroke: #fff; stroke-width: 1.4; }
+.series-dot:focus { outline: none; }
+
+@media (max-width: 700px) {
+  .stage-results-series { padding: var(--space-section) 16px; }
+  .results-title--series { max-width: 100%; }
+}

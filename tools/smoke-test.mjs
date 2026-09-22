@@ -323,9 +323,15 @@ checks.push([
   `navegador de actas construido (${w.document.querySelectorAll('#actsList .act-list-item').length} actas)`,
   w.document.querySelectorAll('#actsList .act-list-item').length > 0,
 ]);
+/* La timeline se retiró (su índice anual salía de la muestra y duplicaba el de
+   Resultados). Ahora se comprueba la sección que la reemplaza. */
 checks.push([
-  `línea de tiempo construida (${w.document.querySelectorAll('#timelineContainer *').length} nodos)`,
-  w.document.querySelectorAll('#timelineContainer *').length > 0,
+  `serie de tasa y tono construida (${w.document.querySelectorAll('#resultsSeriesChart svg *').length} nodos)`,
+  w.document.querySelectorAll('#resultsSeriesChart svg *').length > 0,
+]);
+checks.push([
+  `panel de decisiones construido (${w.document.querySelectorAll('#resultsDecisionChart svg *').length} nodos)`,
+  w.document.querySelectorAll('#resultsDecisionChart svg *').length > 0,
 ]);
 
 checks.push(['skip link', !!$('.skip-link')]);
