@@ -1,0 +1,144 @@
+/* 29-stage-results.css
+   Primera sección de Resultados: el tono de la deliberación contra la decisión
+   de tasa. El prefijo numérico ES el orden de cascada (ver css/README.md) y
+   build-css.mjs la recoge sola.
+
+   Criterio de diseño, aprendido de la crítica del autor a El Método: NADA de
+   dashboard. Sin cajas anidadas, sin etiquetas en mayúsculas gritadas, sin
+   repetir en un panel lo que ya dice el titular. El gráfico es el contenido:
+   puntos, una línea de cero y dos rótulos de eje. */
+
+.stage-results {
+  position: relative;
+  z-index: 4;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-section) 6%;
+  pointer-events: none;
+}
+
+.results-shell {
+  width: min(1060px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.results-kicker {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.results-title {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3.4vw, 46px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  text-align: center;
+  color: var(--color-text-primary);
+  text-wrap: balance;
+  max-width: 20ch;
+}
+
+.results-title em {
+  font-style: italic;
+  color: var(--color-gold);
+}
+
+/* La cifra que resume el hallazgo, cuando el titular no la dice entera. */
+.results-summary {
+  margin-top: 14px;
+  font-size: clamp(13px, 1.2vw, 15px);
+  letter-spacing: 0.2px;
+  color: var(--color-text-secondary);
+}
+
+.results-board {
+  width: 100%;
+  margin-top: clamp(18px, 3vh, 34px);
+}
+
+#resultsDecisionChart {
+  width: 100%;
+}
+
+#resultsDecisionChart svg {
+  display: block;
+  overflow: visible;
+  /* El gráfico es interactivo (los puntos abren su reunión): sin esto, el
+     contenedor padre con pointer-events:none se comería el clic. */
+  pointer-events: auto;
+}
+
+/* Punto: el hit area es invisible y más grande que la marca, para que un dedo
+   acierte. Solo los que tienen fragmento abrible se anuncian como tales. */
+.results-dot-hit { cursor: pointer; }
+.results-dot--leible .results-dot-mark { transition: r 0.15s ease, fill-opacity 0.15s ease; }
+.results-dot--leible:hover .results-dot-mark { r: 5.4; fill-opacity: 1; }
+.results-dot:focus { outline: none; }
+.results-dot:focus-visible .results-dot-mark {
+  r: 6;
+  stroke: var(--color-gold);
+  stroke-width: 2;
+  fill-opacity: 1;
+}
+.results-dot:focus-visible { outline: none; }
+
+.results-readout {
+  min-height: 34px;
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px 14px;
+  font-size: var(--fs-small);
+  color: var(--color-text-secondary);
+}
+.results-readout-fecha { color: var(--color-text-primary); font-weight: 500; }
+.results-readout-decision { letter-spacing: 0.2px; }
+.results-readout-sin { color: var(--color-text-faint); font-style: italic; }
+.results-readout-open {
+  pointer-events: auto;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 215, 106, 0.3);
+  background: rgba(255, 215, 106, 0.06);
+  color: var(--color-gold);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.results-readout-open:hover,
+.results-readout-open:focus-visible {
+  background: rgba(255, 215, 106, 0.12);
+  border-color: rgba(255, 215, 106, 0.5);
+}
+
+.results-note {
+  max-width: 680px;
+  margin-top: 22px;
+  text-align: center;
+  font-size: var(--fs-small);
+  line-height: 1.65;
+  font-weight: 300;
+  color: var(--color-text-muted);
+  text-wrap: balance;
+}
+.results-note strong { color: var(--color-text-secondary); font-weight: 500; }
+
+@media (max-width: 700px) {
+  .stage-results { padding: var(--space-section) 16px; }
+  .results-title { max-width: 100%; }
+  .results-readout { font-size: 12.5px; }
+  .results-note { font-size: 12.5px; line-height: 1.55; }
+}

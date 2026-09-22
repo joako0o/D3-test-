@@ -16,6 +16,7 @@
     "hero:check": "node scripts/screenshots/hero-check.mjs",
     "hook:check": "node scripts/screenshots/hook-check.mjs",
     "particle:hover": "node scripts/screenshots/particula-hover.mjs",
+    "results:check": "node scripts/screenshots/results-check.mjs",
     "perf": "node scripts/perf/measure.mjs",
     "startup": "node scripts/perf/startup.mjs",
     "perf:early": "node scripts/perf/early-scroll.mjs",

@@ -1990,7 +1990,7 @@ function onPointerUp() { isDragging = false; }
    bloquear el contenido ni el scroll. En touch sólo se usa pointerdown para
    fijar el panel; el hover queda reservado al mouse. */
 const isInteractiveTarget = (e) => !!(e.target && e.target.closest &&
-  e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term, .axes-data-mark, .voice-explorer, .voice-card, .voice-detail, .voice-profile-panel, .acts-browser, .act-list-item, .act-term-chip, .act-evidence-row, .act-open-evidence'));
+  e.target.closest('a, button, .quote-card, .signal-card, [data-quote], #quotePanel, #timelineContainer, .closing-cta, .jargon-term, .axes-data-mark, .voice-explorer, .voice-card, .voice-detail, .voice-profile-panel, .acts-browser, .act-list-item, .act-term-chip, .act-evidence-row, .act-open-evidence, .stage-results'));
 window.addEventListener('pointermove', (e) => {
   if (e.pointerType === 'touch' || isInteractiveTarget(e)) return;
   lastPointerX = e.clientX;
@@ -3067,6 +3067,7 @@ const cameraChoreographyStops = [
   { id: 'stageActs',          pos: [-1.10, 0.74, 5.20], look: [0.00, 0.68, 0.00] },
   { id: 'stageCounters',      pos: [0.00, 0.68, 5.50], look: [0.00, 0.70, 0.00] },
   { id: 'stagePipeline',      pos: [1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
+  { id: 'stageResults',       pos: [0.00, 0.76, 5.20], look: [0.00, 0.68, 0.00] },   // resultados: el gráfico manda
   { id: 'stageTimeline',      pos: [-1.50, 0.80, 4.90], look: [0.00, 0.66, 0.00] },
   { id: 'stageQuotes',        pos: [0.00, 0.72, 5.40], look: [0.00, 0.70, 0.00] },
   { id: 'stageClosing',       pos: [0.00, 0.60, 5.80], look: [0.00, 0.70, 0.00] },   // base
@@ -5465,6 +5466,20 @@ counterEls.forEach((el) => {
    Y como añadir un pin cambia la altura del documento, al vaciarse la cola se
    llama una vez a refreshLayout() (al final de este archivo), que recalcula
    todos los trigger contra el documento ya definitivo. */
+/* Resultados: la primera sección que dibuja el hallazgo en vez del método.
+   Va acá en la cola —después de los contadores y el pipeline, antes de los
+   cierres— porque necesita D3 y su gráfico mide el ancho del contenedor, que
+   no está maquetado hasta que la cola anterior corrió. Si el agregado no llega
+   (sin red), no dibuja nada: la sección queda con su titular y su nota, que es
+   mejor que un gráfico vacío. */
+deferBoot(async () => {
+  const [{ initResultsDecision }, [data]] = await Promise.all([
+    import('./sections/results-decision.js?v=1'),
+    Promise.all([loadWebData('resultados'), loadD3()]),
+  ]);
+  if (data) initResultsDecision({ data, openQuote });
+});
+
 deferBoot(async () => {
   const [{ initTimeline }] = await Promise.all([import('./sections/timeline.js?v=3'), loadD3()]);
   initTimeline(quotes);
